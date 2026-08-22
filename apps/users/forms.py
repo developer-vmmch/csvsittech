@@ -1,8 +1,21 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm
+from .models import CustomRole
 
 User = get_user_model()
+
+def get_all_role_choices():
+    choices = list(User.Roles.choices)
+    try:
+        custom_roles = CustomRole.objects.all()
+        for cr in custom_roles:
+            if (cr.code, cr.name) not in choices:
+                choices.append((cr.code, cr.name))
+    except Exception:
+        pass
+    return choices
+
 
 class UserLoginForm(AuthenticationForm):
     username = forms.CharField(
@@ -33,6 +46,12 @@ class UserCreationCustomForm(forms.ModelForm):
         label="Confirm Password *"
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        choices = get_all_role_choices()
+        self.fields['role'].choices = choices
+        self.fields['role'].widget.choices = choices
+
     class Meta:
         model = User
         fields = [
@@ -47,7 +66,7 @@ class UserCreationCustomForm(forms.ModelForm):
             'role': forms.Select(attrs={'class': 'form-select'}),
             'department': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'e.g. GENERAL MEDICINE or FRONT OFFICE'}),
             'phone_number': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Mobile / Contact Number', 'maxlength': '10'}),
-            'employee_id': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'EMP-001'}),
+            'employee_id': forms.TextInput(attrs={'class': 'form-input', 'readonly': 'readonly', 'style': 'background-color: #f1f5f9; color: #475569; font-weight: 600;'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
         }
 
@@ -59,7 +78,9 @@ class UserCreationCustomForm(forms.ModelForm):
 
     def clean_employee_id(self):
         employee_id = (self.cleaned_data.get('employee_id') or '').strip()
-        if employee_id and User.objects.filter(employee_id__iexact=employee_id).exists():
+        if not employee_id:
+            return User.generate_next_employee_id()
+        if User.objects.filter(employee_id__iexact=employee_id).exists():
             raise forms.ValidationError("A user with this Employee ID already exists.")
         return employee_id
 
@@ -89,6 +110,12 @@ class UserEditCustomForm(forms.ModelForm):
         required=False,
         label="New Password (Optional)"
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        choices = get_all_role_choices()
+        self.fields['role'].choices = choices
+        self.fields['role'].widget.choices = choices
 
     class Meta:
         model = User
@@ -128,3 +155,24 @@ class UserEditCustomForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+
+
+class CustomRoleForm(forms.ModelForm):
+    class Meta:
+        model = CustomRole
+        fields = ['name', 'code', 'description', 'color', 'icon']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'e.g. Doctor / Specialist', 'required': 'required'}),
+            'code': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'e.g. DOCTOR', 'required': 'required'}),
+            'description': forms.Textarea(attrs={'class': 'form-input', 'placeholder': 'Describe duties and permissions of this role profile...', 'rows': 3}),
+            'color': forms.TextInput(attrs={'type': 'color', 'class': 'form-input-color', 'style': 'height: 40px; padding: 2px;'}),
+            'icon': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'e.g. bi-person-badge-fill'}),
+        }
+
+    def clean_code(self):
+        code = (self.cleaned_data.get('code') or '').strip().upper().replace(' ', '_')
+        if not code:
+            raise forms.ValidationError("Role code key is required.")
+        if code in User.Roles.values or CustomRole.objects.filter(code__iexact=code).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError("A system role profile with this Code key already exists.")
+        return code

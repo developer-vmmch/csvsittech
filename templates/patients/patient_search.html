@@ -65,12 +65,22 @@
         </form>
     </div>
 
+    {% if not has_searched %}
+    <!-- Initial Prompt Panel -->
+    <div style="text-align: center; padding: 3.5rem 1.5rem; color: var(--text-muted); background: #ffffff; border: 1px solid var(--border-color); border-radius: 14px; box-shadow: var(--shadow-sm);">
+        <i class="bi bi-search" style="font-size: 3.2rem; display: block; margin-bottom: 1rem; color: var(--accent-teal);"></i>
+        <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">Enter Search Criteria to Find Patients</h3>
+        <p style="font-size: 0.9rem; color: var(--text-muted); max-width: 550px; margin: 0 auto;">
+            Use the search filter panel above (Patient Name, ID, Mobile No, Aadhar, ABHA ID, or Date Range) and click <strong>"Search Patient"</strong> to view matching records.
+        </p>
+    </div>
+    {% else %}
     <!-- Search Results Panel -->
     <div class="panel">
         <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
             <div>
                 <h2 class="panel-title" style="margin: 0; font-size: 1.2rem;">
-                    Search Results {% if has_filters %}<span class="badge badge-blue" style="font-size: 0.8rem; margin-left: 8px;">Filtered Results</span>{% endif %}
+                    Search Results <span class="badge badge-blue" style="font-size: 0.8rem; margin-left: 8px;">Filtered Results</span>
                 </h2>
                 <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
                     Found <strong>{{ patients|length }}</strong> matching patient records.
@@ -94,6 +104,7 @@
                         <th>ABHA ID</th>
                         <th>Department</th>
                         <th>Doctor</th>
+                        <th>Registered By</th>
                         <th>Registered On</th>
                         <th>Actions</th>
                     </tr>
@@ -109,6 +120,15 @@
                         <td><span class="badge badge-purple">{{ patient.abha_id|default:"--" }}</span></td>
                         <td><span class="badge badge-blue">{{ patient.department }}</span></td>
                         <td>{{ patient.unit_doctor }}</td>
+                        <td>
+                            {% if patient.created_by %}
+                            <span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); font-weight: 500;">
+                                <i class="bi bi-person-fill"></i> {{ patient.created_by.get_full_name|default:patient.created_by.username }}
+                            </span>
+                            {% else %}
+                            <span style="color: var(--text-muted); font-size: 0.82rem;">--</span>
+                            {% endif %}
+                        </td>
                         <td>{{ patient.created_at|date:"d/M/Y H:i" }}</td>
                         <td>
                             <div style="display: flex; align-items: center; gap: 0.4rem;">
@@ -133,17 +153,16 @@
         </div>
         {% else %}
         <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
-            <i class="bi bi-search-heart" style="font-size: 3rem; display: block; margin-bottom: 1rem; color: var(--accent-blue);"></i>
-            <p style="font-size: 1.1rem;">No patients found matching your search criteria.</p>
-            <p style="font-size: 0.85rem; margin-top: 4px;">Try clearing filters or searching with different keywords.</p>
-            {% if has_filters %}
+            <i class="bi bi-exclamation-circle" style="font-size: 3rem; display: block; margin-bottom: 1rem; color: var(--accent-amber);"></i>
+            <p style="font-size: 1.1rem; font-weight: 600; color: var(--text-main);">No patients found matching your search criteria.</p>
+            <p style="font-size: 0.85rem; margin-top: 4px;">Try searching with different keywords or clearing filters.</p>
             <a href="{% url 'patients:search' %}" class="btn btn-secondary" style="margin-top: 1rem; display: inline-block;">
                 <i class="bi bi-x-circle"></i> Clear Search Filters
             </a>
-            {% endif %}
         </div>
         {% endif %}
     </div>
+    {% endif %}
 
 </div>
 {% endblock %}

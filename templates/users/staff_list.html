@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Role Management | VMMCerp{% endblock %}
+{% block page_heading %}Staff Members Directory{% endblock %}
+
+{% block content %}
+<style>
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 1.75rem;
+    }
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+    }
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    .stat-val {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--text-color);
+        line-height: 1.2;
+    }
+    .stat-label {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+</style>
+
+<!-- Summary Metric Cards -->
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+            <i class="bi bi-people-fill"></i>
+        </div>
+        <div>
+            <div class="stat-val">{{ total_staff }}</div>
+            <div class="stat-label">Total Staff Members</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(2, 132, 199, 0.15); color: #0284c7;">
+            <i class="bi bi-person-check-fill"></i>
+        </div>
+        <div>
+            <div class="stat-val">{{ active_staff }}</div>
+            <div class="stat-label">Active Login Accounts</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
+            <i class="bi bi-person-x-fill"></i>
+        </div>
+        <div>
+            <div class="stat-val">{{ disabled_staff }}</div>
+            <div class="stat-label">Disabled Accounts</div>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">
+                <i class="bi bi-person-badge-fill" style="color: var(--accent-green);"></i> Staff Role Members
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; margin-bottom: 0;">
+                Directory of all users registered under the Staff Member profile.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <a href="{% url 'users:role_permissions' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
+                <i class="bi bi-shield-check" style="color: var(--accent-blue);"></i> Role Access Matrix
+            </a>
+            <a href="{% url 'users:add' %}?role=STAFF" class="btn btn-primary">
+                <i class="bi bi-person-plus-fill"></i> + Add Staff Member
+            </a>
+        </div>
+    </div>
+
+    {% if staff_members %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Email / Phone</th>
+                    <th>Department</th>
+                    <th>Employee ID</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in staff_members %}
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="bi bi-person-circle" style="font-size: 1.2rem; color: var(--accent-green);"></i>
+                            <strong>{{ u.username }}</strong>
+                        </div>
+                    </td>
+                    <td>{{ u.get_full_name|default:u.username }}</td>
+                    <td>
+                        <div>{{ u.email|default:"--" }}</div>
+                        <div style="color: var(--text-muted); font-size: 0.8rem;">{{ u.phone_number|default:"" }}</div>
+                    </td>
+                    <td>{{ u.department|default:"--" }}</td>
+                    <td><strong style="color: var(--accent-blue);">{{ u.employee_id|default:"--" }}</strong></td>
+                    <td>
+                        {% if u.is_active %}
+                            <span class="badge badge-green">Active</span>
+                        {% else %}
+                            <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">Disabled</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <a href="{% url 'users:edit' u.id %}" class="btn-edit-sm" title="Edit Credentials">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            <form method="post" action="{% url 'users:delete' u.id %}" onsubmit="return confirm('Are you sure you want to delete staff account {{ u.username }}?');" style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-danger-sm" title="Delete Staff Account">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        <i class="bi bi-people" style="font-size: 3rem; display: block; margin-bottom: 1rem; color: var(--accent-green);"></i>
+        <p style="font-size: 1.1rem; color: var(--text-color);">No Staff Member accounts created yet.</p>
+        <a href="{% url 'users:add' %}?role=STAFF" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">
+            <i class="bi bi-person-plus-fill"></i> Add First Staff Member
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -22,6 +22,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Accordion Sub-Menu Toggle
+    const submenuToggles = document.querySelectorAll('.submenu-toggle');
+    submenuToggles.forEach(toggle => {
+        toggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            const parentLi = toggle.closest('.has-submenu');
+            if (parentLi) {
+                parentLi.classList.toggle('open');
+            }
+        });
+    });
+
     // Floating Scroll to Top button behavior
     const scrollToTopBtn = document.getElementById('scrollToTopBtn');
     if (scrollToTopBtn) {

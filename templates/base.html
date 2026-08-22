@@ -19,92 +19,144 @@
         </div>
 
         <ul class="nav-list">
+            {% if not user.is_authenticated or user.get_menu_mapping.dashboard %}
             <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                 <a href="{% url 'core:dashboard' %}" title="Dashboard">
                     <i class="bi bi-grid-1x2"></i>
                     <span>Dashboard</span>
                 </a>
             </li>
+            {% endif %}
 
-            <!-- Patient Management Section -->
-            <li class="nav-section-title"><span>PATIENTS</span></li>
-
-            <li class="nav-item {% if request.resolver_match.url_name == 'add' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                <a href="{% url 'patients:add' %}" title="Add Patient">
-                    <i class="bi bi-person-plus-fill" style="color: var(--accent-green);"></i>
-                    <span>Add Patient</span>
+            <!-- Patient Management Module (Collapsible Submenu) -->
+            <li class="nav-item has-submenu {% if request.resolver_match.namespace == 'patients' %}open active-parent{% endif %}">
+                <a href="javascript:void(0);" class="submenu-toggle" title="Patient Registration & Management">
+                    <i class="bi bi-person-vcard-fill" style="color: var(--accent-green);"></i>
+                    <span>Patients</span>
+                    <i class="bi bi-chevron-down submenu-chevron"></i>
                 </a>
+                <ul class="submenu-list">
+                    {% if not user.is_authenticated or user.get_menu_mapping.add_patient %}
+                    <li class="{% if request.resolver_match.url_name == 'add' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
+                        <a href="{% url 'patients:add' %}">
+                            <i class="bi bi-person-plus-fill"></i>
+                            <span>Add Patient</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if not user.is_authenticated or user.get_menu_mapping.search_patient %}
+                    <li class="{% if request.resolver_match.url_name == 'search' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
+                        <a href="{% url 'patients:search' %}">
+                            <i class="bi bi-search"></i>
+                            <span>Search Patient</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if not user.is_authenticated or user.get_menu_mapping.patient_list %}
+                    <li class="{% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
+                        <a href="{% url 'patients:list' %}">
+                            <i class="bi bi-people"></i>
+                            <span>Patient List</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if not user.is_authenticated or user.get_menu_mapping.op_census %}
+                    <li class="{% if request.resolver_match.url_name == 'op_census' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
+                        <a href="{% url 'patients:op_census' %}">
+                            <i class="bi bi-bar-chart-line" style="color: #f59e0b;"></i>
+                            <span>OP Census</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if not user.is_authenticated or user.get_menu_mapping.patient_companies %}
+                    <li class="{% if request.resolver_match.url_name == 'company_list' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
+                        <a href="{% url 'patients:company_list' %}">
+                            <i class="bi bi-building"></i>
+                            <span>Patient Companies</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if not user.is_authenticated or user.get_menu_mapping.department_list %}
+                    <li class="{% if request.resolver_match.url_name == 'department_list' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
+                        <a href="{% url 'patients:department_list' %}">
+                            <i class="bi bi-diagram-3"></i>
+                            <span>Departments & Units</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if not user.is_authenticated or user.get_menu_mapping.add_department %}
+                    <li class="{% if request.resolver_match.url_name == 'department_add' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
+                        <a href="{% url 'patients:department_add' %}">
+                            <i class="bi bi-folder-plus"></i>
+                            <span>+ Add Department</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if not user.is_authenticated or user.get_menu_mapping.add_company %}
+                    <li class="{% if request.resolver_match.url_name == 'company_add' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
+                        <a href="{% url 'patients:company_add' %}">
+                            <i class="bi bi-building-add"></i>
+                            <span>+ Add Company</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
 
-            <li class="nav-item {% if request.resolver_match.url_name == 'search' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                <a href="{% url 'patients:search' %}" title="Search Patients">
-                    <i class="bi bi-search" style="color: var(--accent-blue);"></i>
-                    <span>Search Patient</span>
-                </a>
-            </li>
-
-            <li class="nav-item {% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                <a href="{% url 'patients:list' %}" title="All Patients">
-                    <i class="bi bi-people"></i>
-                    <span>Patient List</span>
-                </a>
-            </li>
-
-            <li class="nav-item {% if request.resolver_match.url_name == 'company_list' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                <a href="{% url 'patients:company_list' %}" title="Patient Companies">
-                    <i class="bi bi-building"></i>
-                    <span>Patient Companies</span>
-                </a>
-            </li>
-
-            <li class="nav-item {% if request.resolver_match.url_name == 'department_list' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                <a href="{% url 'patients:department_list' %}" title="Departments & Units">
-                    <i class="bi bi-diagram-3"></i>
-                    <span>Departments & Units</span>
-                </a>
-            </li>
-
-            <li class="nav-item {% if request.resolver_match.url_name == 'department_add' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                <a href="{% url 'patients:department_add' %}" title="Add Department">
-                    <i class="bi bi-folder-plus" style="color: var(--accent-purple);"></i>
-                    <span>+ Add Department</span>
-                </a>
-            </li>
-
-            <li class="nav-item {% if request.resolver_match.url_name == 'company_add' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                <a href="{% url 'patients:company_add' %}" title="Add Company">
-                    <i class="bi bi-building-add" style="color: var(--accent-blue);"></i>
-                    <span>+ Add Company</span>
-                </a>
-            </li>
-
-            <!-- General Administration -->
-            <li class="nav-section-title"><span>SYSTEM</span></li>
-
-            <li class="nav-item {% if request.resolver_match.namespace == 'users' %}active{% endif %}">
-                <a href="{% url 'users:list' %}" title="Administration & User Management">
-                    <i class="bi bi-shield-lock"></i>
+            <!-- General Administration Module (Collapsible Submenu) -->
+            {% if not user.is_authenticated or user.get_menu_mapping.system_section %}
+            <li class="nav-item has-submenu {% if request.resolver_match.namespace == 'users' %}open active-parent{% endif %}">
+                <a href="javascript:void(0);" class="submenu-toggle" title="Administration & User Control">
+                    <i class="bi bi-shield-lock-fill" style="color: var(--accent-blue);"></i>
                     <span>Administration</span>
+                    <i class="bi bi-chevron-down submenu-chevron"></i>
                 </a>
+                <ul class="submenu-list">
+                    {% if not user.is_authenticated or user.get_menu_mapping.administration %}
+                    <li class="{% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'users' %}active{% endif %}">
+                        <a href="{% url 'users:list' %}">
+                            <i class="bi bi-person-gear"></i>
+                            <span>User Accounts</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if not user.is_authenticated or user.get_menu_mapping.users_roles %}
+                    <li class="{% if request.resolver_match.url_name == 'roles_overview' or request.resolver_match.url_name == 'role_permissions' %}active{% endif %}">
+                        <a href="{% url 'users:roles_overview' %}">
+                            <i class="bi bi-person-badge"></i>
+                            <span>Users & Roles</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
-            <li class="nav-item">
-                <a href="#" title="Users & Roles">
-                    <i class="bi bi-person-badge"></i>
-                    <span>Users & Roles</span>
-                </a>
-            </li>
+            {% endif %}
+
+            {% if not user.is_authenticated or user.get_menu_mapping.inventory %}
             <li class="nav-item">
                 <a href="#" title="Inventory">
                     <i class="bi bi-box-seam"></i>
                     <span>Inventory</span>
                 </a>
             </li>
+            {% endif %}
+
+            {% if not user.is_authenticated or user.get_menu_mapping.settings %}
             <li class="nav-item">
                 <a href="#" title="Settings">
                     <i class="bi bi-gear"></i>
                     <span>Settings</span>
                 </a>
             </li>
+            {% endif %}
         </ul>
     </aside>
 
@@ -146,8 +198,8 @@
                 <div class="messages-container">
                     {% for message in messages %}
                         {% if forloop.last %}
-                        <div class="alert alert-{{ message.tags }}" style="margin-bottom: 1rem;">
-                            <i class="bi bi-check-circle-fill"></i> {{ message }}
+                        <div class="alert alert-{{ message.tags }}" style="margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between;">
+                            <div><i class="bi bi-check-circle-fill"></i> {{ message|safe }}</div>
                         </div>
                         {% endif %}
                     {% endfor %}

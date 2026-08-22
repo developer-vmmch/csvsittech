@@ -10,7 +10,7 @@
         <p>Register a new login account for ERP system access.</p>
     </div>
 
-    <form method="post" class="custom-form">
+    <form method="post" class="custom-form" id="userForm">
         {% csrf_token %}
 
         <div class="form-grid">
@@ -74,7 +74,7 @@
             </div>
 
             <div class="form-group">
-                <label for="{{ form.employee_id.id_for_label }}">Employee ID</label>
+                <label for="{{ form.employee_id.id_for_label }}">Employee ID / Unique User ID</label>
                 {{ form.employee_id }}
                 {% if form.employee_id.errors %}<div class="field-error">{{ form.employee_id.errors.0 }}</div>{% endif %}
             </div>
@@ -94,4 +94,76 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const usernameInput = document.getElementById('{{ form.username.id_for_label }}');
+    const statusDiv = document.createElement('div');
+    statusDiv.id = 'usernameStatus';
+    statusDiv.style.fontSize = '0.82rem';
+    statusDiv.style.marginTop = '4px';
+    statusDiv.style.fontWeight = '600';
+
+    if (usernameInput && usernameInput.parentNode) {
+        usernameInput.parentNode.appendChild(statusDiv);
+
+        let timeout = null;
+        let isUsernameTaken = false;
+
+        const checkUsername = function() {
+            const val = usernameInput.value.trim();
+            if (!val) {
+                statusDiv.innerHTML = '';
+                usernameInput.classList.remove('is-invalid');
+                isUsernameTaken = false;
+                return;
+            }
+
+            const currentUserId = "{% if object %}{{ object.pk }}{% else %}{% endif %}";
+            let url = `{% url "users:api_check_username" %}?username=${encodeURIComponent(val)}`;
+            if (currentUserId) {
+                url += `&user_id=${currentUserId}`;
+            }
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.exists) {
+                        isUsernameTaken = true;
+                        usernameInput.classList.add('is-invalid');
+                        statusDiv.style.color = '#ef4444';
+                        statusDiv.innerHTML = `<i class="bi bi-x-circle-fill"></i> ${data.message}`;
+                    } else {
+                        isUsernameTaken = false;
+                        usernameInput.classList.remove('is-invalid');
+                        statusDiv.style.color = '#10b981';
+                        statusDiv.innerHTML = `<i class="bi bi-check-circle-fill"></i> ${data.message}`;
+                    }
+                })
+                .catch(err => {
+                    console.error('Error checking username:', err);
+                });
+        };
+
+        usernameInput.addEventListener('input', function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(checkUsername, 300);
+        });
+
+        const form = document.getElementById('userForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (isUsernameTaken) {
+                    e.preventDefault();
+                    usernameInput.focus();
+                    statusDiv.style.color = '#ef4444';
+                    statusDiv.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> Cannot save: Username is already in use by another account.`;
+                }
+            });
+        }
+    }
+});
+</script>
 {% endblock %}

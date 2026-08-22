@@ -18,18 +18,18 @@
         <div class="hims-card-header">
             <h2 class="reg-title">
                 {% if is_edit %}
-                    EDIT PATIENT: {{ object.name }} (ID: {{ object.patient_id }})
+                EDIT PATIENT: {{ object.name }} (ID: {{ object.patient_id }})
                 {% else %}
-                    PATIENT REGISTRATION
+                PATIENT REGISTRATION
                 {% endif %}
             </h2>
             <div class="last-id-banner">
                 <span class="last-id-label">{% if is_edit %}Patient ID:{% else %}Last Patient ID:{% endif %}</span>
                 <span class="last-id-value">
                     {% if is_edit %}
-                        {{ object.patient_id }}
+                    {{ object.patient_id }}
                     {% else %}
-                        {{ last_patient_id }}
+                    {{ last_patient_id }}
                     {% endif %}
                 </span>
                 <span class="staff-tag">VMMC STAFF</span>
@@ -54,25 +54,26 @@
                     <div class="hims-field-row">
                         <label class="hims-label">Patient Id:</label>
                         {% if is_edit %}
-                            {{ form.patient_id }}
+                        {{ form.patient_id }}
                         {% else %}
-                            <input type="text" class="form-input" value="Auto-Generated on Save" disabled style="background-color: #f1f5f9; color: #64748b; font-style: italic;">
-                            {{ form.patient_id.as_hidden }}
+                        <input type="text" class="form-input" value="Auto-Generated on Save" disabled
+                            style="background-color: #f1f5f9; color: #64748b; font-style: italic;">
+                        {{ form.patient_id.as_hidden }}
                         {% endif %}
                     </div>
 
                     <div class="hims-field-row">
                         <label class="hims-label">Title / Name <span class="required-star">*</span>:</label>
                         <div style="width: 62%;">
-                            <div class="hims-input-group">
-                                <div style="width: 30%;">{{ form.title }}</div>
-                                <div style="width: 70%;">{{ form.name }}</div>
+                            <div class="hims-input-group" style="width: 100%;">
+                                <div style="width: 28%; min-width: 80px;">{{ form.title }}</div>
+                                <div style="width: 72%;">{{ form.name }}</div>
                             </div>
                             {% if form.title.errors %}
-                                <span class="field-error">{{ form.title.errors.0 }}</span>
+                            <span class="field-error">{{ form.title.errors.0 }}</span>
                             {% endif %}
                             {% if form.name.errors %}
-                                <span class="field-error">{{ form.name.errors.0 }}</span>
+                            <span class="field-error">{{ form.name.errors.0 }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -82,7 +83,7 @@
                         <div style="width: 62%;">
                             {{ form.gender }}
                             {% if form.gender.errors %}
-                                <span class="field-error">{{ form.gender.errors.0 }}</span>
+                            <span class="field-error">{{ form.gender.errors.0 }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -101,7 +102,7 @@
                                 {{ form.age_days }} <span class="unit">D</span>
                             </div>
                             {% if form.age_years.errors %}
-                                <span class="field-error">{{ form.age_years.errors.0 }}</span>
+                            <span class="field-error">{{ form.age_years.errors.0 }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -111,7 +112,7 @@
                         <div style="width: 62%;">
                             {{ form.aadhar_card }}
                             {% if form.aadhar_card.errors %}
-                                <span class="field-error">{{ form.aadhar_card.errors.0 }}</span>
+                            <span class="field-error">{{ form.aadhar_card.errors.0 }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -139,12 +140,12 @@
                     <div class="hims-field-row">
                         <label class="hims-label">Guardian Name <span class="required-star">*</span>:</label>
                         <div style="width: 62%;">
-                            <div class="hims-input-group">
-                                <div style="width: 30%;">{{ form.guardian_relationship }}</div>
-                                <div style="width: 70%;">{{ form.guardian_name }}</div>
+                            <div class="hims-input-group" style="width: 100%;">
+                                <div style="width: 28%; min-width: 80px;">{{ form.guardian_relationship }}</div>
+                                <div style="width: 72%;">{{ form.guardian_name }}</div>
                             </div>
                             {% if form.guardian_name.errors %}
-                                <span class="field-error">{{ form.guardian_name.errors.0 }}</span>
+                            <span class="field-error">{{ form.guardian_name.errors.0 }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -172,7 +173,7 @@
                         <div style="width: 62%;">
                             {{ form.street }}
                             {% if form.street.errors %}
-                                <span class="field-error">{{ form.street.errors.0 }}</span>
+                            <span class="field-error">{{ form.street.errors.0 }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -182,7 +183,7 @@
                         <div style="width: 62%;">
                             {{ form.village_area }}
                             {% if form.village_area.errors %}
-                                <span class="field-error">{{ form.village_area.errors.0 }}</span>
+                            <span class="field-error">{{ form.village_area.errors.0 }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -212,7 +213,7 @@
                         <div style="width: 62%;">
                             {{ form.mobile_no }}
                             {% if form.mobile_no.errors %}
-                                <span class="field-error">{{ form.mobile_no.errors.0 }}</span>
+                            <span class="field-error">{{ form.mobile_no.errors.0 }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -246,7 +247,7 @@
                         <div style="width: 62%;">
                             {{ form.department_obj }}
                             {% if form.department_obj.errors %}
-                                <span class="field-error">{{ form.department_obj.errors.0 }}</span>
+                            <span class="field-error">{{ form.department_obj.errors.0 }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -256,7 +257,7 @@
                         <div style="width: 62%;">
                             {{ form.unit_obj }}
                             {% if form.unit_obj.errors %}
-                                <span class="field-error">{{ form.unit_obj.errors.0 }}</span>
+                            <span class="field-error">{{ form.unit_obj.errors.0 }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -347,7 +348,6 @@
             { id: 'id_title', name: 'Title' },
             { id: 'id_name', name: 'Patient Name' },
             { id: 'id_gender', name: 'Gender' },
-            { id: 'id_age_years', name: 'Age (Years)' },
             { id: 'id_guardian_name', name: 'Guardian Name' },
             { id: 'id_street', name: 'Address / Street' },
             { id: 'id_village_area', name: 'Village / Area' },
@@ -441,6 +441,21 @@
                         }
                     }
                 });
+
+                // Age validation (MUST BE Selected)
+                const ageYearsEl = document.getElementById('id_age_years');
+                const ageMonthsEl = document.getElementById('id_age_months');
+                const ageDaysEl = document.getElementById('id_age_days');
+
+                const yearsVal = parseInt(ageYearsEl ? ageYearsEl.value || '0' : '0', 10) || 0;
+                const monthsVal = parseInt(ageMonthsEl ? ageMonthsEl.value || '0' : '0', 10) || 0;
+                const daysVal = parseInt(ageDaysEl ? ageDaysEl.value || '0' : '0', 10) || 0;
+
+                if (yearsVal === 0 && monthsVal === 0 && daysVal === 0) {
+                    isValid = false;
+                    if (ageYearsEl) createErrorMsg(ageYearsEl, 'Patient age must be Selected.');
+                    if (!firstInvalidEl) firstInvalidEl = ageYearsEl;
+                }
 
                 // Mobile number validation (MUST BE EXACTLY 10 DIGITS)
                 if (mobileInput) {

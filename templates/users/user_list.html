@@ -10,9 +10,20 @@
             <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">System Login Users</h2>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Manage ERP system login accounts, user roles, and access credentials.</p>
         </div>
-        <a href="{% url 'users:add' %}" class="btn btn-primary">
-            <i class="bi bi-person-plus-fill"></i> Create New User
-        </a>
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <a href="{% url 'users:roles_overview' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
+                <i class="bi bi-shield-lock-fill" style="color: var(--accent-purple);"></i> Roles Overview
+            </a>
+            <a href="{% url 'users:staff_list' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
+                <i class="bi bi-people-fill" style="color: var(--accent-green);"></i> Staff Members
+            </a>
+            <a href="{% url 'users:role_permissions' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
+                <i class="bi bi-sliders" style="color: var(--accent-blue);"></i> Role Access Matrix
+            </a>
+            <a href="{% url 'users:add' %}" class="btn btn-primary">
+                <i class="bi bi-person-plus-fill"></i> Create New User
+            </a>
+        </div>
     </div>
 
     {% if system_users %}
@@ -48,9 +59,13 @@
                         {% if u.role == 'ADMIN' %}
                             <span class="badge badge-purple">Administrator</span>
                         {% elif u.role == 'MANAGER' %}
-                            <span class="badge badge-blue">Manager</span>
-                        {% else %}
+                            <span class="badge badge-blue">Department Manager</span>
+                        {% elif u.role == 'AUDITOR' %}
+                            <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">Auditor</span>
+                        {% elif u.role == 'STAFF' %}
                             <span class="badge badge-green">Staff Member</span>
+                        {% else %}
+                            <span class="badge badge-blue">{{ u.get_role_display }}</span>
                         {% endif %}
                     </td>
                     <td>{{ u.department|default:"--" }}</td>

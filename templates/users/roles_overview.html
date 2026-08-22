@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}System Roles Overview | VMMCerp{% endblock %}
+{% block page_heading %}Role Profiles Management{% endblock %}
+
+{% block content %}
+<style>
+    .roles-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+    .role-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .role-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+    .role-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
+    .role-icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+    }
+    .role-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-color);
+        margin: 0 0 0.5rem 0;
+    }
+    .role-desc {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        line-height: 1.45;
+        margin-bottom: 1.25rem;
+    }
+    .feature-tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 1.25rem;
+    }
+    .feature-tag {
+        background: rgba(30, 41, 59, 0.5);
+        color: var(--text-muted);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        padding: 3px 8px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .role-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid var(--border-color);
+        padding-top: 1rem;
+        margin-top: auto;
+    }
+</style>
+
+<div class="panel">
+    <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 class="panel-title" style="margin: 0; font-size: 1.3rem;">
+                <i class="bi bi-shield-lock-fill" style="color: var(--accent-blue);"></i> User System Roles & Access Profiles
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; margin-bottom: 0;">
+                Overview of system role profiles, assigned user counts, and menu access boundaries.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <a href="{% url 'users:role_add' %}" class="btn btn-primary" style="font-size: 0.85rem; background: var(--accent-purple); border-color: var(--accent-purple);">
+                <i class="bi bi-shield-plus"></i> + Add New Role
+            </a>
+            <a href="{% url 'users:role_permissions' %}" class="btn btn-primary" style="font-size: 0.85rem;">
+                <i class="bi bi-sliders"></i> Role Access Matrix
+            </a>
+            <a href="{% url 'users:list' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
+                <i class="bi bi-person-lines-fill"></i> View All Users
+            </a>
+        </div>
+    </div>
+
+    <!-- Grid of 4 Role Cards -->
+    <div class="roles-grid">
+        {% for r in roles %}
+        <div class="role-card">
+            <div>
+                <div class="role-card-header">
+                    <div class="role-icon-box" style="background: rgba(2, 132, 199, 0.12); color: {{ r.color }};">
+                        <i class="bi {{ r.icon }}"></i>
+                    </div>
+                    <span class="badge {{ r.badge_class }}" style="font-size: 0.78rem;">
+                        {{ r.user_count }} User{% if r.user_count != 1 %}s{% endif %}
+                    </span>
+                </div>
+
+                <h3 class="role-title">{{ r.label }}</h3>
+                <p class="role-desc">{{ r.description }}</p>
+
+                <div class="feature-tag-list">
+                    {% for feat in r.features %}
+                    <span class="feature-tag">{{ feat }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="role-footer">
+                {% if r.code == 'STAFF' %}
+                    <a href="{% url 'users:staff_list' %}" class="btn-edit-sm" style="font-size: 0.8rem;">
+                        <i class="bi bi-people"></i> Staff Directory
+                    </a>
+                {% else %}
+                    <a href="{% url 'users:list' %}" class="btn-edit-sm" style="font-size: 0.8rem;">
+                        <i class="bi bi-person"></i> View Accounts
+                    </a>
+                {% endif %}
+
+                <a href="{% url 'users:role_permissions' %}" style="color: var(--accent-blue); text-decoration: none; font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                    Permissions <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
