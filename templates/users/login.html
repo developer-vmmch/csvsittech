@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,8 +33,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .login-header {
@@ -117,6 +125,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <div class="login-card">
@@ -127,17 +136,18 @@
         </div>
 
         {% if messages %}
-            {% for message in messages %}
-                <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %}" style="margin-bottom: 1.25rem;">
-                    <i class="bi bi-info-circle-fill"></i> {{ message }}
-                </div>
-            {% endfor %}
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %}"
+            style="margin-bottom: 1.25rem;">
+            <i class="bi bi-info-circle-fill"></i> {{ message }}
+        </div>
+        {% endfor %}
         {% endif %}
 
         {% if form.errors %}
-            <div class="alert alert-danger" style="margin-bottom: 1.25rem;">
-                <i class="bi bi-exclamation-triangle-fill"></i> Invalid username or password. Please try again.
-            </div>
+        <div class="alert alert-danger" style="margin-bottom: 1.25rem;">
+            <i class="bi bi-exclamation-triangle-fill"></i> Invalid username or password. Please try again.
+        </div>
         {% endif %}
 
         <form method="post" class="login-form">
@@ -152,7 +162,8 @@
                 <label for="{{ form.password.id_for_label }}">Password</label>
                 <div class="password-toggle-group">
                     {{ form.password }}
-                    <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('id_login_password', this)" title="Show/Hide Password">
+                    <button type="button" class="btn-toggle-password"
+                        onclick="togglePasswordVisibility('id_login_password', this)" title="Show/Hide Password">
                         <i class="bi bi-eye-fill"></i>
                     </button>
                 </div>
@@ -163,12 +174,10 @@
             </button>
         </form>
 
-        <div class="login-footer">
-            Vardhman Mahavir Medical College & Safdarjung Hospital<br>
-            &copy; 2026 TFC Solutions, Chennai, India.
-        </div>
+
     </div>
 
     <script src="/static/js/main.js"></script>
 </body>
+
 </html>

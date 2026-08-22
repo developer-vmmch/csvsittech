@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from apps.core.models import TimeStampedModel
 
 class Department(TimeStampedModel):
@@ -101,6 +102,7 @@ class PatientCompany(TimeStampedModel):
 
 class Patient(TimeStampedModel):
     class TitleChoices(models.TextChoices):
+        NONE = '-', '-'
         MR = 'Mr', 'Mr'
         MRS = 'Mrs', 'Mrs'
         MISS = 'Miss', 'Miss'
@@ -134,7 +136,7 @@ class Patient(TimeStampedModel):
     ipno = models.CharField(max_length=50, blank=True, null=True, verbose_name="IPNO")
     
     # Personal Info
-    title = models.CharField(max_length=10, choices=TitleChoices.choices, default=TitleChoices.MR)
+    title = models.CharField(max_length=10, choices=TitleChoices.choices, default='-')
     name = models.CharField(max_length=150, verbose_name="Patient Name")
     gender = models.CharField(max_length=10, choices=GenderChoices.choices, default=GenderChoices.MALE)
     dob = models.DateField(blank=True, null=True, verbose_name="Date of Birth")
@@ -176,6 +178,14 @@ class Patient(TimeStampedModel):
     department_obj = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='patients')
     unit_obj = models.ForeignKey(DepartmentUnit, on_delete=models.SET_NULL, null=True, blank=True, related_name='patients')
     pan_no = models.CharField(max_length=20, blank=True, null=True, verbose_name="PAN No")
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='registered_patients',
+        verbose_name="Created By User"
+    )
 
     class Meta:
         ordering = ['-id']

@@ -27,6 +27,7 @@
                     <th>Department</th>
                     <th>Doctor</th>
                     <th>Company</th>
+                    <th>Registered By</th>
                     <th>Registered On</th>
                     <th>Actions</th>
                 </tr>
@@ -41,6 +42,15 @@
                     <td><span class="badge badge-blue">{{ patient.department }}</span></td>
                     <td>{{ patient.unit_doctor }}</td>
                     <td><span class="badge badge-purple">{{ patient.company_name|default:"INDIVIDUAL" }}</span></td>
+                    <td>
+                        {% if patient.created_by %}
+                        <span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); font-weight: 500;">
+                            <i class="bi bi-person-fill"></i> {{ patient.created_by.get_full_name|default:patient.created_by.username }}
+                        </span>
+                        {% else %}
+                        <span style="color: var(--text-muted); font-size: 0.82rem;">--</span>
+                        {% endif %}
+                    </td>
                     <td>{{ patient.created_at|date:"d/M/Y H:i" }}</td>
                     <td>
                         <div style="display: flex; align-items: center; gap: 0.4rem;">
