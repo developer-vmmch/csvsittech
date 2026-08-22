@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Search Patients | VMMCerp{% endblock %}
+{% block page_heading %}Patient Search & Lookup{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+    <!-- Search Filters Panel -->
+    <div class="panel">
+        <div class="panel-header-action" style="margin-bottom: 1.25rem;">
+            <div>
+                <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">
+                    <i class="bi bi-search" style="color: var(--accent-blue);"></i> Advanced Patient Search
+                </h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+                    Filter patient records by Name, Registration Date Range, Mobile Number, Aadhar Number, or ABHA Number.
+                </p>
+            </div>
+        </div>
+
+        <form method="get" action="{% url 'patients:search' %}" class="custom-form">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="q_name">Patient Name</label>
+                    <input type="text" id="q_name" name="q_name" value="{{ q_name }}" class="form-input" placeholder="e.g. EDWIN or KARTHI">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_from_date">From Date</label>
+                    <input type="date" id="q_from_date" name="q_from_date" value="{{ q_from_date }}" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_to_date">To Date</label>
+                    <input type="date" id="q_to_date" name="q_to_date" value="{{ q_to_date }}" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_mobile">Mobile Number</label>
+                    <input type="text" id="q_mobile" name="q_mobile" value="{{ q_mobile }}" class="form-input" placeholder="10-digit mobile..." maxlength="10">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_aadhar">Aadhar Card Number</label>
+                    <input type="text" id="q_aadhar" name="q_aadhar" value="{{ q_aadhar }}" class="form-input" placeholder="12-digit Aadhar..." maxlength="12">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_abha">ABHA ID / Number</label>
+                    <input type="text" id="q_abha" name="q_abha" value="{{ q_abha }}" class="form-input" placeholder="ABHA ID / Patient ID...">
+                </div>
+            </div>
+
+            <div class="form-actions" style="margin-top: 1.25rem;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Search Patients
+                </button>
+                {% if has_filters %}
+                <a href="{% url 'patients:search' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Clear Filters
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Search Results Panel -->
+    <div class="panel">
+        <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h2 class="panel-title" style="margin: 0; font-size: 1.2rem;">
+                    Search Results {% if has_filters %}<span class="badge badge-blue" style="font-size: 0.8rem; margin-left: 8px;">Filtered Results</span>{% endif %}
+                </h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+                    Found <strong>{{ patients|length }}</strong> matching patient records.
+                </p>
+            </div>
+            <a href="{% url 'patients:add' %}" class="btn btn-primary">
+                <i class="bi bi-person-plus-fill"></i> Add New Patient
+            </a>
+        </div>
+
+        {% if patients %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Patient ID</th>
+                        <th>Patient Name</th>
+                        <th>Age / Gender</th>
+                        <th>Mobile No</th>
+                        <th>Aadhar Card</th>
+                        <th>ABHA ID</th>
+                        <th>Department</th>
+                        <th>Doctor</th>
+                        <th>Registered On</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for patient in patients %}
+                    <tr>
+                        <td><strong>{{ patient.patient_id }}</strong></td>
+                        <td><strong>{{ patient.title }} {{ patient.name }}</strong></td>
+                        <td>{{ patient.age_years }} Y / {{ patient.gender }}</td>
+                        <td>{{ patient.mobile_no }}</td>
+                        <td>{{ patient.aadhar_card|default:"--" }}</td>
+                        <td><span class="badge badge-purple">{{ patient.abha_id|default:"--" }}</span></td>
+                        <td><span class="badge badge-blue">{{ patient.department }}</span></td>
+                        <td>{{ patient.unit_doctor }}</td>
+                        <td>{{ patient.created_at|date:"d/M/Y H:i" }}</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                <a href="{% url 'patients:edit' patient.id %}" class="btn-edit-sm" title="Edit Patient">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </a>
+                                <a href="{% url 'patients:print' patient.id %}" target="_blank" class="btn-print-sm" title="Print OP Pass">
+                                    <i class="bi bi-printer"></i> Print OP
+                                </a>
+                                <form method="post" action="{% url 'patients:delete' patient.id %}" onsubmit="return confirm('Delete patient {{ patient.name }}?');" style="margin: 0;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-danger-sm" title="Delete Patient Record">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+            <i class="bi bi-search-heart" style="font-size: 3rem; display: block; margin-bottom: 1rem; color: var(--accent-blue);"></i>
+            <p style="font-size: 1.1rem;">No patients found matching your search criteria.</p>
+            <p style="font-size: 0.85rem; margin-top: 4px;">Try clearing filters or searching with different keywords.</p>
+            {% if has_filters %}
+            <a href="{% url 'patients:search' %}" class="btn btn-secondary" style="margin-top: 1rem; display: inline-block;">
+                <i class="bi bi-x-circle"></i> Clear Search Filters
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

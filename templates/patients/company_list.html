@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Companies | VMMCerp{% endblock %}
+{% block page_heading %}Patient Companies Directory{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">Patient Corporate & Scheme Directory</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Manage corporate accounts, insurance TPAs, and government schemes.</p>
+        </div>
+        <a href="{% url 'patients:company_add' %}" class="btn btn-primary">
+            <i class="bi bi-building-add"></i> Add New Company
+        </a>
+    </div>
+
+    {% if companies %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Company Code</th>
+                    <th>Company / Scheme Name</th>
+                    <th>Category</th>
+                    <th>Contact Person</th>
+                    <th>Phone</th>
+                    <th>Discount (%)</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for comp in companies %}
+                <tr>
+                    <td><strong>{{ comp.code }}</strong></td>
+                    <td>{{ comp.name }}</td>
+                    <td><span class="badge badge-purple">{{ comp.get_category_display }}</span></td>
+                    <td>{{ comp.contact_person|default:"--" }}</td>
+                    <td>{{ comp.phone_number|default:"--" }}</td>
+                    <td><strong style="color: var(--accent-green);">{{ comp.discount_percentage }}%</strong></td>
+                    <td>
+                        {% if comp.is_active %}
+                            <span class="badge badge-green">Active</span>
+                        {% else %}
+                            <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="post" action="{% url 'patients:company_delete' comp.id %}" onsubmit="return confirm('Are you sure you want to delete {{ comp.name }}?');" style="margin: 0;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-danger-sm" title="Delete Company">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        <i class="bi bi-building-exclamation" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+        <p style="font-size: 1.1rem;">No patient companies or schemes registered yet.</p>
+        <a href="{% url 'patients:company_add' %}" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">
+            <i class="bi bi-building-add"></i> Add First Patient Company
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

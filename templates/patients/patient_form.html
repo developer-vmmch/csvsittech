@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Registration | VMMCerp{% endblock %}
+{% block page_heading %}Comprehensive ERP for Hospital Information Management System{% endblock %}
+
+{% block content %}
+<div class="hims-wrapper">
+
+    <!-- Error Banner for JS validation -->
+    <div id="jsValidationBanner" class="alert alert-danger" style="display: none; margin-bottom: 1.25rem;">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span id="jsValidationMessage"><strong>Validation Error:</strong> Please correct the highlighted errors in the
+            form fields.</span>
+    </div>
+
+    <!-- Registration Card -->
+    <div class="hims-card">
+        <div class="hims-card-header">
+            <h2 class="reg-title">
+                {% if is_edit %}
+                    EDIT PATIENT: {{ object.name }} (ID: {{ object.patient_id }})
+                {% else %}
+                    PATIENT REGISTRATION
+                {% endif %}
+            </h2>
+            <div class="last-id-banner">
+                <span class="last-id-label">{% if is_edit %}Patient ID:{% else %}Last Patient ID:{% endif %}</span>
+                <span class="last-id-value">
+                    {% if is_edit %}
+                        {{ object.patient_id }}
+                    {% else %}
+                        {{ last_patient_id }}
+                    {% endif %}
+                </span>
+                <span class="staff-tag">VMMC STAFF</span>
+            </div>
+        </div>
+
+        <form method="post" class="hims-form" id="patientRegForm" novalidate>
+            {% csrf_token %}
+
+            <div class="hims-grid">
+
+                <!-- Left Column -->
+                <div class="hims-col">
+                    <div class="hims-field-row">
+                        <label class="hims-label">IPNO:</label>
+                        <div class="hims-input-group">
+                            {{ form.ipno }}
+                            <button type="button" class="hims-btn-small">Go</button>
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Patient Id:</label>
+                        {% if is_edit %}
+                            {{ form.patient_id }}
+                        {% else %}
+                            <input type="text" class="form-input" value="Auto-Generated on Save" disabled style="background-color: #f1f5f9; color: #64748b; font-style: italic;">
+                            {{ form.patient_id.as_hidden }}
+                        {% endif %}
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Title / Name <span class="required-star">*</span>:</label>
+                        <div style="width: 62%;">
+                            <div class="hims-input-group">
+                                <div style="width: 30%;">{{ form.title }}</div>
+                                <div style="width: 70%;">{{ form.name }}</div>
+                            </div>
+                            {% if form.title.errors %}
+                                <span class="field-error">{{ form.title.errors.0 }}</span>
+                            {% endif %}
+                            {% if form.name.errors %}
+                                <span class="field-error">{{ form.name.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Gender <span class="required-star">*</span>:</label>
+                        <div style="width: 62%;">
+                            {{ form.gender }}
+                            {% if form.gender.errors %}
+                                <span class="field-error">{{ form.gender.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">DOB:</label>
+                        {{ form.dob }}
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Age <span class="required-star">*</span>:</label>
+                        <div style="width: 62%;">
+                            <div class="hims-age-group">
+                                {{ form.age_years }} <span class="unit">Y</span>
+                                {{ form.age_months }} <span class="unit">M</span>
+                                {{ form.age_days }} <span class="unit">D</span>
+                            </div>
+                            {% if form.age_years.errors %}
+                                <span class="field-error">{{ form.age_years.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">AAdhar Card:</label>
+                        <div style="width: 62%;">
+                            {{ form.aadhar_card }}
+                            {% if form.aadhar_card.errors %}
+                                <span class="field-error">{{ form.aadhar_card.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Visit Through:</label>
+                        {{ form.visit_through }}
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Category:</label>
+                        {{ form.category }}
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Marital Status:</label>
+                        {{ form.marital_status }}
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Religion:</label>
+                        {{ form.religion }}
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Guardian Name <span class="required-star">*</span>:</label>
+                        <div style="width: 62%;">
+                            <div class="hims-input-group">
+                                <div style="width: 30%;">{{ form.guardian_relationship }}</div>
+                                <div style="width: 70%;">{{ form.guardian_name }}</div>
+                            </div>
+                            {% if form.guardian_name.errors %}
+                                <span class="field-error">{{ form.guardian_name.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Company Name:</label>
+                        {{ form.patient_company }}
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">ABHAID:</label>
+                        {{ form.abha_id }}
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">OFC Code:</label>
+                        {{ form.ofc_code }}
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="hims-col">
+                    <div class="hims-field-row">
+                        <label class="hims-label">Address / Street <span class="required-star">*</span>:</label>
+                        <div style="width: 62%;">
+                            {{ form.street }}
+                            {% if form.street.errors %}
+                                <span class="field-error">{{ form.street.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Village / Area <span class="required-star">*</span>:</label>
+                        <div style="width: 62%;">
+                            {{ form.village_area }}
+                            {% if form.village_area.errors %}
+                                <span class="field-error">{{ form.village_area.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Country:</label>
+                        {{ form.country }}
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">State:</label>
+                        {{ form.state }}
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">City:</label>
+                        {{ form.city }}
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Pincode:</label>
+                        {{ form.pincode }}
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Mobile No <span class="required-star">*</span>:</label>
+                        <div style="width: 62%;">
+                            {{ form.mobile_no }}
+                            {% if form.mobile_no.errors %}
+                                <span class="field-error">{{ form.mobile_no.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Bloodgroup:</label>
+                        {{ form.blood_group }}
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Complaint:</label>
+                        <div style="width: 100%;">
+                            {{ form.complaint }}
+                            <button type="button" class="hims-btn-small" style="margin-top: 4px; float: right;">Add New
+                                Complaint</button>
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row" style="clear: both;">
+                        <label class="hims-label">Occupation:</label>
+                        {{ form.occupation }}
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Income:</label>
+                        {{ form.income }}
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Department <span class="required-star">*</span>:</label>
+                        <div style="width: 62%;">
+                            {{ form.department_obj }}
+                            {% if form.department_obj.errors %}
+                                <span class="field-error">{{ form.department_obj.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Unit / Doctor <span class="required-star">*</span>:</label>
+                        <div style="width: 62%;">
+                            {{ form.unit_obj }}
+                            {% if form.unit_obj.errors %}
+                                <span class="field-error">{{ form.unit_obj.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">PanNo:</label>
+                        {{ form.pan_no }}
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Action Buttons Footer -->
+            <div class="hims-action-bar">
+                <button type="submit" name="save" class="hims-action-btn primary-btn">Save</button>
+                <button type="button" class="hims-action-btn">Modify</button>
+                <button type="reset" class="hims-action-btn">Reset</button>
+                <button type="submit" name="print" class="hims-action-btn"><i class="bi bi-printer"></i> Print</button>
+                <button type="button" class="hims-action-btn">Label - 1</button>
+                <button type="button" class="hims-action-btn">Label-A4</button>
+                <button type="submit" name="print_op" class="hims-action-btn"><i class="bi bi-printer-fill"></i> Print
+                    OP</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('patientRegForm');
+        const deptSelect = document.getElementById('id_department_select');
+        const unitSelect = document.getElementById('id_unit_select');
+        const jsBanner = document.getElementById('jsValidationBanner');
+        const jsMessage = document.getElementById('jsValidationMessage');
+
+        const mobileInput = document.getElementById('id_mobile_no');
+        const aadharInput = document.getElementById('id_aadhar_card');
+
+        // Restrict input fields to digits only
+        function enforceDigitsOnly(el) {
+            if (el) {
+                el.addEventListener('input', function () {
+                    this.value = this.value.replace(/\D/g, '');
+                });
+            }
+        }
+        enforceDigitsOnly(mobileInput);
+        enforceDigitsOnly(aadharInput);
+
+        // Dynamic unit dropdown fetching
+        if (deptSelect && unitSelect) {
+            deptSelect.addEventListener('change', function () {
+                const deptId = this.value;
+                unitSelect.innerHTML = '<option value="">Loading units...</option>';
+
+                if (!deptId) {
+                    unitSelect.innerHTML = '<option value="">Select Unit / Doctor</option>';
+                    return;
+                }
+
+                fetch(`{% url "patients:api_units" %}?department_id=${deptId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        unitSelect.innerHTML = '<option value="">Select Unit / Doctor</option>';
+                        if (data.units && data.units.length > 0) {
+                            data.units.forEach(unit => {
+                                const option = document.createElement('option');
+                                option.value = unit.id;
+                                option.textContent = unit.unit_name;
+                                unitSelect.appendChild(option);
+                            });
+                        } else {
+                            unitSelect.innerHTML = '<option value="">No units mapped</option>';
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error fetching units:', err);
+                        unitSelect.innerHTML = '<option value="">Select Unit / Doctor</option>';
+                    });
+            });
+        }
+
+        // Required field definitions
+        const requiredFields = [
+            { id: 'id_title', name: 'Title' },
+            { id: 'id_name', name: 'Patient Name' },
+            { id: 'id_gender', name: 'Gender' },
+            { id: 'id_age_years', name: 'Age (Years)' },
+            { id: 'id_guardian_name', name: 'Guardian Name' },
+            { id: 'id_street', name: 'Address / Street' },
+            { id: 'id_village_area', name: 'Village / Area' },
+            { id: 'id_department_select', name: 'Department' },
+            { id: 'id_unit_select', name: 'Unit / Doctor' }
+        ];
+
+        // Helper to create and place error message directly inside field wrapper
+        function createErrorMsg(el, msgText) {
+            el.classList.add('is-invalid');
+            const errMsg = document.createElement('span');
+            errMsg.className = 'js-error-msg';
+            errMsg.style.color = '#f87171';
+            errMsg.style.fontSize = '0.78rem';
+            errMsg.style.marginTop = '4px';
+            errMsg.style.display = 'block';
+            errMsg.style.fontWeight = '600';
+            errMsg.textContent = msgText;
+
+            let targetParent = el.parentNode;
+            if (targetParent.classList.contains('hims-input-group') || targetParent.classList.contains('hims-age-group')) {
+                targetParent = targetParent.parentNode;
+            }
+
+            // Avoid duplicate messages
+            const existing = targetParent.querySelector('.js-error-msg');
+            if (!existing) {
+                targetParent.appendChild(errMsg);
+            }
+        }
+
+        function clearFieldError(el) {
+            el.classList.remove('is-invalid');
+            let targetParent = el.parentNode;
+            if (targetParent.classList.contains('hims-input-group') || targetParent.classList.contains('hims-age-group')) {
+                targetParent = targetParent.parentNode;
+            }
+            const existing = targetParent.querySelector('.js-error-msg');
+            if (existing) existing.remove();
+        }
+
+        // Remove red highlight on input change
+        requiredFields.forEach(fieldObj => {
+            const el = document.getElementById(fieldObj.id);
+            if (el) {
+                el.addEventListener('input', function () { clearFieldError(this); });
+                el.addEventListener('change', function () { clearFieldError(this); });
+            }
+        });
+
+        // Real-time live validation for Mobile Number as user types
+        if (mobileInput) {
+            mobileInput.addEventListener('keyup', function () {
+                const val = this.value.trim();
+                clearFieldError(this);
+                if (val.length > 0 && val.length !== 10) {
+                    createErrorMsg(this, 'Mobile number must be exactly 10 digits.');
+                }
+            });
+        }
+
+        // Real-time live validation for Aadhar Card as user types
+        if (aadharInput) {
+            aadharInput.addEventListener('keyup', function () {
+                const val = this.value.trim();
+                clearFieldError(this);
+                if (val.length > 0 && val.length !== 12) {
+                    createErrorMsg(this, 'Aadhar card number must be exactly 12 digits.');
+                }
+            });
+        }
+
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                let isValid = true;
+                let firstInvalidEl = null;
+
+                // Clear previous JS error messages
+                document.querySelectorAll('.js-error-msg').forEach(el => el.remove());
+                document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+
+                // Check standard required fields
+                requiredFields.forEach(fieldObj => {
+                    const el = document.getElementById(fieldObj.id);
+                    if (el) {
+                        const val = el.value ? el.value.trim() : '';
+                        if (!val || val === '') {
+                            isValid = false;
+                            createErrorMsg(el, `${fieldObj.name} is required.`);
+                            if (!firstInvalidEl) firstInvalidEl = el;
+                        }
+                    }
+                });
+
+                // Mobile number validation (MUST BE EXACTLY 10 DIGITS)
+                if (mobileInput) {
+                    const mobileVal = mobileInput.value.trim();
+                    if (!mobileVal) {
+                        isValid = false;
+                        createErrorMsg(mobileInput, 'Mobile number is required.');
+                        if (!firstInvalidEl) firstInvalidEl = mobileInput;
+                    } else if (!/^\d{10}$/.test(mobileVal)) {
+                        isValid = false;
+                        createErrorMsg(mobileInput, 'Mobile number must be exactly 10 digits.');
+                        if (!firstInvalidEl) firstInvalidEl = mobileInput;
+                    }
+                }
+
+                // Aadhar card validation (MUST BE EXACTLY 12 DIGITS if entered)
+                if (aadharInput) {
+                    const aadharVal = aadharInput.value.trim();
+                    if (aadharVal && !/^\d{12}$/.test(aadharVal)) {
+                        isValid = false;
+                        createErrorMsg(aadharInput, 'Aadhar card number must be exactly 12 digits.');
+                        if (!firstInvalidEl) firstInvalidEl = aadharInput;
+                    }
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                    if (jsBanner) {
+                        jsBanner.style.display = 'flex';
+                        jsMessage.innerHTML = '<strong>Validation Error:</strong> Please correct the errors inside the highlighted form fields.';
+                    }
+                    if (firstInvalidEl) {
+                        firstInvalidEl.focus();
+                        firstInvalidEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                } else {
+                    if (jsBanner) jsBanner.style.display = 'none';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

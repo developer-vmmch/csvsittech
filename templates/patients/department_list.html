@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Departments & Units | VMMCerp{% endblock %}
+{% block page_heading %}Department & Unit Mapping{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">Clinical Departments & Doctor Unit Mapping</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Manage medical departments and mapped clinical units/doctors.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <a href="{% url 'patients:department_add' %}" class="btn btn-primary">
+                <i class="bi bi-folder-plus"></i> Add Department
+            </a>
+            <a href="{% url 'patients:unit_add' %}" class="btn btn-secondary">
+                <i class="bi bi-person-plus"></i> + Map Unit / Doctor
+            </a>
+        </div>
+    </div>
+
+    {% if departments %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Department Name</th>
+                    <th>Mapped Units & Doctors</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dept in departments %}
+                <tr>
+                    <td><strong>{{ dept.code }}</strong></td>
+                    <td><strong style="color: var(--accent-blue);">{{ dept.name }}</strong></td>
+                    <td>
+                        {% if dept.units.exists %}
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                            {% for unit in dept.units.all %}
+                                <div class="unit-badge-wrapper">
+                                    <span class="badge badge-purple" title="Head: {{ unit.head_doctor|default:'N/A' }}">{{ unit.unit_name }}</span>
+                                    <form method="post" action="{% url 'patients:unit_delete' unit.id %}" style="display: inline;" onsubmit="return confirm('Remove unit {{ unit.unit_name }}?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-icon-delete" title="Delete Unit"><i class="bi bi-x-circle-fill"></i></button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                            </div>
+                        {% else %}
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">No units mapped</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if dept.is_active %}
+                            <span class="badge badge-green">Active</span>
+                        {% else %}
+                            <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <a href="{% url 'patients:unit_add' %}?department={{ dept.id }}" class="action-link-add">+ Add Unit</a>
+                            <form method="post" action="{% url 'patients:department_delete' dept.id %}" onsubmit="return confirm('Are you sure you want to delete department {{ dept.name }}?');" style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-danger-sm" title="Delete Department">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        <i class="bi bi-diagram-3" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+        <p style="font-size: 1.1rem;">No departments configured.</p>
+        <a href="{% url 'patients:department_add' %}" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">
+            <i class="bi bi-folder-plus"></i> Add First Department
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

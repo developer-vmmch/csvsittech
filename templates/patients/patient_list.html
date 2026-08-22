@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Patients Directory | VMMCerp{% endblock %}
+{% block page_heading %}Registered Patients{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">Patient Directory</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Comprehensive list of all registered OPD and IPD hospital patients.</p>
+        </div>
+        <a href="{% url 'patients:add' %}" class="btn btn-primary">
+            <i class="bi bi-person-plus-fill"></i> Add New Patient
+        </a>
+    </div>
+
+    {% if patients %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Patient ID</th>
+                    <th>Patient Name</th>
+                    <th>Age / Gender</th>
+                    <th>Mobile No</th>
+                    <th>Department</th>
+                    <th>Doctor</th>
+                    <th>Company</th>
+                    <th>Registered On</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in patients %}
+                <tr>
+                    <td><strong>{{ patient.patient_id }}</strong></td>
+                    <td>{{ patient.title }} {{ patient.name }}</td>
+                    <td>{{ patient.age_years }} Y / {{ patient.gender }}</td>
+                    <td>{{ patient.mobile_no }}</td>
+                    <td><span class="badge badge-blue">{{ patient.department }}</span></td>
+                    <td>{{ patient.unit_doctor }}</td>
+                    <td><span class="badge badge-purple">{{ patient.company_name|default:"INDIVIDUAL" }}</span></td>
+                    <td>{{ patient.created_at|date:"d/M/Y H:i" }}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                            <a href="{% url 'patients:edit' patient.id %}" class="btn-edit-sm" title="Edit Patient Details">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            <a href="{% url 'patients:print' patient.id %}" target="_blank" class="btn-print-sm" title="Print OP Pass">
+                                <i class="bi bi-printer"></i> Print OP
+                            </a>
+                            <form method="post" action="{% url 'patients:delete' patient.id %}" onsubmit="return confirm('Are you sure you want to delete patient record {{ patient.name }} ({{ patient.patient_id }})?');" style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-danger-sm" title="Delete Patient Record">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        <i class="bi bi-person-exclamation" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+        <p style="font-size: 1.1rem;">No registered patients found.</p>
+        <a href="{% url 'patients:add' %}" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">
+            <i class="bi bi-person-plus-fill"></i> Add Your First Patient
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

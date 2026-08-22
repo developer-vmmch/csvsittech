@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OP Registration Slip - {{ patient.patient_id }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace, Arial, sans-serif;
+            background: #0f172a;
+            color: #fff;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .messages-container {
+            width: 720px;
+            margin-bottom: 16px;
+            font-family: sans-serif;
+        }
+
+        .alert-success {
+            background: rgba(52, 211, 153, 0.15);
+            border: 1px solid rgba(52, 211, 153, 0.4);
+            color: #34d399;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .no-print-bar {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            font-family: sans-serif;
+        }
+
+        .btn-print {
+            background: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-print:hover {
+            background: #7dd3fc;
+            transform: scale(1.02);
+        }
+
+        .btn-back {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-back:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* OP Pass Slip */
+        .op-slip {
+            width: 720px;
+            background: #ffffff;
+            border: 2px solid #000;
+            padding: 24px;
+            position: relative;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #000;
+            border-radius: 4px;
+        }
+
+        .op-header {
+            text-align: center;
+            padding-bottom: 10px;
+            margin-bottom: 14px;
+        }
+
+        .hospital-title {
+            font-size: 18px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .hospital-sub {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .op-type-banner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            font-weight: 800;
+            font-size: 15px;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            padding: 6px 12px;
+        }
+
+        .op-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 14px;
+        }
+
+        .qr-placeholder {
+            width: 52px;
+            height: 52px;
+            border: 1px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .field-row {
+            display: flex;
+            margin-bottom: 8px;
+        }
+
+        .field-label {
+            width: 130px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .field-val {
+            flex: 1;
+            font-weight: 800;
+        }
+
+        .op-footer {
+            margin-top: 20px;
+            border-top: 1px dashed #000;
+            padding-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Print Media Query */
+        @media print {
+            .no-print-bar, .messages-container {
+                display: none !important;
+            }
+
+            body {
+                background: #ffffff !important;
+                padding: 0 !important;
+            }
+
+            .op-slip {
+                border: 1px solid #000 !important;
+                width: 100% !important;
+                box-shadow: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+                <div class="alert-success">
+                    <i class="bi bi-check-circle-fill"></i> {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Non-printable top action bar -->
+    <div class="no-print-bar">
+        <button onclick="window.print()" class="btn-print">
+            <i class="bi bi-printer-fill"></i> Click Here to Print OP Slip
+        </button>
+        <a href="{% url 'patients:add' %}" class="btn-back">
+            <i class="bi bi-person-plus-fill"></i> Register Another Patient
+        </a>
+        <a href="{% url 'patients:list' %}" class="btn-back">
+            <i class="bi bi-list-ul"></i> Patient Directory
+        </a>
+    </div>
+
+    <!-- OPD Slip -->
+    <div class="op-slip">
+        
+        <div class="op-header">
+            <div class="hospital-title">VINAYAKA MISSIONS MEDICAL COLLEGE & HOSPITAL</div>
+            <div class="hospital-sub">Keezhakasakudy Med, Karaikal Pin: 609609</div>
+            <div class="hospital-sub">Phone No: 04368 - 263277, 263338 | www.vmmcki.edu.in</div>
+
+            <div class="op-type-banner">
+                <span>OUT PATIENT - NEW</span>
+                <span style="text-transform: uppercase;">{{ patient.department|default:"GENERAL MEDICINE" }}</span>
+            </div>
+        </div>
+
+        <div class="op-grid">
+
+            <!-- Left Column -->
+            <div>
+                <div class="field-row">
+                    <span class="field-label">UH ID</span>
+                    <span class="field-val">: {{ patient.patient_id }}</span>
+                </div>
+
+                <div class="field-row">
+                    <span class="field-label">Name</span>
+                    <span class="field-val">: {{ patient.title }}. {{ patient.name|upper }}</span>
+                </div>
+
+                <div class="field-row">
+                    <span class="field-label">Guardian</span>
+                    <span class="field-val">: {{ patient.guardian_name|default:"N/A"|upper }}</span>
+                </div>
+
+                <div class="field-row">
+                    <span class="field-label">Address</span>
+                    <span class="field-val">: {{ patient.street|default:"" }} {{ patient.village_area|default:"" }} {{ patient.city|default:"KARAIKAL" }}</span>
+                </div>
+
+                <div class="field-row">
+                    <span class="field-label">Phone No</span>
+                    <span class="field-val">: {{ patient.mobile_no }}</span>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div>
+                <div class="field-row">
+                    <span class="field-label">Regn. Date</span>
+                    <span class="field-val">: {{ patient.created_at|date:"d/M/Y H:i:s" }}</span>
+                </div>
+
+                <div class="field-row">
+                    <span class="field-label">Age / Gender</span>
+                    <span class="field-val">: {{ patient.age_years }} Yr(s) / {{ patient.gender }}</span>
+                </div>
+
+                <div class="field-row">
+                    <span class="field-label">Doctor/Unit</span>
+                    <span class="field-val">: {{ patient.unit_doctor|default:"GENERAL MEDICINE" }}</span>
+                </div>
+
+                <div class="field-row">
+                    <span class="field-label">Category</span>
+                    <span class="field-val">: {{ patient.company_name|default:"INDIVIDUAL" }}</span>
+                </div>
+
+                <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
+                    <div class="qr-placeholder">QR CODE</div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="op-footer">
+            <span>Printed On: {% now "d/M/Y H:i:s" %}</span>
+            <span>Issued By: Front Office Desk</span>
+        </div>
+    </div>
+
+</body>
+</html>

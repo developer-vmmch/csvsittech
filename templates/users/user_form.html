@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Create System Login User | VMMCerp{% endblock %}
+{% block page_heading %}User Login Creation{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h2><i class="bi bi-person-plus-fill" style="color: var(--accent-blue);"></i> Create New System User</h2>
+        <p>Register a new login account for ERP system access.</p>
+    </div>
+
+    <form method="post" class="custom-form">
+        {% csrf_token %}
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}">Username *</label>
+                {{ form.username }}
+                {% if form.username.errors %}<div class="field-error">{{ form.username.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.role.id_for_label }}">System Role *</label>
+                {{ form.role }}
+                {% if form.role.errors %}<div class="field-error">{{ form.role.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.first_name.id_for_label }}">First Name</label>
+                {{ form.first_name }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+                {{ form.last_name }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}">Password *</label>
+                <div class="password-toggle-group">
+                    {{ form.password }}
+                    <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('{{ form.password.id_for_label }}', this)" title="Show/Hide Password">
+                        <i class="bi bi-eye-fill"></i>
+                    </button>
+                </div>
+                {% if form.password.errors %}<div class="field-error">{{ form.password.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.confirm_password.id_for_label }}">Confirm Password *</label>
+                <div class="password-toggle-group">
+                    {{ form.confirm_password }}
+                    <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('{{ form.confirm_password.id_for_label }}', this)" title="Show/Hide Password">
+                        <i class="bi bi-eye-fill"></i>
+                    </button>
+                </div>
+                {% if form.confirm_password.errors %}<div class="field-error">{{ form.confirm_password.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}">Email Address</label>
+                {{ form.email }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.phone_number.id_for_label }}">Phone / Mobile Number</label>
+                {{ form.phone_number }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.department.id_for_label }}">Department</label>
+                {{ form.department }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.employee_id.id_for_label }}">Employee ID</label>
+                {{ form.employee_id }}
+                {% if form.employee_id.errors %}<div class="field-error">{{ form.employee_id.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group checkbox-group" style="grid-column: 1 / -1;">
+                <label class="checkbox-label" for="{{ form.is_active.id_for_label }}">
+                    {{ form.is_active }} <span>Active Login Account</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg"></i> Create User Account
+            </button>
+            <a href="{% url 'users:list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

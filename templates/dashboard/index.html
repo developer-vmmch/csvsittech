@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | VMMCerp{% endblock %}
+{% block page_heading %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="grid-cards">
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">System Status</span>
+            <span class="badge badge-green">Operational</span>
+        </div>
+        <div class="card-value">Django 5.x</div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Active ERP Modules</span>
+            <span class="badge badge-blue">Ready</span>
+        </div>
+        <div class="card-value">4 Apps</div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">User Authentication</span>
+            <span class="badge badge-purple">Custom Model</span>
+        </div>
+        <div class="card-value">users.User</div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Database Engine</span>
+            <span class="badge badge-blue">SQLite3</span>
+        </div>
+        <div class="card-value">Connected</div>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-title">Registered ERP System Modules</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Module Name</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for module in modules %}
+            <tr>
+                <td><i class="bi {{ module.icon }} style="margin-right: 8px;"></i> <strong>{{ module.name }}</strong></td>
+                <td><span class="badge badge-purple">{{ module.badge }}</span></td>
+                <td><span class="badge badge-green">{{ module.status }}</span></td>
+                <td><a href="#" style="color: var(--accent-blue); text-decoration: none; font-size: 0.9rem;">Manage</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

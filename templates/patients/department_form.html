@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Add Department | VMMCerp{% endblock %}
+{% block page_heading %}Create Medical Department{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h2><i class="bi bi-folder-plus" style="color: var(--accent-blue);"></i> Add New Department</h2>
+        <p>Register a clinical department for patient OPD/IPD consultations.</p>
+    </div>
+
+    <form method="post" class="custom-form">
+        {% csrf_token %}
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.code.id_for_label }}">Department Code *</label>
+                {{ form.code }}
+                {% if form.code.errors %}<div class="field-error">{{ form.code.errors }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">Department Name *</label>
+                {{ form.name }}
+                {% if form.name.errors %}<div class="field-error">{{ form.name.errors }}</div>{% endif %}
+            </div>
+
+            <div class="form-group checkbox-group" style="grid-column: 1 / -1;">
+                <label class="checkbox-label" for="{{ form.is_active.id_for_label }}">
+                    {{ form.is_active }} <span>Active Department</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group full-width" style="margin-top: 1rem;">
+            <label for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg"></i> Save Department
+            </button>
+            <a href="{% url 'patients:department_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Map Department Unit / Doctor | VMMCerp{% endblock %}
+{% block page_heading %}Map Unit / Doctor to Department{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h2><i class="bi bi-person-plus" style="color: var(--accent-green);"></i> Map Unit / Doctor</h2>
+        <p>Assign a clinical unit or HOD doctor to a medical department.</p>
+    </div>
+
+    <form method="post" class="custom-form">
+        {% csrf_token %}
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.department.id_for_label }}">Target Department *</label>
+                {{ form.department }}
+                {% if form.department.errors %}<div class="field-error">{{ form.department.errors }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.unit_name.id_for_label }}">Unit / Doctor Name *</label>
+                {{ form.unit_name }}
+                {% if form.unit_name.errors %}<div class="field-error">{{ form.unit_name.errors }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.head_doctor.id_for_label }}">Head Doctor Name</label>
+                {{ form.head_doctor }}
+            </div>
+
+            <div class="form-group checkbox-group">
+                <label class="checkbox-label" for="{{ form.is_active.id_for_label }}">
+                    {{ form.is_active }} <span>Active Unit Status</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg"></i> Save Unit Mapping
+            </button>
+            <a href="{% url 'patients:department_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
