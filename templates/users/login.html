@@ -4,180 +4,466 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In | VMMCerp System</title>
+    <title>Sign In | Vinayaka Missions Medical College & Hospital ERP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="/static/css/style.css">
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            background: radial-gradient(circle at 50% -20%, #1e1b4b, #0f172a 70%);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #040d1a;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1.5rem;
-            margin: 0;
+            color: #f8fafc;
             overflow-x: hidden;
+            position: relative;
         }
 
-        .login-card {
+        /* Ambient Glow Backgrounds */
+        .ambient-orb-1 {
+            position: absolute;
+            width: 550px;
+            height: 550px;
+            top: -150px;
+            left: -150px;
+            background: radial-gradient(circle, rgba(13, 148, 136, 0.35) 0%, rgba(13, 148, 136, 0) 70%);
+            filter: blur(70px);
+            z-index: 0;
+            pointer-events: none;
+            animation: pulseOrb 8s ease-in-out infinite alternate;
+        }
+
+        .ambient-orb-2 {
+            position: absolute;
+            width: 650px;
+            height: 650px;
+            bottom: -200px;
+            right: -200px;
+            background: radial-gradient(circle, rgba(2, 132, 199, 0.3) 0%, rgba(2, 132, 199, 0) 70%);
+            filter: blur(90px);
+            z-index: 0;
+            pointer-events: none;
+            animation: pulseOrb 10s ease-in-out infinite alternate-reverse;
+        }
+
+        @keyframes pulseOrb {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.15) translate(30px, -20px); }
+        }
+
+        /* Main Container */
+        .login-wrapper {
+            position: relative;
+            z-index: 1;
             width: 100%;
-            max-width: 440px;
-            background: rgba(30, 41, 59, 0.75);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            max-width: 1080px;
+            min-height: 640px;
+            margin: 1.5rem;
+            display: flex;
+            border-radius: 24px;
+            overflow: hidden;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
             border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 20px;
-            padding: 2.5rem 2.25rem;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(99, 102, 241, 0.15);
-            animation: fadeIn 0.4s ease-out;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.65), 0 0 50px rgba(13, 148, 136, 0.18);
+            animation: slideUp 0.5s ease-out;
         }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(12px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .login-header {
-            text-align: center;
-            margin-bottom: 2rem;
+        /* Left Hero Panel */
+        .hero-panel {
+            flex: 1.15;
+            background: linear-gradient(145deg, #071d2b 0%, #0a2d42 50%, #064e57 100%);
+            padding: 3.25rem 2.75rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        .login-logo {
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple));
-            border-radius: 16px;
+        .hero-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(20, 184, 166, 0.15), transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(56, 189, 248, 0.12), transparent 50%);
+            pointer-events: none;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.5rem 1rem;
+            background: rgba(13, 148, 136, 0.22);
+            border: 1px solid rgba(45, 212, 191, 0.35);
+            border-radius: 30px;
+            color: #2dd4bf;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            width: fit-content;
+        }
+
+        .hero-title-group {
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-hospital-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1.25;
+            margin-bottom: 0.6rem;
+        }
+
+        .hero-subtitle {
+            color: #94a3b8;
+            font-size: 0.92rem;
+            line-height: 1.55;
+        }
+
+        .feature-cards-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            margin-top: 1rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            padding: 0.85rem 1rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 14px;
+            transition: all 0.25s ease;
+        }
+
+        .feature-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(45, 212, 191, 0.4);
+            transform: translateX(4px);
+        }
+
+        .feature-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #0d9488, #0284c7);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.75rem;
-            font-weight: 800;
-            color: #fff;
-            margin: 0 auto 1.25rem;
-            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+            font-size: 1.1rem;
+            color: #ffffff;
+            flex-shrink: 0;
+            box-shadow: 0 4px 14px rgba(13, 148, 136, 0.4);
         }
 
-        .login-title {
-            font-size: 1.6rem;
+        .feature-text h4 {
+            font-size: 0.9rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, #ffffff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #f1f5f9;
+            margin-bottom: 2px;
         }
 
-        .login-subtitle {
-            color: var(--text-muted);
+        .feature-text p {
+            font-size: 0.78rem;
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        .hero-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 1.25rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            color: #64748b;
+            font-size: 0.8rem;
+        }
+
+        /* Right Form Panel */
+        .form-panel {
+            flex: 0.95;
+            padding: 3.25rem 2.75rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.65);
+        }
+
+        .form-header {
+            margin-bottom: 1.75rem;
+        }
+
+        .form-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 0.35rem;
+        }
+
+        .form-header p {
+            color: #94a3b8;
             font-size: 0.88rem;
-            line-height: 1.4;
         }
 
-        .login-form .form-group {
+        .input-label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #cbd5e1;
+            margin-bottom: 0.45rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .input-wrapper {
+            position: relative;
             margin-bottom: 1.25rem;
         }
 
-        .login-form label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 0.4rem;
+        .input-wrapper .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 1.1rem;
+            pointer-events: none;
+            transition: color 0.2s ease;
         }
 
-        .login-btn {
+        .custom-input {
             width: 100%;
-            padding: 0.85rem;
+            padding: 0.85rem 1rem 0.85rem 2.75rem;
+            background: rgba(30, 41, 59, 0.7);
+            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.25s ease;
+        }
+
+        .custom-input:focus {
+            background: rgba(30, 41, 59, 0.95);
+            border-color: #0d9488;
+            box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.25);
+        }
+
+        .custom-input:focus + .input-icon,
+        .input-wrapper:focus-within .input-icon {
+            color: #2dd4bf;
+        }
+
+        /* Password Eye Toggle */
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 6px;
+            font-size: 1.15rem;
+            transition: color 0.2s ease;
+        }
+
+        .password-toggle-btn:hover {
+            color: #ffffff;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 0.95rem;
+            background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
             font-size: 1rem;
             font-weight: 700;
-            border-radius: 12px;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-indigo));
-            color: #fff;
-            border: none;
+            font-family: inherit;
             cursor: pointer;
-            box-shadow: 0 4px 20px rgba(56, 189, 248, 0.35);
+            box-shadow: 0 8px 25px rgba(13, 148, 136, 0.4);
             transition: all 0.25s ease;
-            margin-top: 0.75rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
+            margin-top: 0.5rem;
         }
 
-        .login-btn:hover {
+        .btn-submit:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.5);
+            box-shadow: 0 12px 30px rgba(13, 148, 136, 0.55);
+            background: linear-gradient(135deg, #0f766e 0%, #0369a1 100%);
         }
 
-        .login-footer {
-            text-align: center;
-            margin-top: 2rem;
-            padding-top: 1.25rem;
-            border-top: 1px solid var(--border-color);
-            font-size: 0.8rem;
-            color: var(--text-muted);
+        .alert-box {
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.18);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.18);
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            color: #86efac;
+        }
+
+        @media (max-width: 900px) {
+            .hero-panel { display: none; }
+            .login-wrapper { max-width: 460px; }
+            .form-panel { padding: 2.5rem 2rem; }
         }
     </style>
 </head>
 
 <body>
 
-    <div class="login-card">
-        <div class="login-header">
-            <div class="login-logo">V</div>
-            <h1 class="login-title">VMMCerp Portal</h1>
-            <p class="login-subtitle">Hospital Information Management & Patient ERP System</p>
-        </div>
+    <div class="ambient-orb-1"></div>
+    <div class="ambient-orb-2"></div>
 
-        {% if messages %}
-        {% for message in messages %}
-        <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %}"
-            style="margin-bottom: 1.25rem;">
-            <i class="bi bi-info-circle-fill"></i> {{ message }}
-        </div>
-        {% endfor %}
-        {% endif %}
+    <div class="login-wrapper">
 
-        {% if form.errors %}
-        <div class="alert alert-danger" style="margin-bottom: 1.25rem;">
-            <i class="bi bi-exclamation-triangle-fill"></i> Invalid username or password. Please try again.
-        </div>
-        {% endif %}
+        <!-- Left Hero Branding Panel -->
+        <div class="hero-panel">
+            <div>
+                <div class="brand-badge">
+                    <i class="bi bi-hospital-fill"></i> VMMC ERP System v2.4
+                </div>
 
-        <form method="post" class="login-form">
-            {% csrf_token %}
+                <div class="hero-title-group">
+                    <h1 class="hero-hospital-name">Vinayaka Missions Medical College & Hospital</h1>
+                    <p class="hero-subtitle">
+                        Comprehensive Hospital Information Management & ERP Portal — Keezhakasakudy Medu, Karaikal.
+                    </p>
+                </div>
 
-            <div class="form-group">
-                <label for="{{ form.username.id_for_label }}">Username</label>
-                {{ form.username }}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.password.id_for_label }}">Password</label>
-                <div class="password-toggle-group">
-                    {{ form.password }}
-                    <button type="button" class="btn-toggle-password"
-                        onclick="togglePasswordVisibility('id_login_password', this)" title="Show/Hide Password">
-                        <i class="bi bi-eye-fill"></i>
-                    </button>
+                <!-- Inspiration & Project Mission Quote Card -->
+                <div style="margin-top: 1.5rem; padding: 1.1rem 1.25rem; background: rgba(13, 148, 136, 0.14); border: 1px solid rgba(45, 212, 191, 0.28); border-radius: 16px; position: relative;">
+                    <i class="bi bi-quote" style="font-size: 2.2rem; color: #2dd4bf; opacity: 0.35; position: absolute; top: 4px; right: 12px; pointer-events: none;"></i>
+                    <p style="font-size: 0.88rem; font-style: italic; color: #e2e8f0; line-height: 1.5; margin-bottom: 0.6rem; position: relative; z-index: 1;">
+                        "Wherever the art of Medicine is loved, there is also a love of Humanity. Transforming clinical care through intelligent digital health systems."
+                    </p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+                        <span style="font-weight: 700; color: #2dd4bf; font-style: normal;"><i class="bi bi-award-fill" style="color: #2dd4bf;"></i> VMMC Healthcare Motto</span>
+                        <span style="color: #94a3b8; font-style: normal;"><i class="bi bi-heart-pulse-fill" style="color: #ef4444;"></i> Patient First</span>
+                    </div>
                 </div>
             </div>
 
-            <button type="submit" class="login-btn">
-                <i class="bi bi-box-arrow-in-right"></i> Sign In to VMMCerp
-            </button>
-        </form>
+            <div class="hero-footer">
+                <span><i class="bi bi-shield-check" style="color: #2dd4bf;"></i> 256-Bit SSL Encrypted ERP</span>
+                <span>VMMCH &copy; {% now "Y" %}</span>
+            </div>
+        </div>
 
+        <!-- Right Form Panel -->
+        <div class="form-panel">
+            <div class="form-header">
+                <h2>Account Sign In</h2>
+                <p>Please enter your authorized ERP credentials to continue.</p>
+            </div>
+
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert-box {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+                <i class="bi bi-info-circle-fill"></i> {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% if form.errors %}
+            <div class="alert-box alert-error">
+                <i class="bi bi-exclamation-triangle-fill"></i> Invalid username or password. Please try again.
+            </div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div>
+                    <label for="id_username" class="input-label">Username</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-person-fill input-icon"></i>
+                        <input type="text" name="username" id="id_username" class="custom-input" placeholder="Enter staff username" required autofocus value="{{ form.username.value|default:'' }}">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="id_password" class="input-label">Password</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-shield-lock-fill input-icon"></i>
+                        <input type="password" name="password" id="id_password" class="custom-input" placeholder="Enter account password" required style="padding-right: 2.75rem;">
+                        <button type="button" class="password-toggle-btn" onclick="togglePass('id_password', this)" title="Show/Hide Password">
+                            <i class="bi bi-eye-fill"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <i class="bi bi-box-arrow-in-right"></i> Sign In to VMMC ERP
+                </button>
+            </form>
+        </div>
 
     </div>
 
-    <script src="/static/js/main.js"></script>
+    <script>
+        function togglePass(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input && icon) {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('bi-eye-fill');
+                    icon.classList.add('bi-eye-slash-fill');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('bi-eye-slash-fill');
+                    icon.classList.add('bi-eye-fill');
+                }
+            }
+        }
+    </script>
 </body>
 
 </html>

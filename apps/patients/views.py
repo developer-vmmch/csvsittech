@@ -6,16 +6,50 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.core.mixins import MenuAccessRequiredMixin
 from django.contrib import messages
 from django.db.models import Q
+from django.utils import timezone
 from datetime import datetime
-from .models import Patient, PatientCompany, Department, DepartmentUnit
-from .forms import PatientRegistrationForm, PatientCompanyForm, DepartmentForm, DepartmentUnitForm
+from .models import Patient, PatientCompany, Department, DepartmentUnit, PatientVisit
+from .forms import PatientRegistrationForm, PatientCompanyForm, DepartmentForm, DepartmentUnitForm, PatientVisitForm
+
+from django.contrib.auth import get_user_model
 
 class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
     menu_key = 'patient_list'
     model = Patient
     template_name = 'patients/patient_list.html'
     context_object_name = 'patients'
-    paginate_by = 20
+    paginate_by = 25
+
+    def get_queryset(self):
+        q_patient_id = self.request.GET.get('q_patient_id', '').strip()
+        filter_date = self.request.GET.get('filter_date', '').strip()
+
+        today = timezone.localdate()
+        queryset = Patient.objects.all().order_by('-id')
+
+        if q_patient_id:
+            queryset = queryset.filter(
+                Q(patient_id__icontains=q_patient_id) |
+                Q(name__icontains=q_patient_id) |
+                Q(ipno__icontains=q_patient_id)
+            )
+        elif filter_date == 'today':
+            queryset = queryset.filter(created_at__date=today)
+        elif filter_date and filter_date != 'all':
+            try:
+                target_dt = datetime.strptime(filter_date, '%Y-%m-%d').date()
+                queryset = queryset.filter(created_at__date=target_dt)
+            except ValueError:
+                pass
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['q_patient_id'] = self.request.GET.get('q_patient_id', '')
+        context['filter_date'] = self.request.GET.get('filter_date', '')
+        context['today'] = timezone.localdate()
+        return context
 
 
 class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
@@ -32,8 +66,10 @@ class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
         q_mobile = self.request.GET.get('q_mobile', '').strip()
         q_aadhar = self.request.GET.get('q_aadhar', '').strip()
         q_abha = self.request.GET.get('q_abha', '').strip()
+        q_department = self.request.GET.get('q_department', '').strip()
+        q_user = self.request.GET.get('q_user', '').strip()
 
-        has_search_params = any([q_name, q_from_date, q_to_date, q_mobile, q_aadhar, q_abha])
+        has_search_params = any([q_name, q_from_date, q_to_date, q_mobile, q_aadhar, q_abha, q_department, q_user])
 
         if not has_search_params:
             return Patient.objects.none()
@@ -66,19 +102,40 @@ class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
         if q_abha:
             queryset = queryset.filter(Q(abha_id__icontains=q_abha) | Q(patient_id__icontains=q_abha))
 
+        if q_department:
+            if q_department.isdigit():
+                queryset = queryset.filter(department_obj_id=int(q_department))
+            else:
+                queryset = queryset.filter(department__icontains=q_department)
+
+        if q_user:
+            if q_user == 'system':
+                queryset = queryset.filter(created_by__isnull=True)
+            elif q_user.isdigit():
+                queryset = queryset.filter(created_by_id=int(q_user))
+
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        User = get_user_model()
         context['q_name'] = self.request.GET.get('q_name', '')
         context['q_from_date'] = self.request.GET.get('q_from_date', '')
         context['q_to_date'] = self.request.GET.get('q_to_date', '')
         context['q_mobile'] = self.request.GET.get('q_mobile', '')
         context['q_aadhar'] = self.request.GET.get('q_aadhar', '')
         context['q_abha'] = self.request.GET.get('q_abha', '')
+        context['q_department'] = self.request.GET.get('q_department', '')
+        context['q_user'] = self.request.GET.get('q_user', '')
+
+        Department.seed_defaults()
+        context['departments'] = Department.objects.filter(is_active=True).order_by('name')
+        context['users_list'] = User.objects.all().order_by('username')
+
         context['has_searched'] = any([
             context['q_name'], context['q_from_date'], context['q_to_date'],
-            context['q_mobile'], context['q_aadhar'], context['q_abha']
+            context['q_mobile'], context['q_aadhar'], context['q_abha'],
+            context['q_department'], context['q_user']
         ])
         return context
 
@@ -106,14 +163,6 @@ class PatientCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, CreateView)
         if default_company:
             initial['patient_company'] = default_company.id
 
-        # Set default department & unit
-        default_dept = Department.objects.filter(code='GENMED').first() or Department.objects.first()
-        if default_dept:
-            initial['department_obj'] = default_dept.id
-            default_unit = default_dept.units.filter(is_active=True).first()
-            if default_unit:
-                initial['unit_obj'] = default_unit.id
-            
         return initial
 
     def get_context_data(self, **kwargs):
@@ -140,10 +189,26 @@ class PatientCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, CreateView)
         if patient.unit_obj:
             patient.unit_doctor = patient.unit_obj.unit_name
 
-        if self.request.user.is_authenticated:
-            patient.created_by = self.request.user
+        if patient.visit_through == 'IP' and not patient.ipno:
+            patient.ipno = Patient.generate_next_ipno()
 
         patient.save()
+
+        # Automatically create Visit #1 for initial patient registration
+        PatientVisit.objects.create(
+            patient=patient,
+            visit_no=1,
+            visit_date=patient.created_at or timezone.now(),
+            department_obj=patient.department_obj,
+            department=patient.department,
+            unit_obj=patient.unit_obj,
+            unit_doctor=patient.unit_doctor,
+            visit_type=patient.visit_through,
+            category=patient.category,
+            ipno=patient.ipno,
+            clinical_notes=patient.complaint,
+            created_by=self.request.user if self.request.user.is_authenticated else None
+        )
         
         print_url = reverse('patients:print', kwargs={'pk': patient.pk})
         msg = (
@@ -342,6 +407,27 @@ class OPCensusView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
         revisit_count = qs.filter(category='RE_CONSULTATION').count()
         emergency_count = qs.filter(category='EMERGENCY').count()
 
+        # Date-Based Census Metrics: New OP, Review OP, IP Admissions, Discharged Patients
+        new_op_count = total_op  # Matches total OP registrations on census_date & sum of department table
+
+        review_op_qs = PatientVisit.objects.filter(visit_date__date=census_date, visit_type='OP').exclude(visit_no=1)
+        ip_admissions_qs = PatientVisit.objects.filter(Q(visit_date__date=census_date, visit_type='IP') | Q(patient__created_at__date=census_date, patient__visit_through='IP')).distinct()
+        discharged_qs = PatientVisit.objects.filter(discharge_date=census_date)
+
+        if dept_id:
+            if dept_id.isdigit():
+                review_op_qs = review_op_qs.filter(department_obj_id=int(dept_id))
+                ip_admissions_qs = ip_admissions_qs.filter(department_obj_id=int(dept_id))
+                discharged_qs = discharged_qs.filter(department_obj_id=int(dept_id))
+            else:
+                review_op_qs = review_op_qs.filter(department__icontains=dept_id)
+                ip_admissions_qs = ip_admissions_qs.filter(department__icontains=dept_id)
+                discharged_qs = discharged_qs.filter(department__icontains=dept_id)
+
+        review_op_count = review_op_qs.count()
+        ip_admissions_count = ip_admissions_qs.count()
+        discharged_count = discharged_qs.count()
+
         departments = Department.objects.filter(is_active=True)
         dept_census = []
         for d in departments:
@@ -373,6 +459,10 @@ class OPCensusView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
         context['categories'] = Patient.CategoryChoices.choices
         context['patients'] = qs
         context['total_op'] = total_op
+        context['new_op_count'] = new_op_count
+        context['review_op_count'] = review_op_count
+        context['ip_admissions_count'] = ip_admissions_count
+        context['discharged_count'] = discharged_count
         context['male_count'] = male_count
         context['female_count'] = female_count
         context['other_count'] = other_count
@@ -439,4 +529,218 @@ class OPCensusView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
         users_census.sort(key=lambda x: x['total'], reverse=True)
         context['users_census'] = users_census
 
+        return context
+
+
+class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
+    menu_key = 'review'
+    template_name = 'patients/patient_review.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        search_id = self.request.GET.get('patient_id', '').strip()
+        patient = None
+
+        if search_id:
+            patient = Patient.objects.filter(
+                Q(patient_id__iexact=search_id) | Q(ipno__iexact=search_id)
+            ).first()
+            if not patient:
+                messages.warning(self.request, f"No patient record found for ID / IPNO '{search_id}'.")
+
+        context['patient'] = patient
+        context['search_id'] = search_id
+        context['all_patients'] = Patient.objects.all().order_by('-id')[:50]
+        context['now'] = timezone.now()
+
+        if patient:
+            # Ensure at least Visit #1 exists for legacy patient records
+            if not patient.visits.exists():
+                PatientVisit.objects.create(
+                    patient=patient,
+                    visit_no=1,
+                    visit_date=patient.created_at or timezone.now(),
+                    department_obj=patient.department_obj,
+                    department=patient.department,
+                    unit_obj=patient.unit_obj,
+                    unit_doctor=patient.unit_doctor,
+                    visit_type=patient.visit_through,
+                    category=patient.category,
+                    ipno=patient.ipno,
+                    clinical_notes=patient.complaint,
+                    created_by=patient.created_by
+                )
+
+            context['visits'] = patient.visits.all().order_by('-visit_no')
+            context['last_visit'] = patient.visits.order_by('-visit_no').first()
+            next_ip = Patient.generate_next_ipno()
+            context['next_ipno'] = next_ip
+            context['visit_form'] = PatientVisitForm(initial={
+                'department_obj': patient.department_obj,
+                'unit_obj': patient.unit_obj,
+                'visit_type': 'OP',
+                'category': 'RE_CONSULTATION',
+                'ipno': '',
+            })
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        patient_id = request.POST.get('patient_id_hidden') or request.POST.get('patient_id')
+        patient = get_object_or_404(Patient, pk=patient_id)
+
+        if request.POST.get('action') == 'update_centre':
+            new_centre = request.POST.get('centre')
+            if new_centre in [c[0] for c in Patient.CentreChoices.choices]:
+                patient.centre = new_centre
+                patient.save()
+                messages.success(request, f"Patient centre updated to '{patient.get_centre_display()}'!")
+                return redirect(f"{reverse('patients:review')}?patient_id={patient.patient_id}")
+
+        form = PatientVisitForm(request.POST)
+        if form.is_valid():
+            visit = form.save(commit=False)
+            visit.patient = patient
+
+            last_visit = patient.visits.order_by('-visit_no').first()
+            visit.visit_no = (last_visit.visit_no + 1) if last_visit else 1
+
+            if visit.department_obj:
+                visit.department = visit.department_obj.name
+            if visit.unit_obj:
+                visit.unit_doctor = visit.unit_obj.unit_name
+
+            # Assign IP Number ONLY when visit_type is IP
+            if visit.visit_type == 'IP':
+                if not visit.ipno or visit.ipno.strip() == '':
+                    visit.ipno = Patient.generate_next_ipno()
+            else:
+                visit.ipno = ''
+
+            if request.user.is_authenticated:
+                visit.created_by = request.user
+
+            visit.save()
+
+            # Update latest patient metadata
+            patient.department_obj = visit.department_obj
+            patient.department = visit.department
+            patient.unit_obj = visit.unit_obj
+            patient.unit_doctor = visit.unit_doctor
+            if visit.centre:
+                patient.centre = visit.centre
+            if visit.visit_type:
+                patient.visit_through = visit.visit_type
+            if visit.ipno:
+                patient.ipno = visit.ipno
+            patient.save()
+
+            messages.success(request, f"New Visit #{visit.visit_no} recorded successfully for patient '{patient.name}' ({patient.patient_id})!")
+            return redirect(f"{reverse('patients:review')}?patient_id={patient.patient_id}")
+        else:
+            messages.error(request, "Failed to log visit. Please select required Department and Doctor.")
+            return redirect(f"{reverse('patients:review')}?patient_id={patient.patient_id}")
+
+
+class PatientMedicalHistoryPrintView(LoginRequiredMixin, MenuAccessRequiredMixin, DetailView):
+    menu_key = 'review'
+    model = Patient
+    template_name = 'patients/medical_history_print.html'
+    context_object_name = 'patient'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['visits'] = self.object.visits.all().order_by('-visit_no')
+        context['last_visit'] = context['visits'].first()
+        context['now'] = timezone.now()
+        return context
+
+
+class PatientReviewReportView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
+    menu_key = 'review_report'
+    model = PatientVisit
+    template_name = 'patients/review_report.html'
+    context_object_name = 'visits'
+    paginate_by = 50
+
+    def get_queryset(self):
+        queryset = PatientVisit.objects.select_related('patient', 'department_obj', 'unit_obj', 'created_by').order_by('-id')
+
+        q_patient = self.request.GET.get('q_patient', '').strip()
+        q_from_date = self.request.GET.get('q_from_date', '').strip()
+        q_to_date = self.request.GET.get('q_to_date', '').strip()
+        q_department = self.request.GET.get('q_department', '').strip()
+        q_visit_type = self.request.GET.get('q_visit_type', '').strip()
+        q_centre = self.request.GET.get('q_centre', '').strip()
+        q_user = self.request.GET.get('q_user', '').strip()
+
+        if q_patient:
+            queryset = queryset.filter(
+                Q(patient__patient_id__icontains=q_patient) |
+                Q(patient__name__icontains=q_patient) |
+                Q(ipno__icontains=q_patient)
+            )
+
+        if q_from_date:
+            try:
+                from_dt = datetime.strptime(q_from_date, '%Y-%m-%d').date()
+                queryset = queryset.filter(visit_date__date__gte=from_dt)
+            except ValueError:
+                pass
+
+        if q_to_date:
+            try:
+                to_dt = datetime.strptime(q_to_date, '%Y-%m-%d').date()
+                queryset = queryset.filter(visit_date__date__lte=to_dt)
+            except ValueError:
+                pass
+
+        if q_department:
+            if q_department.isdigit():
+                queryset = queryset.filter(department_obj_id=int(q_department))
+            else:
+                queryset = queryset.filter(department__icontains=q_department)
+
+        if q_visit_type:
+            queryset = queryset.filter(visit_type=q_visit_type)
+
+        if q_centre:
+            queryset = queryset.filter(Q(centre=q_centre) | Q(patient__centre=q_centre))
+
+        if q_user:
+            if q_user == 'system':
+                queryset = queryset.filter(created_by__isnull=True)
+            elif q_user.isdigit():
+                queryset = queryset.filter(created_by_id=int(q_user))
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        User = get_user_model()
+        qs = self.get_queryset()
+
+        context['q_patient'] = self.request.GET.get('q_patient', '')
+        context['q_from_date'] = self.request.GET.get('q_from_date', '')
+        context['q_to_date'] = self.request.GET.get('q_to_date', '')
+        context['q_department'] = self.request.GET.get('q_department', '')
+        context['q_visit_type'] = self.request.GET.get('q_visit_type', '')
+        context['q_centre'] = self.request.GET.get('q_centre', '')
+        context['q_user'] = self.request.GET.get('q_user', '')
+
+        # KPI Metrics
+        context['total_visits'] = qs.count()
+        context['op_visits_count'] = qs.filter(visit_type='OP').count()
+        context['ip_visits_count'] = qs.filter(visit_type='IP').count()
+        context['unique_patients_count'] = qs.values('patient').distinct().count()
+
+        Department.seed_defaults()
+        context['departments'] = Department.objects.filter(is_active=True).order_by('name')
+        context['users_list'] = User.objects.all().order_by('username')
+        context['centre_choices'] = Patient.CentreChoices.choices
+
+        context['has_filters'] = any([
+            context['q_patient'], context['q_from_date'], context['q_to_date'],
+            context['q_department'], context['q_visit_type'], context['q_centre'], context['q_user']
+        ])
         return context

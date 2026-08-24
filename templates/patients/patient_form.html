@@ -52,6 +52,16 @@
                     </div>
 
                     <div class="hims-field-row">
+                        <label class="hims-label">Centre <span class="required-star">*</span>:</label>
+                        <div style="width: 62%;">
+                            {{ form.centre }}
+                            {% if form.centre.errors %}
+                            <span class="field-error">{{ form.centre.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
                         <label class="hims-label">Patient Id:</label>
                         {% if is_edit %}
                         {{ form.patient_id }}
@@ -224,7 +234,7 @@
                     </div>
 
                     <div class="hims-field-row">
-                        <label class="hims-label">Complaint:</label>
+                        <label class="hims-label">Diagnosis:</label>
                         <div style="width: 100%;">
                             {{ form.complaint }}
                             <button type="button" class="hims-btn-small" style="margin-top: 4px; float: right;">Add New

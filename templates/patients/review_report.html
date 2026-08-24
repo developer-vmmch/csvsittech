@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Review & Visit History Report | VMMCerp{% endblock %}
+{% block page_heading %}Review & Re-Consultation Visit Report Analytics{% endblock %}
+
+{% block content %}
+<style>
+    .report-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+    .report-stat-card {
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+    }
+    .report-stat-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+    .report-stat-value {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.2;
+    }
+    .report-stat-label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    .filter-grid-4col {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.1rem 1rem;
+    }
+    @media (max-width: 1200px) {
+        .filter-grid-4col {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    @media (max-width: 640px) {
+        .filter-grid-4col {
+            grid-template-columns: 1fr;
+        }
+    }
+    @media print {
+        .no-print { display: none !important; }
+        body { background: #ffffff !important; }
+        .panel { box-shadow: none !important; border: none !important; padding: 0 !important; }
+    }
+</style>
+
+<div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+    <!-- KPI Summary Stat Cards -->
+    <div class="report-stat-grid no-print">
+        <div class="report-stat-card">
+            <div class="report-stat-icon" style="background: #e0f2fe; color: #0284c7;">
+                <i class="bi bi-journal-text"></i>
+            </div>
+            <div>
+                <div class="report-stat-value">{{ total_visits }}</div>
+                <div class="report-stat-label">Total Review Visits</div>
+            </div>
+        </div>
+
+        <div class="report-stat-card">
+            <div class="report-stat-icon" style="background: #dcfce7; color: #16a34a;">
+                <i class="bi bi-person-check-fill"></i>
+            </div>
+            <div>
+                <div class="report-stat-value">{{ op_visits_count }}</div>
+                <div class="report-stat-label">OP Consultations</div>
+            </div>
+        </div>
+
+        <div class="report-stat-card">
+            <div class="report-stat-icon" style="background: #f3e8ff; color: #9333ea;">
+                <i class="bi bi-hospital-fill"></i>
+            </div>
+            <div>
+                <div class="report-stat-value">{{ ip_visits_count }}</div>
+                <div class="report-stat-label">IP Admissions</div>
+            </div>
+        </div>
+
+        <div class="report-stat-card">
+            <div class="report-stat-icon" style="background: #ccfbf1; color: #0d9488;">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div>
+                <div class="report-stat-value">{{ unique_patients_count }}</div>
+                <div class="report-stat-label">Unique Patients</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Control Panel -->
+    <div class="panel no-print">
+        <div class="panel-header-action" style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h2 class="panel-title" style="margin: 0; font-size: 1.2rem;">
+                    <i class="bi bi-funnel-fill" style="color: var(--accent-blue);"></i> Review Visit Report Filters
+                </h2>
+                <p style="color: var(--text-muted); font-size: 0.84rem; margin-top: 4px; margin-bottom: 0;">
+                    Filter patient review logs by Patient ID, Date Range, Department, Visit Type, Centre, or Registered User.
+                </p>
+            </div>
+            <button class="btn btn-secondary" onclick="window.print()" style="font-size: 0.85rem; background: #0284c7; color: #ffffff; border: none;">
+                <i class="bi bi-printer-fill"></i> Print Review Report
+            </button>
+        </div>
+
+        <form method="get" action="{% url 'patients:review_report' %}" class="custom-form">
+            <div class="filter-grid-4col">
+                <div class="form-group">
+                    <label for="q_patient">Patient ID / Name / IPNO</label>
+                    <input type="text" id="q_patient" name="q_patient" value="{{ q_patient }}" class="form-input" placeholder="Search ID, Name or IPNO...">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_from_date">From Date</label>
+                    <input type="date" id="q_from_date" name="q_from_date" value="{{ q_from_date }}" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_to_date">To Date</label>
+                    <input type="date" id="q_to_date" name="q_to_date" value="{{ q_to_date }}" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_department">Department</label>
+                    <select id="q_department" name="q_department" class="form-select">
+                        <option value="">-- All Departments --</option>
+                        {% for d in departments %}
+                        <option value="{{ d.id }}" {% if q_department == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="q_visit_type">Visit Type</label>
+                    <select id="q_visit_type" name="q_visit_type" class="form-select">
+                        <option value="">-- All Visit Types --</option>
+                        <option value="OP" {% if q_visit_type == 'OP' %}selected{% endif %}>Out-Patient (OP)</option>
+                        <option value="IP" {% if q_visit_type == 'IP' %}selected{% endif %}>In-Patient (IP)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="q_centre">Centre</label>
+                    <select id="q_centre" name="q_centre" class="form-select">
+                        <option value="">-- All Centres --</option>
+                        {% for code, label in centre_choices %}
+                        <option value="{{ code }}" {% if q_centre == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="q_user">Processed By User</label>
+                    <select id="q_user" name="q_user" class="form-select">
+                        <option value="">-- All Users --</option>
+                        <option value="system" {% if q_user == 'system' %}selected{% endif %}>System / Initial Entry</option>
+                        {% for u in users_list %}
+                        <option value="{{ u.id }}" {% if q_user == u.id|stringformat:"s" %}selected{% endif %}>{{ u.get_full_name|default:u.username }} ({{ u.username }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: flex-end; gap: 0.5rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
+                        <i class="bi bi-search"></i> Apply Filter
+                    </button>
+                    {% if has_filters %}
+                    <a href="{% url 'patients:review_report' %}" class="btn btn-secondary" title="Reset Filters">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Review Visit Records Table Panel -->
+    <div class="panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0;">
+                <i class="bi bi-table" style="color: var(--accent-teal);"></i> Patient Review & Visit Log Records (Total: {{ visits|length }})
+            </h3>
+        </div>
+
+        {% if visits %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Visit #</th>
+                        <th>Visit Date & Time</th>
+                        <th>Patient ID</th>
+                        <th>Patient Name</th>
+                        <th>Age / Gender</th>
+                        <th>Centre</th>
+                        <th>Department</th>
+                        <th>Doctor / Unit</th>
+                        <th>Type</th>
+                        <th>IpNo</th>
+                        <th>Clinical Notes</th>
+                        <th>Processed By</th>
+                        <th class="no-print">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in visits %}
+                    <tr>
+                        <td><strong style="color: #0e7490; font-size: 0.95rem;">#{{ v.visit_no }}</strong></td>
+                        <td><strong>{{ v.visit_date|date:"d/M/Y H:i" }}</strong></td>
+                        <td>
+                            <a href="{% url 'patients:review' %}?patient_id={{ v.patient.patient_id }}" style="font-weight: 700; color: #16a34a; text-decoration: none;">
+                                {{ v.patient.patient_id }}
+                            </a>
+                        </td>
+                        <td><strong>{{ v.patient.title }} {{ v.patient.name }}</strong></td>
+                        <td>{{ v.patient.age_years }} Y / {{ v.patient.gender }}</td>
+                        <td>
+                            <span class="badge" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; font-weight: 700;">
+                                {{ v.centre|default:v.patient.centre|default:"VMMCH" }}
+                            </span>
+                        </td>
+                        <td><span class="badge badge-blue">{{ v.department }}</span></td>
+                        <td>{{ v.unit_doctor }}</td>
+                        <td>
+                            <span class="badge {% if v.visit_type == 'IP' %}badge-purple{% else %}badge-blue{% endif %}">
+                                {{ v.visit_type }}
+                            </span>
+                        </td>
+                        <td>{{ v.ipno|default:"--" }}</td>
+                        <td style="max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ v.clinical_notes }}">
+                            {{ v.clinical_notes|default:"--" }}
+                        </td>
+                        <td>
+                            {% if v.created_by %}
+                            <span class="badge" style="background: #f1f5f9; color: #0284c7; border: 1px solid #cbd5e1; font-weight: 600;">
+                                <i class="bi bi-person-circle"></i> {{ v.created_by.get_full_name|default:v.created_by.username|upper }}
+                            </span>
+                            {% else %}
+                            <span class="badge" style="background: #f1f5f9; color: #64748b; font-weight: 600;">
+                                <i class="bi bi-gear-fill"></i> System
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="no-print">
+                            <div style="display: flex; gap: 4px;">
+                                <a href="{% url 'patients:print' v.patient.id %}" target="_blank" class="btn-print-sm" title="Print OP Slip">
+                                    <i class="bi bi-printer"></i> Slip
+                                </a>
+                                <a href="{% url 'patients:medical_history_print' v.patient.id %}" target="_blank" class="btn-print-sm" style="background: #0d9488; border-color: #0d9488;" title="View Medical History">
+                                    <i class="bi bi-file-earmark-medical"></i> History
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 3rem 1.5rem; color: #64748b;">
+            <i class="bi bi-file-earmark-x" style="font-size: 3rem; display: block; margin-bottom: 0.75rem;"></i>
+            <h4 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 0.25rem;">No Review Visit Records Found</h4>
+            <p style="font-size: 0.88rem;">Try adjusting your search query, date range, or department filters above.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

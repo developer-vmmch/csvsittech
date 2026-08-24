@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Review & Re-Registration | VMMCerp{% endblock %}
+{% block page_heading %}REVIEW - Re-Registration & Visit History{% endblock %}
+
+{% block content %}
+<div class="hims-wrapper">
+
+    <!-- Top Hospital Header Banner -->
+    <div
+        style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem 1.75rem; margin-bottom: 1.25rem; box-shadow: var(--shadow-sm); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #025a68; margin: 0; font-family: Georgia, serif;">
+                Vinayaka Missions Medical College and Hospital - Karaikal
+            </h2>
+        </div>
+        <div style="text-align: right;">
+            <span style="font-size: 0.85rem; color: #64748b; font-weight: 600;">Logged in User:</span>
+            <span class="badge badge-purple" style="font-size: 0.82rem; margin-left: 6px; padding: 0.35rem 0.75rem;">
+                <i class="bi bi-person-fill"></i> {{ user.get_full_name|default:user.username|upper }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Review Patient Top Info Card -->
+    <div class="hims-card" style="margin-bottom: 1.5rem;">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.85rem; margin-bottom: 1.25rem;">
+            <h3
+                style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="bi bi-clock-history" style="color: var(--accent-teal);"></i> REVIEW - PATIENT RECORD LOG
+            </h3>
+
+            <!-- Quick Search Form -->
+            <form method="get" action="{% url 'patients:review' %}"
+                style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                <label style="font-size: 0.85rem; font-weight: 700; color: #334155; white-space: nowrap;">Patient ID /
+                    IPNO:</label>
+                <input type="text" name="patient_id"
+                    value="{% if search_id %}{{ search_id }}{% elif patient %}{{ patient.patient_id }}{% endif %}"
+                    class="form-input" placeholder="e.g. 26148644"
+                    style="width: 170px; padding: 0.4rem 0.75rem; font-weight: 700; color: #0284c7;">
+                <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.9rem; font-size: 0.84rem;">
+                    <i class="bi bi-search"></i> Go
+                </button>
+            </form>
+        </div>
+
+        {% if patient %}
+        <!-- Patient Summary Fields Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem 1.5rem; background: #f8fafc; padding: 1.25rem; border-radius: 10px; border: 1px solid #e2e8f0;">
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px;">Centre:</label>
+                <form method="post" action="{% url 'patients:review' %}" id="centre_update_form" style="margin: 0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="patient_id_hidden" value="{{ patient.id }}">
+                    <input type="hidden" name="action" value="update_centre">
+                    <select name="centre" class="form-select" onchange="document.getElementById('centre_update_form').submit()" style="padding: 0.25rem 0.6rem; font-size: 0.88rem; font-weight: 700; color: #0284c7; border: 1.5px solid #bae6fd; background-color: #f0f9ff; cursor: pointer; border-radius: 6px;">
+                        <option value="VMMCH" {% if patient.centre == 'VMMCH' %}selected{% endif %}>VMMCH</option>
+                        <option value="CAMP" {% if patient.centre == 'CAMP' %}selected{% endif %}>Camp</option>
+                        <option value="RURAL" {% if patient.centre == 'RURAL' %}selected{% endif %}>Rural</option>
+                        <option value="URBAN" {% if patient.centre == 'URBAN' %}selected{% endif %}>Urban</option>
+                    </select>
+                </form>
+            </div>
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block;">Patient ID:</label>
+                <span style="font-size: 1.1rem; font-weight: 800; color: #16a34a; font-family: monospace;">{{ patient.patient_id }}</span>
+            </div>
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block;">Patient Name:</label>
+                <span style="font-size: 1rem; font-weight: 700; color: #0f172a;">{{ patient.title }} {{ patient.name }}</span>
+            </div>
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block;">Age / Gender:</label>
+                <span style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">{{ patient.age_years }} Y / {{ patient.gender }}</span>
+            </div>
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block;">Category:</label>
+                <span class="badge badge-purple" style="font-size: 0.8rem;">{{ patient.get_category_display }}</span>
+            </div>
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block;">Visit Through:</label>
+                <span class="badge {% if last_visit.visit_type == 'IP' or patient.visit_through == 'IP' %}badge-purple{% else %}badge-blue{% endif %}" style="font-size: 0.8rem;">
+                    {% if last_visit %}{{ last_visit.get_visit_type_display }}{% else %}{{ patient.get_visit_through_display }}{% endif %}
+                </span>
+            </div>
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block;">IPNO:</label>
+                <span style="font-size: 0.95rem; font-weight: 700; color: #7c3aed;">
+                    {% if last_visit.ipno %}{{ last_visit.ipno }}{% else %}{{ patient.ipno|default:"--" }}{% endif %}
+                </span>
+            </div>
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block;">Last Visit Dt:</label>
+                <span style="font-size: 0.88rem; font-weight: 700; color: #0e7490;">
+                    {% if last_visit %}
+                    {{ last_visit.visit_date|date:"d/M/Y H:i:s" }}
+                    {% else %}
+                    {{ patient.created_at|date:"d/M/Y H:i:s" }}
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        {% else %}
+        <div
+            style="text-align: center; padding: 3.5rem 1.5rem; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 12px; margin-top: 0.5rem;">
+            <div
+                style="width: 64px; height: 64px; background: #e0f2fe; color: #0284c7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; font-size: 1.85rem; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);">
+                <i class="bi bi-search"></i>
+            </div>
+            <h4 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem;">Search & Retrieve
+                Patient Record</h4>
+            <p style="font-size: 0.88rem; color: #64748b; max-width: 520px; margin: 0 auto 1.5rem; line-height: 1.5;">
+                Enter a <strong>Patient ID</strong> (e.g. <code>26148644</code>) or <strong>IP Number</strong> in the
+                top search field above and click <strong>Go</strong> to load their complete medical history, previous
+                visits, and log re-consultations.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if patient %}
+    <!-- Tabbed Navigation Bar -->
+    <div
+        style="display: flex; gap: 0.35rem; border-bottom: 2px solid #e2e8f0; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 2px;">
+        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-visit-details')" id="defaultTab"
+            style="padding: 0.6rem 1.1rem; border: none; background: #0d9488; color: #ffffff; font-weight: 700; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem;">
+            <i class="bi bi-calendar-event"></i> Visit Details
+        </button>
+        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-personal')"
+            style="padding: 0.6rem 1.1rem; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-weight: 600; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem;">
+            <i class="bi bi-person"></i> Personal Details
+        </button>
+        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-company')"
+            style="padding: 0.6rem 1.1rem; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-weight: 600; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem;">
+            <i class="bi bi-building"></i> Company Details
+        </button>
+        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-contact')"
+            style="padding: 0.6rem 1.1rem; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-weight: 600; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem;">
+            <i class="bi bi-geo-alt"></i> Contact Address
+        </button>
+        <a href="{% url 'patients:medical_history_print' patient.id %}" target="_blank" class="btn btn-secondary"
+            style="margin-left: auto; padding: 0.5rem 1rem; font-size: 0.84rem; font-weight: 700; background: #0284c7; color: #ffffff; border: none;">
+            <i class="bi bi-printer-fill"></i> Print Full Medical Record History
+        </a>
+    </div>
+
+    <!-- TAB CONTENT: VISIT DETAILS & RE-CONSULTATION -->
+    <div id="tab-visit-details" class="tab-content" style="display: block;">
+        <!-- Add New Visit / Re-Consultation Form -->
+        <div class="panel" style="margin-bottom: 1.5rem;">
+            <h4
+                style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="bi bi-plus-circle-fill" style="color: var(--accent-teal);"></i> Register New Visit /
+                Re-Consultation for {{ patient.name }}
+            </h4>
+
+            <form method="post" action="{% url 'patients:review' %}">
+                {% csrf_token %}
+                <input type="hidden" name="patient_id_hidden" value="{{ patient.id }}">
+
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem 1.25rem;">
+                    <div>
+                        <label
+                            style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Department
+                            <span style="color: red;">*</span>:</label>
+                        {{ visit_form.department_obj }}
+                    </div>
+                    <div>
+                        <label
+                            style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Doctor
+                            <span style="color: red;">*</span>:</label>
+                        {{ visit_form.unit_obj }}
+                    </div>
+                    <div>
+                        <label
+                            style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Visit
+                            Type:</label>
+                        {{ visit_form.visit_type }}
+                    </div>
+                    <div>
+                        <label style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Centre:</label>
+                        {{ visit_form.centre }}
+                    </div>
+                    <div id="ipno_container" style="display: none;">
+                        <label
+                            style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">IP
+                            Number (Unique ID from 600000):</label>
+                        <div style="display: flex; gap: 6px;">
+                            {{ visit_form.ipno }}
+                            <button type="button" class="btn btn-secondary" onclick="autoGenerateIP()"
+                                title="Generate next IP Number"
+                                style="padding: 0.35rem 0.65rem; font-size: 0.78rem; white-space: nowrap; font-weight: 700; background: #0284c7; color: #ffffff; border: none;">
+                                <i class="bi bi-magic"></i> Auto IP
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label
+                            style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Category:</label>
+                        {{ visit_form.category }}
+                    </div>
+                    <div>
+                        <label
+                            style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Review
+                            Date:</label>
+                        <input type="text" class="form-input" value="{{ now|date:'d/b/Y' }}" readonly
+                            style="background-color: #f1f5f9; color: #475569; font-weight: 600;">
+                    </div>
+                    <div>
+                        <label
+                            style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Time:</label>
+                        <input type="text" class="form-input" value="{{ now|date:'H:i:s' }}" readonly
+                            style="background-color: #f1f5f9; color: #475569; font-weight: 600;">
+                    </div>
+                    <div>
+                        <label
+                            style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Reg
+                            Fees:</label>
+                        {{ visit_form.reg_fees }}
+                    </div>
+                    <div>
+                        <label
+                            style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Collection
+                            Status:</label>
+                        {{ visit_form.coll_status }}
+                    </div>
+                    <div style="grid-column: 1 / -1;">
+                        <label
+                            style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Clinical
+                            Notes / Complaints / Diagnosis:</label>
+                        {{ visit_form.clinical_notes }}
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.25rem; text-align: right;">
+                    <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.5rem; font-size: 0.9rem;">
+                        <i class="bi bi-journal-plus"></i> Add New Visit Record
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Visit History Records Table -->
+        <div class="panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <h4 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">
+                    <i class="bi bi-table" style="color: var(--accent-blue);"></i> All Patient Visit History Logs (Total
+                    Visits: {{ visits|length }})
+                </h4>
+                <a href="{% url 'patients:medical_history_print' patient.id %}" target="_blank" class="btn-print-sm"
+                    style="font-size: 0.84rem; padding: 0.4rem 0.85rem;">
+                    <i class="bi bi-printer"></i> Print Medical History Card
+                </a>
+            </div>
+
+            {% if visits %}
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>IpNo</th>
+                            <th>Visit No</th>
+                            <th>Visit Date</th>
+                            <th>Department</th>
+                            <th>Doctor</th>
+                            <th>Visit Type</th>
+                            <th>Ward / Bed</th>
+                            <th>Coll Status</th>
+                            <th>Clinical Notes</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in visits %}
+                        <tr>
+                            <td>{{ v.ipno|default:"--" }}</td>
+                            <td><strong style="color: #0e7490; font-size: 0.95rem;">#{{ v.visit_no }}</strong></td>
+                            <td><strong>{{ v.visit_date|date:"d/M/Y H:i" }}</strong></td>
+                            <td><span class="badge badge-blue">{{ v.department }}</span></td>
+                            <td>{{ v.unit_doctor }}</td>
+                            <td><span class="badge badge-purple">{{ v.visit_type }}</span></td>
+                            <td>{{ v.ward|default:"--" }} / {{ v.bed|default:"--" }}</td>
+                            <td><span class="badge badge-green">{{ v.coll_status }}</span></td>
+                            <td
+                                style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {{ v.clinical_notes|default:"--" }}</td>
+                            <td>
+                                <a href="{% url 'patients:print' patient.id %}" target="_blank" class="btn-print-sm"
+                                    title="Print OP Slip">
+                                    <i class="bi bi-printer"></i> Print Slip
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p style="color: var(--text-muted); text-align: center; padding: 1.5rem;">No visit records logged yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- TAB CONTENT: PERSONAL DETAILS -->
+    <div id="tab-personal" class="tab-content" style="display: none;">
+        <div class="panel">
+            <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 1rem;">Personal
+                & Guardian Demographics</h4>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem 2rem;">
+                <div><strong>Full Name:</strong> {{ patient.title }} {{ patient.name }}</div>
+                <div><strong>Aadhar Card:</strong> {{ patient.aadhar_card|default:"--" }}</div>
+                <div><strong>Guardian:</strong> {{ patient.guardian_relationship }} {{ patient.guardian_name|default:"--" }}</div>
+                <div><strong>Marital Status:</strong> {{ patient.marital_status|default:"--" }}</div>
+                <div><strong>Religion:</strong> {{ patient.religion|default:"--" }}</div>
+                <div><strong>Occupation:</strong> {{ patient.occupation|default:"--" }}</div>
+                <div><strong>Income:</strong> {{ patient.income|default:"--" }}</div>
+                <div><strong>Blood Group:</strong> {{ patient.blood_group|default:"--" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB CONTENT: COMPANY DETAILS -->
+    <div id="tab-company" class="tab-content" style="display: none;">
+        <div class="panel">
+            <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 1rem;">Company &
+                Insurance Details</h4>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem 2rem;">
+                <div><strong>Company / Scheme:</strong> {{ patient.company_name }}</div>
+                <div><strong>ABHA ID:</strong> {{ patient.abha_id|default:"--" }}</div>
+                <div><strong>OFC Code:</strong> {{ patient.ofc_code|default:"--" }}</div>
+                <div><strong>PAN Card No:</strong> {{ patient.pan_no|default:"--" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB CONTENT: CONTACT ADDRESS -->
+    <div id="tab-contact" class="tab-content" style="display: none;">
+        <div class="panel">
+            <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 1rem;">Contact &
+                Address Details</h4>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem 2rem;">
+                <div><strong>Mobile Number:</strong> {{ patient.mobile_no }}</div>
+                <div><strong>Street / Address:</strong> {{ patient.street|default:"--" }}</div>
+                <div><strong>Village / Area:</strong> {{ patient.village_area|default:"--" }}</div>
+                <div><strong>City:</strong> {{ patient.city }}</div>
+                <div><strong>State:</strong> {{ patient.state }}</div>
+                <div><strong>Pincode:</strong> {{ patient.pincode|default:"--" }}</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    function switchTab(evt, tabId) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tab-content");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+        tablinks = document.getElementsByClassName("tab-btn");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].style.background = "#ffffff";
+            tablinks[i].style.color = "#475569";
+        }
+        document.getElementById(tabId).style.display = "block";
+        evt.currentTarget.style.background = "#0d9488";
+        evt.currentTarget.style.color = "#ffffff";
+    }
+
+    function autoGenerateIP() {
+        const ipInput = document.getElementById('id_ipno');
+        if (ipInput) {
+            ipInput.value = "{{ next_ipno|default:'600000' }}";
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const visitTypeSel = document.getElementById('id_visit_type');
+        const ipInput = document.getElementById('id_ipno');
+        const ipContainer = document.getElementById('ipno_container');
+
+        function toggleIPField() {
+            if (visitTypeSel && ipContainer) {
+                if (visitTypeSel.value === 'IP') {
+                    ipContainer.style.display = 'block';
+                    if (ipInput && (!ipInput.value || ipInput.value.trim() === '')) {
+                        ipInput.value = "{{ next_ipno|default:'600000' }}";
+                    }
+                } else {
+                    ipContainer.style.display = 'none';
+                    if (ipInput) {
+                        ipInput.value = '';
+                    }
+                }
+            }
+        }
+
+        if (visitTypeSel) {
+            visitTypeSel.addEventListener('change', toggleIPField);
+            toggleIPField();
+        }
+
+        const deptSel = document.getElementById('id_visit_department');
+        const unitSel = document.getElementById('id_visit_unit');
+        if (deptSel && unitSel) {
+            deptSel.addEventListener('change', function () {
+                const dId = this.value;
+                unitSel.innerHTML = '<option value="">Loading doctors...</option>';
+                if (!dId) {
+                    unitSel.innerHTML = '<option value="">Select Unit / Doctor</option>';
+                    return;
+                }
+                fetch(`{% url "patients:api_units" %}?department_id=${dId}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        unitSel.innerHTML = '<option value="">Select Unit / Doctor</option>';
+                        if (data.units && data.units.length > 0) {
+                            data.units.forEach(u => {
+                                const opt = document.createElement('option');
+                                opt.value = u.id;
+                                opt.textContent = u.unit_name;
+                                unitSel.appendChild(opt);
+                            });
+                        }
+                    });
+            });
+        }
+    });
+</script>
+{% endblock %}

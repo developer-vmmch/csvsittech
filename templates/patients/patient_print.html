@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -42,7 +43,7 @@
 
         .no-print-bar {
             background: rgba(30, 41, 59, 0.9);
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: #fff;
             padding: 12px 24px;
             border-radius: 12px;
@@ -50,7 +51,7 @@
             display: flex;
             gap: 16px;
             align-items: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
             font-family: sans-serif;
         }
 
@@ -75,7 +76,7 @@
         }
 
         .btn-back {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
             color: #fff;
             text-decoration: none;
             padding: 10px 20px;
@@ -86,7 +87,7 @@
         }
 
         .btn-back:hover {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
         }
 
         /* OP Pass Slip */
@@ -179,7 +180,9 @@
 
         /* Print Media Query */
         @media print {
-            .no-print-bar, .messages-container {
+
+            .no-print-bar,
+            .messages-container {
                 display: none !important;
             }
 
@@ -196,16 +199,17 @@
         }
     </style>
 </head>
+
 <body>
 
     {% if messages %}
-        <div class="messages-container">
-            {% for message in messages %}
-                <div class="alert-success">
-                    <i class="bi bi-check-circle-fill"></i> {{ message }}
-                </div>
-            {% endfor %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="alert-success">
+            <i class="bi bi-check-circle-fill"></i> {{ message }}
         </div>
+        {% endfor %}
+    </div>
     {% endif %}
 
     <!-- Non-printable top action bar -->
@@ -223,7 +227,7 @@
 
     <!-- OPD Slip -->
     <div class="op-slip">
-        
+
         <div class="op-header">
             <div class="hospital-title">VINAYAKA MISSIONS MEDICAL COLLEGE & HOSPITAL</div>
             <div class="hospital-sub">Keezhakasakudy Med, Karaikal Pin: 609609</div>
@@ -256,7 +260,8 @@
 
                 <div class="field-row">
                     <span class="field-label">Address</span>
-                    <span class="field-val">: {{ patient.street|default:"" }} {{ patient.village_area|default:"" }} {{ patient.city|default:"KARAIKAL" }}</span>
+                    <span class="field-val">: {{ patient.street|default:"" }} {{ patient.village_area|default:"" }}
+                    </span>
                 </div>
 
                 <div class="field-row">
@@ -301,4 +306,5 @@
     </div>
 
 </body>
+
 </html>

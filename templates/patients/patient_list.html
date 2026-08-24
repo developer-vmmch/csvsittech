@@ -5,14 +5,47 @@
 
 {% block content %}
 <div class="panel">
-    <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
         <div>
             <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">Patient Directory</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Comprehensive list of all registered OPD and IPD hospital patients.</p>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; margin-bottom: 0;">Comprehensive list of registered OPD and IPD hospital patients.</p>
         </div>
         <a href="{% url 'patients:add' %}" class="btn btn-primary">
             <i class="bi bi-person-plus-fill"></i> Add New Patient
         </a>
+    </div>
+
+    <!-- Patient ID Search Bar & Today Filter Indicator -->
+    <div style="margin-bottom: 1.25rem; background: #f8fafc; padding: 1rem 1.25rem; border-radius: 10px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <form method="get" action="{% url 'patients:list' %}" style="display: flex; align-items: center; gap: 0.6rem; flex: 1; max-width: 520px; margin: 0;">
+            <div style="position: relative; flex: 1;">
+                <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.95rem;"></i>
+                <input type="text" name="q_patient_id" value="{{ q_patient_id }}" class="form-input" placeholder="Enter Patient ID (e.g. 26148646) or Name..." style="padding-left: 2.2rem; font-weight: 600;">
+            </div>
+            <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                <i class="bi bi-search"></i> Search ID
+            </button>
+            {% if q_patient_id or filter_date %}
+            <a href="{% url 'patients:list' %}" class="btn btn-secondary" style="padding: 0.5rem 0.85rem; font-size: 0.85rem;" title="Clear Search & Show Today's Patients">
+                <i class="bi bi-x-circle"></i>
+            </a>
+            {% endif %}
+        </form>
+
+        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+            <span class="badge badge-blue" style="font-size: 0.82rem; padding: 0.4rem 0.85rem; font-weight: 700;">
+                <i class="bi bi-calendar-check-fill"></i> {% if filter_date == 'today' %}Today's Registrations ({{ today|date:"d/M/Y" }}){% elif q_patient_id %}Search Result{% else %}All Registered Patients{% endif %}
+            </span>
+            {% if filter_date != 'today' and not q_patient_id %}
+            <a href="{% url 'patients:list' %}?filter_date=today" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;">
+                <i class="bi bi-calendar-event"></i> View Today's Patients Only
+            </a>
+            {% elif filter_date == 'today' %}
+            <a href="{% url 'patients:list' %}" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;">
+                <i class="bi bi-people-fill"></i> View All Patients
+            </a>
+            {% endif %}
+        </div>
     </div>
 
     {% if patients %}
@@ -44,11 +77,13 @@
                     <td><span class="badge badge-purple">{{ patient.company_name|default:"INDIVIDUAL" }}</span></td>
                     <td>
                         {% if patient.created_by %}
-                        <span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); font-weight: 500;">
-                            <i class="bi bi-person-fill"></i> {{ patient.created_by.get_full_name|default:patient.created_by.username }}
+                        <span class="badge" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; font-weight: 700; font-size: 0.82rem;">
+                            <i class="bi bi-person-circle"></i> {{ patient.created_by.get_full_name|default:patient.created_by.username|upper }}
                         </span>
                         {% else %}
-                        <span style="color: var(--text-muted); font-size: 0.82rem;">--</span>
+                        <span class="badge" style="background: #f1f5f9; color: #64748b; font-weight: 600; font-size: 0.8rem;">
+                            <i class="bi bi-gear-fill"></i> System
+                        </span>
                         {% endif %}
                     </td>
                     <td>{{ patient.created_at|date:"d/M/Y H:i" }}</td>

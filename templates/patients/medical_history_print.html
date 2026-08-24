@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Medical History Record - {{ patient.patient_id }} | VMMCH</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f1f5f9;
+            padding: 20px;
+            color: #1e293b;
+        }
+        .print-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #0284c7;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 22px;
+            color: #0369a1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-family: Georgia, serif;
+        }
+        .header h2 {
+            font-size: 14px;
+            color: #475569;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .header p {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        .doc-title {
+            text-align: center;
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .doc-title h3 {
+            font-size: 15px;
+            color: #0369a1;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px 24px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 24px;
+            font-size: 13px;
+        }
+        .info-item {
+            display: flex;
+        }
+        .info-label {
+            font-weight: 700;
+            color: #475569;
+            width: 140px;
+            flex-shrink: 0;
+        }
+        .info-value {
+            color: #0f172a;
+            font-weight: 600;
+        }
+        .section-heading {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #cbd5e1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            font-size: 12px;
+        }
+        th, td {
+            border: 1px solid #cbd5e1;
+            padding: 8px 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .notes-box {
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 12px;
+            min-height: 80px;
+            margin-bottom: 30px;
+            font-size: 12px;
+            background: #fafafa;
+        }
+        .footer-signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            padding-top: 20px;
+            font-size: 12px;
+        }
+        .sig-block {
+            text-align: center;
+            width: 200px;
+            border-top: 1px solid #475569;
+            padding-top: 6px;
+            font-weight: 600;
+            color: #334155;
+        }
+        .no-print {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .btn-print {
+            background: #0284c7;
+            color: #ffffff;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-print:hover {
+            background: #0369a1;
+        }
+
+        @media print {
+            body {
+                background: #ffffff;
+                padding: 0;
+            }
+            .print-container {
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+            }
+            .no-print {
+                display: none;
+            }
+            @page {
+                margin: 15mm;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print">
+        <button class="btn-print" onclick="window.print()">
+            <i class="bi bi-printer-fill"></i> Print Medical Record History
+        </button>
+    </div>
+
+    <div class="print-container">
+        <!-- Hospital Header -->
+        <div class="header">
+            <h1>Vinayaka Missions Medical College and Hospital</h1>
+            <h2>KEEZHAKASAKUDY MEDU, KARAIKAL - 609 609</h2>
+            <p>Phone: 04368-262270, 262271 | Email: vmmch@vmmc.edu.in | Web: www.vmmc.edu.in</p>
+        </div>
+
+        <div class="doc-title">
+            <h3>PATIENT COMPLETE MEDICAL HISTORY RECORD & REFERRAL SUMMARY</h3>
+        </div>
+
+        <!-- Patient Info Card -->
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">Patient ID / UHID:</span>
+                <span class="info-value" style="color: #0369a1; font-size: 14px;">{{ patient.patient_id }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Date of Report:</span>
+                <span class="info-value">{{ now|date:"d/b/Y H:i" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Patient Name:</span>
+                <span class="info-value">{{ patient.title }} {{ patient.name }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Age / Gender:</span>
+                <span class="info-value">{{ patient.age_years }} Y / {{ patient.gender }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Guardian Name:</span>
+                <span class="info-value">{{ patient.guardian_relationship }} {{ patient.guardian_name|default:"--" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Mobile Number:</span>
+                <span class="info-value">{{ patient.mobile_no }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Address / City:</span>
+                <span class="info-value">{{ patient.street|default:"" }} {{ patient.village_area|default:"" }} {{ patient.city }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">ABHA ID / Scheme:</span>
+                <span class="info-value">{{ patient.abha_id|default:"--" }} / {{ patient.company_name }}</span>
+            </div>
+        </div>
+
+        <!-- Chronological Visit History Table -->
+        <div class="section-heading">
+            <span>COMPLETE CHRONOLOGICAL CONSULTATION & VISIT HISTORY</span>
+            <span style="font-size: 11px; font-weight: 500; color: #64748b;">Total Visits: {{ visits|length }}</span>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Visit #</th>
+                    <th>Date & Time</th>
+                    <th>Department</th>
+                    <th>Consulting Doctor / Unit</th>
+                    <th>Type</th>
+                    <th>Clinical Notes / Symptoms</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in visits %}
+                <tr>
+                    <td><strong>#{{ v.visit_no }}</strong></td>
+                    <td>{{ v.visit_date|date:"d/b/Y H:i" }}</td>
+                    <td><strong>{{ v.department }}</strong></td>
+                    <td>{{ v.unit_doctor }}</td>
+                    <td>{{ v.visit_type }}</td>
+                    <td>{{ v.clinical_notes|default:"Initial OP Registration & Consultation" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center;">No visit records found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Doctor Referral Notes Section -->
+        <div class="section-heading">
+            <span>REFERRAL / DOCTOR CONSULTATION NOTES & DIAGNOSIS</span>
+        </div>
+        <div class="notes-box">
+            <p style="color: #64748b; font-style: italic;">
+                Physician Remarks / Treatment History Summary / Referral Notes for Next Doctor:
+            </p>
+        </div>
+
+        <!-- Signatures -->
+        <div class="footer-signatures">
+            <div class="sig-block">
+                Medical Records Dept (MRD)
+            </div>
+            <div class="sig-block">
+                Consulting Doctor's Signature & Stamp
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -175,6 +175,8 @@ class RoleMenuPermissionsView(LoginRequiredMixin, MenuAccessRequiredMixin, View)
             {'key': 'add_patient', 'label': 'Add Patient', 'section': 'PATIENT MANAGEMENT'},
             {'key': 'search_patient', 'label': 'Search Patient', 'section': 'PATIENT MANAGEMENT'},
             {'key': 'patient_list', 'label': 'Patient Directory', 'section': 'PATIENT MANAGEMENT'},
+            {'key': 'review', 'label': 'Review (Patient Record Log)', 'section': 'PATIENT MANAGEMENT'},
+            {'key': 'review_report', 'label': 'Review Report Analytics', 'section': 'PATIENT MANAGEMENT'},
             {'key': 'op_census', 'label': 'OP Census Analytics', 'section': 'PATIENT MANAGEMENT'},
             {'key': 'patient_companies', 'label': 'Patient Companies', 'section': 'PATIENT MANAGEMENT'},
             {'key': 'department_list', 'label': 'Departments & Units List', 'section': 'PATIENT MANAGEMENT'},
