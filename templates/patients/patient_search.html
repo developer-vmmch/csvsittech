@@ -4,6 +4,24 @@
 {% block page_heading %}Patient Search & Lookup{% endblock %}
 
 {% block content %}
+<style>
+.search-form-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.1rem 1rem;
+}
+@media (max-width: 1200px) {
+    .search-form-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 640px) {
+    .search-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
 <div style="display: flex; flex-direction: column; gap: 1.5rem;">
 
     <!-- Search Filters Panel -->
@@ -14,13 +32,13 @@
                     <i class="bi bi-search" style="color: var(--accent-blue);"></i> Advanced Patient Search
                 </h2>
                 <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
-                    Filter patient records by Name, Registration Date Range, Mobile Number, Aadhar Number, or ABHA Number.
+                    Filter patient records by Name, Registration Date Range, Mobile Number, Aadhar Number, ABHA Number, Department, or Registered By User.
                 </p>
             </div>
         </div>
 
         <form method="get" action="{% url 'patients:search' %}" class="custom-form">
-            <div class="form-grid">
+            <div class="search-form-grid">
                 <div class="form-group">
                     <label for="q_name">Patient Name</label>
                     <input type="text" id="q_name" name="q_name" value="{{ q_name }}" class="form-input" placeholder="e.g. EDWIN or KARTHI">
@@ -49,6 +67,27 @@
                 <div class="form-group">
                     <label for="q_abha">ABHA ID / Number</label>
                     <input type="text" id="q_abha" name="q_abha" value="{{ q_abha }}" class="form-input" placeholder="ABHA ID / Patient ID...">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_department">Department</label>
+                    <select id="q_department" name="q_department" class="form-select">
+                        <option value="">-- All Departments --</option>
+                        {% for d in departments %}
+                        <option value="{{ d.id }}" {% if q_department == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="q_user">Registered By User</label>
+                    <select id="q_user" name="q_user" class="form-select">
+                        <option value="">-- All Users --</option>
+                        <option value="system" {% if q_user == 'system' %}selected{% endif %}>System / Initial Entry</option>
+                        {% for u in users_list %}
+                        <option value="{{ u.id }}" {% if q_user == u.id|stringformat:"s" %}selected{% endif %}>{{ u.get_full_name|default:u.username }} ({{ u.username }})</option>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
 

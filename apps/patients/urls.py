@@ -4,18 +4,21 @@ from .views import (
     PatientCompanyListView, PatientCompanyCreateView, PatientCompanyDeleteView,
     DepartmentListView, DepartmentCreateView, DepartmentDeleteView,
     DepartmentUnitCreateView, DepartmentUnitDeleteView,
-    get_department_units, OPCensusView
+    get_department_units, OPCensusView, PatientReviewView, PatientReviewReportView, PatientMedicalHistoryPrintView
 )
 
 app_name = 'patients'
 
 urlpatterns = [
     path('', PatientListView.as_view(), name='list'),
+    path('review/', PatientReviewView.as_view(), name='review'),
+    path('review/report/', PatientReviewReportView.as_view(), name='review_report'),
     path('op-census/', OPCensusView.as_view(), name='op_census'),
     path('search/', PatientSearchView.as_view(), name='search'),
     path('add/', PatientCreateView.as_view(), name='add'),
     path('<int:pk>/edit/', PatientUpdateView.as_view(), name='edit'),
     path('<int:pk>/print/', PatientPrintView.as_view(), name='print'),
+    path('<int:pk>/history/print/', PatientMedicalHistoryPrintView.as_view(), name='medical_history_print'),
     path('<int:pk>/delete/', PatientDeleteView.as_view(), name='delete'),
     
     path('companies/', PatientCompanyListView.as_view(), name='company_list'),

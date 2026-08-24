@@ -63,6 +63,24 @@
                     </li>
                     {% endif %}
 
+                    {% if not user.is_authenticated or user.get_menu_mapping.review %}
+                    <li class="{% if request.resolver_match.url_name == 'review' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
+                        <a href="{% url 'patients:review' %}">
+                            <i class="bi bi-clock-history" style="color: #38bdf8;"></i>
+                            <span>Review</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if not user.is_authenticated or user.get_menu_mapping.review_report %}
+                    <li class="{% if request.resolver_match.url_name == 'review_report' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
+                        <a href="{% url 'patients:review_report' %}">
+                            <i class="bi bi-file-earmark-bar-graph" style="color: #2dd4bf;"></i>
+                            <span>Review Report</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
                     {% if not user.is_authenticated or user.get_menu_mapping.op_census %}
                     <li class="{% if request.resolver_match.url_name == 'op_census' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
                         <a href="{% url 'patients:op_census' %}">
@@ -171,6 +189,14 @@
             </div>
 
             <div style="display: flex; align-items: center; gap: 1rem;">
+                <!-- Live Header Date & Time Display Widget -->
+                <div id="liveClockWidget" style="display: flex; align-items: center; gap: 0.55rem; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 0.4rem 0.85rem; border-radius: 20px; font-size: 0.82rem; color: #166534; font-weight: 700; box-shadow: var(--shadow-sm);">
+                    <i class="bi bi-clock-fill" style="color: #16a34a; font-size: 0.9rem;"></i>
+                    <span id="liveDateText" style="color: #334155; font-size: 0.8rem; font-weight: 600;">--/--/----</span>
+                    <span style="color: #cbd5e1;">|</span>
+                    <span id="liveTimeText" style="color: #15803d; font-size: 0.85rem; font-weight: 800; letter-spacing: 0.03em;">--:--:-- --</span>
+                </div>
+
                 <div class="user-badge">
                     <div class="avatar">{{ user.username|default:"A"|slice:":1"|upper }}</div>
                     <span>{{ user.username|default:"Administrator" }}</span>
@@ -216,6 +242,22 @@
     </button>
 
     <script src="{% static 'js/main.js' %}"></script>
+    <script>
+        function updateLiveHeaderClock() {
+            const now = new Date();
+            const dateOptions = { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' };
+            const dateStr = now.toLocaleDateString('en-GB', dateOptions);
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+            const timeStr = now.toLocaleTimeString('en-US', timeOptions);
+            
+            const dateEl = document.getElementById('liveDateText');
+            const timeEl = document.getElementById('liveTimeText');
+            if (dateEl) dateEl.textContent = dateStr;
+            if (timeEl) timeEl.textContent = timeStr;
+        }
+        updateLiveHeaderClock();
+        setInterval(updateLiveHeaderClock, 1000);
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

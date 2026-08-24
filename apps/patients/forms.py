@@ -1,5 +1,5 @@
 from django import forms
-from .models import Patient, PatientCompany, Department, DepartmentUnit
+from .models import Patient, PatientCompany, Department, DepartmentUnit, PatientVisit
 
 class DepartmentForm(forms.ModelForm):
     class Meta:
@@ -145,7 +145,7 @@ class PatientRegistrationForm(forms.ModelForm):
     class Meta:
         model = Patient
         fields = [
-            'ipno', 'patient_id', 'title', 'name', 'gender', 'dob', 'age_years', 'age_months', 'age_days',
+            'ipno', 'patient_id', 'centre', 'title', 'name', 'gender', 'dob', 'age_years', 'age_months', 'age_days',
             'aadhar_card', 'visit_through', 'category', 'marital_status', 'religion',
             'guardian_relationship', 'guardian_name', 'patient_company', 'abha_id', 'ofc_code',
             'street', 'village_area', 'country', 'state', 'city', 'pincode',
@@ -155,6 +155,7 @@ class PatientRegistrationForm(forms.ModelForm):
         widgets = {
             'patient_id': forms.TextInput(attrs={'class': 'form-input', 'readonly': 'readonly'}),
             'ipno': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'IPNO'}),
+            'centre': forms.Select(attrs={'class': 'form-select', 'id': 'id_centre'}),
             'title': forms.Select(choices=[
                 ('-', '-'), ('Mr', 'Mr'), ('Mrs', 'Mrs'), ('Miss', 'Miss'), ('Master', 'Master'), ('Dr', 'Dr'), ('Baby', 'Baby')
             ], attrs={'class': 'form-select', 'id': 'id_title', 'required': 'required'}),
@@ -173,26 +174,74 @@ class PatientRegistrationForm(forms.ModelForm):
             'religion': forms.Select(choices=[
                 ('', 'Select'), ('Hindu', 'Hindu'), ('Christian', 'Christian'), ('Muslim', 'Muslim'), ('Sikh', 'Sikh'), ('Other', 'Other')
             ], attrs={'class': 'form-select'}),
-            'guardian_relationship': forms.Select(attrs={'class': 'form-select', 'id': 'id_guardian_rel'}),
+            'guardian_relationship': forms.Select(choices=[
+                ('-', '-'),
+                ('S/O', 'S/O (Son of)'),
+                ('D/O', 'D/O (Daughter of)'),
+                ('W/O', 'W/O (Wife of)'),
+                ('C/O', 'C/O (Care of)'),
+                ('H/O', 'H/O (Husband of)'),
+                ('F/O', 'F/O (Father of)'),
+                ('M/O', 'M/O (Mother of)'),
+            ], attrs={'class': 'form-select', 'id': 'id_guardian_rel'}),
             'guardian_name': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_guardian_name', 'placeholder': 'Guardian Name', 'required': 'required'}),
             'abha_id': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'ABHA ID'}),
             'ofc_code': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'OFC Code'}),
             'street': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_street', 'placeholder': 'Street / Address', 'required': 'required'}),
-            'village_area': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_village_area', 'placeholder': 'Village / Area', 'required': 'required'}),
-            'country': forms.Select(choices=[('India', 'India'), ('Other', 'Other')], attrs={'class': 'form-select'}),
-            'state': forms.Select(choices=[
-                ('Puducherry', 'Puducherry'), ('Tamil Nadu', 'Tamil Nadu'), ('Kerala', 'Kerala'), ('Delhi', 'Delhi')
-            ], attrs={'class': 'form-select'}),
-            'city': forms.Select(choices=[
-                ('Karaikal', 'Karaikal'), ('Puducherry', 'Puducherry'), ('Chennai', 'Chennai')
-            ], attrs={'class': 'form-select'}),
-            'pincode': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Pincode'}),
-            'mobile_no': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_mobile_no', 'placeholder': 'Mobile Number (10 digits)', 'maxlength': '10', 'required': 'required'}),
+            'village_area': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_village_area'}),
+            'country': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_country'}),
+            'state': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_state'}),
+            'city': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_city', 'required': 'required'}),
+            'pincode': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_pincode'}),
+            'mobile_no': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_mobile_no', 'placeholder': '10-digit mobile number', 'maxlength': '10', 'required': 'required'}),
             'blood_group': forms.Select(choices=[
-                ('', 'Select'), ('A+', 'A+'), ('A-', 'A-'), ('B+', 'B+'), ('B-', 'B-'), ('AB+', 'AB+'), ('AB-', 'AB-'), ('O+', 'O+'), ('O-', 'O-')
+                ('', 'Select'), ('A+', 'A+'), ('A-', 'A-'), ('B+', 'B+'), ('B-', 'B-'), ('O+', 'O+'), ('O-', 'O-'), ('AB+', 'AB+'), ('AB-', 'AB-')
             ], attrs={'class': 'form-select'}),
-            'complaint': forms.Textarea(attrs={'class': 'form-textarea', 'rows': 2, 'placeholder': 'Complaint / Symptoms'}),
-            'occupation': forms.Select(choices=[('', 'Select'), ('Private', 'Private Job'), ('Govt', 'Govt Employee'), ('Business', 'Business'), ('Student', 'Student')], attrs={'class': 'form-select'}),
-            'income': forms.Select(choices=[('', 'Select'), ('< 1L', '< 1 Lakh'), ('1L-5L', '1-5 Lakhs'), ('> 5L', '> 5 Lakhs')], attrs={'class': 'form-select'}),
+            'complaint': forms.Textarea(attrs={'class': 'form-textarea', 'rows': 2, 'placeholder': 'Primary complaint / symptoms'}),
+            'occupation': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Occupation'}),
+            'income': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Annual / Monthly Income'}),
+            'department_obj': forms.Select(attrs={'class': 'form-select', 'id': 'id_department'}),
+            'unit_obj': forms.Select(attrs={'class': 'form-select', 'id': 'id_unit'}),
             'pan_no': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'PAN Card Number'}),
         }
+
+
+class PatientVisitForm(forms.ModelForm):
+    department_obj = forms.ModelChoiceField(
+        queryset=Department.objects.filter(is_active=True),
+        required=True,
+        empty_label="Select Department",
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_visit_department'})
+    )
+    unit_obj = forms.ModelChoiceField(
+        queryset=DepartmentUnit.objects.filter(is_active=True),
+        required=True,
+        empty_label="Select Unit / Doctor",
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_visit_unit'})
+    )
+
+    class Meta:
+        model = PatientVisit
+        fields = [
+            'department_obj', 'unit_obj', 'visit_type', 'centre', 'category',
+            'ipno', 'ward', 'bed', 'ref_no', 'ref_by', 'reg_fees', 'coll_status', 'clinical_notes'
+        ]
+        widgets = {
+            'visit_type': forms.Select(attrs={'class': 'form-select'}),
+            'centre': forms.Select(attrs={'class': 'form-select', 'id': 'id_visit_centre'}),
+            'category': forms.Select(attrs={'class': 'form-select'}),
+            'ipno': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'IP Number'}),
+            'ward': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ward'}),
+            'bed': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Bed'}),
+            'ref_no': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ref No'}),
+            'ref_by': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Referred By'}),
+            'reg_fees': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01', 'placeholder': '0.00'}),
+            'coll_status': forms.Select(choices=[('Paid', 'Paid'), ('Pending', 'Pending'), ('Waived', 'Waived')], attrs={'class': 'form-select'}),
+            'clinical_notes': forms.Textarea(attrs={'class': 'form-textarea', 'rows': 3, 'placeholder': 'Enter consultation diagnosis / medical notes...'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        Department.seed_defaults()
+        self.fields['department_obj'].queryset = Department.objects.filter(is_active=True)
+        self.fields['unit_obj'].queryset = DepartmentUnit.objects.filter(is_active=True)

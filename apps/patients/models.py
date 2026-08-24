@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 from apps.core.models import TimeStampedModel
 
 class Department(TimeStampedModel):
@@ -126,14 +127,25 @@ class Patient(TimeStampedModel):
         RE_CONSULTATION = 'RE_CONSULTATION', 'Re-Consultation'
 
     class GuardianRelChoices(models.TextChoices):
+        NONE = '-', '-'
         SO = 'S/O', 'S/O (Son of)'
         DO = 'D/O', 'D/O (Daughter of)'
         WO = 'W/O', 'W/O (Wife of)'
         CO = 'C/O', 'C/O (Care of)'
+        HO = 'H/O', 'H/O (Husband of)'
+        FO = 'F/O', 'F/O (Father of)'
+        MO = 'M/O', 'M/O (Mother of)'
+
+    class CentreChoices(models.TextChoices):
+        VMMCH = 'VMMCH', 'VMMCH'
+        CAMP = 'CAMP', 'Camp'
+        RURAL = 'RURAL', 'Rural'
+        URBAN = 'URBAN', 'Urban'
 
     # Patient Identification
     patient_id = models.CharField(max_length=50, unique=True, db_index=True)
     ipno = models.CharField(max_length=50, blank=True, null=True, verbose_name="IPNO")
+    centre = models.CharField(max_length=50, choices=CentreChoices.choices, default=CentreChoices.VMMCH, verbose_name="Centre")
     
     # Personal Info
     title = models.CharField(max_length=10, choices=TitleChoices.choices, default='-')
@@ -152,7 +164,7 @@ class Patient(TimeStampedModel):
     religion = models.CharField(max_length=30, blank=True, null=True)
     
     # Guardian Info
-    guardian_relationship = models.CharField(max_length=10, choices=GuardianRelChoices.choices, default=GuardianRelChoices.SO)
+    guardian_relationship = models.CharField(max_length=10, choices=GuardianRelChoices.choices, default='-')
     guardian_name = models.CharField(max_length=100, blank=True, null=True)
     company_name = models.CharField(max_length=100, default="INDIVIDUAL")
     patient_company = models.ForeignKey(PatientCompany, on_delete=models.SET_NULL, null=True, blank=True, related_name='patients')
@@ -205,3 +217,60 @@ class Patient(TimeStampedModel):
         if last_patient and last_patient.patient_id and last_patient.patient_id.isdigit():
             return str(int(last_patient.patient_id) + 1)
         return "26148626"
+
+    @classmethod
+    def generate_next_ipno(cls):
+        """Generates sequential numeric IP number starting from 600000"""
+        max_num = 599999
+        p_patients = cls.objects.filter(ipno__isnull=False).exclude(ipno='')
+        for p in p_patients:
+            if p.ipno and p.ipno.isdigit():
+                val = int(p.ipno)
+                if val > max_num:
+                    max_num = val
+
+        p_visits = PatientVisit.objects.filter(ipno__isnull=False).exclude(ipno='')
+        for v in p_visits:
+            if v.ipno and v.ipno.isdigit():
+                val = int(v.ipno)
+                if val > max_num:
+                    max_num = val
+
+        return str(max_num + 1)
+
+
+class PatientVisit(TimeStampedModel):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='visits')
+    visit_no = models.PositiveIntegerField(verbose_name="Visit No")
+    visit_date = models.DateTimeField(default=timezone.now, verbose_name="Visit Date & Time")
+    department_obj = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='visits')
+    department = models.CharField(max_length=100, default="GENERAL MEDICINE")
+    unit_obj = models.ForeignKey(DepartmentUnit, on_delete=models.SET_NULL, null=True, blank=True, related_name='visits')
+    unit_doctor = models.CharField(max_length=100, default="HOD-GENERAL MEDICINE-V", verbose_name="Unit / Doctor")
+    visit_type = models.CharField(max_length=20, choices=Patient.VisitChoices.choices, default=Patient.VisitChoices.OP)
+    centre = models.CharField(max_length=50, choices=Patient.CentreChoices.choices, default=Patient.CentreChoices.VMMCH, verbose_name="Centre")
+    category = models.CharField(max_length=50, choices=Patient.CategoryChoices.choices, default=Patient.CategoryChoices.RE_CONSULTATION)
+    ipno = models.CharField(max_length=50, blank=True, null=True, verbose_name="IP Number")
+    ward = models.CharField(max_length=50, blank=True, null=True)
+    bed = models.CharField(max_length=50, blank=True, null=True)
+    discharge_date = models.DateField(blank=True, null=True, verbose_name="Date of Discharge")
+    ref_no = models.CharField(max_length=50, blank=True, null=True, verbose_name="Ref No")
+    ref_by = models.CharField(max_length=100, blank=True, null=True, verbose_name="Referred By")
+    ref_date = models.DateField(blank=True, null=True, verbose_name="Ref Date")
+    reg_fees = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Registration Fees")
+    coll_status = models.CharField(max_length=20, default="Paid", verbose_name="Collection Status")
+    clinical_notes = models.TextField(blank=True, null=True, verbose_name="Clinical Notes / Diagnosis")
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_visits'
+    )
+
+    class Meta:
+        ordering = ['-visit_no']
+        unique_together = ['patient', 'visit_no']
+
+    def __str__(self):
+        return f"Visit #{self.visit_no} - {self.patient.name} ({self.visit_date.strftime('%d/%b/%Y')})"

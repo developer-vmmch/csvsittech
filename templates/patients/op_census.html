@@ -142,45 +142,45 @@
     </div>
 </div>
 
-<!-- KPI Summary Cards -->
+<!-- KPI Summary Cards: New OP, Review OP, IP Admissions, Discharged Patients -->
 <div class="stat-grid">
     <div class="stat-card">
-        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
-            <i class="bi bi-person-lines-fill"></i>
-        </div>
-        <div>
-            <div class="stat-val">{{ total_op }}</div>
-            <div class="stat-label">Total OP Attendance</div>
-        </div>
-    </div>
-
-    <div class="stat-card">
         <div class="stat-icon" style="background: rgba(2, 132, 199, 0.15); color: #0284c7;">
-            <i class="bi bi-gender-male"></i>
+            <i class="bi bi-person-plus-fill"></i>
         </div>
         <div>
-            <div class="stat-val">{{ male_count }}</div>
-            <div class="stat-label">Male Patients</div>
+            <div class="stat-val">{{ new_op_count }}</div>
+            <div class="stat-label">New OP Registrations</div>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;">
-            <i class="bi bi-gender-female"></i>
+        <div class="stat-icon" style="background: rgba(13, 148, 136, 0.15); color: #0d9488;">
+            <i class="bi bi-clock-history"></i>
         </div>
         <div>
-            <div class="stat-val">{{ female_count }}</div>
-            <div class="stat-label">Female Patients</div>
+            <div class="stat-val">{{ review_op_count }}</div>
+            <div class="stat-label">Review OP Visits</div>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
-            <i class="bi bi-emoji-smile"></i>
+        <div class="stat-icon" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">
+            <i class="bi bi-hospital-fill"></i>
         </div>
         <div>
-            <div class="stat-val">{{ child_count }}</div>
-            <div class="stat-label">Children (&lt;12 Yrs)</div>
+            <div class="stat-val">{{ ip_admissions_count }}</div>
+            <div class="stat-label">IP Admissions</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+            <i class="bi bi-box-arrow-right"></i>
+        </div>
+        <div>
+            <div class="stat-val">{{ discharged_count }}</div>
+            <div class="stat-label">Discharged Patients</div>
         </div>
     </div>
 </div>
