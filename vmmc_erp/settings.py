@@ -15,7 +15,17 @@ load_dotenv(BASE_DIR / '.env')
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-vmmc-erp-dev-key')
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
-ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'vmmcerp-production.up.railway.app').split(',') if host.strip()]
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'vmmcerp-production.up.railway.app,127.0.0.1,localhost,*').split(',') if host.strip()]
+
+# CSRF & Security for Production Deployments (Railway / HTTPS)
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip() for origin in os.getenv(
+        'CSRF_TRUSTED_ORIGINS',
+        'https://vmmcerp-production.up.railway.app,http://vmmcerp-production.up.railway.app,http://127.0.0.1:8000,http://localhost:8000'
+    ).split(',') if origin.strip()
+]
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Application definition
 INSTALLED_APPS = [
