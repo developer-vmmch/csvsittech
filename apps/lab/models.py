@@ -357,6 +357,7 @@ class AgeGroupImportHistory(TimeStampedModel):
 
 class ReferenceRangeImportHistory(TimeStampedModel):
     file_name = models.CharField(max_length=255)
+    upload_file = models.FileField(upload_to='referencerange_imports/', null=True, blank=True)
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     total_records = models.IntegerField(default=0)
     imported = models.IntegerField(default=0)

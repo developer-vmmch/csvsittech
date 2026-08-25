@@ -53,6 +53,22 @@ class User(AbstractUser):
     def is_admin_role(self):
         return self.is_superuser or self.role == self.Roles.ADMIN
 
+    def has_perm_code(self, perm_code):
+        """
+        Check if user has a specific permission code, e.g. 'patients.patient_list.view'.
+        Super Admin always returns True.
+        """
+        if self.is_superuser or self.role == self.Roles.ADMIN:
+            return True
+            
+        from apps.users.models import RoleMenuPermission
+        db_perms = RoleMenuPermission.get_permissions_for_role(self.role)
+        if db_perms and isinstance(db_perms, dict):
+            return db_perms.get(perm_code, False)
+            
+        # Default fallback for specific legacy roles if not configured in DB
+        return False
+
     @property
     def is_manager_role(self):
         return self.is_admin_role or self.role == self.Roles.MANAGER

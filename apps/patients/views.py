@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from apps.core.mixins import MenuAccessRequiredMixin
+from apps.core.mixins import MenuAccessRequiredMixin, GranularPermissionRequiredMixin
 from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
@@ -13,32 +13,128 @@ from .forms import PatientRegistrationForm, PatientCompanyForm, DepartmentForm, 
 
 from django.contrib.auth import get_user_model
 
-class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
+class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermissionRequiredMixin, ListView):
     menu_key = 'patient_list'
+    permission_required = 'patients.patient_list.view'
     model = Patient
     template_name = 'patients/patient_list.html'
     context_object_name = 'patients'
     paginate_by = 25
 
-    def get_queryset(self):
-        q_patient_id = self.request.GET.get('q_patient_id', '').strip()
-        filter_date = self.request.GET.get('filter_date', '').strip()
+    paginate_by = 25
 
-        today = timezone.localdate()
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('export') == 'excel':
+            if not request.user.has_perm_code('patients.patient_list.export'):
+                messages.error(request, "Access Denied: You do not have permission to export patients.")
+                return redirect('patients:list')
+            return self.export_excel(request)
+        return super().get(request, *args, **kwargs)
+
+    def export_excel(self, request):
+        from openpyxl import Workbook
+        from django.http import HttpResponse
+        import io
+
+        queryset = self.get_queryset()
+        columns_param = request.GET.get('columns', '')
+        
+        if not columns_param:
+            selected_columns = ['Patient ID', 'OP Number', 'Patient Name', 'Gender / Age', 'Mobile Number', 'Guardian', 'City / State', 'Registration Date']
+        else:
+            selected_columns = [c.strip() for c in columns_param.split(',') if c.strip()]
+            
+        wb = Workbook(write_only=True)
+        ws = wb.create_sheet('Patients')
+        ws.append(selected_columns)
+        
+        for p in queryset.iterator(chunk_size=1000):
+            row = []
+            for col in selected_columns:
+                if col == 'Patient ID': row.append(p.patient_id)
+                elif col == 'OP Number': row.append(p.op_number or '')
+                elif col == 'Patient Title': row.append(p.title)
+                elif col == 'First Name': row.append(p.name)
+                elif col == 'Last Name': row.append('') 
+                elif col == 'Patient Name': row.append(p.name)
+                elif col == 'Gender': row.append(p.gender)
+                elif col == 'Date of Birth': row.append(p.dob.strftime('%Y-%m-%d') if p.dob else '')
+                elif col == 'Age' or col == 'Age Display': row.append(p.age_years)
+                elif col == 'Gender / Age': row.append(f"{p.gender} / {p.age_years} Y")
+                elif col == 'Mobile Number': row.append(p.mobile_no)
+                elif col == 'Alternate Phone': row.append(p.alternate_phone or '')
+                elif col == 'Email': row.append(p.email or '')
+                elif col == 'Address': row.append(p.street or '')
+                elif col == 'City': row.append(p.city)
+                elif col == 'State': row.append(p.state)
+                elif col == 'City / State': row.append(f"{p.city}, {p.state}")
+                elif col == 'Country': row.append(p.country)
+                elif col == 'Pincode': row.append(p.pincode or '')
+                elif col == 'Blood Group': row.append(p.blood_group or '')
+                elif col == 'Marital Status': row.append(p.marital_status or '')
+                elif col == 'Guardian Title': row.append(p.guardian_title)
+                elif col == 'Guardian Name': row.append(p.guardian_name or '')
+                elif col == 'Guardian Relation': row.append(p.guardian_relationship)
+                elif col == 'Guardian': 
+                    row.append(f"{p.guardian_relationship} {p.guardian_name}".strip() if p.guardian_name else '-')
+                elif col == 'Guardian Phone': row.append(p.guardian_phone or '')
+                elif col == 'Emergency Contact': row.append('')
+                elif col == 'Emergency Phone': row.append(p.emergency_contact_phone or '')
+                elif col == 'Registration Date': row.append(p.registration_date.strftime('%Y-%m-%d') if p.registration_date else '')
+                else: row.append('')
+            ws.append(row)
+            
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        from_date = request.GET.get('from_date')
+        to_date = request.GET.get('to_date')
+        today = timezone.localdate().strftime('%Y-%m-%d')
+        
+        if from_date and to_date:
+            filename = f"patients_{from_date}_to_{to_date}.xlsx"
+        else:
+            filename = f"patients_all_{today}.xlsx"
+            
+        response = HttpResponse(
+            output,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    def get_paginate_by(self, queryset):
+        page_size = self.request.GET.get('page_size')
+        if page_size and page_size.isdigit():
+            return int(page_size)
+        return super().get_paginate_by(queryset)
+
+    def get_queryset(self):
+        q_search = self.request.GET.get('search', '').strip()
+        from_date = self.request.GET.get('from_date', '').strip()
+        to_date = self.request.GET.get('to_date', '').strip()
+
         queryset = Patient.objects.all().order_by('-id')
 
-        if q_patient_id:
+        if q_search:
             queryset = queryset.filter(
-                Q(patient_id__icontains=q_patient_id) |
-                Q(name__icontains=q_patient_id) |
-                Q(ipno__icontains=q_patient_id)
+                Q(patient_id__icontains=q_search) |
+                Q(name__icontains=q_search) |
+                Q(op_number__icontains=q_search)
             )
-        elif filter_date == 'today':
-            queryset = queryset.filter(created_at__date=today)
-        elif filter_date and filter_date != 'all':
+
+        if from_date:
             try:
-                target_dt = datetime.strptime(filter_date, '%Y-%m-%d').date()
-                queryset = queryset.filter(created_at__date=target_dt)
+                from_dt = datetime.strptime(from_date, '%Y-%m-%d').date()
+                queryset = queryset.filter(registration_date__gte=from_dt)
+            except ValueError:
+                pass
+
+        if to_date:
+            try:
+                to_dt = datetime.strptime(to_date, '%Y-%m-%d').date()
+                queryset = queryset.filter(registration_date__lte=to_dt)
             except ValueError:
                 pass
 
@@ -46,14 +142,45 @@ class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['q_patient_id'] = self.request.GET.get('q_patient_id', '')
-        context['filter_date'] = self.request.GET.get('filter_date', '')
-        context['today'] = timezone.localdate()
+        
+        # Calculate counts
+        total_patients = Patient.objects.count()
+        filtered_patients = self.get_queryset().count()
+
+        context['search'] = self.request.GET.get('search', '')
+        context['from_date'] = self.request.GET.get('from_date', '')
+        context['to_date'] = self.request.GET.get('to_date', '')
+        context['today'] = timezone.localdate().strftime('%Y-%m-%d')
+        context['total_patients'] = total_patients
+        context['filtered_patients'] = filtered_patients
+        context['has_filter'] = bool(context['search'] or context['from_date'] or context['to_date'])
+        
         return context
 
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.headers.get('Accept') == 'application/json' or self.request.GET.get('format') == 'json':
+            patients = context['patients']
+            results = []
+            for p in patients:
+                results.append({
+                    'patient_id': p.patient_id,
+                    'op_number': p.op_number,
+                    'name': p.name,
+                    'gender': p.gender,
+                    'age_years': p.age_years,
+                    'mobile_no': p.mobile_no,
+                    'registration_date': p.registration_date.isoformat() if p.registration_date else None
+                })
+            return JsonResponse({
+                'count': context['filtered_patients'],
+                'results': results
+            })
+        return super().render_to_response(context, **response_kwargs)
 
-class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
+
+class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermissionRequiredMixin, ListView):
     menu_key = 'search_patient'
+    permission_required = 'patients.search_patient.view'
     model = Patient
     template_name = 'patients/patient_search.html'
     context_object_name = 'patients'
@@ -140,8 +267,9 @@ class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
         return context
 
 
-class PatientCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, CreateView):
+class PatientCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermissionRequiredMixin, CreateView):
     menu_key = 'add_patient'
+    permission_required = 'patients.patient_list.create'
     model = Patient
     form_class = PatientRegistrationForm
     template_name = 'patients/patient_form.html'
@@ -226,8 +354,9 @@ class PatientCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, CreateView)
         return redirect('patients:add')
 
 
-class PatientUpdateView(LoginRequiredMixin, MenuAccessRequiredMixin, UpdateView):
+class PatientUpdateView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermissionRequiredMixin, UpdateView):
     menu_key = 'patient_list'
+    permission_required = 'patients.patient_list.update'
     model = Patient
     form_class = PatientRegistrationForm
     template_name = 'patients/patient_form.html'
@@ -262,8 +391,9 @@ class PatientPrintView(LoginRequiredMixin, MenuAccessRequiredMixin, DetailView):
     context_object_name = 'patient'
 
 
-class PatientDeleteView(LoginRequiredMixin, MenuAccessRequiredMixin, DeleteView):
+class PatientDeleteView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermissionRequiredMixin, DeleteView):
     menu_key = 'patient_list'
+    permission_required = 'patients.patient_list.delete'
     model = Patient
     success_url = reverse_lazy('patients:list')
 

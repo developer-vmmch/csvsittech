@@ -10,6 +10,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from .forms import UserCreationCustomForm, UserEditCustomForm, UserLoginForm, CustomRoleForm
 from .models import RoleMenuPermission, CustomRole
+from .permissions import PERMISSION_MODULES
 
 User = get_user_model()
 
@@ -175,8 +176,6 @@ class RoleMenuPermissionsView(LoginRequiredMixin, MenuAccessRequiredMixin, View)
             {'key': 'add_patient', 'label': 'Add Patient', 'section': 'PATIENT MANAGEMENT'},
             {'key': 'search_patient', 'label': 'Search Patient', 'section': 'PATIENT MANAGEMENT'},
             {'key': 'patient_list', 'label': 'Patient Directory', 'section': 'PATIENT MANAGEMENT'},
-            {'key': 'review', 'label': 'Review (Patient Record Log)', 'section': 'PATIENT MANAGEMENT'},
-            {'key': 'review_report', 'label': 'Review Report Analytics', 'section': 'PATIENT MANAGEMENT'},
             {'key': 'op_census', 'label': 'OP Census Analytics', 'section': 'PATIENT MANAGEMENT'},
             {'key': 'patient_companies', 'label': 'Patient Companies', 'section': 'PATIENT MANAGEMENT'},
             {'key': 'department_list', 'label': 'Departments & Units List', 'section': 'PATIENT MANAGEMENT'},
@@ -186,6 +185,26 @@ class RoleMenuPermissionsView(LoginRequiredMixin, MenuAccessRequiredMixin, View)
             {'key': 'users_roles', 'label': 'Users & Roles Matrix', 'section': 'SYSTEM ADMINISTRATION'},
             {'key': 'inventory', 'label': 'Inventory Management', 'section': 'SYSTEM ADMINISTRATION'},
             {'key': 'settings', 'label': 'System Settings', 'section': 'SYSTEM ADMINISTRATION'},
+            
+            # Lab Master
+            {'key': 'lab_master_diagnosis', 'label': 'Diagnosis', 'section': 'LAB MASTER'},
+            {'key': 'lab_master_investigation', 'label': 'Investigation', 'section': 'LAB MASTER'},
+            {'key': 'lab_master_parameter', 'label': 'Parameter', 'section': 'LAB MASTER'},
+            {'key': 'lab_master_age_group', 'label': 'Age Group', 'section': 'LAB MASTER'},
+            {'key': 'lab_master_mapping', 'label': 'Investigation Parameter Mapping', 'section': 'LAB MASTER'},
+            {'key': 'lab_master_reference_range', 'label': 'Reference Range Grid', 'section': 'LAB MASTER'},
+            {'key': 'lab_master_legacy_mapping', 'label': 'Legacy Mapping', 'section': 'LAB MASTER'},
+            
+            # Lab Orders
+            {'key': 'lab_orders_lab_orders', 'label': 'Lab Orders', 'section': 'LAB ORDERS'},
+            {'key': 'lab_orders_create', 'label': 'Create Lab Order', 'section': 'LAB ORDERS'},
+            {'key': 'lab_orders_list', 'label': 'Order List', 'section': 'LAB ORDERS'},
+            {'key': 'lab_orders_details', 'label': 'Order Details', 'section': 'LAB ORDERS'},
+            {'key': 'lab_orders_pending', 'label': 'Pending Orders', 'section': 'LAB ORDERS'},
+            {'key': 'lab_orders_processing', 'label': 'Processing Orders', 'section': 'LAB ORDERS'},
+            {'key': 'lab_orders_completed', 'label': 'Completed Orders', 'section': 'LAB ORDERS'},
+            {'key': 'lab_orders_cancelled', 'label': 'Cancelled Orders', 'section': 'LAB ORDERS'},
+            {'key': 'lab_orders_reports', 'label': 'Reports / Export', 'section': 'LAB ORDERS'},
         ]
 
     def get(self, request, *args, **kwargs):
@@ -249,7 +268,9 @@ class RoleMenuPermissionsView(LoginRequiredMixin, MenuAccessRequiredMixin, View)
                 perms_dict[m_key] = field_name in request.POST
 
             obj, created = RoleMenuPermission.objects.get_or_create(role=r_code)
-            obj.menu_permissions = perms_dict
+            existing = obj.menu_permissions if isinstance(obj.menu_permissions, dict) else {}
+            existing.update(perms_dict)
+            obj.menu_permissions = existing
             obj.save()
 
         messages.success(request, "Role & Sidebar Menu Access Mapping permissions updated successfully!")
@@ -317,3 +338,70 @@ class RoleOverviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView
             })
         context['roles'] = roles_info
         return context
+
+class ProfilePermissionsView(LoginRequiredMixin, MenuAccessRequiredMixin, View):
+    menu_key = 'users_roles'
+    template_name = 'users/profile_permissions.html'
+
+    def get(self, request, *args, **kwargs):
+        if not (request.user.is_superuser or request.user.role == User.Roles.ADMIN):
+            messages.error(request, "Access restricted to system administrators.")
+            return redirect('patients:list')
+        
+        roles = [
+            {'code': User.Roles.ADMIN, 'label': 'Administrator', 'is_locked': True},
+            {'code': User.Roles.MANAGER, 'label': 'Department Manager', 'is_locked': False},
+            {'code': User.Roles.STAFF, 'label': 'Staff Member', 'is_locked': False},
+            {'code': User.Roles.AUDITOR, 'label': 'Auditor', 'is_locked': False},
+        ]
+        for cr in CustomRole.objects.all():
+            roles.append({'code': cr.code, 'label': cr.name, 'is_locked': False})
+            
+        selected_role = request.GET.get('role', '')
+        if not selected_role and roles:
+            selected_role = roles[1]['code'] # Select the first non-admin role by default
+
+        current_perms = {}
+        if selected_role != User.Roles.ADMIN:
+            perm_obj = RoleMenuPermission.objects.filter(role=selected_role).first()
+            if perm_obj and isinstance(perm_obj.menu_permissions, dict):
+                current_perms = perm_obj.menu_permissions
+                
+        context = {
+            'modules': PERMISSION_MODULES,
+            'roles': roles,
+            'selected_role': selected_role,
+            'current_perms': current_perms,
+            'actions_list': ['view', 'create', 'update', 'cancel', 'delete', 'export']
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        if not (request.user.is_superuser or request.user.role == User.Roles.ADMIN):
+            messages.error(request, "Access restricted to system administrators.")
+            return redirect('patients:list')
+
+        selected_role = request.POST.get('role')
+        if not selected_role or selected_role == User.Roles.ADMIN:
+            messages.error(request, "Invalid or locked profile selected.")
+            return redirect('users:profile_permissions')
+        
+        obj, created = RoleMenuPermission.objects.get_or_create(role=selected_role)
+        existing_perms = obj.menu_permissions if isinstance(obj.menu_permissions, dict) else {}
+        
+        for mod in PERMISSION_MODULES:
+            for sub in mod['sub_modules']:
+                for action in sub['actions']:
+                    perm_key = f"{sub['code']}.{action}"
+                    post_key = f"perm_{perm_key}"
+                    if post_key in request.POST:
+                        existing_perms[perm_key] = True
+                    else:
+                        existing_perms[perm_key] = False
+                        
+        obj.menu_permissions = existing_perms
+        obj.save()
+
+        messages.success(request, f"Permissions saved successfully for profile.")
+        return redirect(f"{reverse_lazy('users:profile_permissions')}?role={selected_role}")
+

@@ -1248,18 +1248,29 @@ def api_referencerange_preview(request):
             return JsonResponse({'status': 'error', 'message': 'Unsupported file format.'})
             
         required_columns = [
-            'investigation_code', 'parameter_code', 'age_group_code', 'gender', 'range_type'
+            'investigation_code', 'parameter_code', 'age_group_code', 'range_type'
         ]
         
-        df_columns = [c.lower().strip() for c in df.columns]
-        for req in required_columns:
-            if req not in df_columns:
-                return JsonResponse({'status': 'error', 'message': f'Missing required column: {req}'})
+        # Normalize headers to handle spaces, case, etc.
+        df.columns = [str(c).strip().lower().replace(' ', '_') for c in df.columns]
+        
+        missing_columns = [req for req in required_columns if req not in df.columns]
+        if missing_columns:
+            msg = 'Missing required columns:\n- ' + '\n- '.join(missing_columns)
+            return JsonResponse({'status': 'error', 'message': msg})
                 
-        df.columns = df_columns
+        from .models import InvestigationParameter, AgeGroup, ParameterReferenceRange, Investigation, ReferenceRangeImportHistory
         
-        from .models import InvestigationParameter, AgeGroup, ParameterReferenceRange
+        # Create staging history record and save file
+        history = ReferenceRangeImportHistory.objects.create(
+            file_name=filename,
+            uploaded_by=request.user if request.user.is_authenticated else None,
+            total_records=len(df),
+            status='Staged',
+            upload_file=file
+        )
         
+        valid_investigations = set(Investigation.objects.values_list('code', flat=True))
         inv_params_cache = list(InvestigationParameter.objects.select_related('investigation', 'parameter').all())
         ag_cache = {ag.code: ag for ag in AgeGroup.objects.all()}
         
@@ -1269,6 +1280,10 @@ def api_referencerange_preview(request):
         
         preview_data = []
         file_keys = set()
+        
+        valid_rows = 0
+        invalid_rows = 0
+        duplicate_rows = 0
         
         for index, row in df.iterrows():
             row_num = index + 2
@@ -1303,26 +1318,32 @@ def api_referencerange_preview(request):
             ip_id = None
             ag_id = None
             
-            if not inv_code or not param_code:
+            if not inv_code:
                 status = 'Error'
-                error_msg = 'Investigation Code and Parameter Code are required'
+                error_msg = 'Investigation Code is required'
+            elif not param_code:
+                status = 'Error'
+                error_msg = 'Parameter Code is required'
             elif not ag_code:
                 status = 'Error'
                 error_msg = 'Age Group Code is required'
             elif gender not in ['All', 'Male', 'Female']:
                 status = 'Error'
                 error_msg = 'Invalid Gender'
+            elif inv_code not in valid_investigations:
+                status = 'Error'
+                error_msg = f"Investigation code '{inv_code}' does not exist."
             else:
                 ip = next((ip for ip in inv_params_cache if ip.investigation.code == inv_code and (ip.code == param_code or (ip.parameter and ip.parameter.code == param_code))), None)
                 if not ip:
                     status = 'Error'
-                    error_msg = 'Investigation-Parameter mapping not found'
+                    error_msg = f"Parameter code '{param_code}' not found for investigation '{inv_code}'"
                 else:
                     ip_id = ip.id
                     ag = ag_cache.get(ag_code)
                     if not ag:
                         status = 'Error'
-                        error_msg = 'Age Group not found'
+                        error_msg = f"Age Group code '{ag_code}' does not exist."
                     else:
                         ag_id = ag.id
                         
@@ -1349,24 +1370,41 @@ def api_referencerange_preview(request):
                         status = 'Duplicate'
                         error_msg = 'Mapping already exists'
             
-            preview_data.append({
-                'row_num': row_num,
-                'investigation_code': inv_code,
-                'parameter_code': param_code,
-                'age_group_code': ag_code,
-                'gender': gender,
-                'range_type': range_type.upper(),
-                'min_value': min_val,
-                'max_value': max_val,
-                'reference_range_text': ref_text,
-                'unit': str(row.get('unit', '')).strip(),
-                'method': str(row.get('method', '')).strip(),
-                'remarks': str(row.get('remarks', '')).strip(),
-                'status': status,
-                'error': error_msg
-            })
+            if status == 'Valid':
+                valid_rows += 1
+            elif status == 'Duplicate':
+                duplicate_rows += 1
+            else:
+                invalid_rows += 1
+                
+            if index < 100:
+                preview_data.append({
+                    'row_num': row_num,
+                    'investigation_code': inv_code,
+                    'parameter_code': param_code,
+                    'age_group_code': ag_code,
+                    'gender': gender,
+                    'range_type': range_type.upper(),
+                    'min_value': min_val,
+                    'max_value': max_val,
+                    'reference_range_text': ref_text,
+                    'unit': str(row.get('unit', '')).strip(),
+                    'method': str(row.get('method', '')).strip(),
+                    'remarks': str(row.get('remarks', '')).strip(),
+                    'status': status,
+                    'error': error_msg
+                })
             
-        return JsonResponse({'status': 'success', 'filename': filename, 'data': preview_data})
+        return JsonResponse({
+            'status': 'success',
+            'filename': filename,
+            'import_id': history.id,
+            'total_rows': len(df),
+            'valid_rows': valid_rows,
+            'invalid_rows': invalid_rows,
+            'duplicate_rows': duplicate_rows,
+            'data': preview_data
+        })
         
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f'Error parsing file: {str(e)}'})
@@ -1377,84 +1415,125 @@ def api_referencerange_import(request):
         
     try:
         data = json.loads(request.body)
-        filename = data.get('filename', 'Unknown')
+        import_id = data.get('import_id')
         update_existing = data.get('update_existing', False)
-        rows = data.get('rows', [])
         
-        from .models import InvestigationParameter, AgeGroup, ParameterReferenceRange, ReferenceRangeImportHistory
+        if not import_id:
+            return JsonResponse({'status': 'error', 'message': 'Missing import_id'})
+            
+        from .models import InvestigationParameter, AgeGroup, ParameterReferenceRange, ReferenceRangeImportHistory, Investigation
         from decimal import Decimal
+        from django.db import transaction, models
+        import pandas as pd
         
-        history = ReferenceRangeImportHistory.objects.create(
-            file_name=filename,
-            uploaded_by=request.user,
-            total_records=data.get('total_file_rows', len(rows)),
-            status='In Progress'
-        )
+        history = ReferenceRangeImportHistory.objects.get(id=import_id)
+        if history.status != 'Staged':
+            return JsonResponse({'status': 'error', 'message': 'This import is already processed.'})
+            
+        history.status = 'In Progress'
+        history.save()
+        
+        file_path = history.upload_file.path
+        if file_path.endswith('.csv'):
+            df = pd.read_csv(file_path, dtype=str)
+        else:
+            df = pd.read_excel(file_path, dtype=str)
+            
+        df.columns = [str(c).strip().lower().replace(' ', '_') for c in df.columns]
         
         imported = 0
         updated = 0
         failed = 0
         
-        for row in rows:
-            try:
-                inv_code = row.get('investigation_code')
-                param_code = row.get('parameter_code')
-                ag_code = row.get('age_group_code')
-                gender = row.get('gender')
-                
-                range_type = row.get('range_type', 'NUMERIC')
-                if range_type == 'NUMERIC': range_type = 'Numeric'
-                elif range_type == 'TEXT': range_type = 'Text'
-                else: range_type = 'None'
-                
-                min_val = row.get('min_value')
-                max_val = row.get('max_value')
-                ref_text = row.get('reference_range_text')
-                unit = row.get('unit')
-                method = row.get('method')
-                remarks = row.get('remarks')
-                
-                min_d = Decimal(min_val) if min_val and str(min_val).lower() != 'nan' else None
-                max_d = Decimal(max_val) if max_val and str(max_val).lower() != 'nan' else None
-                if unit == 'nan': unit = ''
-                if method == 'nan': method = ''
-                if remarks == 'nan': remarks = ''
-                if ref_text == 'nan': ref_text = ''
-                
-                ip = InvestigationParameter.objects.filter(investigation__code=inv_code).filter(models.Q(code=param_code) | models.Q(parameter__code=param_code)).first()
-                ag = AgeGroup.objects.filter(code=ag_code).first()
-                
-                if ip and ag:
-                    obj, created = ParameterReferenceRange.objects.get_or_create(
-                        investigation_parameter=ip,
-                        age_group=ag,
-                        gender=gender
-                    )
-                    
-                    if created:
-                        imported += 1
-                    else:
-                        updated += 1
+        # Pre-cache to speed up import
+        inv_params_cache = list(InvestigationParameter.objects.select_related('investigation', 'parameter').all())
+        ag_cache = {ag.code: ag for ag in AgeGroup.objects.all()}
+        valid_investigations = set(Investigation.objects.values_list('code', flat=True))
+        
+        try:
+            with transaction.atomic():
+                for index, row in df.iterrows():
+                    try:
+                        inv_code = str(row.get('investigation_code', '')).strip()
+                        param_code = str(row.get('parameter_code', '')).strip()
+                        ag_code = str(row.get('age_group_code', '')).strip()
+                        gender = str(row.get('gender', '')).strip().capitalize()
                         
-                    obj.range_type = range_type
-                    obj.min_value = min_d
-                    obj.max_value = max_d
-                    obj.reference_text = ref_text
-                    obj.unit = unit
-                    obj.method = method
-                    obj.remarks = remarks
-                    obj.is_active = True
-                    obj.save()
-                else:
-                    failed += 1
-            except Exception as e:
-                failed += 1
+                        if inv_code == 'nan': inv_code = ''
+                        if param_code == 'nan': param_code = ''
+                        if ag_code == 'nan': ag_code = ''
+                        if gender == 'nan' or not gender: gender = 'All'
+                        if gender not in ['All', 'Male', 'Female']:
+                            failed += 1
+                            continue
+                            
+                        if not inv_code or not param_code or not ag_code:
+                            failed += 1
+                            continue
+                            
+                        if inv_code not in valid_investigations:
+                            failed += 1
+                            continue
+                            
+                        range_type = str(row.get('range_type', '')).strip().upper()
+                        if range_type in ['NUMERIC RANGE', 'NUMERIC']: range_type = 'Numeric'
+                        elif range_type in ['TEXT', 'TEXT / QUALITATIVE', 'QUALITATIVE']: range_type = 'Text'
+                        else: range_type = 'None'
+                        
+                        min_val = str(row.get('min_value', '')).strip()
+                        max_val = str(row.get('max_value', '')).strip()
+                        ref_text = str(row.get('reference_range_text', '')).strip()
+                        unit = str(row.get('unit', '')).strip()
+                        method = str(row.get('method', '')).strip()
+                        remarks = str(row.get('remarks', '')).strip()
+                        
+                        min_d = Decimal(min_val) if min_val and min_val != 'nan' else None
+                        max_d = Decimal(max_val) if max_val and max_val != 'nan' else None
+                        
+                        if unit == 'nan': unit = ''
+                        if method == 'nan': method = ''
+                        if remarks == 'nan': remarks = ''
+                        if ref_text == 'nan': ref_text = ''
+                        
+                        ip = next((ip for ip in inv_params_cache if ip.investigation.code == inv_code and (ip.code == param_code or (ip.parameter and ip.parameter.code == param_code))), None)
+                        ag = ag_cache.get(ag_code)
+                        
+                        if ip and ag:
+                            obj, created = ParameterReferenceRange.objects.get_or_create(
+                                investigation_parameter=ip,
+                                age_group=ag,
+                                gender=gender
+                            )
+                            
+                            if created:
+                                imported += 1
+                            else:
+                                updated += 1
+                                
+                            obj.range_type = range_type
+                            obj.min_value = min_d
+                            obj.max_value = max_d
+                            obj.reference_text = ref_text
+                            obj.unit = unit
+                            obj.method = method
+                            obj.remarks = remarks
+                            obj.is_active = True
+                            obj.save()
+                        else:
+                            failed += 1
+                    except Exception as e:
+                        failed += 1
+                        
+                history.imported = imported
+                history.updated = updated
+                history.failed = failed
+                history.status = 'Completed'
+                history.save()
                 
-        history.imported = imported
-        history.updated = updated
-        history.failed = failed
-        history.status = 'Completed'
-        history.save()
+        except Exception as e:
+            history.status = 'Failed'
+            history.save()
+            return JsonResponse({'status': 'error', 'message': str(e)})
         
         return JsonResponse({
             'status': 'success',

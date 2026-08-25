@@ -35,46 +35,34 @@
         width: 100%;
         border-collapse: collapse;
         margin-top: 1rem;
-        overflow: hidden;
-        border-radius: 8px 8px 0 0;
     }
     .perm-table th {
-        background: #071d2b;
-        color: #ffffff !important;
+        background: rgba(30, 41, 59, 0.5);
+        color: var(--text-muted);
         text-transform: uppercase;
-        font-size: 0.78rem;
-        font-weight: 700;
+        font-size: 0.75rem;
         letter-spacing: 0.05em;
-        padding: 0.95rem 1rem;
+        padding: 0.85rem 1rem;
         text-align: center;
-        border-bottom: 3px solid #0d9488;
+        border-bottom: 2px solid var(--border-color);
     }
     .perm-table th:first-child {
         text-align: left;
     }
     .perm-table td {
         padding: 0.85rem 1rem;
-        border-bottom: 1px solid #e2e8f0;
+        border-bottom: 1px solid var(--border-color);
         text-align: center;
         font-size: 0.9rem;
-        color: #0f172a;
-        font-weight: 500;
-    }
-    .perm-table td:first-child {
-        text-align: left;
-        color: #0f172a;
-        font-weight: 600;
     }
     .perm-table tr.section-row td {
-        background: #e0f2fe;
-        color: #0369a1;
-        font-weight: 800;
-        font-size: 0.82rem;
+        background: rgba(15, 23, 42, 0.3);
+        color: var(--accent-blue);
+        font-weight: 700;
+        font-size: 0.78rem;
         letter-spacing: 0.08em;
         text-align: left;
-        padding: 0.65rem 1rem;
-        border-top: 1px solid #bae6fd;
-        border-bottom: 1px solid #bae6fd;
+        padding: 0.6rem 1rem;
     }
     .switch {
         position: relative;
@@ -91,7 +79,7 @@
         position: absolute;
         cursor: pointer;
         top: 0; left: 0; right: 0; bottom: 0;
-        background-color: #94a3b8;
+        background-color: #334155;
         transition: .3s;
         border-radius: 24px;
     }
@@ -114,7 +102,7 @@
     }
     input:disabled + .slider {
         background-color: #059669;
-        opacity: 0.85;
+        opacity: 0.7;
         cursor: not-allowed;
     }
     .role-badge {
@@ -122,23 +110,7 @@
         padding: 3px 8px;
         border-radius: 4px;
         font-size: 0.75rem;
-        font-weight: 700;
-    }
-    .role-badge.badge-purple {
-        background: #8b5cf6;
-        color: #ffffff;
-    }
-    .role-badge.badge-blue {
-        background: #0284c7;
-        color: #ffffff;
-    }
-    .role-badge.badge-green {
-        background: #059669;
-        color: #ffffff;
-    }
-    .role-badge.badge-amber {
-        background: #d97706;
-        color: #ffffff;
+        font-weight: 600;
     }
 </style>
 
@@ -150,7 +122,13 @@
                 Configure which sidebar menu items and operational tools each User Role profile can view.
             </p>
         </div>
-        <div style="display: flex; gap: 0.75rem;">
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <a href="{% url 'users:roles_overview' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
+                <i class="bi bi-gear"></i> Manage Roles
+            </a>
+            <a href="{% url 'users:profile_permissions' %}" class="btn btn-primary" style="font-size: 0.85rem; background: var(--accent-blue);">
+                <i class="bi bi-shield-lock"></i> Detailed Permissions Matrix
+            </a>
             <a href="{% url 'users:list' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
                 <i class="bi bi-arrow-left"></i> Back to Users Directory
             </a>
@@ -167,15 +145,15 @@
                         <th style="width: 40%;">Menu Item / Feature</th>
                         {% for r in roles %}
                         <th style="width: 15%;">
-                            <div style="color: #ffffff; font-weight: 700; margin-bottom: 4px;">{{ r.label }}</div>
+                            <div>{{ r.label }}</div>
                             {% if r.code == 'ADMIN' %}
-                                <span class="role-badge badge-purple">ADMIN</span>
+                                <span class="role-badge badge-purple" style="margin-top: 4px;">ADMIN</span>
                             {% elif r.code == 'MANAGER' %}
-                                <span class="role-badge badge-blue">MANAGER</span>
+                                <span class="role-badge badge-blue" style="margin-top: 4px;">MANAGER</span>
                             {% elif r.code == 'AUDITOR' %}
-                                <span class="role-badge badge-amber">AUDITOR</span>
+                                <span class="role-badge" style="margin-top: 4px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">AUDITOR</span>
                             {% else %}
-                                <span class="role-badge badge-green">STAFF</span>
+                                <span class="role-badge badge-green" style="margin-top: 4px;">STAFF</span>
                             {% endif %}
                         </th>
                         {% endfor %}

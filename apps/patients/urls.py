@@ -6,6 +6,10 @@ from .views import (
     DepartmentUnitCreateView, DepartmentUnitUpdateView, DepartmentUnitDeleteView,
     get_department_units, OPCensusView, PatientReviewView, PatientReviewReportView, PatientMedicalHistoryPrintView
 )
+from .import_views import (
+    PatientImportView, PatientImportHistoryView, api_patient_download_template,
+    api_patient_preview, api_patient_import
+)
 
 app_name = 'patients'
 
@@ -35,4 +39,11 @@ urlpatterns = [
     path('units/<int:pk>/delete/', DepartmentUnitDeleteView.as_view(), name='unit_delete'),
     
     path('api/units/', get_department_units, name='api_units'),
+    
+    # Import endpoints
+    path('import/', PatientImportView.as_view(), name='import'),
+    path('import/history/', PatientImportHistoryView.as_view(), name='import_history'),
+    path('api/import/template/', api_patient_download_template, name='api_import_template'),
+    path('api/import/preview/', api_patient_preview, name='api_import_preview'),
+    path('api/import/process/', api_patient_import, name='api_import_process'),
 ]

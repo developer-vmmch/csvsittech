@@ -143,8 +143,10 @@ class Patient(TimeStampedModel):
 
     # Patient Identification
     patient_id = models.CharField(max_length=50, unique=True, db_index=True)
+    op_number = models.CharField(max_length=50, unique=True, blank=True, null=True, verbose_name="OP Number")
     ipno = models.CharField(max_length=50, blank=True, null=True, verbose_name="IPNO")
     centre = models.CharField(max_length=50, choices=CentreChoices.choices, default=CentreChoices.VMMCH, verbose_name="Centre")
+    registration_date = models.DateField(default=timezone.now, verbose_name="Registration Date")
     
     # Personal Info
     title = models.CharField(max_length=10, choices=TitleChoices.choices, default='-')
@@ -163,8 +165,10 @@ class Patient(TimeStampedModel):
     religion = models.CharField(max_length=30, blank=True, null=True)
     
     # Guardian Info
+    guardian_title = models.CharField(max_length=10, choices=TitleChoices.choices, default='-')
     guardian_relationship = models.CharField(max_length=10, choices=GuardianRelChoices.choices, default='-')
     guardian_name = models.CharField(max_length=100, blank=True, null=True)
+    guardian_phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Guardian Phone")
     company_name = models.CharField(max_length=100, default="INDIVIDUAL")
     patient_company = models.ForeignKey(PatientCompany, on_delete=models.SET_NULL, null=True, blank=True, related_name='patients')
     abha_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="ABHAID")
@@ -180,6 +184,9 @@ class Patient(TimeStampedModel):
     
     # Medical & Doctor Assignment
     mobile_no = models.CharField(max_length=20, verbose_name="Mobile No (without 91)")
+    alternate_phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Alternate Phone")
+    email = models.EmailField(blank=True, null=True, verbose_name="Email")
+    emergency_contact_phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Emergency Contact Phone")
     blood_group = models.CharField(max_length=10, blank=True, null=True)
     complaint = models.TextField(blank=True, null=True)
     occupation = models.CharField(max_length=100, blank=True, null=True)
@@ -273,3 +280,20 @@ class PatientVisit(TimeStampedModel):
 
     def __str__(self):
         return f"Visit #{self.visit_no} - {self.patient.name} ({self.visit_date.strftime('%d/%b/%Y')})"
+
+class PatientImportHistory(TimeStampedModel):
+    file_name = models.CharField(max_length=255)
+    upload_file = models.FileField(upload_to='patient_imports/', null=True, blank=True)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    total_records = models.IntegerField(default=0)
+    imported = models.IntegerField(default=0)
+    updated = models.IntegerField(default=0)
+    skipped = models.IntegerField(default=0)
+    failed = models.IntegerField(default=0)
+    status = models.CharField(max_length=50, default='Completed')
+    
+    class Meta:
+        ordering = ['-created_at']
+        
+    def __str__(self):
+        return f"{self.file_name} on {self.created_at.strftime('%Y-%m-%d %H:%M')}"

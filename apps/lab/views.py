@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from apps.core.mixins import MenuAccessRequiredMixin
+from apps.core.mixins import MenuAccessRequiredMixin, GranularPermissionRequiredMixin
 from django.contrib import messages
 from django.http import JsonResponse
 import json
@@ -25,14 +25,16 @@ from apps.patients.models import Patient
 # --- Master Entities CRUD ---
 
 class BaseLabMasterView(LoginRequiredMixin, MenuAccessRequiredMixin):
-    menu_key = 'administration' # Placeholder, since it should be 'lab_master' but need to check existing menus
+    menu_key = 'administration' # Fallback for now
 
-class DiagnosisListView(BaseLabMasterView, ListView):
+class DiagnosisListView(LoginRequiredMixin, GranularPermissionRequiredMixin, ListView):
+    permission_required = 'lab_master.diagnosis.view'
     model = Diagnosis
     template_name = 'lab/master/diagnosis_list.html'
     context_object_name = 'diagnoses'
 
-class DiagnosisCreateView(BaseLabMasterView, CreateView):
+class DiagnosisCreateView(LoginRequiredMixin, GranularPermissionRequiredMixin, CreateView):
+    permission_required = 'lab_master.diagnosis.create'
     model = Diagnosis
     form_class = DiagnosisForm
     template_name = 'lab/master/diagnosis_form.html'
@@ -42,7 +44,8 @@ class DiagnosisCreateView(BaseLabMasterView, CreateView):
         messages.success(self.request, "Diagnosis created successfully!")
         return super().form_valid(form)
 
-class DiagnosisUpdateView(BaseLabMasterView, UpdateView):
+class DiagnosisUpdateView(LoginRequiredMixin, GranularPermissionRequiredMixin, UpdateView):
+    permission_required = 'lab_master.diagnosis.update'
     model = Diagnosis
     form_class = DiagnosisForm
     template_name = 'lab/master/diagnosis_form.html'
@@ -52,7 +55,8 @@ class DiagnosisUpdateView(BaseLabMasterView, UpdateView):
         messages.success(self.request, "Diagnosis updated successfully!")
         return super().form_valid(form)
 
-class InvestigationListView(BaseLabMasterView, ListView):
+class InvestigationListView(LoginRequiredMixin, GranularPermissionRequiredMixin, ListView):
+    permission_required = 'lab_master.investigation.view'
     model = Investigation
     template_name = 'lab/master/investigation_list.html'
     context_object_name = 'investigations'
@@ -61,12 +65,14 @@ class InvestigationListView(BaseLabMasterView, ListView):
         return super().get_queryset().prefetch_related('parameters', 'department', 'sample_type')
 
 from django.views.generic import DetailView
-class InvestigationDetailView(BaseLabMasterView, DetailView):
+class InvestigationDetailView(LoginRequiredMixin, GranularPermissionRequiredMixin, DetailView):
+    permission_required = 'lab_master.investigation.view'
     model = Investigation
     template_name = 'lab/master/investigation_detail.html'
     context_object_name = 'investigation'
 
-class InvestigationCreateView(BaseLabMasterView, CreateView):
+class InvestigationCreateView(LoginRequiredMixin, GranularPermissionRequiredMixin, CreateView):
+    permission_required = 'lab_master.investigation.create'
     model = Investigation
     form_class = InvestigationForm
     template_name = 'lab/master/investigation_form.html'
@@ -76,7 +82,8 @@ class InvestigationCreateView(BaseLabMasterView, CreateView):
         messages.success(self.request, "Investigation created successfully!")
         return super().form_valid(form)
 
-class InvestigationUpdateView(BaseLabMasterView, UpdateView):
+class InvestigationUpdateView(LoginRequiredMixin, GranularPermissionRequiredMixin, UpdateView):
+    permission_required = 'lab_master.investigation.update'
     model = Investigation
     form_class = InvestigationForm
     template_name = 'lab/master/investigation_form.html'
@@ -86,12 +93,14 @@ class InvestigationUpdateView(BaseLabMasterView, UpdateView):
         messages.success(self.request, "Investigation updated successfully!")
         return super().form_valid(form)
 
-class ParameterListView(BaseLabMasterView, ListView):
+class ParameterListView(LoginRequiredMixin, GranularPermissionRequiredMixin, ListView):
+    permission_required = 'lab_master.parameter.view'
     model = InvestigationParameter
     template_name = 'lab/master/parameter_list.html'
     context_object_name = 'parameters'
 
-class ParameterCreateView(BaseLabMasterView, CreateView):
+class ParameterCreateView(LoginRequiredMixin, GranularPermissionRequiredMixin, CreateView):
+    permission_required = 'lab_master.parameter.create'
     model = InvestigationParameter
     form_class = ParameterForm
     template_name = 'lab/master/parameter_form.html'
@@ -101,7 +110,8 @@ class ParameterCreateView(BaseLabMasterView, CreateView):
         messages.success(self.request, "Parameter created successfully!")
         return super().form_valid(form)
 
-class ParameterUpdateView(BaseLabMasterView, UpdateView):
+class ParameterUpdateView(LoginRequiredMixin, GranularPermissionRequiredMixin, UpdateView):
+    permission_required = 'lab_master.parameter.update'
     model = InvestigationParameter
     form_class = ParameterForm
     template_name = 'lab/master/parameter_form.html'
@@ -116,12 +126,14 @@ class ParameterUpdateView(BaseLabMasterView, UpdateView):
         messages.success(self.request, "Parameter updated successfully!")
         return super().form_valid(form)
 
-class AgeGroupListView(BaseLabMasterView, ListView):
+class AgeGroupListView(LoginRequiredMixin, GranularPermissionRequiredMixin, ListView):
+    permission_required = 'lab_master.age_group.view'
     model = AgeGroup
     template_name = 'lab/master/agegroup_list.html'
     context_object_name = 'age_groups'
 
-class AgeGroupCreateView(BaseLabMasterView, CreateView):
+class AgeGroupCreateView(LoginRequiredMixin, GranularPermissionRequiredMixin, CreateView):
+    permission_required = 'lab_master.age_group.create'
     model = AgeGroup
     form_class = AgeGroupForm
     template_name = 'lab/master/agegroup_form.html'
@@ -131,7 +143,8 @@ class AgeGroupCreateView(BaseLabMasterView, CreateView):
         messages.success(self.request, "Age Group created successfully!")
         return super().form_valid(form)
 
-class AgeGroupUpdateView(BaseLabMasterView, UpdateView):
+class AgeGroupUpdateView(LoginRequiredMixin, GranularPermissionRequiredMixin, UpdateView):
+    permission_required = 'lab_master.age_group.update'
     model = AgeGroup
     form_class = AgeGroupForm
     template_name = 'lab/master/agegroup_form.html'
@@ -143,7 +156,8 @@ class AgeGroupUpdateView(BaseLabMasterView, UpdateView):
 
 
 # --- Reference Range Grid ---
-class ReferenceRangeGridView(BaseLabMasterView, TemplateView):
+class ReferenceRangeGridView(LoginRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
+    permission_required = 'lab_master.reference_range.view'
     template_name = 'lab/master/reference_range_grid.html'
 
     def get_context_data(self, **kwargs):
@@ -153,7 +167,8 @@ class ReferenceRangeGridView(BaseLabMasterView, TemplateView):
         context['diagnoses'] = Diagnosis.objects.filter(is_active=True)
         return context
 
-class InvestigationParameterMappingView(BaseLabMasterView, TemplateView):
+class InvestigationParameterMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
+    permission_required = 'lab_master.mapping.view'
     template_name = 'lab/master/investigation_parameter_mapping.html'
     
     def get_context_data(self, **kwargs):
@@ -177,11 +192,15 @@ class InvestigationParameterMappingView(BaseLabMasterView, TemplateView):
         
         return context
 
+from apps.core.mixins import granular_permission_required
+
+@granular_permission_required('lab_master.mapping.view')
 def get_all_parameters(request):
     params = InvestigationParameter.objects.filter(is_active=True).values('code', 'name').distinct().order_by('name')
     param_list = [{'id': p['code'], 'code': p['code'], 'name': p['name']} for p in params if p['code']]
     return JsonResponse({'parameters': param_list})
 
+@granular_permission_required('lab_master.mapping.update')
 def save_investigation_parameters(request):
     if request.method == 'POST':
         try:
@@ -230,6 +249,7 @@ def save_investigation_parameters(request):
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
 
 @csrf_exempt
+@granular_permission_required('lab_master.parameter.create')
 def api_add_parameter(request):
     if request.method == 'POST':
         try:
@@ -266,6 +286,7 @@ def api_add_parameter(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
 
+@granular_permission_required('lab_master.reference_range.view')
 def get_investigation_parameters(request):
     investigation_id = request.GET.get('investigation_id')
     if not investigation_id:
@@ -275,6 +296,7 @@ def get_investigation_parameters(request):
     data = [{'id': p.id, 'parameter_id': p.code, 'name': p.name or (p.parameter.name if p.parameter else ''), 'unit': p.unit or (p.parameter.default_unit if p.parameter else '')} for p in params]
     return JsonResponse({'parameters': data})
 
+@granular_permission_required('lab_master.reference_range.view')
 def get_reference_ranges(request):
     inv_param_id = request.GET.get('inv_param_id')
     if not inv_param_id:
@@ -298,6 +320,7 @@ def get_reference_ranges(request):
         })
     return JsonResponse({'ranges': data})
 
+@granular_permission_required('lab_master.reference_range.view')
 def get_reference_ranges_bulk(request):
     investigation_id = request.GET.get('investigation_id')
     age_group_id = request.GET.get('age_group_id')
@@ -331,6 +354,7 @@ def get_reference_ranges_bulk(request):
         })
     return JsonResponse({'ranges': data})
 
+@granular_permission_required('lab_master.reference_range.view')
 def get_reference_ranges_all(request):
     inv_id = request.GET.get('inv_id')
     ag_id = request.GET.get('ag_id')
@@ -374,6 +398,7 @@ def get_reference_ranges_all(request):
         })
     return JsonResponse({'ranges': data})
 
+@granular_permission_required('lab_master.reference_range.update')
 def save_reference_range(request):
     if request.method == 'POST':
         try:
@@ -428,6 +453,7 @@ def save_reference_range(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
 
+@granular_permission_required('lab_master.reference_range.create')
 def save_multiple_reference_ranges(request):
     if request.method == 'POST':
         try:
@@ -503,6 +529,7 @@ def save_multiple_reference_ranges(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
 
+@granular_permission_required('lab_master.reference_range.delete')
 def delete_reference_range(request, pk):
     if request.method == 'POST':
         try:
@@ -529,7 +556,8 @@ def api_add_sample_type(request):
             return JsonResponse({'status': 'success', 'id': st.id, 'name': st.name})
     return JsonResponse({'status': 'error'})
 
-class LegacyMappingView(BaseLabMasterView, TemplateView):
+class LegacyMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
+    permission_required = 'lab_master.legacy_mapping.view'
     template_name = 'lab/master/legacy_mapping.html'
 
     def get_context_data(self, **kwargs):
@@ -554,6 +582,7 @@ class LegacyMappingView(BaseLabMasterView, TemplateView):
         
         return context
 
+@granular_permission_required('lab_master.legacy_mapping.update')
 def process_legacy_mapping(request):
     """
     API endpoint to handle legacy mapping operations from both tabs.
@@ -659,7 +688,8 @@ def process_legacy_mapping(request):
         return JsonResponse({'status': 'error', 'message': str(e)})
 
 # --- Transaction Screens ---
-class OrderEntryView(BaseLabMasterView, TemplateView):
+class OrderEntryView(LoginRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
+    permission_required = 'lab_orders.create_lab_order.view'
     template_name = 'lab/orders/order_entry.html'
 
     def get_context_data(self, **kwargs):
@@ -704,7 +734,8 @@ class OrderEntryView(BaseLabMasterView, TemplateView):
         messages.success(request, f"Successfully created {len(investigation_ids)} order(s) for patient {patient.name}.")
         return redirect('lab:order_entry')
 
-class ResultEntryListView(BaseLabMasterView, ListView):
+class ResultEntryListView(LoginRequiredMixin, GranularPermissionRequiredMixin, ListView):
+    permission_required = 'lab_orders.lab_order_list.view'
     model = PatientInvestigationOrder
     template_name = 'lab/orders/result_entry_list.html'
     context_object_name = 'orders'
@@ -712,7 +743,8 @@ class ResultEntryListView(BaseLabMasterView, ListView):
     def get_queryset(self):
         return PatientInvestigationOrder.objects.filter(status=PatientInvestigationOrder.StatusChoices.PENDING).select_related('patient', 'investigation')
 
-class ResultEntryDetailView(BaseLabMasterView, TemplateView):
+class ResultEntryDetailView(LoginRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
+    permission_required = 'lab_orders.lab_order_list.view'
     template_name = 'lab/orders/result_entry.html'
 
     def get_context_data(self, **kwargs):

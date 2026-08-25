@@ -61,6 +61,12 @@
                             <span>Patient List</span>
                         </a>
                     </li>
+                    <li class="{% if request.resolver_match.url_name == 'import' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
+                        <a href="{% url 'patients:import' %}">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                            <span>Patient Import</span>
+                        </a>
+                    </li>
                     {% endif %}
 
                     {% if not user.is_authenticated or user.get_menu_mapping.review %}
