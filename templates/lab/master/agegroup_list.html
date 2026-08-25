@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Age Group Master | VMMCerp{% endblock %}
+{% block page_heading %}Age Group Master{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">Age Groups</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Manage age groupings used for reference ranges.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <a href="{% url 'lab:agegroup_import' %}" class="btn btn-secondary">
+                <i class="bi bi-file-earmark-spreadsheet"></i> Import
+            </a>
+            <a href="{% url 'lab:agegroup_add' %}" class="btn btn-primary">
+                <i class="bi bi-person-lines-fill"></i> + Add Age Group
+            </a>
+        </div>
+    </div>
+
+    {% if age_groups %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Age Range</th>
+                    <th>Gender</th>
+                    <th>Pregnancy</th>
+                    <th>Sort Order</th>
+                    <th>Active</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ag in age_groups %}
+                <tr>
+                    <td><strong style="color: var(--accent-blue);">{{ ag.code }}</strong></td>
+                    <td>{{ ag.label }}</td>
+                    <td>{{ ag.min_age_value }} {{ ag.get_min_age_unit_display }} - {{ ag.max_age_value }} {{ ag.get_max_age_unit_display }}</td>
+                    <td>{{ ag.get_gender_display }}</td>
+                    <td>{% if ag.pregnancy_applicable %}Yes{% else %}No{% endif %}</td>
+                    <td>{{ ag.sort_order }}</td>
+                    <td>
+                        {% if ag.is_active %}
+                            <span class="badge" style="background: #dcfce7; color: #166534; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">Active</span>
+                        {% else %}
+                            <span class="badge" style="background: #fee2e2; color: #991b1b; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <a href="{% url 'lab:agegroup_edit' ag.id %}" class="btn-icon" title="Edit Age Group">
+                                <i class="bi bi-pencil-square" style="color: var(--accent-blue);"></i> Edit
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        <i class="bi bi-person-lines-fill" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+        <p style="font-size: 1.1rem;">No age groups configured.</p>
+        <a href="{% url 'lab:agegroup_add' %}" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">
+            <i class="bi bi-person-lines-fill"></i> Add First Age Group
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

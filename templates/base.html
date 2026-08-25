@@ -128,6 +128,82 @@
                 </ul>
             </li>
 
+            <!-- Lab Master Module -->
+            <li class="nav-item has-submenu {% if request.resolver_match.namespace == 'lab' %}open active-parent{% endif %}">
+                <a href="javascript:void(0);" class="submenu-toggle" title="Lab Investigation Master">
+                    <i class="bi bi-droplet-fill" style="color: #ef4444;"></i>
+                    <span>Lab Master</span>
+                    <i class="bi bi-chevron-down submenu-chevron"></i>
+                </a>
+                <ul class="submenu-list">
+                    <li class="{% if request.resolver_match.url_name == 'diagnosis_list' %}active{% endif %}">
+                        <a href="{% url 'lab:diagnosis_list' %}">
+                            <i class="bi bi-heart-pulse"></i>
+                            <span>Diagnosis</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'investigation_list' %}active{% endif %}">
+                        <a href="{% url 'lab:investigation_list' %}">
+                            <i class="bi bi-file-medical"></i>
+                            <span>Investigation</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'parameter_list' %}active{% endif %}">
+                        <a href="{% url 'lab:parameter_list' %}">
+                            <i class="bi bi-list-check"></i>
+                            <span>Parameter</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'agegroup_list' %}active{% endif %}">
+                        <a href="{% url 'lab:agegroup_list' %}">
+                            <i class="bi bi-person-lines-fill"></i>
+                            <span>Age Group</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'investigation_parameter_mapping' %}active{% endif %}">
+                        <a href="{% url 'lab:investigation_parameter_mapping' %}">
+                            <i class="bi bi-diagram-3"></i>
+                            <span>Investigation Parameter Mapping</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'reference_range_grid' %}active{% endif %}">
+                        <a href="{% url 'lab:reference_range_grid' %}">
+                            <i class="bi bi-grid-3x3-gap"></i>
+                            <span>Reference Range Grid</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'legacy_mapping' %}active{% endif %}">
+                        <a href="{% url 'lab:legacy_mapping' %}">
+                            <i class="bi bi-arrow-left-right"></i>
+                            <span>Legacy Mapping</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Lab Orders Module -->
+            <li class="nav-item has-submenu">
+                <a href="javascript:void(0);" class="submenu-toggle" title="Lab Orders & Results">
+                    <i class="bi bi-clipboard2-pulse" style="color: #8b5cf6;"></i>
+                    <span>Lab Orders</span>
+                    <i class="bi bi-chevron-down submenu-chevron"></i>
+                </a>
+                <ul class="submenu-list">
+                    <li class="{% if request.resolver_match.url_name == 'order_entry' %}active{% endif %}">
+                        <a href="{% url 'lab:order_entry' %}">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>New Order</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'result_entry_list' or request.resolver_match.url_name == 'result_entry_detail' %}active{% endif %}">
+                        <a href="{% url 'lab:result_entry_list' %}">
+                            <i class="bi bi-journal-text"></i>
+                            <span>Result Entry</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
             <!-- General Administration Module (Collapsible Submenu) -->
             {% if not user.is_authenticated or user.get_menu_mapping.system_section %}
             <li class="nav-item has-submenu {% if request.resolver_match.namespace == 'users' %}open active-parent{% endif %}">

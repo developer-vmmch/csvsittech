@@ -11,18 +11,54 @@ class DepartmentForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'class': 'form-textarea', 'rows': 3, 'placeholder': 'Department description'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
         }
+        
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name:
+            name = name.strip()
+            qs = Department.objects.filter(name__iexact=name)
+            if self.instance and self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise forms.ValidationError("Department name already exists.")
+        return name
+
+    def clean_code(self):
+        code = self.cleaned_data.get('code')
+        if code:
+            code = code.strip()
+            qs = Department.objects.filter(code__iexact=code)
+            if self.instance and self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise forms.ValidationError("Department code already exists.")
+        return code
 
 
 class DepartmentUnitForm(forms.ModelForm):
     class Meta:
         model = DepartmentUnit
-        fields = ['department', 'unit_name', 'head_doctor', 'is_active']
+        fields = ['department', 'unit_name', 'code', 'unit_type', 'display_order', 'is_active']
         widgets = {
             'department': forms.Select(attrs={'class': 'form-select'}),
-            'unit_name': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'e.g. HOD-GENERAL MEDICINE-V or UNIT-I DR. KUMAR', 'required': 'required'}),
-            'head_doctor': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Head Doctor Name'}),
+            'unit_name': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'e.g. HOD-GENERAL MEDICINE-V', 'required': 'required'}),
+            'code': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'e.g. GM-V', 'required': 'required'}),
+            'unit_type': forms.Select(attrs={'class': 'form-select'}),
+            'display_order': forms.NumberInput(attrs={'class': 'form-input', 'min': '0'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
         }
+        
+    def clean_code(self):
+        code = self.cleaned_data.get('code')
+        if code:
+            code = code.strip()
+            # Case insensitive check
+            qs = DepartmentUnit.objects.filter(code__iexact=code)
+            if self.instance and self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise forms.ValidationError("Unit/Doctor Code already exists.")
+        return code
 
 
 class PatientCompanyForm(forms.ModelForm):

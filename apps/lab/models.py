@@ -1,0 +1,369 @@
+from django.db import models
+from django.conf import settings
+from apps.core.models import TimeStampedModel
+from apps.patients.models import Patient
+
+class Diagnosis(TimeStampedModel):
+    name = models.CharField(max_length=200, verbose_name="Diagnosis Name")
+    code = models.CharField(max_length=50, unique=True, verbose_name="ICD-11 Code")
+    icd11_title = models.CharField(max_length=255, blank=True, null=True, verbose_name="ICD-11 Title")
+    chapter = models.CharField(max_length=100, blank=True, null=True, verbose_name="Chapter")
+    synonyms = models.TextField(blank=True, null=True, verbose_name="Synonyms")
+    legacy_code = models.CharField(max_length=50, blank=True, null=True, verbose_name="Legacy Code")
+    source = models.CharField(max_length=100, blank=True, null=True, verbose_name="Source (e.g. WHO, Import)")
+    icd_version = models.CharField(max_length=50, blank=True, null=True, verbose_name="ICD Version")
+    who_uri = models.URLField(blank=True, null=True, verbose_name="WHO URI")
+    is_active = models.BooleanField(default=True, verbose_name="Active Status")
+
+    class Meta:
+        ordering = ['name']
+        verbose_name_plural = "Diagnoses"
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+
+class DiagnosisImportHistory(TimeStampedModel):
+    file_name = models.CharField(max_length=255)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='diagnosis_imports')
+    total_rows = models.IntegerField(default=0)
+    imported = models.IntegerField(default=0)
+    updated = models.IntegerField(default=0)
+    duplicates = models.IntegerField(default=0)
+    failed = models.IntegerField(default=0)
+    status = models.CharField(max_length=50, default='Completed')
+    
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.file_name} on {self.created_at}"
+
+class InvestigationImportHistory(TimeStampedModel):
+    file_name = models.CharField(max_length=255)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='investigation_imports')
+    total_investigations = models.IntegerField(default=0)
+    total_parameters = models.IntegerField(default=0)
+    investigations_imported = models.IntegerField(default=0)
+    investigations_updated = models.IntegerField(default=0)
+    investigations_skipped = models.IntegerField(default=0)
+    parameters_imported = models.IntegerField(default=0)
+    parameters_updated = models.IntegerField(default=0)
+    parameters_skipped = models.IntegerField(default=0)
+    failed_records = models.IntegerField(default=0)
+    status = models.CharField(max_length=50, default='Completed')
+    
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.file_name} on {self.created_at}"
+
+class ChiefComplaint(TimeStampedModel):
+    name = models.CharField(max_length=200, verbose_name="Complaint Name")
+    legacy_code = models.CharField(max_length=50, blank=True, null=True, verbose_name="Legacy Code")
+    is_active = models.BooleanField(default=True, verbose_name="Active Status")
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+class HospitalService(TimeStampedModel):
+    class CategoryChoices(models.TextChoices):
+        BED_CHARGE = 'Bed Charge', 'Bed Charge'
+        AMBULANCE = 'Ambulance', 'Ambulance'
+        OT_CHARGE = 'OT Charge', 'OT Charge'
+        DIALYSIS = 'Dialysis', 'Dialysis'
+        PHYSIO = 'Physiotherapy Modality', 'Physiotherapy Modality'
+        OTHER = 'Other', 'Other'
+
+    name = models.CharField(max_length=200, verbose_name="Service Name")
+    code = models.CharField(max_length=50, unique=True, verbose_name="Code (Legacy Accession)")
+    category = models.CharField(max_length=50, choices=CategoryChoices.choices, default=CategoryChoices.OTHER)
+    is_active = models.BooleanField(default=True, verbose_name="Active Status")
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+class StagingDiagnosis(models.Model):
+    legacy_id = models.CharField(max_length=50, unique=True)
+    legacy_text = models.CharField(max_length=255)
+    migrated = models.BooleanField(default=False)
+    migrated_to_type = models.CharField(max_length=50, blank=True, null=True, help_text="Diagnosis, ChiefComplaint, or Skipped")
+    migrated_to_id = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['legacy_id']
+
+    def __str__(self):
+        return f"{self.legacy_text} ({self.legacy_id})"
+
+class StagingInvestigation(models.Model):
+    legacy_code = models.CharField(max_length=50, unique=True)
+    legacy_text = models.CharField(max_length=255)
+    migrated = models.BooleanField(default=False)
+    migrated_to_type = models.CharField(max_length=50, blank=True, null=True, help_text="Investigation, HospitalService, or Skipped")
+    migrated_to_id = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['legacy_code']
+
+    def __str__(self):
+        return f"{self.legacy_text} ({self.legacy_code})"
+
+class LabDepartment(TimeStampedModel):
+    name = models.CharField(max_length=100, unique=True, verbose_name="Department Name")
+    is_active = models.BooleanField(default=True, verbose_name="Active Status")
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+class SampleType(TimeStampedModel):
+    name = models.CharField(max_length=100, unique=True, verbose_name="Sample Type")
+    is_active = models.BooleanField(default=True, verbose_name="Active Status")
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+class Investigation(TimeStampedModel):
+    name = models.CharField(max_length=200, verbose_name="Investigation Name")
+    short_name = models.CharField(max_length=50, blank=True, null=True, verbose_name="Short Name / Alias")
+    code = models.CharField(max_length=50, unique=True, verbose_name="Investigation Code")
+    department = models.ForeignKey(LabDepartment, on_delete=models.SET_NULL, null=True, blank=True, related_name='investigations', verbose_name="Department")
+    sample_type = models.ForeignKey(SampleType, on_delete=models.SET_NULL, null=True, blank=True, related_name='investigations', verbose_name="Sample Type")
+    is_panel = models.BooleanField(default=False, verbose_name="Is Panel (Multi-parameter)")
+    turnaround_time_hours = models.PositiveIntegerField(null=True, blank=True, verbose_name="Turnaround Time (Hours)")
+    legacy_code = models.CharField(max_length=50, blank=True, null=True, verbose_name="Legacy Code")
+    is_active = models.BooleanField(default=True, verbose_name="Active Status")
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+class Parameter(TimeStampedModel):
+    class DataTypeChoices(models.TextChoices):
+        NUMERIC = 'NUMERIC', 'Numeric'
+        TEXT = 'TEXT', 'Text'
+        SELECT = 'SELECT', 'Select/Dropdown'
+
+    name = models.CharField(max_length=200, verbose_name="Parameter Name")
+    code = models.CharField(max_length=50, unique=True, verbose_name="Parameter Code")
+    default_unit = models.CharField(max_length=50, blank=True, null=True, verbose_name="Default Unit")
+    data_type = models.CharField(max_length=20, choices=DataTypeChoices.choices, default=DataTypeChoices.NUMERIC, verbose_name="Data Type")
+    is_active = models.BooleanField(default=True, verbose_name="Active Status")
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+class AgeGroup(TimeStampedModel):
+    class AgeUnitChoices(models.TextChoices):
+        DAY = 'Days', 'Days'
+        MONTH = 'Months', 'Months'
+        YEAR = 'Years', 'Years'
+
+    class GenderChoices(models.TextChoices):
+        ALL = 'All', 'All'
+        MALE = 'Male', 'Male'
+        FEMALE = 'Female', 'Female'
+
+    code = models.CharField(max_length=50, unique=True, verbose_name="Age Group Code", default="DEFAULT")
+    label = models.CharField(max_length=100, verbose_name="Age Group Name")
+    min_age_value = models.PositiveIntegerField(null=True, blank=True, verbose_name="Min Age Value")
+    min_age_unit = models.CharField(max_length=10, choices=AgeUnitChoices.choices, default=AgeUnitChoices.YEAR, verbose_name="Min Age Unit")
+    max_age_value = models.PositiveIntegerField(null=True, blank=True, verbose_name="Max Age Value")
+    max_age_unit = models.CharField(max_length=10, choices=AgeUnitChoices.choices, default=AgeUnitChoices.YEAR, verbose_name="Max Age Unit")
+    gender = models.CharField(max_length=10, choices=GenderChoices.choices, default=GenderChoices.ALL, verbose_name="Gender")
+    pregnancy_applicable = models.BooleanField(default=False, verbose_name="Pregnancy Applicable")
+    sort_order = models.PositiveIntegerField(default=0, verbose_name="Display Order")
+    is_active = models.BooleanField(default=True, verbose_name="Active Status")
+
+    class Meta:
+        ordering = ['sort_order', 'label']
+
+    def __str__(self):
+        return self.label
+
+class DiagnosisInvestigationMap(TimeStampedModel):
+    diagnosis = models.ForeignKey(Diagnosis, on_delete=models.CASCADE, related_name='investigation_maps')
+    investigation = models.ForeignKey(Investigation, on_delete=models.CASCADE, related_name='diagnosis_maps')
+    is_default = models.BooleanField(default=False, verbose_name="Is Default for Diagnosis")
+    is_active = models.BooleanField(default=True, verbose_name="Active Status")
+
+    class Meta:
+        unique_together = ('diagnosis', 'investigation')
+        ordering = ['diagnosis', 'investigation']
+
+    def __str__(self):
+        return f"{self.investigation.name} for {self.diagnosis.name}"
+
+class InvestigationParameter(TimeStampedModel):
+    investigation = models.ForeignKey(Investigation, on_delete=models.CASCADE, related_name='parameters')
+    parameter = models.ForeignKey(Parameter, on_delete=models.CASCADE, related_name='investigations', null=True, blank=True)
+    code = models.CharField(max_length=50, blank=True, null=True, verbose_name="Parameter Code")
+    name = models.CharField(max_length=200, blank=True, null=True, verbose_name="Parameter Name")
+    short_name = models.CharField(max_length=50, blank=True, null=True, verbose_name="Short Name")
+    result_type = models.CharField(max_length=50, default='Numeric', verbose_name="Result Type")
+    unit = models.CharField(max_length=50, blank=True, null=True, verbose_name="Unit")
+    decimal_precision = models.IntegerField(null=True, blank=True, verbose_name="Decimal Precision")
+    reference_range = models.CharField(max_length=255, null=True, blank=True, verbose_name="Reference Range")
+    critical_low = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True, verbose_name="Critical Low")
+    critical_high = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True, verbose_name="Critical High")
+    male_reference_range = models.CharField(max_length=255, null=True, blank=True, verbose_name="Male Reference Range")
+    female_reference_range = models.CharField(max_length=255, null=True, blank=True, verbose_name="Female Reference Range")
+    child_reference_range = models.CharField(max_length=255, null=True, blank=True, verbose_name="Child Reference Range")
+    minimum_age = models.IntegerField(null=True, blank=True, verbose_name="Minimum Age")
+    maximum_age = models.IntegerField(null=True, blank=True, verbose_name="Maximum Age")
+    display_order = models.PositiveIntegerField(default=0, verbose_name="Display Order")
+    is_active = models.BooleanField(default=True, verbose_name="Active Status")
+
+    class Meta:
+        unique_together = ('investigation', 'code')
+        ordering = ['investigation', 'display_order']
+
+    def __str__(self):
+        return f"{self.investigation.name} - {self.name or self.parameter}"
+
+class ParameterReferenceRange(TimeStampedModel):
+    class GenderChoices(models.TextChoices):
+        ALL = 'All', 'All'
+        MALE = 'Male', 'Male'
+        FEMALE = 'Female', 'Female'
+    class PregnancyChoices(models.TextChoices):
+        NO = 'No', 'No'
+        YES = 'Yes', 'Yes'
+        NA = 'N/A', 'N/A'
+
+    class RangeTypeChoices(models.TextChoices):
+        NUMERIC = 'Numeric', 'Numeric Range'
+        TEXT = 'Text', 'Text / Qualitative'
+        NONE = 'None', 'No Reference Range'
+
+    investigation_parameter = models.ForeignKey(InvestigationParameter, on_delete=models.CASCADE, related_name='reference_ranges')
+    age_group = models.ForeignKey(AgeGroup, on_delete=models.CASCADE, related_name='reference_ranges')
+    diagnosis = models.ForeignKey(Diagnosis, on_delete=models.CASCADE, null=True, blank=True, related_name='reference_ranges', help_text="Null means generic range for this age group")
+    gender = models.CharField(max_length=10, choices=GenderChoices.choices, default=GenderChoices.ALL)
+    pregnancy = models.CharField(max_length=10, choices=PregnancyChoices.choices, default=PregnancyChoices.NO, verbose_name="Pregnancy")
+    
+    range_type = models.CharField(max_length=20, choices=RangeTypeChoices.choices, default=RangeTypeChoices.NUMERIC, verbose_name="Range Type")
+    min_value = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True, verbose_name="Min Value")
+    max_value = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True, verbose_name="Max Value")
+    reference_text = models.CharField(max_length=500, null=True, blank=True, verbose_name="Reference Text")
+    unit = models.CharField(max_length=50, blank=True, null=True)
+    method = models.CharField(max_length=200, null=True, blank=True, verbose_name="Method")
+    remarks = models.TextField(null=True, blank=True, verbose_name="Remarks")
+    
+    critical_low = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True, verbose_name="Critical Low")
+    critical_high = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True, verbose_name="Critical High")
+    interpretation = models.TextField(null=True, blank=True, verbose_name="Interpretation")
+    
+    is_active = models.BooleanField(default=True, verbose_name="Active Status")
+
+    class Meta:
+        unique_together = ('investigation_parameter', 'age_group', 'gender', 'pregnancy')
+
+    def __str__(self):
+        return f"Range for {self.investigation_parameter} ({self.age_group})"
+
+class PatientInvestigationOrder(TimeStampedModel):
+    class StatusChoices(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        COMPLETED = 'COMPLETED', 'Completed'
+        CANCELLED = 'CANCELLED', 'Cancelled'
+
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='lab_orders')
+    diagnosis = models.ForeignKey(Diagnosis, on_delete=models.SET_NULL, null=True, blank=True, related_name='lab_orders')
+    investigation = models.ForeignKey(Investigation, on_delete=models.CASCADE, related_name='lab_orders')
+    ordered_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='lab_orders_placed')
+    ordered_on = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.PENDING)
+
+    class Meta:
+        ordering = ['-ordered_on']
+
+    def __str__(self):
+        return f"Order #{self.id} - {self.patient.name} - {self.investigation.name}"
+
+class PatientInvestigationResult(TimeStampedModel):
+    class FlagChoices(models.TextChoices):
+        NORMAL = 'NORMAL', 'Normal'
+        ABNORMAL_LOW = 'ABNORMAL_LOW', 'Abnormal Low'
+        ABNORMAL_HIGH = 'ABNORMAL_HIGH', 'Abnormal High'
+        CRITICAL_LOW = 'CRITICAL_LOW', 'Critical Low'
+        CRITICAL_HIGH = 'CRITICAL_HIGH', 'Critical High'
+        NOT_CONFIGURED = 'NOT_CONFIGURED', 'Not Configured'
+
+    order = models.ForeignKey(PatientInvestigationOrder, on_delete=models.CASCADE, related_name='results')
+    investigation_parameter = models.ForeignKey(InvestigationParameter, on_delete=models.CASCADE, related_name='results')
+    result_value = models.CharField(max_length=255, verbose_name="Result Value")
+    applied_reference_range = models.ForeignKey(ParameterReferenceRange, on_delete=models.SET_NULL, null=True, blank=True, related_name='applied_results')
+    flag = models.CharField(max_length=20, choices=FlagChoices.choices, default=FlagChoices.NORMAL)
+    entered_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='lab_results_entered')
+    entered_on = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('order', 'investigation_parameter')
+
+    def __str__(self):
+        return f"Result for {self.investigation_parameter.parameter.name} (Order #{self.order.id})"
+
+class ParameterImportHistory(TimeStampedModel):
+    file_name = models.CharField(max_length=255)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    total_records = models.IntegerField(default=0)
+    imported = models.IntegerField(default=0)
+    updated = models.IntegerField(default=0)
+    skipped = models.IntegerField(default=0)
+    failed = models.IntegerField(default=0)
+    age_groups_created = models.IntegerField(default=0)
+    age_groups_updated = models.IntegerField(default=0)
+    age_groups_skipped = models.IntegerField(default=0)
+    reference_ranges_created = models.IntegerField(default=0)
+    reference_ranges_updated = models.IntegerField(default=0)
+    reference_ranges_skipped = models.IntegerField(default=0)
+    status = models.CharField(max_length=50, default='Completed')
+
+    class Meta:
+        ordering = ['-created_at']
+
+class AgeGroupImportHistory(TimeStampedModel):
+    file_name = models.CharField(max_length=255)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    total_records = models.IntegerField(default=0)
+    imported = models.IntegerField(default=0)
+    updated = models.IntegerField(default=0)
+    skipped = models.IntegerField(default=0)
+    failed = models.IntegerField(default=0)
+    status = models.CharField(max_length=50, default='Completed')
+
+    class Meta:
+        ordering = ['-created_at']
+
+class ReferenceRangeImportHistory(TimeStampedModel):
+    file_name = models.CharField(max_length=255)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    total_records = models.IntegerField(default=0)
+    imported = models.IntegerField(default=0)
+    updated = models.IntegerField(default=0)
+    skipped = models.IntegerField(default=0)
+    failed = models.IntegerField(default=0)
+    status = models.CharField(max_length=50, default='Completed')
+
+    class Meta:
+        ordering = ['-created_at']

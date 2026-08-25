@@ -14,4 +14,11 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             {'name': 'Finance & Billing', 'status': 'Configured', 'icon': 'bi-cash-coin', 'badge': 'Finance'},
             {'name': 'Reports & Analytics', 'status': 'Active', 'icon': 'bi-graph-up-arrow', 'badge': 'BI'},
         ]
+        
+        # Adding counts for the Master Summary Section
+        from apps.lab.models import Diagnosis, Investigation, InvestigationParameter
+        context['diagnosis_count'] = Diagnosis.objects.count()
+        context['investigation_count'] = Investigation.objects.count()
+        context['parameter_count'] = InvestigationParameter.objects.count()
+        
         return context

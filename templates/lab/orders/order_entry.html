@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Order Entry | VMMCerp{% endblock %}
+{% block page_heading %}Patient Order Entry{% endblock %}
+
+{% block extra_head %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .select2-container .select2-selection--single {
+        height: 38px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 36px;
+        color: #334155;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 800px; margin: 0 auto;">
+    <div class="panel-header" style="margin-bottom: 1.5rem;">
+        <h2 class="panel-title">New Lab Order</h2>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        {% if messages %}
+        <div class="messages mb-4">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div style="margin-bottom: 1.5rem;">
+            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Patient ID *</label>
+            <div style="display:flex; gap:0.5rem;">
+                <input type="number" name="patient_id" id="patientId" class="form-control" value="{{ patient.id|default:'' }}" required placeholder="Enter Patient ID">
+                {% if patient %}
+                    <div style="padding: 0.5rem; background: #e0f2fe; color: #0284c7; border-radius: 4px; border: 1px solid #bae6fd;">
+                        Selected: <strong>{{ patient.name }}</strong> ({{ patient.get_gender_display }}, {{ patient.age_years }}y)
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Diagnosis (Optional)</label>
+            <select name="diagnosis_id" id="diagnosisSelect" class="form-select">
+                <option value="">-- No Diagnosis / Health Checkup --</option>
+                {% for d in diagnoses %}
+                <option value="{{ d.id }}">{{ d.name }} ({{ d.code }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Select Investigations *</label>
+            
+            <div id="suggestedInvestigations" style="display: none; margin-bottom: 1rem; padding: 1rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px;">
+                <strong style="color: #166534; display: block; margin-bottom: 0.5rem;">Suggested by Diagnosis:</strong>
+                <div id="suggestedChecks" style="display: flex; gap: 1rem; flex-wrap: wrap;"></div>
+            </div>
+
+            <div style="max-height: 300px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; padding: 1rem;">
+                {% for inv in all_investigations %}
+                <div style="margin-bottom: 0.5rem;">
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" name="investigations" value="{{ inv.id }}" class="inv-checkbox">
+                        <span>{{ inv.name }} {% if inv.short_name %}({{ inv.short_name }}){% endif %}</span>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-cart-plus"></i> Confirm Order
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+{{ diagnosis_investigation_map_json|json_script:"diagMap" }}
+<script>
+    $(document).ready(function() {
+        $('#diagnosisSelect').select2();
+        
+        const mapData = JSON.parse(document.getElementById('diagMap').textContent);
+        
+        $('#diagnosisSelect').on('change', function() {
+            const diagId = $(this).val();
+            const suggestions = mapData[diagId] || [];
+            
+            // Clear current selection
+            $('.inv-checkbox').prop('checked', false);
+            $('#suggestedInvestigations').hide();
+            $('#suggestedChecks').empty();
+            
+            if (suggestions.length > 0) {
+                let html = '';
+                suggestions.forEach(s => {
+                    $(`input[value="${s.id}"]`).prop('checked', true);
+                    html += `<span class="badge badge-green">${s.name}</span>`;
+                });
+                $('#suggestedChecks').html(html);
+                $('#suggestedInvestigations').show();
+            }
+        });
+    });
+</script>
+{% endblock %}

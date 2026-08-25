@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Diagnosis Master | VMMCerp{% endblock %}
+{% block page_heading %}Diagnosis Master{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">ICD-11 Diagnoses</h2>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; display: flex; gap: 1rem;">
+                <span id="total-count-badge">Total Entries: <i class="spinner-border spinner-border-sm"></i></span>
+                <span id="active-count-badge">Active: <i class="spinner-border spinner-border-sm"></i></span>
+                <span id="inactive-count-badge">Inactive: <i class="spinner-border spinner-border-sm"></i></span>
+                <span id="filtered-count-badge" style="color: var(--accent-blue); font-weight: bold; display: none;">Filtered Results: 0</span>
+            </div>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <select id="categoryFilter" class="form-select" style="width: 150px;">
+                <option value="">All Categories</option>
+            </select>
+            <select id="activeFilter" class="form-select" style="width: 120px;">
+                <option value="">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+            </select>
+            <input type="text" id="searchInput" placeholder="Search diagnosis..." class="form-control" style="width: 200px;">
+            <a href="{% url 'lab:diagnosis_import' %}" class="btn btn-secondary">
+                <i class="bi bi-cloud-arrow-up"></i> Import
+            </a>
+            <a href="{% url 'lab:diagnosis_add' %}" class="btn btn-primary">
+                <i class="bi bi-heart-pulse"></i> + Add Diagnosis
+            </a>
+        </div>
+    </div>
+
+    {% if diagnoses %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>ICD Code</th>
+                    <th>Diagnosis Name</th>
+                    <th>Category</th>
+                    <th>Synonyms</th>
+                    <th>Source</th>
+                    <th>ICD Version</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for diag in diagnoses %}
+                <tr data-category="{{ diag.chapter|default:'' }}" data-active="{% if diag.is_active %}Active{% else %}Inactive{% endif %}">
+                    <td><strong>{{ diag.code }}</strong></td>
+                    <td><strong style="color: var(--accent-blue);">{{ diag.name }}</strong></td>
+                    <td class="cat-cell">{{ diag.chapter|default:"-" }}</td>
+                    <td><span title="{{ diag.synonyms|default:'' }}">{{ diag.synonyms|truncatechars:30|default:"-" }}</span></td>
+                    <td>{{ diag.source|default:"-" }}</td>
+                    <td>{{ diag.icd_version|default:"-" }}</td>
+                    <td class="status-cell">
+                        {% if diag.is_active %}
+                            <span class="badge badge-green">Active</span>
+                        {% else %}
+                            <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <a href="{% url 'lab:diagnosis_edit' diag.id %}" class="btn-icon" title="Edit Diagnosis">
+                                <i class="bi bi-pencil-square" style="color: var(--accent-blue);"></i> Edit
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        <i class="bi bi-heart-pulse" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+        <p style="font-size: 1.1rem;">No diagnoses configured.</p>
+        <a href="{% url 'lab:diagnosis_add' %}" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">
+            <i class="bi bi-heart-pulse"></i> Add First Diagnosis
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Populate Category Filter
+        const categories = new Set();
+        document.querySelectorAll('.cat-cell').forEach(td => {
+            const val = td.textContent.trim();
+            if(val && val !== '-') categories.add(val);
+        });
+        const catFilter = document.getElementById('categoryFilter');
+        categories.forEach(cat => {
+            let opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            catFilter.appendChild(opt);
+        });
+
+        // Filter Logic
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const cat = catFilter.value;
+            const active = document.getElementById('activeFilter').value;
+            
+            let visibleCount = 0;
+            document.querySelectorAll('.table-responsive tbody tr').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const rowCat = row.getAttribute('data-category');
+                const rowActive = row.getAttribute('data-active');
+                
+                let match = true;
+                if(search && !text.includes(search)) match = false;
+                if(cat && rowCat !== cat) match = false;
+                if(active && rowActive !== active) match = false;
+                
+                row.style.display = match ? '' : 'none';
+                if(match) visibleCount++;
+            });
+
+            const filteredBadge = document.getElementById('filtered-count-badge');
+            if (search || cat || active) {
+                filteredBadge.style.display = 'inline-block';
+                filteredBadge.textContent = `Filtered Results: ${visibleCount}`;
+            } else {
+                filteredBadge.style.display = 'none';
+            }
+        }
+        
+        document.getElementById('searchInput').addEventListener('keyup', applyFilters);
+        catFilter.addEventListener('change', applyFilters);
+        document.getElementById('activeFilter').addEventListener('change', applyFilters);
+
+        // Fetch Counts from API
+        fetch("{% url 'lab:api_diagnosis_count' %}")
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('total-count-badge').innerHTML = `Total Entries: <strong>${data.total}</strong>`;
+                document.getElementById('active-count-badge').innerHTML = `Active: <strong>${data.active}</strong>`;
+                document.getElementById('inactive-count-badge').innerHTML = `Inactive: <strong>${data.inactive}</strong>`;
+            });
+    });
+</script>
+{% endblock %}

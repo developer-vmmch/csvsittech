@@ -19,43 +19,42 @@ class Department(TimeStampedModel):
     def seed_defaults(cls):
         """Ensures default departments and units exist in DB"""
         deps = [
-            {'code': 'GENMED', 'name': 'GENERAL MEDICINE'},
-            {'code': 'PED', 'name': 'PEDIATRICS'},
-            {'code': 'ORTHO', 'name': 'ORTHOPEDICS'},
+            {'code': 'CTB', 'name': 'CHEST & TB'},
+            {'code': 'DENTAL', 'name': 'DENTAL'},
             {'code': 'DERM', 'name': 'DERMATOLOGY'},
-            {'code': 'SURG', 'name': 'SURGERY'},
-            {'code': 'CARD', 'name': 'CARDIOLOGY'},
+            {'code': 'EMR', 'name': 'EMERGENCY MEDICINE'},
+            {'code': 'ENT', 'name': 'ENT'},
+            {'code': 'GM', 'name': 'GENERAL MEDICINE'},
+            {'code': 'GS', 'name': 'GENERAL SURGERY'},
+            {'code': 'GYN', 'name': 'GYNAECOLOGY'},
+            {'code': 'OBS', 'name': 'OBSTETRICS'},
+            {'code': 'OPH', 'name': 'OPHTHALMOLOGY'},
+            {'code': 'ORTHO', 'name': 'ORTHOPAEDICS'},
+            {'code': 'PED', 'name': 'PAEDIATRICS'},
+            {'code': 'PSY', 'name': 'PSYCHIATRY'},
         ]
         for d in deps:
-            dep_obj, _ = cls.objects.get_or_create(code=d['code'], defaults=d)
-            
-            # Create default units for department if missing
-            if not dep_obj.units.exists():
-                if d['code'] == 'GENMED':
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='HOD-GENERAL MEDICINE-V', head_doctor='Dr. V. General')
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='UNIT-I DR. KUMAR', head_doctor='Dr. Kumar')
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='UNIT-II DR. SHARMA', head_doctor='Dr. Sharma')
-                elif d['code'] == 'PED':
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='UNIT-I DR. ANITA (PEDIATRICS)', head_doctor='Dr. Anita')
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='UNIT-II DR. RAHUL', head_doctor='Dr. Rahul')
-                elif d['code'] == 'ORTHO':
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='UNIT-I DR. RAJESH (ORTHO)', head_doctor='Dr. Rajesh')
-                elif d['code'] == 'DERM':
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='UNIT-I DR. MEENA (DERM)', head_doctor='Dr. Meena')
-                elif d['code'] == 'SURG':
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='UNIT-I DR. SURESH (SURGERY)', head_doctor='Dr. Suresh')
-                elif d['code'] == 'CARD':
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='UNIT-I DR. ANAND (CARDIOLOGY)', head_doctor='Dr. Anand')
+            cls.objects.get_or_create(name__iexact=d['name'], defaults={'name': d['name'], 'code': d['code'], 'is_active': True})
 
 
 class DepartmentUnit(TimeStampedModel):
+    class UnitTypeChoices(models.TextChoices):
+        HOD = 'HOD', 'HOD'
+        UNIT = 'Unit', 'Unit'
+        DOCTOR = 'Doctor', 'Doctor'
+        CONSULTANT = 'Consultant', 'Consultant'
+        OTHER = 'Other', 'Other'
+
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='units')
     unit_name = models.CharField(max_length=150, verbose_name="Unit / Doctor Name")
+    code = models.CharField(max_length=50, unique=True, null=True, blank=True, verbose_name="Unit/Doctor Code")
+    unit_type = models.CharField(max_length=20, choices=UnitTypeChoices.choices, default=UnitTypeChoices.OTHER, verbose_name="Type")
     head_doctor = models.CharField(max_length=100, blank=True, null=True, verbose_name="Head Doctor")
+    display_order = models.PositiveIntegerField(default=0, verbose_name="Display Order")
     is_active = models.BooleanField(default=True, verbose_name="Active Status")
 
     class Meta:
-        ordering = ['unit_name']
+        ordering = ['department', 'display_order', 'unit_name']
         unique_together = ('department', 'unit_name')
 
     def __str__(self):

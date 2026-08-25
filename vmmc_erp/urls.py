@@ -11,6 +11,7 @@ urlpatterns = [
     path('logout/', ERPLogoutView.as_view(), name='logout'),
     path('dashboard/', include(('apps.core.urls', 'core'), namespace='core')),
     path('patients/', include('apps.patients.urls')),
+    path('lab/', include(('apps.lab.urls', 'lab'), namespace='lab')),
     path('administration/', include(('apps.users.urls', 'users'), namespace='users')),
 ]
 

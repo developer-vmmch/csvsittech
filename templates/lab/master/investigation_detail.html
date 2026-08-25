@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}{{ investigation.name }} | VMMCerp{% endblock %}
+{% block page_heading %}Investigation Details{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header-action" style="margin-bottom: 1.5rem; display:flex; justify-content: space-between; align-items:flex-start;">
+        <div>
+            <h2 class="panel-title" style="margin-bottom: 0.5rem;">{{ investigation.name }} ({{ investigation.code }})</h2>
+            <div style="display: flex; gap: 1rem; color: #64748b; font-size: 0.9rem;">
+                <span><strong>Category:</strong> {{ investigation.department.name|default:"-" }}</span>
+                <span><strong>Specimen:</strong> {{ investigation.sample_type.name|default:"-" }}</span>
+                <span>
+                    <strong>Status:</strong> 
+                    {% if investigation.is_active %}
+                        <span class="badge badge-green">Active</span>
+                    {% else %}
+                        <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">Inactive</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        <div>
+            <a href="{% url 'lab:investigation_edit' investigation.id %}" class="btn btn-secondary">
+                <i class="bi bi-pencil-square"></i> Edit
+            </a>
+            <a href="{% url 'lab:investigation_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Master
+            </a>
+        </div>
+    </div>
+
+    <div style="margin-top: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="margin: 0; font-size: 1.2rem;">Parameters</h3>
+            <button class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-lg"></i> Add Parameter
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Parameter Name</th>
+                        <th>Code</th>
+                        <th>Result Type</th>
+                        <th>Unit</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for param in investigation.parameters.all %}
+                    <tr>
+                        <td style="color: #94a3b8; font-weight: bold;">{{ param.display_order }}</td>
+                        <td><strong>{{ param.name }}</strong></td>
+                        <td>{{ param.code }}</td>
+                        <td><span class="badge badge-purple">{{ param.result_type }}</span></td>
+                        <td>{{ param.unit|default:"-" }}</td>
+                        <td>
+                            {% if param.is_active %}
+                                <span class="badge badge-green">Active</span>
+                            {% else %}
+                                <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <button class="btn-icon" title="Edit Parameter">
+                                    <i class="bi bi-pencil" style="color: var(--accent-blue);"></i>
+                                </button>
+                                <button class="btn-icon" title="Delete Parameter">
+                                    <i class="bi bi-trash" style="color: #ef4444;"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem; color: #64748b;">
+                            No parameters configured for this investigation.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

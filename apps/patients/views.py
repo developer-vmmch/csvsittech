@@ -289,6 +289,9 @@ class DepartmentListView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
     template_name = 'patients/department_list.html'
     context_object_name = 'departments'
     paginate_by = 20
+    
+    def get_queryset(self):
+        return Department.objects.filter(is_active=True)
 
 
 class DepartmentCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, CreateView):
@@ -301,6 +304,26 @@ class DepartmentCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, CreateVi
     def form_valid(self, form):
         dept = form.save()
         messages.success(self.request, f"Department '{dept.name}' ({dept.code}) created successfully!")
+        return super().form_valid(form)
+
+
+class DepartmentUpdateView(LoginRequiredMixin, MenuAccessRequiredMixin, UpdateView):
+    menu_key = 'department_list'
+    model = Department
+    form_class = DepartmentForm
+    template_name = 'patients/department_form.html'
+    
+    def get_success_url(self):
+        return reverse_lazy('patients:department_edit', kwargs={'pk': self.object.pk})
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['units'] = self.object.units.all()
+        return context
+
+    def form_valid(self, form):
+        dept = form.save()
+        messages.success(self.request, f"Department '{dept.name}' ({dept.code}) updated successfully!")
         return super().form_valid(form)
 
 
@@ -326,6 +349,21 @@ class DepartmentUnitCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, Crea
         unit = form.save()
         messages.success(self.request, f"Unit/Doctor '{unit.unit_name}' mapped to '{unit.department.name}' successfully!")
         return super().form_valid(form)
+
+class DepartmentUnitUpdateView(LoginRequiredMixin, MenuAccessRequiredMixin, UpdateView):
+    menu_key = 'add_department'
+    model = DepartmentUnit
+    form_class = DepartmentUnitForm
+    template_name = 'patients/unit_form.html'
+    
+    def get_success_url(self):
+        return reverse_lazy('patients:department_edit', kwargs={'pk': self.object.department.pk})
+
+    def form_valid(self, form):
+        unit = form.save()
+        messages.success(self.request, f"Unit '{unit.unit_name}' updated successfully!")
+        return super().form_valid(form)
+
 
 
 class DepartmentUnitDeleteView(LoginRequiredMixin, MenuAccessRequiredMixin, DeleteView):
