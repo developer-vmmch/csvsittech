@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Sample / Test View{% endblock %}
+
+{% block extra_head %}
+<style>
+    :root {
+        --primary-blue: #0b5ed7;
+        --border-color: #e2e8f0;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --btn-green: #059669;
+        --btn-green-hover: #047857;
+    }
+    
+    body {
+        background-color: #f1f5f9 !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .wo-container {
+        padding: 1rem 1.5rem;
+        max-width: 100%;
+    }
+
+    /* Page Header */
+    .wo-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+    }
+    .wo-header-titles h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0 0 0.25rem 0;
+    }
+    .wo-header-titles p {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+    
+    .wo-breadcrumb {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+
+    /* Patient Header Card */
+    .patient-header-card {
+        background-color: #fff;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    
+    .info-group {
+        display: flex;
+        flex-direction: column;
+    }
+    .info-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 0.2rem;
+    }
+    .info-value {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--text-main);
+    }
+
+    /* Actions Panel */
+    .actions-panel {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .btn-receive {
+        background-color: var(--primary-blue);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        height: 36px;
+        padding: 0 1.5rem;
+        font-weight: 500;
+        font-size: 0.85rem;
+        cursor: pointer;
+    }
+    .btn-receive:hover { background-color: #0a58ca; }
+    
+    .btn-close-page {
+        background-color: #fff;
+        color: var(--text-main);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        height: 36px;
+        padding: 0 1.5rem;
+        font-weight: 500;
+        font-size: 0.85rem;
+        cursor: pointer;
+    }
+    .btn-close-page:hover { background-color: #f8fafc; }
+
+    /* Work Orders Table */
+    .wo-card {
+        background-color: #fff;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
+    .wo-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+    }
+    .wo-table th {
+        background-color: #f8fafc;
+        color: var(--text-main);
+        font-weight: 600;
+        text-align: left;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        white-space: nowrap;
+    }
+    .wo-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        color: var(--text-main);
+        vertical-align: middle;
+    }
+    .wo-table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .status-PENDING { background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; }
+    .status-RECEIVED { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .status-COMPLETED { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+    
+    .action-btn {
+        background: none;
+        border: none;
+        color: var(--primary-blue);
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        font-weight: 500;
+        text-decoration: none;
+    }
+    .action-btn:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wo-container">
+    <div class="wo-header">
+        <div class="wo-header-titles">
+            <h2>Patient Sample / Test View</h2>
+            <p>Receive samples and view pending tests</p>
+        </div>
+        <div class="wo-breadcrumb">
+            Dashboard > Lab Orders > Work Orders > Order #{{ order.id }}
+        </div>
+    </div>
+
+    <div class="patient-header-card">
+        <div class="info-group">
+            <span class="info-label">Patient ID</span>
+            <span class="info-value">{{ order.patient.patient_id }}</span>
+        </div>
+        <div class="info-group">
+            <span class="info-label">Patient Name</span>
+            <span class="info-value">{{ order.patient.name }}</span>
+        </div>
+        <div class="info-group">
+            <span class="info-label">Visit No</span>
+            <span class="info-value">1</span>
+        </div>
+        <div class="info-group">
+            <span class="info-label">Age</span>
+            <span class="info-value">{{ order.patient.age_years }}</span>
+        </div>
+        <div class="info-group">
+            <span class="info-label">Gender</span>
+            <span class="info-value">{{ order.patient.gender }}</span>
+        </div>
+        <div class="info-group">
+            <span class="info-label">Visit Type</span>
+            <span class="info-value">{{ order.get_visit_type_display }}</span>
+        </div>
+        <div class="info-group">
+            <span class="info-label">Department</span>
+            <span class="info-value">{{ order.department.name|default:"-" }}</span>
+        </div>
+        <div class="info-group">
+            <span class="info-label">Consultant</span>
+            <span class="info-value">{{ order.consultant.get_full_name|default:order.consultant.username|default:"-" }}</span>
+        </div>
+        <div class="info-group">
+            <span class="info-label">Sample ID</span>
+            <span class="info-value">{{ order.sample_id|default:"-" }}</span>
+        </div>
+        <div class="info-group">
+            <span class="info-label">Order Date</span>
+            <span class="info-value">{{ order.request_date|date:"d/m/Y" }}</span>
+        </div>
+        <div class="info-group">
+            <span class="info-label">Sample Date</span>
+            <span class="info-value">{{ order.request_date|date:"d/m/Y" }}</span>
+        </div>
+    </div>
+
+    <div class="actions-panel">
+        <div>
+            <button type="button" class="btn-receive" id="btn-receive-selected">Receive Selected</button>
+        </div>
+        <div>
+            <a href="{% url 'lab:work_orders' %}" class="btn-close-page">Close</a>
+        </div>
+    </div>
+
+    <div class="wo-card">
+        <div class="table-responsive">
+            <table class="wo-table" id="wo-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">S.No</th>
+                        <th style="width: 40px;"><input type="checkbox" id="select-all"></th>
+                        <th>Test Code</th>
+                        <th>Test Name</th>
+                        <th>Status</th>
+                        <th>Department</th>
+                        <th>Sample Type</th>
+                        <th>Receiver</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in investigations %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            {% if inv.status == 'PENDING' %}
+                            <input type="checkbox" class="test-select" value="{{ inv.id }}">
+                            {% endif %}
+                        </td>
+                        <td>{{ inv.investigation.legacy_code|default:inv.investigation.code }}</td>
+                        <td>{{ inv.investigation.name }}</td>
+                        <td><span class="status-badge status-{{ inv.status }}">{{ inv.status }}</span></td>
+                        <td>{{ inv.investigation.department.name|default:"-" }}</td>
+                        <td>{{ inv.investigation.sample_type.name|default:"-" }}</td>
+                        <td>{{ inv.received_by.username|default:"-" }}</td>
+                        <td>
+                            {% if inv.status == 'RECEIVED' %}
+                                <a href="{% url 'lab:work_order_result_entry' inv.id %}" class="action-btn">Enter Result</a>
+                            {% elif inv.status == 'COMPLETED' %}
+                                <span class="text-muted">Completed</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted" style="padding: 2rem;">No tests found for this order.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#select-all').change(function() {
+        $('.test-select').prop('checked', $(this).prop('checked'));
+    });
+
+    $('#btn-receive-selected').click(function() {
+        const selectedIds = [];
+        $('.test-select:checked').each(function() {
+            selectedIds.push(parseInt($(this).val()));
+        });
+
+        if (selectedIds.length === 0) {
+            alert('Please select at least one pending test to receive.');
+            return;
+        }
+
+        const btn = $(this);
+        const orig = btn.html();
+        btn.html('<i class="spinner-border spinner-border-sm"></i> Receiving...').prop('disabled', true);
+
+        $.ajax({
+            url: "{% url 'lab:api_work_order_receive_multiple' %}",
+            type: 'POST',
+            contentType: 'application/json',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            data: JSON.stringify({ test_ids: selectedIds }),
+            success: function(res) {
+                if(res.status === 'success') {
+                    location.reload();
+                } else {
+                    alert('Error: ' + res.message);
+                }
+            },
+            error: function() { 
+                alert('A server error occurred.'); 
+            },
+            complete: function() { 
+                btn.html(orig).prop('disabled', false); 
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

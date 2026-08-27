@@ -44,6 +44,7 @@ PERMISSION_MODULES = [
         "module": "lab_orders",
         "label": "Lab Orders",
         "sub_modules": [
+            {"code": "lab_orders.service_request", "label": "Service Request", "actions": ["view", "create", "update", "cancel", "delete", "export"]},
             {"code": "lab_orders.lab_order_list", "label": "Lab Order List", "actions": ["view", "create", "update", "cancel", "delete", "export"]},
             {"code": "lab_orders.create_lab_order", "label": "Create Lab Order", "actions": ["view", "create", "update", "cancel", "delete", "export"]},
             {"code": "lab_orders.pending_orders", "label": "Pending Orders", "actions": ["view", "create", "update", "cancel", "delete", "export"]},
@@ -51,6 +52,13 @@ PERMISSION_MODULES = [
             {"code": "lab_orders.completed_orders", "label": "Completed Orders", "actions": ["view", "create", "update", "cancel", "delete", "export"]},
             {"code": "lab_orders.cancelled_orders", "label": "Cancelled Orders", "actions": ["view", "create", "update", "cancel", "delete", "export"]},
             {"code": "lab_orders.lab_order_reports", "label": "Lab Order Reports", "actions": ["view", "create", "update", "cancel", "delete", "export"]},
+        ]
+    },
+    {
+        "module": "consultant",
+        "label": "Consultant",
+        "sub_modules": [
+            {"code": "consultant.doctor_window", "label": "Doctor Window", "actions": ["view", "create", "update", "delete"]}
         ]
     },
     {

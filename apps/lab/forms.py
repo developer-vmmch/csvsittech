@@ -2,7 +2,8 @@ from django import forms
 from .models import (
     Diagnosis, Investigation, Parameter, AgeGroup,
     DiagnosisInvestigationMap, InvestigationParameter,
-    ParameterReferenceRange, PatientInvestigationOrder, PatientInvestigationResult
+    ParameterReferenceRange, PatientInvestigationOrder, PatientInvestigationResult,
+    ServiceRequest
 )
 
 class DiagnosisForm(forms.ModelForm):
@@ -109,4 +110,16 @@ class InvestigationParameterForm(forms.ModelForm):
             'unit': forms.TextInput(attrs={'class': 'form-control'}),
             'display_order': forms.NumberInput(attrs={'class': 'form-control'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+class ServiceRequestForm(forms.ModelForm):
+    class Meta:
+        model = ServiceRequest
+        fields = ['patient', 'consultant', 'department', 'visit_type', 'request_date']
+        widgets = {
+            'patient': forms.HiddenInput(),
+            'consultant': forms.Select(attrs={'class': 'form-select'}),
+            'department': forms.Select(attrs={'class': 'form-select'}),
+            'visit_type': forms.Select(attrs={'class': 'form-select'}),
+            'request_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'onclick': 'if(this.showPicker) this.showPicker();'}),
         }

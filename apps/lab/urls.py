@@ -9,7 +9,11 @@ from .views import (
     api_add_department, api_add_sample_type,
     OrderEntryView, ResultEntryListView, ResultEntryDetailView,
     LegacyMappingView, process_legacy_mapping,
-    api_diagnosis_count, api_investigation_count, api_parameter_count
+    ServiceRequestListView, ServiceRequestCreateView,
+    api_get_patients_for_request, api_search_diagnosis, api_suggest_investigations, api_search_investigation,
+    api_diagnosis_count, api_investigation_count, api_parameter_count,
+    DoctorWindowView, api_doctor_window_patients, api_doctor_window_get_diagnosis, api_doctor_window_save_diagnosis,
+    WorkOrdersView, WorkOrderDetailView, api_work_orders_list, api_work_order_receive, api_work_order_receive_multiple, WorkOrderResultEntryView, api_work_order_save_result
 )
 from .import_views import (
     DiagnosisImportView, DiagnosisImportHistoryView,
@@ -107,6 +111,28 @@ urlpatterns = [
     path('order/add/', OrderEntryView.as_view(), name='order_entry'),
     path('result/', ResultEntryListView.as_view(), name='result_entry_list'),
     path('result/<int:pk>/', ResultEntryDetailView.as_view(), name='result_entry_detail'),
+    # Work Orders
+    path('work-orders/', WorkOrdersView.as_view(), name='work_orders'),
+    path('work-orders/<int:pk>/', WorkOrderDetailView.as_view(), name='work_order_detail'),
+    path('work-orders/result/<int:pk>/', WorkOrderResultEntryView.as_view(), name='work_order_result_entry'),
+    path('api/work-orders/list/', api_work_orders_list, name='api_work_orders_list'),
+    path('api/work-orders/<int:pk>/receive/', api_work_order_receive, name='api_work_order_receive'),
+    path('api/work-orders/receive-multiple/', api_work_order_receive_multiple, name='api_work_order_receive_multiple'),
+    path('api/work-orders/<int:pk>/save-result/', api_work_order_save_result, name='api_work_order_save_result'),
+    
+    # Service Request
+    path('service-request/list/', ServiceRequestListView.as_view(), name='service_request_list'),
+    path('service-request/', ServiceRequestCreateView.as_view(), name='service_request_add'),
+    path('api/service-request/patients/', api_get_patients_for_request, name='api_get_patients_for_request'),
+    path('api/service-request/diagnoses/', api_search_diagnosis, name='api_search_diagnosis'),
+    path('api/service-request/suggest-investigations/', api_suggest_investigations, name='api_suggest_investigations'),
+    path('api/service-request/search-investigation/', api_search_investigation, name='api_search_investigation'),
+    
+    # Doctor Window
+    path('doctor-window/', DoctorWindowView.as_view(), name='doctor_window'),
+    path('api/doctor-window/patients/', api_doctor_window_patients, name='api_doctor_window_patients'),
+    path('api/doctor-window/diagnosis/get/', api_doctor_window_get_diagnosis, name='api_doctor_window_get_diagnosis'),
+    path('api/doctor-window/diagnosis/save/', api_doctor_window_save_diagnosis, name='api_doctor_window_save_diagnosis'),
     
     # Counts
     path('api/diagnoses/count/', api_diagnosis_count, name='api_diagnosis_count'),

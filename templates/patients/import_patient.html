@@ -52,11 +52,13 @@
     <!-- Step 1: Upload -->
     <div id="step-upload">
         <div class="upload-area" id="drop-zone">
-            <i class="bi bi-cloud-arrow-up" style="font-size: 3rem; color: var(--accent-blue);"></i>
-            <h3 style="margin-top: 1rem;">Drag and drop file here</h3>
-            <p style="color: var(--text-muted);">or click to browse (.xlsx, .csv)</p>
-            <input type="file" id="file-input" style="display: none;" accept=".xlsx,.csv">
+            <div id="drop-zone-content">
+                <i class="bi bi-cloud-arrow-up" style="font-size: 3rem; color: var(--accent-blue);"></i>
+                <h3 style="margin-top: 1rem;">Drag and drop file here</h3>
+                <p style="color: var(--text-muted);">or click to browse (.xlsx, .csv)</p>
+            </div>
         </div>
+        <input type="file" id="file-input" style="display: none;" accept=".xlsx,.csv">
         
         <div id="upload-error-container" class="hidden" style="margin-top: 1rem; background: #fee2e2; border: 1px solid #fecaca; border-radius: 6px; padding: 1rem; color: #991b1b;">
             <div style="font-weight: bold; margin-bottom: 0.5rem;"><i class="bi bi-exclamation-triangle-fill"></i> Upload Error</div>
@@ -217,7 +219,10 @@
         formData.append('file', file);
         
         // Show loading state
-        dropZone.innerHTML = '<i class="bi bi-hourglass-split" style="font-size: 3rem; color: var(--accent-blue);"></i><h3 style="margin-top: 1rem;">Validating...</h3>';
+        const dropContent = document.getElementById('drop-zone-content');
+        if (dropContent) {
+            dropContent.innerHTML = '<i class="bi bi-hourglass-split" style="font-size: 3rem; color: var(--accent-blue);"></i><h3 style="margin-top: 1rem;">Validating...</h3>';
+        }
         
         fetch('{% url "patients:api_import_preview" %}', {
             method: 'POST',
@@ -254,11 +259,14 @@
         fileInput.value = '';
         currentData = [];
         
-        dropZone.innerHTML = `
-            <i class="bi bi-cloud-arrow-up" style="font-size: 3rem; color: var(--accent-blue);"></i>
-            <h3 style="margin-top: 1rem;">Drag and drop file here</h3>
-            <p style="color: var(--text-muted);">or click to browse (.xlsx, .csv)</p>
-        `;
+        const dropContent = document.getElementById('drop-zone-content');
+        if (dropContent) {
+            dropContent.innerHTML = `
+                <i class="bi bi-cloud-arrow-up" style="font-size: 3rem; color: var(--accent-blue);"></i>
+                <h3 style="margin-top: 1rem;">Drag and drop file here</h3>
+                <p style="color: var(--text-muted);">or click to browse (.xlsx, .csv)</p>
+            `;
+        }
     }
     
     function resetUpload() {
@@ -303,7 +311,6 @@
                 `;
                 tbody.appendChild(tr);
                 rendered++;
-            }
         });
         
         if (totalRows > 100) {

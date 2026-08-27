@@ -197,7 +197,7 @@ class PatientRegistrationForm(forms.ModelForm):
             ], attrs={'class': 'form-select', 'id': 'id_title', 'required': 'required'}),
             'name': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_name', 'placeholder': 'Patient Full Name', 'required': 'required'}),
             'gender': forms.Select(attrs={'class': 'form-select', 'id': 'id_gender', 'required': 'required'}),
-            'dob': forms.DateInput(attrs={'class': 'form-input', 'type': 'date'}),
+            'dob': forms.DateInput(attrs={'class': 'form-input', 'type': 'date', 'onclick': 'if(this.showPicker) this.showPicker();'}),
             'age_years': forms.NumberInput(attrs={'class': 'form-input small-input', 'id': 'id_age_years', 'placeholder': 'Y', 'min': '0'}),
             'age_months': forms.NumberInput(attrs={'class': 'form-input small-input', 'id': 'id_age_months', 'placeholder': 'M', 'min': '0'}),
             'age_days': forms.NumberInput(attrs={'class': 'form-input small-input', 'id': 'id_age_days', 'placeholder': 'D', 'min': '0'}),

@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from apps.core.models import TimeStampedModel
 from apps.patients.models import Patient
+from django.utils import timezone
 
 class Diagnosis(TimeStampedModel):
     name = models.CharField(max_length=200, verbose_name="Diagnosis Name")
@@ -203,15 +204,17 @@ class AgeGroup(TimeStampedModel):
 class DiagnosisInvestigationMap(TimeStampedModel):
     diagnosis = models.ForeignKey(Diagnosis, on_delete=models.CASCADE, related_name='investigation_maps')
     investigation = models.ForeignKey(Investigation, on_delete=models.CASCADE, related_name='diagnosis_maps')
+    age_group = models.ForeignKey('AgeGroup', on_delete=models.SET_NULL, null=True, blank=True, related_name='diagnosis_maps', verbose_name="Specific Age Group")
     is_default = models.BooleanField(default=False, verbose_name="Is Default for Diagnosis")
     is_active = models.BooleanField(default=True, verbose_name="Active Status")
 
     class Meta:
-        unique_together = ('diagnosis', 'investigation')
+        unique_together = ('diagnosis', 'investigation', 'age_group')
         ordering = ['diagnosis', 'investigation']
 
     def __str__(self):
-        return f"{self.investigation.name} for {self.diagnosis.name}"
+        age_suffix = f" ({self.age_group.label})" if self.age_group else " (All Ages)"
+        return f"{self.investigation.name} for {self.diagnosis.name}{age_suffix}"
 
 class InvestigationParameter(TimeStampedModel):
     investigation = models.ForeignKey(Investigation, on_delete=models.CASCADE, related_name='parameters')
@@ -368,3 +371,95 @@ class ReferenceRangeImportHistory(TimeStampedModel):
 
     class Meta:
         ordering = ['-created_at']
+
+class ServiceRequest(TimeStampedModel):
+    class VisitTypeChoices(models.TextChoices):
+        OP = 'OP', 'OP'
+        INPATIENT = 'INPATIENT', 'Inpatient'
+
+    class StatusChoices(models.TextChoices):
+        DRAFT = 'Draft', 'Draft'
+        SAVED = 'Saved', 'Saved'
+        COMPLETED = 'Completed', 'Completed'
+
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='service_requests')
+    consultant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='service_requests_consulted')
+    department = models.ForeignKey('patients.Department', on_delete=models.SET_NULL, null=True, related_name='service_requests')
+    visit_type = models.CharField(max_length=20, choices=VisitTypeChoices.choices, default=VisitTypeChoices.OP)
+    request_date = models.DateField(default=timezone.now)
+    sample_id = models.CharField(max_length=50, unique=True, blank=True)
+    receipt_no = models.CharField(max_length=50, blank=True, null=True)
+    status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.DRAFT)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_service_requests')
+    
+    class Meta:
+        ordering = ['-created_at']
+        
+    def save(self, *args, **kwargs):
+        if not self.sample_id:
+            date_str = timezone.now().strftime('%y%m%d')
+            # very basic generation, user should confirm
+            last_req = ServiceRequest.objects.filter(sample_id__startswith=date_str).order_by('sample_id').last()
+            if last_req and last_req.sample_id[6:].isdigit():
+                next_seq = int(last_req.sample_id[6:]) + 1
+            else:
+                next_seq = 1
+            self.sample_id = f"{date_str}{next_seq:04d}"
+        super().save(*args, **kwargs)
+
+class ServiceRequestDiagnosis(models.Model):
+    service_request = models.ForeignKey(ServiceRequest, on_delete=models.CASCADE, related_name='diagnoses')
+    diagnosis = models.ForeignKey(Diagnosis, on_delete=models.CASCADE, null=True, blank=True)
+    chief_complaint = models.ForeignKey(ChiefComplaint, on_delete=models.CASCADE, null=True, blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['sort_order']
+
+class ServiceRequestInvestigation(models.Model):
+    class SourceChoices(models.TextChoices):
+        AUTO_SUGGESTED = 'AUTO_SUGGESTED', 'Auto Suggested'
+        MANUAL = 'MANUAL', 'Manual'
+        
+    class StatusChoices(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        RECEIVED = 'RECEIVED', 'Received'
+        COMPLETED = 'COMPLETED', 'Completed'
+
+    service_request = models.ForeignKey(ServiceRequest, on_delete=models.CASCADE, related_name='investigations')
+    investigation = models.ForeignKey(Investigation, on_delete=models.CASCADE)
+    qty = models.PositiveIntegerField(default=1)
+    source = models.CharField(max_length=20, choices=SourceChoices.choices, default=SourceChoices.MANUAL)
+    is_removed = models.BooleanField(default=False)
+    
+    # Work Order / Processing Tracking
+    status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.PENDING)
+    received_date = models.DateField(null=True, blank=True)
+    received_time = models.TimeField(null=True, blank=True)
+    received_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='received_samples')
+    completed_date = models.DateTimeField(null=True, blank=True)
+    completed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='completed_samples')
+
+class ServiceRequestResult(TimeStampedModel):
+    sr_investigation = models.ForeignKey(ServiceRequestInvestigation, on_delete=models.CASCADE, related_name='results')
+    investigation_parameter = models.ForeignKey(InvestigationParameter, on_delete=models.CASCADE)
+    result_value = models.CharField(max_length=255, verbose_name="Result Value")
+    applied_reference_range = models.ForeignKey(ParameterReferenceRange, on_delete=models.SET_NULL, null=True, blank=True)
+    remarks = models.TextField(null=True, blank=True)
+    entered_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        unique_together = ('sr_investigation', 'investigation_parameter')
+
+class PatientVisitDiagnosis(TimeStampedModel):
+    visit = models.ForeignKey('patients.PatientVisit', on_delete=models.CASCADE, related_name='diagnoses')
+    diagnosis = models.ForeignKey(Diagnosis, on_delete=models.CASCADE, null=True, blank=True)
+    chief_complaint = models.ForeignKey(ChiefComplaint, on_delete=models.CASCADE, null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = (('visit', 'diagnosis'), ('visit', 'chief_complaint'))
+
+    def __str__(self):
+        return f"Visit #{self.visit.visit_no} - {self.diagnosis.name if self.diagnosis else self.chief_complaint.name}"
+

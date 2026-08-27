@@ -187,6 +187,28 @@
                 </ul>
             </li>
 
+            <!-- Consultant Module -->
+            <li class="nav-item has-submenu">
+                <a href="javascript:void(0);" class="submenu-toggle" title="Consultant">
+                    <i class="bi bi-person-badge" style="color: #ec4899;"></i>
+                    <span>Consultant</span>
+                    <i class="bi bi-chevron-down submenu-chevron"></i>
+                </a>
+                <ul class="submenu-list">
+                    <li class="{% if request.resolver_match.url_name == 'doctor_window' %}active{% endif %}">
+                        <a href="{% url 'lab:doctor_window' %}">
+                            <i class="bi bi-window-desktop"></i>
+                            <span>Doctor Window</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'service_request_list' or request.resolver_match.url_name == 'service_request_add' %}active{% endif %}">
+                        <a href="{% url 'lab:service_request_add' %}">
+                            <i class="bi bi-file-earmark-medical"></i>
+                            <span>Service Request</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
             <!-- Lab Orders Module -->
             <li class="nav-item has-submenu">
                 <a href="javascript:void(0);" class="submenu-toggle" title="Lab Orders & Results">
@@ -195,6 +217,13 @@
                     <i class="bi bi-chevron-down submenu-chevron"></i>
                 </a>
                 <ul class="submenu-list">
+
+                    <li class="{% if request.resolver_match.url_name == 'work_orders' %}active{% endif %}">
+                        <a href="{% url 'lab:work_orders' %}">
+                            <i class="bi bi-list-task"></i>
+                            <span>Work Orders</span>
+                        </a>
+                    </li>
                     <li class="{% if request.resolver_match.url_name == 'order_entry' %}active{% endif %}">
                         <a href="{% url 'lab:order_entry' %}">
                             <i class="bi bi-plus-circle"></i>

@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}Result Entry - {{ wo.investigation.name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    :root {
+        --primary-blue: #0b5ed7;
+        --border-color: #e2e8f0;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --btn-green: #059669;
+        --btn-green-hover: #047857;
+    }
+    
+    body {
+        background-color: #f1f5f9 !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .re-container {
+        padding: 1rem 1.5rem;
+        max-width: 100%;
+    }
+
+    .re-card {
+        background-color: #fff;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    .re-card-header {
+        background-color: #f8fafc;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    /* Patient Details Section */
+    .patient-details-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        padding: 1.25rem;
+    }
+    .detail-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    .detail-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+    .detail-value {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+    .detail-value.highlight {
+        color: var(--primary-blue);
+    }
+
+    /* Investigation Details */
+    .inv-details-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        padding: 1.25rem;
+        background-color: #eff6ff;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    /* Table */
+    .re-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+    .re-table th {
+        background-color: #f8fafc;
+        color: var(--text-main);
+        font-weight: 600;
+        text-align: left;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .re-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+    .form-control-sm {
+        height: 32px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        padding: 0 0.5rem;
+        width: 100%;
+        font-size: 0.85rem;
+    }
+    .form-control-sm:focus {
+        border-color: var(--primary-blue);
+        outline: none;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 1rem;
+        padding: 1.25rem;
+        background-color: #f8fafc;
+        border-top: 1px solid var(--border-color);
+        justify-content: flex-end;
+    }
+    .btn-primary {
+        background-color: var(--primary-blue);
+        color: white;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+    }
+    .btn-secondary {
+        background-color: #e2e8f0;
+        color: var(--text-main);
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="re-container">
+    <div style="margin-bottom: 1.5rem;">
+        <h2 style="margin: 0 0 0.25rem 0; font-size: 1.5rem; font-weight: 700; color: var(--text-main);">Result Entry</h2>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">
+            <a href="{% url 'lab:work_orders' %}" style="color: var(--text-muted); text-decoration: none;">Dashboard > Lab Orders > Work Orders</a> > <a href="{% url 'lab:work_order_detail' wo.service_request.id %}" style="color: var(--text-muted); text-decoration: none;">Order #{{ wo.service_request.id }}</a> > Result Entry
+        </div>
+    </div>
+
+    <div class="re-card">
+        <div class="re-card-header">Patient Details</div>
+        <div class="patient-details-grid">
+            <div class="detail-group">
+                <span class="detail-label">Patient ID</span>
+                <span class="detail-value highlight">{{ wo.service_request.patient.patient_id }}</span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Patient Name</span>
+                <span class="detail-value">{{ wo.service_request.patient.name }}</span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Age / Gender</span>
+                <span class="detail-value">{{ wo.service_request.patient.age_years }} Yrs / {{ wo.service_request.patient.gender }}</span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Visit No</span>
+                <span class="detail-value">1</span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Department</span>
+                <span class="detail-value">{{ wo.service_request.department.name|default:'-' }}</span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Diagnosis</span>
+                <span class="detail-value">{{ diagnosis_text }}</span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Sample ID</span>
+                <span class="detail-value highlight">{{ wo.service_request.sample_id|default:'-' }}</span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Sample Date</span>
+                <span class="detail-value">{{ wo.received_date|default:'-' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="re-card">
+        <div class="inv-details-grid">
+            <div class="detail-group">
+                <span class="detail-label">Investigation Name</span>
+                <span class="detail-value" style="color: var(--primary-blue); font-size: 1.05rem;">{{ wo.investigation.name }}</span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Test Code</span>
+                <span class="detail-value">{{ wo.investigation.code }}</span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Sample Type</span>
+                <span class="detail-value">{{ wo.investigation.sample_type.name|default:'-' }}</span>
+            </div>
+        </div>
+
+        <table class="re-table" id="results-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">S.No</th>
+                    <th style="width: 120px;">Test Code</th>
+                    <th>Parameter</th>
+                    <th>Reference Range</th>
+                    <th style="width: 150px;">Result</th>
+                    <th style="width: 100px;">Unit</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ip in parameters %}
+                <tr class="result-row" data-param-id="{{ ip.id }}">
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ ip.parameter.code }}</td>
+                    <td style="font-weight: 500;">{{ ip.parameter.name }}</td>
+                    <td><span style="color: var(--text-muted); font-size: 0.8rem;">{{ ip.reference_range|default:"-" }}</span></td>
+                    <td>
+                        <input type="text" class="form-control-sm result-val" placeholder="Enter value">
+                    </td>
+                    <td>{{ ip.unit|default:ip.parameter.unit|default:'' }}</td>
+                    <td>
+                        <input type="text" class="form-control-sm result-rem" placeholder="Remarks (opt)">
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted" style="padding: 2rem;">No parameters configured for this investigation.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="btn-group">
+            <a href="{% url 'lab:work_order_detail' wo.service_request.id %}" class="btn-secondary">Back to Order</a>
+            <button type="button" class="btn-secondary" onclick="document.querySelectorAll('.result-val, .result-rem').forEach(el => el.value='')">Reset</button>
+            <button type="button" class="btn-primary" id="btn-save-result">Save Result</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('btn-save-result').addEventListener('click', function() {
+    const btn = this;
+    const orig = btn.innerHTML;
+    
+    // Validate required (all results must have a value)
+    let valid = true;
+    const results = [];
+    document.querySelectorAll('.result-row').forEach(row => {
+        const id = row.getAttribute('data-param-id');
+        const val = row.querySelector('.result-val').value.trim();
+        const rem = row.querySelector('.result-rem').value.trim();
+        
+        if (!val) {
+            row.querySelector('.result-val').style.borderColor = 'red';
+            valid = false;
+        } else {
+            row.querySelector('.result-val').style.borderColor = 'var(--border-color)';
+            results.push({ parameter_id: id, value: val, remarks: rem });
+        }
+    });
+    
+    if (results.length === 0) {
+        alert("No parameters to save!");
+        return;
+    }
+    
+    if (!valid) {
+        alert("Please enter all required results.");
+        return;
+    }
+    
+    btn.innerHTML = 'Saving...';
+    btn.disabled = true;
+    
+    fetch('{% url "lab:api_work_order_save_result" wo.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ results: results })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            window.location.href = `/lab/work-orders/${data.order_id}/`;
+        } else {
+            alert('Error: ' + data.message);
+            btn.innerHTML = orig;
+            btn.disabled = false;
+        }
+    })
+    .catch(e => {
+        alert('Server error.');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    });
+});
+</script>
+{% endblock %}

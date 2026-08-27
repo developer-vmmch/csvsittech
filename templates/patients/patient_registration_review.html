@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Review OP Registration{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* OP Pass Slip Styling for Review */
+    .op-slip {
+        width: 720px;
+        background: #ffffff;
+        border: 2px solid #000;
+        padding: 24px;
+        position: relative;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #000;
+        border-radius: 4px;
+        margin: 20px auto;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .op-header {
+        text-align: center;
+        padding-bottom: 10px;
+        margin-bottom: 14px;
+    }
+
+    .hospital-title {
+        font-size: 18px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .hospital-sub {
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .op-type-banner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        font-weight: 800;
+        font-size: 15px;
+        border-top: 1px solid #000;
+        border-bottom: 1px solid #000;
+        padding: 6px 12px;
+    }
+
+    .op-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 14px;
+    }
+
+    .qr-placeholder {
+        width: 52px;
+        height: 52px;
+        border: 1px dashed #ccc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 700;
+        color: #aaa;
+    }
+
+    .field-row {
+        display: flex;
+        margin-bottom: 8px;
+    }
+
+    .field-label {
+        width: 130px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .field-val {
+        flex: 1;
+        font-weight: 800;
+    }
+
+    .op-footer {
+        margin-top: 20px;
+        border-top: 1px dashed #000;
+        padding-top: 10px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .action-bar {
+        width: 720px;
+        margin: 0 auto 30px auto;
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3" style="width: 720px; margin: 0 auto;">
+    <h2>Review Registration Details</h2>
+    <span class="badge bg-warning text-dark px-3 py-2">Preview Mode</span>
+</div>
+
+<div class="op-slip">
+    <div class="op-header">
+        <div class="hospital-title">VINAYAKA MISSIONS MEDICAL COLLEGE & HOSPITAL</div>
+        <div class="hospital-sub">Keezhakasakudy Med, Karaikal Pin: 609609</div>
+        <div class="hospital-sub">Phone No: 04368 - 263277, 263338 | www.vmmcki.edu.in</div>
+
+        <div class="op-type-banner">
+            <span>OUT PATIENT - NEW</span>
+            <span style="text-transform: uppercase;">{{ patient.department|default:"GENERAL MEDICINE" }}</span>
+        </div>
+    </div>
+
+    <div class="op-grid">
+        <!-- Left Column -->
+        <div>
+            <div class="field-row">
+                <span class="field-label">UH ID</span>
+                <span class="field-val text-primary">: {{ patient.patient_id }}</span>
+            </div>
+
+            <div class="field-row">
+                <span class="field-label">Name</span>
+                <span class="field-val">: {{ patient.title }}. {{ patient.name|upper }}</span>
+            </div>
+
+            <div class="field-row">
+                <span class="field-label">Guardian</span>
+                <span class="field-val">: {{ patient.guardian_name|default:"N/A"|upper }}</span>
+            </div>
+
+            <div class="field-row">
+                <span class="field-label">Address</span>
+                <span class="field-val">: {{ patient.street|default:"" }} {{ patient.village_area|default:"" }}
+                </span>
+            </div>
+
+            <div class="field-row">
+                <span class="field-label">Phone No</span>
+                <span class="field-val">: {{ patient.mobile_no }}</span>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+            <div class="field-row">
+                <span class="field-label">Regn. Date</span>
+                <span class="field-val">: {{ patient.created_at|date:"d/M/Y H:i:s" }}</span>
+            </div>
+
+            <div class="field-row">
+                <span class="field-label">Age / Gender</span>
+                <span class="field-val">: {{ patient.age_years }} Yr(s) / {{ patient.gender }}</span>
+            </div>
+
+            <div class="field-row">
+                <span class="field-label">Doctor/Unit</span>
+                <span class="field-val">: {{ patient.unit_doctor|default:"GENERAL MEDICINE" }}</span>
+            </div>
+
+            <div class="field-row">
+                <span class="field-label">Category</span>
+                <span class="field-val">: {{ patient.company_name|default:"INDIVIDUAL" }}</span>
+            </div>
+
+            <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
+                <div class="qr-placeholder" title="QR Code will be generated after save">QR CODE</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="op-footer">
+        <span>Printed On: {% now "d/M/Y H:i:s" %}</span>
+        <span>Issued By: Front Office Desk</span>
+    </div>
+</div>
+
+<form method="post" action="{% url 'patients:add' %}" id="review-form">
+    {% csrf_token %}
+    <div style="display:none;">
+        {% for field in form %}
+            {{ field }}
+        {% endfor %}
+    </div>
+    
+    <div class="action-bar">
+        <button type="submit" name="edit_action" class="btn btn-secondary btn-lg px-4">
+            <i class="bi bi-pencil me-2"></i>Edit Details
+        </button>
+        <button type="submit" name="confirm_save" class="btn btn-success btn-lg px-4">
+            <i class="bi bi-check-circle me-2"></i>Confirm & Save
+        </button>
+    </div>
+</form>
+
+{% endblock %}

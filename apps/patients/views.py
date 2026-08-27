@@ -40,7 +40,7 @@ class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermi
         columns_param = request.GET.get('columns', '')
         
         if not columns_param:
-            selected_columns = ['Patient ID', 'OP Number', 'Patient Name', 'Gender / Age', 'Mobile Number', 'Guardian', 'City / State', 'Registration Date']
+            selected_columns = ['Patient ID', 'OP Number', 'Patient Name', 'Gender / Age', 'Department', 'Mobile Number', 'Guardian', 'City / State', 'Registration Date']
         else:
             selected_columns = [c.strip() for c in columns_param.split(',') if c.strip()]
             
@@ -61,6 +61,7 @@ class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermi
                 elif col == 'Date of Birth': row.append(p.dob.strftime('%Y-%m-%d') if p.dob else '')
                 elif col == 'Age' or col == 'Age Display': row.append(p.age_years)
                 elif col == 'Gender / Age': row.append(f"{p.gender} / {p.age_years} Y")
+                elif col == 'Department': row.append(p.department_obj.name if p.department_obj else (p.department or 'Not Assigned'))
                 elif col == 'Mobile Number': row.append(p.mobile_no)
                 elif col == 'Alternate Phone': row.append(p.alternate_phone or '')
                 elif col == 'Email': row.append(p.email or '')
@@ -297,13 +298,39 @@ class PatientCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
         context = super().get_context_data(**kwargs)
         last_patient = Patient.objects.order_by('-id').first()
         context['last_patient_id'] = last_patient.patient_id if last_patient else '26148626'
-        context['reg_date'] = '21/Aug/2026'
-        context['reg_time'] = '09:36:17'
+        context['reg_date'] = timezone.now().strftime('%d/%b/%Y')
+        context['reg_time'] = timezone.now().strftime('%H:%M:%S')
         context['is_edit'] = False
         return context
 
+    def post(self, request, *args, **kwargs):
+        if 'edit_action' in request.POST:
+            # User clicked Edit from the review screen, return to form with existing POST data
+            form = self.get_form()
+            return self.render_to_response(self.get_context_data(form=form))
+        return super().post(request, *args, **kwargs)
+
     def form_valid(self, form):
         patient = form.save(commit=False)
+        
+        # If not confirmed yet, render the review screen
+        if 'confirm_save' not in self.request.POST:
+            context = self.get_context_data(form=form)
+            # Create a mock patient for the review screen to display
+            if patient.department_obj:
+                patient.department = patient.department_obj.name
+            if patient.unit_obj:
+                patient.unit_doctor = patient.unit_obj.unit_name
+            if patient.patient_company:
+                patient.company_name = patient.patient_company.name
+            
+            patient.patient_id = "Auto-Generated"
+            patient.created_at = timezone.now()
+            context['patient'] = patient
+            
+            # Re-render with a different template (the review template)
+            self.template_name = 'patients/patient_registration_review.html'
+            return self.render_to_response(context)
         if not patient.patient_id:
             patient.patient_id = Patient.generate_next_patient_id()
 
