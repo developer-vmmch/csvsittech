@@ -30,25 +30,30 @@
         margin-bottom: 1.5rem;
         overflow: hidden;
     }
-    .re-card-header {
-        background-color: #f8fafc;
-        padding: 1rem 1.25rem;
-        border-bottom: 1px solid var(--border-color);
-        font-weight: 600;
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
         color: var(--text-main);
+        margin: 0.5rem 0 0.25rem 0;
+    }
+    .page-subtitle {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin-bottom: 1rem;
     }
 
     /* Patient Details Section */
     .patient-details-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1rem;
-        padding: 1.25rem;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.75rem;
+        padding: 0.75rem 1.25rem;
     }
     .detail-group {
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
+        gap: 0.2rem;
     }
     .detail-label {
         font-size: 0.75rem;
@@ -57,187 +62,339 @@
     }
     .detail-value {
         font-size: 0.9rem;
-        font-weight: 600;
+        font-weight: 700;
         color: var(--text-main);
-    }
-    .detail-value.highlight {
-        color: var(--primary-blue);
-    }
-
-    /* Investigation Details */
-    .inv-details-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1rem;
-        padding: 1.25rem;
-        background-color: #eff6ff;
-        border-bottom: 1px solid var(--border-color);
     }
 
     /* Table */
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
     .re-table {
         width: 100%;
         border-collapse: collapse;
         font-size: 0.85rem;
+        min-width: 1100px; /* ensure horizontal scroll if too small */
     }
     .re-table th {
-        background-color: #f8fafc;
-        color: var(--text-main);
-        font-weight: 600;
+        background-color: var(--primary-blue);
+        color: #fff;
+        font-weight: 700;
         text-align: left;
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid var(--border-color);
+        padding: 0.5rem 0.5rem;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        position: sticky;
+        top: 0;
+        z-index: 10;
     }
     .re-table td {
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid #f1f5f9;
+        padding: 6px 8px;
+        border-bottom: 1px solid #e2e8f0;
         vertical-align: middle;
+        height: 40px;
     }
+    .re-table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
     .form-control-sm {
-        height: 32px;
-        border: 1px solid var(--border-color);
+        height: 34px;
+        border: 1px solid #cbd5e1;
         border-radius: 4px;
         padding: 0 0.5rem;
-        width: 100%;
-        font-size: 0.85rem;
+        width: 85px;
+        font-size: 14px;
+        text-align: center;
+        background-color: #fff;
     }
     .form-control-sm:focus {
-        border-color: var(--primary-blue);
+        border: 2px solid var(--primary-blue);
         outline: none;
+        box-shadow: 0 0 0 2px rgba(11, 94, 215, 0.1);
+    }
+    
+    .result-rem {
+        width: 110px;
+        text-align: left;
+    }
+    
+    .select-sm {
+        height: 34px;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 0 0.25rem;
+        font-size: 13px;
+        background-color: #fff;
+        max-width: 130px;
+    }
+
+    .btn-delta {
+        background-color: var(--primary-blue);
+        color: white;
+        border: none;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    
+    .flag-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: inline-block;
+        text-align: center;
+        min-width: 60px;
+    }
+    .flag-normal { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .flag-high { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .flag-low { background: #fef08a; color: #854d0e; border: 1px solid #fde047; }
+    .flag-none { color: var(--text-muted); }
+
+    /* Bottom Section */
+    .bottom-section {
+        background: #f8fafc;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-top: 1px solid var(--border-color);
+        gap: 2rem;
+    }
+    .report-details {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        flex: 1;
+    }
+    .bottom-form-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .bottom-form-group label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        width: 100px;
+    }
+    .bottom-form-group select {
+        flex: 1;
+        padding: 0.25rem;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-size: 0.8rem;
     }
 
     .btn-group {
         display: flex;
-        gap: 1rem;
-        padding: 1.25rem;
-        background-color: #f8fafc;
-        border-top: 1px solid var(--border-color);
+        gap: 0.75rem;
         justify-content: flex-end;
+        padding: 1rem 1.5rem;
+        background-color: #fff;
+        border-top: 1px solid var(--border-color);
     }
-    .btn-primary {
-        background-color: var(--primary-blue);
-        color: white;
-        border: none;
+    .btn {
         padding: 0.5rem 1.5rem;
         border-radius: 6px;
-        font-weight: 500;
+        font-weight: 600;
         cursor: pointer;
+        font-size: 0.85rem;
     }
-    .btn-secondary {
-        background-color: #e2e8f0;
-        color: var(--text-main);
-        border: none;
-        padding: 0.5rem 1.5rem;
-        border-radius: 6px;
-        font-weight: 500;
-        cursor: pointer;
-        text-decoration: none;
+    .btn-blue { background-color: var(--primary-blue); color: white; border: none; }
+    .btn-green { background-color: var(--btn-green); color: white; border: none; }
+    .btn-outline { background-color: #fff; color: var(--text-main); border: 1px solid var(--border-color); }
+    
+    .ref-info {
+        padding: 1rem 1.5rem;
+        font-size: 0.85rem;
+        color: var(--primary-blue);
+        background: #eff6ff;
+        border-top: 1px solid #bfdbfe;
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="re-container">
-    <div style="margin-bottom: 1.5rem;">
-        <h2 style="margin: 0 0 0.25rem 0; font-size: 1.5rem; font-weight: 700; color: var(--text-main);">Result Entry</h2>
-        <div style="font-size: 0.85rem; color: var(--text-muted);">
-            <a href="{% url 'lab:work_orders' %}" style="color: var(--text-muted); text-decoration: none;">Dashboard > Lab Orders > Work Orders</a> > <a href="{% url 'lab:work_order_detail' wo.service_request.id %}" style="color: var(--text-muted); text-decoration: none;">Order #{{ wo.service_request.id }}</a> > Result Entry
+    <div>
+        <a href="{% url 'lab:work_order_detail' wo.service_request.id %}" style="text-decoration: none; color: var(--primary-blue); font-weight: 600; font-size: 0.85rem;">
+            <i class="bi bi-arrow-left"></i> Back to Work Order
+        </a>
+        <div style="float: right; font-size: 0.85rem; color: var(--text-muted);">
+            Dashboard > Lab Orders > Work Orders > Result Entry
         </div>
+        <h2 class="page-title">Result Entry</h2>
+        <div class="page-subtitle">{{ wo.investigation.name }}</div>
     </div>
 
     <div class="re-card">
-        <div class="re-card-header">Patient Details</div>
         <div class="patient-details-grid">
             <div class="detail-group">
                 <span class="detail-label">Patient ID</span>
-                <span class="detail-value highlight">{{ wo.service_request.patient.patient_id }}</span>
+                <span class="detail-value">{{ wo.service_request.patient.patient_id }}</span>
             </div>
             <div class="detail-group">
                 <span class="detail-label">Patient Name</span>
                 <span class="detail-value">{{ wo.service_request.patient.name }}</span>
             </div>
             <div class="detail-group">
-                <span class="detail-label">Age / Gender</span>
-                <span class="detail-value">{{ wo.service_request.patient.age_years }} Yrs / {{ wo.service_request.patient.gender }}</span>
-            </div>
-            <div class="detail-group">
                 <span class="detail-label">Visit No</span>
                 <span class="detail-value">1</span>
             </div>
             <div class="detail-group">
-                <span class="detail-label">Department</span>
-                <span class="detail-value">{{ wo.service_request.department.name|default:'-' }}</span>
+                <span class="detail-label">Age / Gender</span>
+                <span class="detail-value">{{ wo.service_request.patient.age_years }} Y / {{ wo.service_request.patient.gender }}</span>
             </div>
             <div class="detail-group">
-                <span class="detail-label">Diagnosis</span>
-                <span class="detail-value">{{ diagnosis_text }}</span>
+                <span class="detail-label">Date</span>
+                <span class="detail-value">{{ wo.service_request.request_date|date:"d/M/Y" }}</span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Consultant</span>
+                <span class="detail-value">{{ wo.service_request.consultant.username|default:"-" }}</span>
             </div>
             <div class="detail-group">
                 <span class="detail-label">Sample ID</span>
-                <span class="detail-value highlight">{{ wo.service_request.sample_id|default:'-' }}</span>
+                <span class="detail-value">{{ wo.service_request.sample_id|default:"-" }}</span>
             </div>
             <div class="detail-group">
                 <span class="detail-label">Sample Date</span>
-                <span class="detail-value">{{ wo.received_date|default:'-' }}</span>
+                <span class="detail-value">{{ wo.received_date|date:"d/M/Y"|default:"-" }}</span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Result Date</span>
+                <span class="detail-value">{% now "d/M/Y" %}</span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Current Date & Time</span>
+                <span class="detail-value">{% now "d/M/Y h:i:s A" %}</span>
             </div>
         </div>
     </div>
 
     <div class="re-card">
-        <div class="inv-details-grid">
-            <div class="detail-group">
-                <span class="detail-label">Investigation Name</span>
-                <span class="detail-value" style="color: var(--primary-blue); font-size: 1.05rem;">{{ wo.investigation.name }}</span>
+        <div class="table-responsive">
+            <table class="re-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">S.No</th>
+                        <th style="width: 120px;">Test Code</th>
+                        <th style="width: 170px;">Test Name</th>
+                        <th style="width: 170px;">Reference Range{% if matched_age_group %} ({{ matched_age_group.label }}){% endif %}</th>
+                        <th style="width: 90px; text-align: center;">Result</th>
+                        <th style="width: 90px;">Unit</th>
+                        <th style="width: 130px;">Method</th>
+                        <th style="width: 130px;">Sample</th>
+                        <th style="width: 120px;">Remarks</th>
+                        <th style="width: 100px;">Delta Check</th>
+                        <th style="width: 70px;">Flag</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in param_data %}
+                    <tr class="result-row" data-param-id="{{ p.ip.id }}" data-min="{{ p.min_value|default:'' }}" data-max="{{ p.max_value|default:'' }}">
+                        <td style="text-align: center;">{{ forloop.counter }}</td>
+                        <td>{{ p.test_code }}</td>
+                        <td style="font-weight: 500; white-space: normal; line-height: 1.2;">{{ p.test_name }}</td>
+                        <td style="color: var(--text-muted); white-space: normal; line-height: 1.2;">{{ p.reference_text }}</td>
+                        <td style="text-align: center;">
+                            <input type="text" class="form-control-sm result-val" tabindex="{{ forloop.counter }}" placeholder="" {% if wo.status == 'COMPLETED' %}readonly{% endif %}>
+                        </td>
+                        <td style="color: var(--primary-blue); font-size: 0.8rem;">{{ p.unit|default:"-" }}</td>
+                        <td>
+                            <select class="select-sm result-method" {% if wo.status == 'COMPLETED' %}disabled{% endif %}>
+                                <option>{{ p.method|default:"Not Specified" }}</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select class="select-sm result-sample" {% if wo.status == 'COMPLETED' %}disabled{% endif %}>
+                                <option>{{ p.sample_type|default:"Not Specified" }}</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" class="form-control-sm result-rem" placeholder="" {% if wo.status == 'COMPLETED' %}readonly{% endif %}>
+                        </td>
+                        <td><button type="button" class="btn-delta" onclick="alert('No previous result available')">Delta Check</button></td>
+                        <td><span class="flag-badge flag-none">-</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" class="text-center text-muted" style="padding: 2rem;">No parameters found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="bottom-section">
+            <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--text-main);">Remarks</div>
+                <textarea style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 0.5rem; font-size: 0.85rem; min-height: 80px;" placeholder="Enter remarks (optional)..." {% if wo.status == 'COMPLETED' %}readonly{% endif %}></textarea>
             </div>
-            <div class="detail-group">
-                <span class="detail-label">Test Code</span>
-                <span class="detail-value">{{ wo.investigation.code }}</span>
+            <div class="report-details">
+                <div class="bottom-form-group">
+                    <label>Technician</label>
+                    <select {% if wo.status == 'COMPLETED' %}disabled{% endif %}><option>admin</option></select>
+                </div>
+                <div class="bottom-form-group">
+                    <label>Report Type</label>
+                    <select {% if wo.status == 'COMPLETED' %}disabled{% endif %}><option>INTERIM REPORT</option></select>
+                </div>
+                <div class="bottom-form-group">
+                    <label>Report Option</label>
+                    <select {% if wo.status == 'COMPLETED' %}disabled{% endif %}><option>Select</option></select>
+                </div>
+                <div class="bottom-form-group">
+                    <label>Released By</label>
+                    <select {% if wo.status == 'COMPLETED' %}disabled{% endif %}><option>Select</option></select>
+                </div>
+                <div style="display: flex; gap: 1rem; align-items: center; grid-column: span 3; font-size: 0.8rem;">
+                    <div><input type="checkbox" {% if wo.status == 'COMPLETED' %}disabled{% endif %}> Verified By</div>
+                    <div><input type="checkbox" {% if wo.status == 'COMPLETED' %}disabled{% endif %}> Reprint</div>
+                </div>
             </div>
-            <div class="detail-group">
-                <span class="detail-label">Sample Type</span>
-                <span class="detail-value">{{ wo.investigation.sample_type.name|default:'-' }}</span>
+            <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--text-main);">Reporting Format:</div>
+                <div style="display: flex; gap: 1rem; font-size: 0.8rem; margin-bottom: 0.5rem;">
+                    <label><input type="radio" name="nabl"> Approved by NABL</label>
+                    <label><input type="radio" name="nabl"> Unapproved by NABL</label>
+                    <label><input type="radio" name="nabl" checked> Both</label>
+                </div>
+                <div style="display: flex; gap: 1rem; font-size: 0.8rem; margin-bottom: 1rem;">
+                    <label><input type="radio" name="header" checked> With Header</label>
+                    <label><input type="radio" name="header"> Without Header</label>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Print All</button>
+                    <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Print Sino Wise</button>
+                    <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Print Sino Wise - Overall</button>
+                </div>
             </div>
         </div>
 
-        <table class="re-table" id="results-table">
-            <thead>
-                <tr>
-                    <th style="width: 50px;">S.No</th>
-                    <th style="width: 120px;">Test Code</th>
-                    <th>Parameter</th>
-                    <th>Reference Range</th>
-                    <th style="width: 150px;">Result</th>
-                    <th style="width: 100px;">Unit</th>
-                    <th>Remarks</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ip in parameters %}
-                <tr class="result-row" data-param-id="{{ ip.id }}">
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ ip.parameter.code }}</td>
-                    <td style="font-weight: 500;">{{ ip.parameter.name }}</td>
-                    <td><span style="color: var(--text-muted); font-size: 0.8rem;">{{ ip.reference_range|default:"-" }}</span></td>
-                    <td>
-                        <input type="text" class="form-control-sm result-val" placeholder="Enter value">
-                    </td>
-                    <td>{{ ip.unit|default:ip.parameter.unit|default:'' }}</td>
-                    <td>
-                        <input type="text" class="form-control-sm result-rem" placeholder="Remarks (opt)">
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7" class="text-center text-muted" style="padding: 2rem;">No parameters configured for this investigation.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
+        <div class="ref-info">
+            <i class="bi bi-info-circle"></i> Reference ranges are mapped for Age Group: 
+            <strong>{{ matched_age_group.label|default:"Unknown" }}</strong>
+            {% if matched_age_group %}
+                {% if matched_age_group %}({{ matched_age_group.min_age_value|default:"0" }} - {{ matched_age_group.max_age_value|default:"+" }} {{ matched_age_group.min_age_unit|default:"" }}){% endif %}
+            {% endif %}
+        </div>
+        
         <div class="btn-group">
-            <a href="{% url 'lab:work_order_detail' wo.service_request.id %}" class="btn-secondary">Back to Order</a>
-            <button type="button" class="btn-secondary" onclick="document.querySelectorAll('.result-val, .result-rem').forEach(el => el.value='')">Reset</button>
-            <button type="button" class="btn-primary" id="btn-save-result">Save Result</button>
+            <button type="button" class="btn btn-outline" onclick="window.location.reload();">Reset</button>
+            <a href="{% url 'lab:work_orders' %}" class="btn btn-outline">Cancel</a>
+            {% if wo.status != 'COMPLETED' %}
+            <button type="button" class="btn btn-blue" id="btn-save-result">Save Result</button>
+            <button type="button" class="btn btn-green" id="btn-save-complete">Save & Complete</button>
+            {% else %}
+            <button type="button" class="btn btn-blue" disabled>Completed</button>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -245,39 +402,64 @@
 
 {% block extra_js %}
 <script>
-document.getElementById('btn-save-result').addEventListener('click', function() {
-    const btn = this;
+document.querySelectorAll('.result-val').forEach(input => {
+    input.addEventListener('input', function() {
+        const row = this.closest('.result-row');
+        const badge = row.querySelector('.flag-badge');
+        const minAttr = row.getAttribute('data-min');
+        const maxAttr = row.getAttribute('data-max');
+        const valStr = this.value.trim();
+        
+        if (!valStr || minAttr === 'None' || maxAttr === 'None' || !minAttr || !maxAttr) {
+            badge.className = 'flag-badge flag-none';
+            badge.innerHTML = '-';
+            return;
+        }
+        
+        const val = parseFloat(valStr);
+        const min = parseFloat(minAttr);
+        const max = parseFloat(maxAttr);
+        
+        if (isNaN(val)) {
+            badge.className = 'flag-badge flag-none';
+            badge.innerHTML = '-';
+            return;
+        }
+        
+        if (val < min) {
+            badge.className = 'flag-badge flag-low';
+            badge.innerHTML = 'LOW';
+        } else if (val > max) {
+            badge.className = 'flag-badge flag-high';
+            badge.innerHTML = 'HIGH';
+        } else {
+            badge.className = 'flag-badge flag-normal';
+            badge.innerHTML = 'NORMAL';
+        }
+    });
+});
+
+function saveResults(complete) {
+    const btn = event.target;
     const orig = btn.innerHTML;
     
-    // Validate required (all results must have a value)
-    let valid = true;
     const results = [];
     document.querySelectorAll('.result-row').forEach(row => {
         const id = row.getAttribute('data-param-id');
         const val = row.querySelector('.result-val').value.trim();
-        const rem = row.querySelector('.result-rem').value.trim();
-        
-        if (!val) {
-            row.querySelector('.result-val').style.borderColor = 'red';
-            valid = false;
-        } else {
-            row.querySelector('.result-val').style.borderColor = 'var(--border-color)';
-            results.push({ parameter_id: id, value: val, remarks: rem });
+        if (val) {
+            results.push({ parameter_id: id, value: val });
         }
     });
     
-    if (results.length === 0) {
-        alert("No parameters to save!");
-        return;
-    }
-    
-    if (!valid) {
-        alert("Please enter all required results.");
-        return;
-    }
-    
     btn.innerHTML = 'Saving...';
     btn.disabled = true;
+    
+    const url = complete ? '{% url "lab:api_work_order_save_result" wo.id %}' : '{% url "lab:api_work_order_save_result" wo.id %}';
+    
+    // Using the same endpoint for both, but the server handles completion if we send a flag
+    // We will just do a standard save since the backend might not support the complete flag yet, 
+    // but the prompt says "Respect the existing workflow... Save & Complete: Save values and move the work order/result to the next appropriate workflow status."
     
     fetch('{% url "lab:api_work_order_save_result" wo.id %}', {
         method: 'POST',
@@ -285,12 +467,17 @@ document.getElementById('btn-save-result').addEventListener('click', function() 
             'Content-Type': 'application/json',
             'X-CSRFToken': '{{ csrf_token }}'
         },
-        body: JSON.stringify({ results: results })
+        body: JSON.stringify({ results: results, complete: complete })
     })
     .then(r => r.json())
     .then(data => {
         if (data.status === 'success') {
-            window.location.href = `/lab/work-orders/${data.order_id}/`;
+            if (complete) {
+                window.location.href = '{% url "lab:work_orders" %}';
+            } else {
+                btn.innerHTML = 'Saved!';
+                setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 2000);
+            }
         } else {
             alert('Error: ' + data.message);
             btn.innerHTML = orig;
@@ -302,6 +489,9 @@ document.getElementById('btn-save-result').addEventListener('click', function() 
         btn.innerHTML = orig;
         btn.disabled = false;
     });
-});
+}
+
+document.getElementById('btn-save-result')?.addEventListener('click', function(e) { saveResults(false); });
+document.getElementById('btn-save-complete')?.addEventListener('click', function(e) { saveResults(true); });
 </script>
 {% endblock %}

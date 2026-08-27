@@ -200,12 +200,7 @@
             <span class="badge" style="background: var(--accent-blue); color: white;">A</span> Investigation Selection
         </div>
         <div style="max-width: 600px;">
-            <select id="investigationSelect" class="form-select" style="font-size: 1rem; padding: 0.5rem;">
-                <option value="">-- Select Investigation --</option>
-                {% for inv in investigations %}
-                <option value="{{ inv.id }}">{{ inv.name }} — {{ inv.code }}</option>
-                {% endfor %}
-            </select>
+            <div id="investigationSelect" style="width: 100%;"></div>
         </div>
     </div>
 
@@ -324,7 +319,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            <button class="btn-icon" onclick="editMapping({{ m.id }})" style="color: var(--accent-blue);" title="Edit Mapping">
+                            <button class="btn-icon" onclick="editMapping({{ m.id }}, '{{ m.name|escapejs }}')" style="color: var(--accent-blue);" title="Edit Mapping">
                                 <i class="bi bi-pencil-square"></i> Edit
                             </button>
                         </td>
@@ -447,26 +442,44 @@
         updateSelectedCount();
     }
 
-    $('#investigationSelect').change(function() {
-        const invId = $(this).val();
-        if (!invId) {
+    let currentInvId = null;
+    let invSelect = new VMMCSearchSelect('#investigationSelect', {
+        url: "{% url 'lab:api_search_investigation' %}",
+        placeholder: '-- Select Investigation --',
+        searchParam: 'q',
+        processResults: (data) => data.results,
+        renderMain: (item) => item.text,
+        renderSub: (item) => item.code,
+        onClear: () => {
+            currentInvId = null;
             $('#parameterContainer').slideUp();
-            return;
+        },
+        onSelect: (item) => {
+            currentInvId = item.id;
+            // Fetch existing mapped parameters for this investigation
+            $.get("{% url 'lab:api_investigation_parameters' %}?investigation_id=" + item.id, function(data) {
+                mappedParameterIds = data.parameters.map(p => p.parameter_id);
+                renderParameters();
+                $('#parameterContainer').slideDown();
+                
+                // clear search
+                $('#paramSearch').val('').trigger('input');
+            });
         }
+    });
+    
+    window.editMapping = function(invId, invName) {
+        currentInvId = invId;
+        invSelect.input.value = invName;
+        invSelect.clearBtn.style.display = 'block';
         
         // Fetch existing mapped parameters for this investigation
         $.get("{% url 'lab:api_investigation_parameters' %}?investigation_id=" + invId, function(data) {
             mappedParameterIds = data.parameters.map(p => p.parameter_id);
             renderParameters();
             $('#parameterContainer').slideDown();
-            
-            // clear search
-            $('#paramSearch').val('').trigger('input');
         });
-    });
-    
-    window.editMapping = function(invId) {
-        $('#investigationSelect').val(invId).trigger('change');
+        
         $('html, body').animate({ scrollTop: 0 }, 'fast');
     };
 
@@ -562,7 +575,7 @@
 
     // Save
     $('#saveMappingBtn').click(function() {
-        const invId = $('#investigationSelect').val();
+        const invId = currentInvId;
         if (!invId) {
             alert('Please select an investigation.');
             return;

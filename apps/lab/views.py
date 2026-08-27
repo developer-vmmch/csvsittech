@@ -11,6 +11,7 @@ from decimal import Decimal
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from apps.patients.models import Patient, PatientVisit
+from django.utils import timezone
 
 from .models import (
     Diagnosis, Investigation, Parameter, AgeGroup,
@@ -845,21 +846,33 @@ class ServiceRequestCreateView(LoginRequiredMixin, GranularPermissionRequiredMix
                 data = json.loads(request.body)
                 patient_id = data.get('patient_id')
                 consultant_id = data.get('consultant_id')
+                consultant_name = data.get('consultant_name')
                 department_id = data.get('department_id')
                 visit_type = data.get('visit_type', 'OP')
+                visit_no = data.get('visit_no')
                 request_date = data.get('request_date')
                 diagnoses_data = data.get('diagnoses', [])
                 investigations_data = data.get('investigations', [])
+                
                 from apps.patients.models import Department
                 patient = Patient.objects.get(id=patient_id)
-                department = Department.objects.filter(id=department_id).first()
-                consultant = User.objects.filter(id=consultant_id).first()
+                
+                # Department Handling
+                department = None
+                if department_id:
+                    department = Department.objects.filter(id=department_id).first()
+                if not department and patient.department:
+                    department = Department.objects.filter(name__iexact=patient.department).first()
+                    
+                consultant = User.objects.filter(id=consultant_id).first() if consultant_id else None
 
                 sr = ServiceRequest.objects.create(
                     patient=patient,
                     consultant=consultant,
+                    consultant_name=consultant_name,
                     department=department,
                     visit_type=visit_type,
+                    visit_no=visit_no,
                     request_date=request_date or timezone.now().date(),
                     status=ServiceRequest.StatusChoices.SAVED,
                     created_by=request.user
@@ -898,81 +911,7 @@ class ServiceRequestCreateView(LoginRequiredMixin, GranularPermissionRequiredMix
 
 @login_required
 def api_get_patients_for_request(request):
-    department_id = request.GET.get('department_id')
-    visit_type = request.GET.get('visit_type')
-    date_str = request.GET.get('date')
-    
-    # We combine logic to find Patient records (visit 1) and PatientVisit records (visit > 1)
-    patients_qs = Patient.objects.all().select_related('department_obj').order_by('-id')
-    if date_str:
-        patients_qs = patients_qs.filter(registration_date=date_str)
-    if department_id:
-        patients_qs = patients_qs.filter(department_obj_id=department_id)
-    if visit_type:
-        patients_qs = patients_qs.filter(visit_through=visit_type)
-        
-    visits_qs = PatientVisit.objects.all().select_related('patient', 'department_obj').order_by('-id')
-    if date_str:
-        visits_qs = visits_qs.filter(visit_date__date=date_str)
-    if department_id:
-        visits_qs = visits_qs.filter(department_obj_id=department_id)
-    if visit_type:
-        visits_qs = visits_qs.filter(visit_type=visit_type)
-        
-    data = []
-    
-    # 1. Process Patient (Visit 1)
-    for p in patients_qs[:50]:
-        visit1 = PatientVisit.objects.filter(patient=p, visit_no=1).first()
-        diagnosis_texts = []
-        if visit1:
-            for d in visit1.diagnoses.all():
-                if d.diagnosis: diagnosis_texts.append(d.diagnosis.name)
-                elif d.chief_complaint: diagnosis_texts.append(d.chief_complaint.name)
-                
-        req_count = ServiceRequest.objects.filter(patient=p, request_date=p.registration_date).count()
-        data.append({
-            'visit_id': f"patient_{p.id}",
-            'patient_id': p.patient_id,
-            'patient_pk': p.id,
-            'name': p.name,
-            'gender': p.gender,
-            'age': p.age_years,
-            'department': p.department_obj.name if p.department_obj else (p.department or '-'),
-            'dept_code': p.department_obj.code if p.department_obj else (p.department[:4].upper() if p.department else '-'),
-            'visit_type': p.visit_through,
-            'visit_no': 1,
-            'diagnosis': ", ".join(diagnosis_texts) if diagnosis_texts else "Not Added",
-            'request_count': req_count
-        })
-        
-    # 2. Process PatientVisit (Visit > 1)
-    for v in visits_qs[:50]:
-        if v.visit_no == 1:
-            continue
-            
-        diagnosis_texts = []
-        for d in v.diagnoses.all():
-            if d.diagnosis: diagnosis_texts.append(d.diagnosis.name)
-            elif d.chief_complaint: diagnosis_texts.append(d.chief_complaint.name)
-            
-        req_count = ServiceRequest.objects.filter(patient=v.patient, request_date=v.visit_date.date()).count()
-        data.append({
-            'visit_id': v.id,
-            'patient_id': v.patient.patient_id,
-            'patient_pk': v.patient.id,
-            'name': v.patient.name,
-            'gender': v.patient.gender,
-            'age': v.patient.age_years,
-            'department': v.department_obj.name if v.department_obj else (v.department or '-'),
-            'dept_code': v.department_obj.code if v.department_obj else (v.department[:4].upper() if v.department else '-'),
-            'visit_type': v.visit_type,
-            'visit_no': v.visit_no,
-            'diagnosis': ", ".join(diagnosis_texts) if diagnosis_texts else "Not Added",
-            'request_count': req_count
-        })
-        
-    return JsonResponse({'patients': data[:100]})
+    return api_doctor_window_patients(request)
 
 @login_required
 def api_search_diagnosis(request):
@@ -1156,13 +1095,16 @@ def api_doctor_window_patients(request):
         data.append({
             'visit_id': f"patient_{p.id}",
             'patient_id': p.patient_id,
+            'patient_pk': p.id,
             'patient_name': p.name,
+            'name': p.name,
             'gender': p.gender,
             'age': p.age_years,
             'department': p.department_obj.name if p.department_obj else (p.department or '-'),
             'dept_code': p.department_obj.code if p.department_obj else (p.department[:4].upper() if p.department else '-'),
             'visit_type': p.visit_through,
             'visit_no': 1,
+            'consultant': p.unit_doctor or '-',
             'diagnosis': ", ".join(diagnosis_texts) if diagnosis_texts else "Select",
             'request_count': req_count
         })
@@ -1181,17 +1123,20 @@ def api_doctor_window_patients(request):
         data.append({
             'visit_id': v.id,
             'patient_id': v.patient.patient_id,
+            'patient_pk': v.patient.id,
             'patient_name': v.patient.name,
+            'name': v.patient.name,
             'gender': v.patient.gender,
             'age': v.patient.age_years,
             'department': v.department_obj.name if v.department_obj else (v.department or '-'),
             'dept_code': v.department_obj.code if v.department_obj else (v.department[:4].upper() if v.department else '-'),
             'visit_type': v.visit_type,
             'visit_no': v.visit_no,
+            'consultant': v.unit_doctor or '-',
             'diagnosis': ", ".join(diagnosis_texts) if diagnosis_texts else "Select",
             'request_count': req_count
         })
-        
+
     return JsonResponse({'patients': data[:150]})
 
 @login_required
@@ -1270,7 +1215,8 @@ class WorkOrdersView(LoginRequiredMixin, GranularPermissionRequiredMixin, Templa
 
 @login_required
 def api_work_orders_list(request):
-    date_str = request.GET.get('date')
+    from_date = request.GET.get('from_date')
+    to_date = request.GET.get('to_date')
     department_id = request.GET.get('department_id')
     visit_type = request.GET.get('visit_type')
     status = request.GET.get('status')
@@ -1285,8 +1231,10 @@ def api_work_orders_list(request):
         'investigations'
     ).order_by('-request_date', '-id')
 
-    if date_str:
-        qs = qs.filter(request_date=date_str)
+    if from_date:
+        qs = qs.filter(request_date__gte=from_date)
+    if to_date:
+        qs = qs.filter(request_date__lte=to_date)
     if department_id:
         qs = qs.filter(department_id=department_id)
     if visit_type and visit_type != 'ALL':
@@ -1327,10 +1275,11 @@ def api_work_orders_list(request):
             'age_gender': f"{sr.patient.age_years} / {sr.patient.gender}",
             'department': sr.department.name if sr.department else '-',
             'visit_type': sr.get_visit_type_display(),
-            'request_date': sr.request_date.strftime('%d/%m/%Y') if sr.request_date else '-',
+            'request_date': sr.request_date.strftime('%d/%b/%Y') if sr.request_date else '-',
             'amount': '-',
             'voucher_no': sr.receipt_no or '-',
             'status': sr_status,
+            'test_count': len(invs),
         })
         
     return JsonResponse({'work_orders': data})
@@ -1407,13 +1356,101 @@ class WorkOrderResultEntryView(LoginRequiredMixin, GranularPermissionRequiredMix
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         wo = self.object
+        patient = wo.service_request.patient
         
-        from apps.lab.models import InvestigationParameter
+        # Calculate patient age in days
+        patient_age_days = (patient.age_years * 365) + (patient.age_months * 30) + patient.age_days
+        
+        from apps.lab.models import InvestigationParameter, ParameterReferenceRange, AgeGroup
+        
         parameters = InvestigationParameter.objects.filter(
             investigation=wo.investigation,
             is_active=True
         ).select_related('parameter').order_by('display_order')
         
+        age_groups = AgeGroup.objects.filter(is_active=True).order_by('-min_age_value')
+        matched_age_group = None
+        for ag in age_groups:
+            min_days = 0
+            if ag.min_age_unit == 'Years': min_days = (ag.min_age_value or 0) * 365
+            elif ag.min_age_unit == 'Months': min_days = (ag.min_age_value or 0) * 30
+            else: min_days = ag.min_age_value or 0
+            
+            max_days = float('inf')
+            if ag.max_age_value is not None:
+                if ag.max_age_unit == 'Years': max_days = ag.max_age_value * 365
+                elif ag.max_age_unit == 'Months': max_days = ag.max_age_value * 30
+                else: max_days = ag.max_age_value
+            
+            if min_days <= patient_age_days <= max_days:
+                if ag.gender == 'All' or ag.gender == patient.gender:
+                    matched_age_group = ag
+                    break
+                    
+        if not matched_age_group:
+            matched_age_group = AgeGroup.objects.filter(label__icontains='Adult').first()
+            
+        param_data = []
+        for ip in parameters:
+            ref_range = None
+            if matched_age_group:
+                ref_range = ParameterReferenceRange.objects.filter(
+                    investigation_parameter=ip,
+                    age_group=matched_age_group,
+                    gender=patient.gender
+                ).first()
+                if not ref_range:
+                    ref_range = ParameterReferenceRange.objects.filter(
+                        investigation_parameter=ip,
+                        age_group=matched_age_group,
+                        gender='All'
+                    ).first()
+            
+            test_code = ip.code if ip.code else (ip.parameter.code if ip.parameter else "-")
+            if test_code == "-" and wo.investigation:
+                test_code = wo.investigation.legacy_code if wo.investigation.legacy_code else wo.investigation.code
+            
+            test_name = ip.name if ip.name else (ip.parameter.name if ip.parameter else "-")
+            
+            unit = "-"
+            if ref_range and ref_range.unit: unit = ref_range.unit
+            elif ip.unit: unit = ip.unit
+            elif ip.parameter and hasattr(ip.parameter, 'default_unit') and ip.parameter.default_unit: unit = ip.parameter.default_unit
+            
+            ref_text = "Not Available"
+            if ref_range and ref_range.reference_text: ref_text = ref_range.reference_text
+            elif ip.reference_range: ref_text = ip.reference_range
+            elif ref_range and ref_range.min_value is not None and ref_range.max_value is not None:
+                ref_text = f"{ref_range.min_value} - {ref_range.max_value}"
+                
+            sample_type = "Not Specified"
+            if wo.investigation and wo.investigation.sample_type:
+                sample_type = wo.investigation.sample_type.name
+                
+            method = "Not Specified"
+            if ip.parameter and hasattr(ip.parameter, 'method') and ip.parameter.method:
+                method = ip.parameter.method
+            elif 'HGB' in str(test_code).upper() or 'HEMOGLOBIN' in str(test_name).upper():
+                method = 'Colorimetric'
+            elif 'COUNT' in str(test_name).upper() or 'WBC' in str(test_code).upper():
+                method = 'Laser Flow'
+            else:
+                method = 'Calculated'
+            
+            param_data.append({
+                'ip': ip,
+                'parameter': ip.parameter,
+                'test_code': test_code,
+                'test_name': test_name,
+                'ref_range': ref_range,
+                'unit': unit,
+                'reference_text': ref_text,
+                'min_value': ref_range.min_value if ref_range else None,
+                'max_value': ref_range.max_value if ref_range else None,
+                'method': method,
+                'sample_type': sample_type
+            })
+            
         # Get diagnosis from service request
         diagnosis_texts = []
         for d in wo.service_request.diagnoses.all():
@@ -1422,6 +1459,8 @@ class WorkOrderResultEntryView(LoginRequiredMixin, GranularPermissionRequiredMix
             
         context['diagnosis_text'] = ", ".join(diagnosis_texts) if diagnosis_texts else "Not Added"
         context['parameters'] = parameters
+        context['param_data'] = param_data
+        context['matched_age_group'] = matched_age_group
         return context
 
 @login_required
@@ -1457,10 +1496,12 @@ def api_work_order_save_result(request, pk):
                     }
                 )
             
-            wo.status = ServiceRequestInvestigation.StatusChoices.COMPLETED
-            wo.completed_date = timezone.now()
-            wo.completed_by = request.user
-            wo.save()
+            complete = data.get('complete', False)
+            if complete:
+                wo.status = ServiceRequestInvestigation.StatusChoices.COMPLETED
+                wo.completed_date = timezone.now()
+                wo.completed_by = request.user
+                wo.save()
             
         return JsonResponse({'status': 'success', 'order_id': wo.service_request.id})
     except Exception as e:

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}VMMCerp - Enterprise Management System{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/vmmc-select.css' %}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     {% block extra_head %}{% endblock %}
 </head>
@@ -353,6 +354,7 @@
     </button>
 
     <script src="{% static 'js/main.js' %}"></script>
+    <script src="{% static 'js/vmmc-select.js' %}"></script>
     <script>
         function updateLiveHeaderClock() {
             const now = new Date();

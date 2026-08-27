@@ -391,7 +391,7 @@
                     <input type="radio" name="filter_visit_type" value="OP" checked> OP
                 </label>
                 <label class="radio-label">
-                    <input type="radio" name="filter_visit_type" value="INPATIENT"> Inpatient
+                    <input type="radio" name="filter_visit_type" value="IP"> Inpatient
                 </label>
             </div>
         </div>
@@ -554,9 +554,7 @@
 
                     <!-- Search Dropdown -->
                     <div>
-                        <select id="diagnosis-search" class="dw-input" style="width: 100%;">
-                            <option value=""></option>
-                        </select>
+                        <div id="diagnosis-search" style="width: 100%;"></div>
                     </div>
 
                     <!-- Selected List -->
@@ -796,63 +794,37 @@ $(document).ready(function() {
     }
 
     // --- Diagnosis Search ---
-    $('#diagnosis-search').select2({
-        placeholder: '\uD83D\uDD0D Type or search diagnosis...',
-        allowClear: true,
-        ajax: {
-            url: "{% url 'lab:api_search_diagnosis' %}",
-            dataType: 'json',
-            delay: 250,
-            data: function (params) { 
-                return { 
-                    q: params.term || '',
-                    type: $('#diagnosis-type-filter').val()
-                }; 
-            },
-            processResults: function (data) {
-                return {
-                    results: data.results.map(r => ({
-                        id: r.id + '||' + r.type,
-                        text: r.text,
-                        real_id: r.id,
-                        type: r.type,
-                        code: r.code,
-                        category: r.category
-                    }))
-                };
-            }
+    const diagSelect = new VMMCSearchSelect('#diagnosis-search', {
+        url: "{% url 'lab:api_search_diagnosis' %}",
+        placeholder: '🔍 Type or search diagnosis...',
+        searchParam: 'q',
+        extraParams: () => ({ type: $('#diagnosis-type-filter').val() }),
+        processResults: (data) => data.results,
+        renderMain: (item) => item.text,
+        renderSub: (item) => {
+            let codeText = item.code ? `ICD: ${item.code}` : '';
+            let catText = item.category ? `Category: ${item.category}` : '';
+            return [codeText, catText].filter(Boolean).join(' | ');
         },
-        templateResult: function(repo) {
-            if (repo.loading) return repo.text;
-            let codeText = repo.code ? `ICD: ${repo.code}` : '';
-            let catText = repo.category ? `Category: ${repo.category}` : '';
-            let subText = [codeText, catText].filter(Boolean).join(' | ');
-            return $(`<div style="display:flex; flex-direction:column; padding: 2px 0;">
-                        <span style="font-weight:600; font-size:0.85rem; color:#0f172a;">${repo.text}</span>
-                        ${subText ? `<small style="color:#64748b; font-size:0.75rem;">${subText}</small>` : ''}
-                      </div>`);
+        onSelect: (data) => {
+            const exists = selectedDiagnoses.find(d => d.id == data.id && d.type == data.type);
+            
+            if(!exists) {
+                selectedDiagnoses.push({
+                    id: data.id,
+                    type: data.type,
+                    text: data.text,
+                    code: data.code,
+                    category: data.category
+                });
+                renderDiagnoses();
+            }
+            diagSelect.clear();
         }
     });
 
     $('#diagnosis-type-filter').change(function() {
-        $('#diagnosis-search').val(null).trigger('change');
-    });
-
-    $('#diagnosis-search').on('select2:select', function(e) {
-        const data = e.params.data;
-        const exists = selectedDiagnoses.find(d => d.id == data.real_id && d.type == data.type);
-        
-        if(!exists) {
-            selectedDiagnoses.push({
-                id: data.real_id,
-                type: data.type,
-                text: data.text,
-                code: data.code,
-                category: data.category
-            });
-            renderDiagnoses();
-        }
-        $(this).val(null).trigger('change');
+        diagSelect.clear();
     });
 
     function renderDiagnoses() {

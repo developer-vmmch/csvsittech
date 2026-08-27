@@ -165,8 +165,18 @@
 
     <div class="filter-panel">
         <div class="filter-group">
-            <span class="filter-label">Date</span>
-            <input type="date" id="f_date" class="filter-input" value="{% now 'Y-m-d' %}" onclick="if(this.showPicker) this.showPicker();" style="width: 130px;">
+            <span class="filter-label">From Date</span>
+            <div style="display: flex; gap: 0.25rem;">
+                <input type="date" id="f_from_date" class="filter-input" value="{% now 'Y-m-d' %}" onclick="if(this.showPicker) this.showPicker();" style="width: 130px;">
+                <button type="button" class="btn-search" id="btn-clear-from-date" title="Clear From Date" style="padding: 0.25rem 0.5rem; background: #e2e8f0; color: #334155; border: none; border-radius: 4px;"><i class="bi bi-x-circle"></i></button>
+            </div>
+        </div>
+        <div class="filter-group">
+            <span class="filter-label">To Date</span>
+            <div style="display: flex; gap: 0.25rem;">
+                <input type="date" id="f_to_date" class="filter-input" value="{% now 'Y-m-d' %}" onclick="if(this.showPicker) this.showPicker();" style="width: 130px;">
+                <button type="button" class="btn-search" id="btn-clear-to-date" title="Clear To Date" style="padding: 0.25rem 0.5rem; background: #e2e8f0; color: #334155; border: none; border-radius: 4px;"><i class="bi bi-x-circle"></i></button>
+            </div>
         </div>
         <div class="filter-group">
             <span class="filter-label">Department</span>
@@ -209,17 +219,14 @@
                 <thead>
                     <tr>
                         <th style="width: 40px;">S.No</th>
+                        <th>Work Order No</th>
+                        <th>Service Request</th>
                         <th>Patient ID</th>
                         <th>Patient Name</th>
-                        <th>V.No</th>
-                        <th>Age</th>
-                        <th>Visit Type</th>
                         <th>Sample ID</th>
-                        <th>Voucher No</th>
-                        <th>Amount</th>
-                        <th>Bill Time</th>
+                        <th>Order Date</th>
                         <th>Sample Date</th>
-                        <th>IP No</th>
+                        <th>No. of Tests</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -259,6 +266,13 @@ $(document).ready(function() {
     let allWorkOrders = [];
 
     function loadWorkOrders() {
+        const fromDate = $('#f_from_date').val();
+        const toDate = $('#f_to_date').val();
+        if (fromDate && toDate && fromDate > toDate) {
+            alert("From date cannot be later than To date.");
+            return;
+        }
+        
         const btn = $('#btn-view');
         const orig = btn.html();
         btn.html('<i class="spinner-border spinner-border-sm"></i>').prop('disabled', true);
@@ -266,7 +280,8 @@ $(document).ready(function() {
         $.ajax({
             url: "{% url 'lab:api_work_orders_list' %}",
             data: {
-                date: $('#f_date').val(),
+                from_date: $('#f_from_date').val(),
+                to_date: $('#f_to_date').val(),
                 department_id: $('#f_dept').val(),
                 visit_type: $('#f_type').val(),
                 status: $('#f_status').val(),
@@ -283,17 +298,14 @@ $(document).ready(function() {
                         const tr = $(`
                             <tr data-id="${wo.id}">
                                 <td>${wo.s_no}</td>
+                                <td style="font-weight: 600;">#${wo.id}</td>
+                                <td style="color: var(--text-muted);">SR-${wo.id}</td>
                                 <td style="color: var(--primary-blue); font-weight: 500;">${wo.patient_id}</td>
                                 <td>${wo.patient_name}</td>
-                                <td>1</td>
-                                <td>${wo.age_gender.split('/')[0].trim()}</td>
-                                <td>${wo.visit_type}</td>
                                 <td style="font-weight: 600;">${wo.sample_id}</td>
-                                <td>${wo.voucher_no}</td>
-                                <td>${wo.amount}</td>
                                 <td>${wo.request_date}</td>
                                 <td>${wo.request_date}</td>
-                                <td>-</td>
+                                <td>${wo.test_count || '-'}</td>
                                 <td><span class="status-badge status-${wo.status}">${wo.status}</span></td>
                                 <td><a href="/lab/work-orders/${wo.id}/" class="action-btn">Select/View</a></td>
                             </tr>
@@ -301,7 +313,7 @@ $(document).ready(function() {
                         tbody.append(tr);
                     });
                 } else {
-                    tbody.html('<tr><td colspan="12" class="text-center text-muted" style="padding: 2rem;">No work orders found.</td></tr>');
+                    tbody.html('<tr><td colspan="11" class="text-center text-muted" style="padding: 2rem;">No work orders found.</td></tr>');
                 }
             },
             complete: function() { btn.html(orig).prop('disabled', false); }
@@ -310,7 +322,16 @@ $(document).ready(function() {
 
     // Bind triggers
     $('#btn-view').click(loadWorkOrders);
-    $('#f_date, #f_dept, #f_type, #f_status').change(loadWorkOrders);
+    $('#f_from_date, #f_to_date, #f_dept, #f_type, #f_status').change(loadWorkOrders);
+    
+    $('#btn-clear-from-date').click(function() {
+        $('#f_from_date').val('');
+        loadWorkOrders();
+    });
+    $('#btn-clear-to-date').click(function() {
+        $('#f_to_date').val('');
+        loadWorkOrders();
+    });
     
     // Initial Load
     loadWorkOrders();

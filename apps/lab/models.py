@@ -384,6 +384,8 @@ class ServiceRequest(TimeStampedModel):
 
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='service_requests')
     consultant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='service_requests_consulted')
+    consultant_name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Consultant Name")
+    visit_no = models.PositiveIntegerField(null=True, blank=True, verbose_name="Visit No")
     department = models.ForeignKey('patients.Department', on_delete=models.SET_NULL, null=True, related_name='service_requests')
     visit_type = models.CharField(max_length=20, choices=VisitTypeChoices.choices, default=VisitTypeChoices.OP)
     request_date = models.DateField(default=timezone.now)

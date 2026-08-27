@@ -1,0 +1,124 @@
+.vmmc-search-select {
+    position: relative;
+    width: 100%;
+    font-family: inherit;
+}
+
+.vmmc-search-select .vss-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border-color, #cbd5e1);
+    border-radius: 6px;
+    background: #fff;
+    transition: all 0.2s;
+    height: 38px;
+}
+
+.vmmc-search-select .vss-input-wrapper.active {
+    border-color: var(--primary-blue, #2563eb);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.vmmc-search-select .vss-icon {
+    padding-left: 10px;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.vmmc-search-select .vss-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 0 10px;
+    height: 100%;
+    outline: none;
+    font-size: 0.85rem;
+    color: var(--text-main, #334155);
+    width: 100%;
+}
+
+.vmmc-search-select .vss-clear,
+.vmmc-search-select .vss-spinner {
+    padding-right: 10px;
+    color: #94a3b8;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vmmc-search-select .vss-clear:hover {
+    color: #ef4444;
+}
+
+.vmmc-search-select .vss-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid var(--border-color, #cbd5e1);
+    border-radius: 6px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 9999;
+    display: none;
+}
+
+.vmmc-search-select .vss-dropdown.show {
+    display: block;
+}
+
+.vmmc-search-select .vss-list {
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+}
+
+.vmmc-search-select .vss-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-main, #334155);
+    border-left: 3px solid transparent;
+    display: flex;
+    flex-direction: column;
+}
+
+.vmmc-search-select .vss-item:hover, 
+.vmmc-search-select .vss-item.highlighted {
+    background: #f1f5f9;
+    border-left-color: var(--primary-blue, #2563eb);
+}
+
+.vmmc-search-select .vss-item-main {
+    font-weight: 500;
+    color: var(--text-main, #0f172a);
+}
+
+.vmmc-search-select .vss-item-sub {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.vmmc-search-select .vss-message {
+    padding: 12px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.vmmc-search-select .spin-icon {
+    animation: vss-spin 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes vss-spin {
+    100% { transform: rotate(360deg); }
+}

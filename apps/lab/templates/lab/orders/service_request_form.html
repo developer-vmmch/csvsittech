@@ -55,9 +55,12 @@
     
     .sr-main-grid {
         display: grid;
-        grid-template-columns: 2.2fr 1fr;
+        grid-template-columns: 2.5fr 1fr;
         gap: 1.5rem;
         align-items: start;
+    }
+    .sr-main-grid > div {
+        min-width: 0; /* Prevent grid blowout */
     }
     @media (max-width: 1200px) {
         .sr-main-grid {
@@ -95,15 +98,15 @@
     /* Patient Details Section */
     .patient-details-grid {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 1rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem 2rem;
         padding: 1.25rem;
         background: #f8fafc;
     }
     .detail-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
+        display: grid;
+        grid-template-columns: 130px 10px 1fr;
+        align-items: center;
     }
     .detail-label {
         font-size: 0.75rem;
@@ -425,47 +428,44 @@
                 </div>
                 <div class="patient-details-grid" id="patient-details-block" style="display: none;">
                     <div class="detail-group">
-                        <span class="detail-label">Patient ID</span>
+                        <span class="detail-label">Patient ID</span><span>:</span>
                         <span class="detail-value" id="lbl-pid"></span>
                     </div>
                     <div class="detail-group">
-                        <span class="detail-label">Patient Name</span>
+                        <span class="detail-label">Visit No</span><span>:</span>
+                        <span class="detail-value" id="lbl-visit"></span>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Patient Name</span><span>:</span>
                         <span class="detail-value" id="lbl-name" style="color: var(--text-main);"></span>
                     </div>
                     <div class="detail-group">
-                        <span class="detail-label">Age / Gender</span>
-                        <span class="detail-value" id="lbl-age-gender" style="color: var(--text-main);"></span>
+                        <span class="detail-label">Visit Type</span><span>:</span>
+                        <span class="detail-value" id="lbl-visit-type"></span>
                     </div>
                     <div class="detail-group">
-                        <span class="detail-label">Department</span>
-                        <span class="detail-value" id="lbl-department" style="color: var(--text-main);"></span>
+                        <span class="detail-label">Age / Gender</span><span>:</span>
+                        <span class="detail-value" id="lbl-age-gender"></span>
                     </div>
                     <div class="detail-group">
-                        <span class="detail-label">Visit No</span>
-                        <span class="detail-value" id="lbl-visit" style="color: var(--text-main);"></span>
+                        <span class="detail-label">Consultant / Doctor</span><span>:</span>
+                        <span class="detail-value" id="lbl-consultant" style="color: var(--text-main);"></span>
                     </div>
-                    <div class="detail-group" style="grid-column: span 2;">
-                        <span class="detail-label">Diagnosis</span>
-                        
-                        <!-- When Diagnosis Exists -->
-                        <div id="lbl-diagnosis-container" style="display: none;">
-                            <span class="detail-value" id="lbl-diagnosis"></span>
-                        </div>
-                        
-                        <!-- When No Diagnosis Exists -->
-                        <div id="add-diagnosis-container" style="display: none; margin-top: 0.25rem;">
-                            <div style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted); margin-bottom: 0.5rem;">[ No diagnosis added ]</div>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <div style="flex-grow: 1;">
-                                    <select id="diagnosis-search" class="sr-input" style="width: 100%;">
-                                        <option value=""></option>
-                                    </select>
-                                </div>
-                                <button type="button" id="btn-save-diagnosis" class="btn-add" style="padding: 0.25rem 0.75rem; font-size: 0.85rem;">
-                                    Save
-                                </button>
-                            </div>
-                        </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Department</span><span>:</span>
+                        <span class="detail-value" id="lbl-department"></span>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Sample ID</span><span>:</span>
+                        <span class="detail-value" id="lbl-sample-id-grid">-</span>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label"></span><span></span>
+                        <span class="detail-value"></span>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Receipt No</span><span>:</span>
+                        <span class="detail-value" id="lbl-receipt-no-grid">-</span>
                     </div>
                 </div>
                 <div id="patient-details-empty" style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
@@ -473,14 +473,36 @@
                 </div>
             </div>
 
+            <!-- Diagnosis Card -->
+            <div class="sr-card" id="diagnosis-card" style="display: none;">
+                <div class="sr-card-header">
+                    <h5 class="sr-card-title"><i class="bi bi-journal-medical"></i> Diagnosis</h5>
+                </div>
+                <div class="add-inv-box" style="border-bottom: 1px solid var(--border-color);">
+                    <div style="flex-grow: 1;">
+                        <div id="diagnosis-search" style="width: 100%;"></div>
+                    </div>
+                    <button type="button" id="btn-save-diagnosis" class="btn-add">
+                        <i class="bi bi-plus-lg"></i> Add
+                    </button>
+                </div>
+                <div style="padding: 1.25rem;">
+                    <h6 id="diagnosis-heading" style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 0.75rem; font-weight: 600;">Selected Diagnosis (0)</h6>
+                    <div id="selected-diagnosis-list">
+                        <!-- Populated via JS -->
+                        <div style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">No diagnosis selected.</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Add Investigation Card -->
             <div class="sr-card">
                 <div class="sr-card-header">
-                    <h5 class="sr-card-title"><i class="bi bi-flask-fill"></i> Add Investigation</h5>
+                    <h5 class="sr-card-title"><i class="bi bi-flask"></i> Add Investigation</h5>
                 </div>
                 <div class="add-inv-box">
                     <div style="flex-grow: 1;">
-                        <select id="inv-search" class="sr-input" style="width: 100%;"></select>
+                        <div id="inv-search" style="width: 100%;"></div>
                     </div>
                     <button type="button" id="btn-add-inv" class="btn-add">
                         <i class="bi bi-plus-lg"></i> Add
@@ -491,24 +513,27 @@
             <!-- Selected Investigations Card -->
             <div class="sr-card">
                 <div class="sr-card-header">
-                    <h5 class="sr-card-title"><i class="bi bi-list-check"></i> Selected Investigations</h5>
+                    <h5 class="sr-card-title"><i class="bi bi-list-check"></i> Selected Investigations (<span id="inv-count">0</span>)</h5>
                 </div>
-                <table class="inv-table" id="inv-table">
-                    <thead>
-                        <tr>
-                            <th>Investigation Name</th>
-                            <th>Code</th>
-                            <th>Sample Type</th>
-                            <th style="width: 70px; text-align: center;">Qty</th>
-                            <th>Source</th>
-                            <th style="text-align: right;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Populated via JS -->
-                        <tr><td colspan="6" class="text-center text-muted" style="padding: 2rem;">No investigations selected.</td></tr>
-                    </tbody>
-                </table>
+                <div style="width: 100%; overflow-x: auto;">
+                    <table class="inv-table" id="inv-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">S.NO</th>
+                                <th>INVESTIGATION NAME</th>
+                                <th>CODE</th>
+                                <th>SAMPLE TYPE</th>
+                                <th style="width: 70px; text-align: center;">QTY</th>
+                                <th>SOURCE</th>
+                                <th style="text-align: right;">ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated via JS -->
+                            <tr><td colspan="6" class="text-center text-muted" style="padding: 2rem;">No investigations selected.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
                 
                 <div class="info-alert">
                     <i class="bi bi-info-circle-fill"></i>
@@ -540,7 +565,7 @@
                         <span class="filter-label">Patient Type</span>
                         <div class="radio-group">
                             <label class="radio-item"><input type="radio" name="f_visit_type" value="OP" checked> OP</label>
-                            <label class="radio-item"><input type="radio" name="f_visit_type" value="INPATIENT"> Inpatient</label>
+                            <label class="radio-item"><input type="radio" name="f_visit_type" value="IP"> Inpatient</label>
                         </div>
                     </div>
                     <div>
@@ -548,7 +573,7 @@
                         <select id="f_dept" class="sr-input select2">
                             <option value="">ALL DEPARTMENTS</option>
                             {% for d in departments %}
-                            <option value="{{ d.id }}" {% if forloop.first %}selected{% endif %}>{{ d.name }}</option>
+                            <option value="{{ d.id }}">{{ d.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -563,23 +588,29 @@
             </div>
             
             <div style="overflow-y: auto; max-height: calc(100vh - 350px);">
-                <table class="patient-table" id="patients-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 50px;">S.No</th>
-                            <th>Patient ID</th>
-                            <th>Patient Name</th>
-                            <th>Age</th>
-                            <th>Department</th>
-                            <th>Visit No</th>
-                            <th>Diagnosis</th>
-                            <th style="text-align: center;">Requests</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr><td colspan="8" class="text-center text-muted" style="padding: 2rem;">Click View to load patients.</td></tr>
-                    </tbody>
-                </table>
+                <div style="width: 100%; overflow-x: auto; max-height: 500px;">
+                    <table class="inv-table patient-table" id="patients-table">
+                        <thead>
+                            <tr>
+                                <th>S.No</th>
+                                <th>Patient ID</th>
+                                <th>Patient Name</th>
+                                <th>Age</th>
+                                <th>Gender</th>
+                                <th>Dept</th>
+                                <th>Diagnosis</th>
+                                <th>Requests</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="8" class="text-center text-muted" style="padding: 2rem;">
+                                    Please select filters and click View to load patients
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
             
             <div class="pagination-footer">
@@ -629,6 +660,7 @@ $(document).ready(function() {
     
     let currentPatient = null;
     let selectedInvestigations = [];
+    let selectedDiagnoses = [];
     let currentDiagnosisIds = [];
     
     // Update Title on Dept change
@@ -647,7 +679,7 @@ $(document).ready(function() {
         btn.html('<i class="spinner-border spinner-border-sm"></i>');
         
         $.ajax({
-            url: "{% url 'lab:api_get_patients_for_request' %}",
+            url: "{% url 'lab:api_doctor_window_patients' %}",
             data: {
                 date: $('#f_date').val(),
                 department_id: $('#f_dept').val(),
@@ -707,13 +739,17 @@ $(document).ready(function() {
 
                 } else {
                     $('#lbl-showing').text('Showing 0 patients');
-                    tbody.html('<tr><td colspan="8" class="text-center text-muted" style="padding: 2rem;">No eligible patients found.</td></tr>');
+                    tbody.html('<tr><td colspan="8" class="text-center text-muted" style="padding: 2rem;">No patients found for the selected date and filters.</td></tr>');
                     
                     $('#summary-table tbody').html(`
                         <tr><td colspan="4" class="text-center text-muted">No data available</td></tr>
                     `);
                     $('#summary-tfoot').hide();
                 }
+            },
+            error: function(xhr) {
+                console.error("Error loading patients:", xhr);
+                $('#patients-table tbody').html('<tr><td colspan="8" class="text-center text-danger" style="padding: 2rem;">Unable to load patient data. Please try again.</td></tr>');
             },
             complete: function() { btn.html(orig); }
         });
@@ -737,96 +773,105 @@ $(document).ready(function() {
         $('#lbl-age-gender').text(`${currentPatient.age} / ${currentPatient.gender}`);
         $('#lbl-department').text(currentPatient.department);
         $('#lbl-visit').text(currentPatient.visit_no);
+        $('#lbl-visit-type').text(currentPatient.visit_type || '-');
+        $('#lbl-consultant').text(currentPatient.consultant || '-');
         
         // Fetch current diagnoses
+        $('#diagnosis-card').show();
         $.ajax({
             url: "{% url 'lab:api_doctor_window_get_diagnosis' %}",
             data: { visit_id: currentPatient.visit_id },
             success: function(res) {
-                currentDiagnosisIds = res.diagnoses.filter(d => d.type === 'Diagnosis').map(d => d.id);
-                
-                if (res.diagnoses.length > 0) {
-                    $('#lbl-diagnosis').html(`${res.diagnoses[0].text} <br><span class="detail-sub">(ICD: mapped)</span>`);
-                    $('#add-diagnosis-container').hide();
-                    $('#lbl-diagnosis-container').show();
-                } else {
-                    $('#lbl-diagnosis-container').hide();
-                    $('#add-diagnosis-container').show();
-                }
-                
+                selectedDiagnoses = res.diagnoses.filter(d => d.type === 'Diagnosis').map(d => ({
+                    id: d.id,
+                    name: d.text,
+                    icd: d.code || 'mapped'
+                }));
+                currentDiagnosisIds = selectedDiagnoses.map(d => d.id);
+                renderDiagnoses();
                 loadDefaultInvestigations();
             }
         });
     });
     
-    // --- 2.5 ADD DIAGNOSIS FLOW ---
-    $('#diagnosis-search').select2({
-        placeholder: 'Search diagnosis name / ICD code...',
-        allowClear: true,
-        ajax: {
-            url: "{% url 'lab:api_search_diagnosis' %}",
-            dataType: 'json',
-            delay: 250,
-            data: function (params) { return { q: params.term || '', type: 'Diagnosis' }; },
-            processResults: function (data) {
-                return {
-                    results: data.results.map(r => ({
-                        id: r.id,
-                        text: r.text,
-                        code: r.code
-                    }))
-                };
-            }
+    function renderDiagnoses() {
+        const container = $('#selected-diagnosis-list');
+        $('#diagnosis-heading').text(`Selected Diagnosis (${selectedDiagnoses.length})`);
+        
+        if (selectedDiagnoses.length === 0) {
+            container.html('<div style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">No diagnosis selected.</div>');
+            return;
         }
+        
+        let html = '';
+        selectedDiagnoses.forEach(diag => {
+            html += `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-blue); border-radius: 4px; margin-bottom: 0.5rem; background: #f8fafc;">
+                <div>
+                    <div style="font-weight: 600; font-size: 0.9rem; color: var(--primary-blue); margin-bottom: 0.15rem;">${diag.name}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">ICD: ${diag.icd}</div>
+                </div>
+                <button type="button" class="btn-remove btn-remove-diagnosis" data-id="${diag.id}">
+                    <i class="bi bi-x"></i> Remove
+                </button>
+            </div>
+            `;
+        });
+        container.html(html);
+    }
+    
+    $(document).on('click', '.btn-remove-diagnosis', function() {
+        const id = $(this).data('id');
+        selectedDiagnoses = selectedDiagnoses.filter(d => d.id != id);
+        currentDiagnosisIds = selectedDiagnoses.map(d => d.id);
+        renderDiagnoses();
+        // Option to save automatically, but per instructions, we just keep it in memory
+        // and fetch mapped investigations again
+        loadDefaultInvestigations();
+    });
+    
+    // --- 2.5 ADD DIAGNOSIS FLOW ---
+    let selectedDiagData = null;
+    const diagSelect = new VMMCSearchSelect('#diagnosis-search', {
+        url: "{% url 'lab:api_search_diagnosis' %}",
+        placeholder: 'Search diagnosis name / ICD code...',
+        searchParam: 'q',
+        extraParams: { type: 'Diagnosis' },
+        processResults: (data) => data.results,
+        renderMain: (item) => item.text,
+        renderSub: (item) => item.code,
+        onSelect: (item) => { selectedDiagData = item; },
+        onClear: () => { selectedDiagData = null; }
     });
 
     $('#btn-save-diagnosis').click(function() {
-        const diagData = $('#diagnosis-search').select2('data')[0];
-        if(!diagData || !diagData.id) return alert('Please select a diagnosis first.');
+        if(!selectedDiagData || !selectedDiagData.id) return alert('Please select a diagnosis first.');
         
-        const btn = $(this);
-        const orig = btn.html();
-        btn.html('<i class="spinner-border spinner-border-sm"></i>').prop('disabled', true);
+        const exists = selectedDiagnoses.find(d => d.id == selectedDiagData.id);
+        if(exists) return alert('This diagnosis is already added.');
         
-        const payload = {
-            visit_id: currentPatient.visit_id,
-            diagnoses: [{ id: diagData.id, type: 'Diagnosis' }]
-        };
-        
-        $.ajax({
-            url: "{% url 'lab:api_doctor_window_save_diagnosis' %}",
-            type: 'POST',
-            contentType: 'application/json',
-            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
-            data: JSON.stringify(payload),
-            success: function(res) {
-                if(res.status === 'success') {
-                    // Update UI immediately
-                    $('#lbl-diagnosis').html(`${diagData.text} <br><span class="detail-sub">(ICD: mapped)</span>`);
-                    $('#add-diagnosis-container').hide();
-                    $('#lbl-diagnosis-container').show();
-                    
-                    // Reload default investigations
-                    currentDiagnosisIds = [diagData.id];
-                    loadDefaultInvestigations();
-                    
-                    // Update row in patient finder list
-                    $(`.patient-row.selected td:nth-child(7)`).text(diagData.text.length > 15 ? diagData.text.substring(0,15)+'...' : diagData.text);
-                    currentPatient.diagnosis = diagData.text;
-                } else {
-                    alert('Error saving diagnosis: ' + res.message);
-                }
-            },
-            error: function() { alert('A server error occurred while saving the diagnosis.'); },
-            complete: function() { btn.html(orig).prop('disabled', false); }
+        selectedDiagnoses.push({
+            id: selectedDiagData.id,
+            name: selectedDiagData.text,
+            icd: selectedDiagData.code || 'mapped'
         });
+        currentDiagnosisIds = selectedDiagnoses.map(d => d.id);
+        
+        renderDiagnoses();
+        loadDefaultInvestigations();
+        
+        diagSelect.clear();
     });
+    
+    let removedMappedInvestigations = [];
     
     // --- 3. DEFAULT INVESTIGATIONS ---
     function loadDefaultInvestigations() {
         if(currentDiagnosisIds.length === 0) {
-            selectedInvestigations = [];
-            renderInvestigations();
+            // Keep manual ones, but optionally we could remove mapped ones? The user says "When another diagnosis is selected... add only missing".
+            // If they remove all diagnoses, maybe we should remove all mapped ones?
+            // Actually, let's just leave the ones already there, or remove mapped ones if they no longer match any diagnosis.
+            // A simpler approach: just fetch and add missing. We won't auto-remove mapped investigations if a diagnosis is removed, they can just remove them manually.
             return;
         }
         
@@ -840,17 +885,22 @@ $(document).ready(function() {
                 patient_id: currentPatient.patient_pk
             }),
             success: function(res) {
-                selectedInvestigations = [];
                 if(res.status === 'success' && res.investigations) {
                     res.investigations.forEach(inv => {
-                        selectedInvestigations.push({
-                            id: inv.id,
-                            name: inv.name,
-                            code: inv.code,
-                            sample: inv.sample || 'Whole Blood', // placeholder if missing in master
-                            qty: 1,
-                            source: 'Diagnosis Mapping'
-                        });
+                        // Check if already in selected
+                        const exists = selectedInvestigations.find(i => i.id == inv.id);
+                        const manuallyRemoved = removedMappedInvestigations.includes(inv.id);
+                        
+                        if(!exists && !manuallyRemoved) {
+                            selectedInvestigations.push({
+                                id: inv.id,
+                                name: inv.name,
+                                code: inv.code,
+                                sample: inv.sample || 'Whole Blood',
+                                qty: 1,
+                                source: 'Diagnosis Mapping'
+                            });
+                        }
                     });
                 }
                 renderInvestigations();
@@ -859,53 +909,45 @@ $(document).ready(function() {
     }
     
     // --- 4. INVESTIGATION SEARCH ---
-    $('#inv-search').select2({
+    let selectedInvData = null;
+    const invSelect = new VMMCSearchSelect('#inv-search', {
+        url: "{% url 'lab:api_search_investigation' %}",
         placeholder: 'Search investigation by name or code...',
-        minimumInputLength: 0,
-        ajax: {
-            url: "{% url 'lab:api_search_investigation' %}",
-            dataType: 'json',
-            delay: 250,
-            data: function (params) { return { q: params.term || '' }; },
-            processResults: function (data) {
-                return {
-                    results: data.results.map(r => ({
-                        id: r.id,
-                        text: r.text,
-                        code: r.code
-                    }))
-                };
-            }
-        }
+        searchParam: 'q',
+        processResults: (data) => data.results,
+        renderMain: (item) => item.text,
+        renderSub: (item) => item.code,
+        onSelect: (item) => { selectedInvData = item; },
+        onClear: () => { selectedInvData = null; }
     });
     
     $('#btn-add-inv').click(function() {
-        const data = $('#inv-search').select2('data')[0];
-        if(!data || !data.id) return;
+        if(!selectedInvData || !selectedInvData.id) return;
         
-        const exists = selectedInvestigations.find(i => i.id == data.id);
+        const exists = selectedInvestigations.find(i => i.id == selectedInvData.id);
         if(exists) return alert('This investigation is already added.');
         
         selectedInvestigations.push({
-            id: data.id,
-            name: data.text,
-            code: data.code || 'N/A',
+            id: selectedInvData.id,
+            name: selectedInvData.text,
+            code: selectedInvData.code || 'N/A',
             sample: 'Manual',
             qty: 1,
             source: 'Manual'
         });
         
-        $('#inv-search').val(null).trigger('change');
+        invSelect.clear();
         renderInvestigations();
     });
     
     // --- 5. RENDER INVESTIGATIONS ---
     function renderInvestigations() {
+        $('#inv-count').text(selectedInvestigations.length);
         const tbody = $('#inv-table tbody');
         tbody.empty();
         
         if(selectedInvestigations.length === 0) {
-            tbody.append('<tr><td colspan="6" class="text-center text-muted" style="padding: 2rem;">No investigations selected.</td></tr>');
+            tbody.append('<tr><td colspan="7" class="text-center text-muted" style="padding: 2rem;">No investigations selected.</td></tr>');
             return;
         }
         
@@ -913,6 +955,7 @@ $(document).ready(function() {
             const badgeClass = inv.source === 'Manual' ? 'source-manual' : 'source-mapped';
             tbody.append(`
                 <tr>
+                    <td>${idx + 1}</td>
                     <td style="color: var(--text-main); font-weight: 500;">${inv.name}</td>
                     <td>${inv.code}</td>
                     <td>${inv.sample}</td>
@@ -929,7 +972,12 @@ $(document).ready(function() {
     }
     
     $(document).on('click', '.btn-remove', function() {
-        selectedInvestigations.splice($(this).data('index'), 1);
+        const idx = $(this).data('index');
+        const inv = selectedInvestigations[idx];
+        if (inv.source === 'Diagnosis Mapping') {
+            removedMappedInvestigations.push(inv.id);
+        }
+        selectedInvestigations.splice(idx, 1);
         renderInvestigations();
     });
     
@@ -948,6 +996,8 @@ $(document).ready(function() {
         
         const payload = {
             patient_id: currentPatient.patient_pk,
+            consultant_name: currentPatient.consultant,
+            visit_no: currentPatient.visit_no,
             department_id: $('#f_dept').val() || null,
             visit_type: $('input[name="f_visit_type"]:checked').val(),
             request_date: $('#f_date').val(),
@@ -995,10 +1045,14 @@ $(document).ready(function() {
 
     $('#btn-clear-all').click(function() {
         $('#patient-details-block').hide();
+        $('#diagnosis-card').hide();
         $('#patient-details-empty').show();
         currentPatient = null;
         selectedInvestigations = [];
+        selectedDiagnoses = [];
         currentDiagnosisIds = [];
+        removedMappedInvestigations = [];
+        renderDiagnoses();
         renderInvestigations();
         $('.patient-row').removeClass('selected');
     });

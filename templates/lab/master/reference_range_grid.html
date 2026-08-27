@@ -94,12 +94,7 @@
             <!-- Investigation -->
             <div>
                 <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Investigation</label>
-                <select id="investigationSelect" class="form-select">
-                    <option value="">-- Select Investigation --</option>
-                    {% for inv in investigations %}
-                    <option value="{{ inv.id }}">{{ inv.name }}</option>
-                    {% endfor %}
-                </select>
+                <div id="investigationSelect" style="width: 100%;"></div>
             </div>
             
             <!-- Parameters (Multi-select) -->
@@ -273,12 +268,7 @@
         <!-- Filters for Existing Ranges -->
         <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
             <input type="text" id="searchInput" class="form-input" placeholder="Search..." style="flex: 1; min-width: 200px;">
-            <select id="filterExistingInv" class="form-select" style="width: 200px;">
-                <option value="">All Investigations</option>
-                {% for inv in investigations %}
-                <option value="{{ inv.id }}">{{ inv.name }}</option>
-                {% endfor %}
-            </select>
+            <div id="filterExistingInv" style="width: 250px;"></div>
             <select id="filterExistingAg" class="form-select" style="width: 200px;">
                 <option value="">All Age Groups</option>
                 {% for ag in age_groups %}
@@ -366,8 +356,27 @@
     });
 
     // Investigation change
-    $('#investigationSelect').change(function() {
-        const invId = $(this).val();
+    let currentInvId = null;
+    let invSelect = new VMMCSearchSelect('#investigationSelect', {
+        url: "{% url 'lab:api_search_investigation' %}",
+        placeholder: 'Search investigation...',
+        searchParam: 'q',
+        processResults: (data) => data.results,
+        renderMain: (item) => item.text,
+        renderSub: (item) => item.code,
+        onClear: () => {
+            currentInvId = null;
+            $('#paramList').empty();
+            $('#selectedParamsText').text('Selected: 0');
+            $('#paramDropdownBtn').prop('disabled', true).html('Select Parameter(s) ▼');
+        },
+        onSelect: (item) => {
+            currentInvId = item.id;
+            loadParametersForInvestigation(item.id);
+        }
+    });
+
+    function loadParametersForInvestigation(invId) {
         const paramBtn = $('#paramDropdownBtn');
         const list = $('#paramList');
         
@@ -416,7 +425,7 @@
                 list.append('<li style="padding: 0.5rem; color: red;">Failed to load parameters from server.</li>');
             }
         });
-    });
+    }
 
     // Parameter selection
     $(document).on('change', '.param-cb', function() {
@@ -479,7 +488,7 @@
     });
 
     function clearForm() {
-        $('#investigationSelect').val('').trigger('change');
+        if(invSelect) invSelect.clear();
         $('.ag-cb').prop('checked', false).trigger('change');
         $('#genderSelect').val('All');
         $('#rangeTypeSelect').val('Numeric').trigger('change');
@@ -564,9 +573,27 @@
         });
     });
 
-    // Load Existing
+    let currentFilterInvId = '';
+    const filterInvSelect = new VMMCSearchSelect('#filterExistingInv', {
+        url: "{% url 'lab:api_search_investigation' %}",
+        placeholder: 'All Investigations...',
+        searchParam: 'q',
+        processResults: (data) => data.results,
+        renderMain: (item) => item.text,
+        renderSub: (item) => item.code,
+        onClear: () => {
+            currentFilterInvId = '';
+            loadExistingRanges();
+        },
+        onSelect: (item) => {
+            currentFilterInvId = item.id;
+            loadExistingRanges();
+        }
+    });
+
+    // Update loadExistingRanges to use currentFilterInvId instead of the select value
     function loadExistingRanges() {
-        const invId = $('#filterExistingInv').val();
+        const invId = currentFilterInvId;
         const agId = $('#filterExistingAg').val();
         const gender = $('#filterExistingGender').val();
         
@@ -605,7 +632,7 @@
                         <td>${r.method}</td>
                         <td>${statusBadge}</td>
                         <td>
-                            <button class="btn btn-sm btn-outline-primary" onclick="editExistingRange(${r.id}, ${r.investigation_id}, ${r.parameter_id}, ${r.age_group_id}, '${r.gender}', '${r.range_type}', '${r.min_value}', '${r.max_value}', '${r.reference_text || ''}', '${r.unit || ''}', '${r.method || ''}', '${r.remarks || ''}')" title="Edit">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editExistingRange(${r.id}, ${r.investigation_id}, '${r.investigation.replace(/'/g, "\\'")}', ${r.parameter_id}, ${r.age_group_id}, '${r.gender}', '${r.range_type}', '${r.min_value}', '${r.max_value}', '${r.reference_text || ''}', '${r.unit || ''}', '${r.method || ''}', '${r.remarks || ''}')" title="Edit">
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <button class="btn btn-sm btn-outline-danger" onclick="deleteRange(${r.id})" title="Delete">
@@ -618,7 +645,7 @@
         });
     }
 
-    $('#filterExistingInv, #filterExistingAg, #filterExistingGender, #searchInput').on('change keyup', function() {
+    $('#filterExistingAg, #filterExistingGender, #searchInput').on('change keyup', function() {
         loadExistingRanges();
     });
     loadExistingRanges();
@@ -639,9 +666,13 @@
         });
     };
 
-    window.editExistingRange = function(rangeId, invId, paramId, agId, gender, rangeType, minV, maxV, textV, unit, method, remarks) {
+    window.editExistingRange = function(rangeId, invId, invName, paramId, agId, gender, rangeType, minV, maxV, textV, unit, method, remarks) {
         clearForm();
-        $('#investigationSelect').val(invId).trigger('change');
+        currentInvId = invId;
+        invSelect.input.value = invName;
+        invSelect.clearBtn.style.display = 'block';
+        loadParametersForInvestigation(invId);
+        
         $('#showFormBtn').click();
         
         // Wait for parameters to load from AJAX
