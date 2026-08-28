@@ -21,8 +21,6 @@ class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermi
     context_object_name = 'patients'
     paginate_by = 25
 
-    paginate_by = 25
-
     def get(self, request, *args, **kwargs):
         if request.GET.get('export') == 'excel':
             if not request.user.has_perm_code('patients.patient_list.export'):
@@ -185,7 +183,13 @@ class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
     model = Patient
     template_name = 'patients/patient_search.html'
     context_object_name = 'patients'
-    paginate_by = 30
+    paginate_by = 25
+
+    def get_paginate_by(self, queryset):
+        page_size = self.request.GET.get('page_size')
+        if page_size and page_size.isdigit() and int(page_size) in [10, 25, 50, 100]:
+            return int(page_size)
+        return super().get_paginate_by(queryset)
 
     def get_queryset(self):
         q_name = self.request.GET.get('q_name', '').strip()
@@ -228,7 +232,7 @@ class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
             queryset = queryset.filter(aadhar_card__icontains=q_aadhar)
 
         if q_abha:
-            queryset = queryset.filter(Q(abha_id__icontains=q_abha) | Q(patient_id__icontains=q_abha))
+            queryset = queryset.filter(Q(abha_id__icontains=q_abha) | Q(patient_id__icontains=q_abha) | Q(op_number__icontains=q_abha))
 
         if q_department:
             if q_department.isdigit():
@@ -445,7 +449,7 @@ class DepartmentListView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
     model = Department
     template_name = 'patients/department_list.html'
     context_object_name = 'departments'
-    paginate_by = 20
+    paginate_by = 25
     
     def get_queryset(self):
         return Department.objects.filter(is_active=True)
@@ -539,7 +543,7 @@ class PatientCompanyListView(LoginRequiredMixin, MenuAccessRequiredMixin, ListVi
     model = PatientCompany
     template_name = 'patients/company_list.html'
     context_object_name = 'companies'
-    paginate_by = 20
+    paginate_by = 25
 
 
 class PatientCompanyCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, CreateView):
@@ -856,7 +860,13 @@ class PatientReviewReportView(LoginRequiredMixin, MenuAccessRequiredMixin, ListV
     model = PatientVisit
     template_name = 'patients/review_report.html'
     context_object_name = 'visits'
-    paginate_by = 50
+    paginate_by = 25
+
+    def get_paginate_by(self, queryset):
+        page_size = self.request.GET.get('page_size')
+        if page_size and page_size.isdigit() and int(page_size) in [10, 25, 50, 100]:
+            return int(page_size)
+        return super().get_paginate_by(queryset)
 
     def get_queryset(self):
         queryset = PatientVisit.objects.select_related('patient', 'department_obj', 'unit_obj', 'created_by').order_by('-id')

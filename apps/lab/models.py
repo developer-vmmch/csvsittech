@@ -475,7 +475,7 @@ class AutoTriggerTimeSetting(TimeStampedModel):
     rush_start = models.TimeField(default='10:00:00')
     rush_end = models.TimeField(default='14:00:00')
     rush_percentage = models.PositiveIntegerField(default=75)
-    processing_interval = models.PositiveIntegerField(default=30, help_text="In minutes")
+    processing_interval = models.PositiveIntegerField(default=1, help_text="In minutes")
     is_active = models.BooleanField(default=False)
 
     def __str__(self):
@@ -491,6 +491,7 @@ class AutoTriggerConfig(TimeStampedModel):
     trigger_start_time = models.TimeField(default='10:00:00')
     day_start_time = models.TimeField(default='04:00:00')
     day_end_time = models.TimeField(default='03:59:00')
+    description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -539,6 +540,9 @@ class AutoTriggerLog(TimeStampedModel):
     entry_no = models.PositiveIntegerField()
     entry_date = models.DateField()
     department = models.CharField(max_length=200, blank=True, null=True)
+    stage = models.CharField(max_length=50, default='STAGE 1 — PATIENT CREATION')
+    source_patient = models.ForeignKey('patients.Patient', on_delete=models.SET_NULL, null=True, blank=True, related_name='source_trigger_logs')
+    new_patient = models.ForeignKey('patients.Patient', on_delete=models.SET_NULL, null=True, blank=True, related_name='created_trigger_logs')
     visit = models.ForeignKey('patients.PatientVisit', on_delete=models.SET_NULL, null=True, blank=True)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES)
     message = models.TextField(blank=True, null=True)

@@ -34,7 +34,11 @@ class Department(TimeStampedModel):
             {'code': 'PSY', 'name': 'PSYCHIATRY'},
         ]
         for d in deps:
-            cls.objects.get_or_create(name__iexact=d['name'], defaults={'name': d['name'], 'code': d['code'], 'is_active': True})
+            try:
+                cls.objects.get_or_create(name__iexact=d['name'], defaults={'name': d['name'], 'code': d['code'], 'is_active': True})
+            except cls.MultipleObjectsReturned:
+                # If there are duplicates, we ignore instead of breaking the app
+                pass
 
 
 class DepartmentUnit(TimeStampedModel):
@@ -243,6 +247,25 @@ class Patient(TimeStampedModel):
                     max_num = val
 
         return str(max_num + 1)
+
+    @classmethod
+    def generate_next_op_number(cls):
+        """Generates sequential numeric OP number starting from OP-2026-000001 (or numeric 26100000 based on old data)"""
+        last_patient = cls.objects.exclude(op_number__isnull=True).exclude(op_number='').order_by('-id').first()
+        if last_patient and last_patient.op_number:
+            op = last_patient.op_number
+            if op.startswith("OP-2026-"):
+                try:
+                    seq = int(op.split("-")[-1])
+                    return f"OP-2026-{seq + 1:06d}"
+                except ValueError:
+                    pass
+            elif op.isdigit():
+                return str(int(op) + 1)
+        
+        # If no previous valid OP number found, start fresh for Auto Trigger generated ones, 
+        # or just continue from a base number. The test dataset had 26100000.
+        return "OP-2026-000001"
 
 
 class PatientVisit(TimeStampedModel):

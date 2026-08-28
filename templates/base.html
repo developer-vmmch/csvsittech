@@ -248,7 +248,7 @@
             </li>
 
             <!-- Auto Trigger Module -->
-            <li class="nav-item has-submenu">
+            <li class="nav-item has-submenu {% if 'auto_trigger' in request.resolver_match.url_name %}open active-parent{% endif %}">
                 <a href="javascript:void(0);" class="submenu-toggle" title="Auto Trigger">
                     <i class="bi bi-cpu" style="color: #f59e0b;"></i>
                     <span>Auto Trigger</span>

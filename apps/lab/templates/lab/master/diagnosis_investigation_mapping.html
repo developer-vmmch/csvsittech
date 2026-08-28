@@ -145,9 +145,7 @@
                 </table>
             </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-color);">
-                <span style="color:var(--text-muted);font-size:0.85rem;" id="pagination-info">Showing 0 to 0 of 0 entries</span>
-            </div>
+            <div style="padding-top:1rem; margin-top:1rem; border-top:1px solid var(--border-color);" id="mapping-pagination"></div>
         </div>
     </div>
 </div>
@@ -155,6 +153,7 @@
 
 {% block extra_js %}
 <script src="{% static 'js/vmmc-select.js' %}"></script>
+<script src="{% static 'js/vmmc-pagination.js' %}"></script>
 <script>
 // ─── State ────────────────────────────────────────────────────────────────────
 let currentInvestigations = [];
@@ -399,7 +398,57 @@ document.getElementById('saveMappingBtn').addEventListener('click', function() {
     });
 });
 
-// ─── Mapping List ────────────────────────────────────────────────────────────
+// ─── Mapping List with Pagination ───────────────────────────────────────────
+let _allMappings = [];
+const mappingPg = new VMMCPagination({
+    containerId: 'mapping-pagination',
+    defaultPageSize: 25,
+    storageKey: 'vmmc_pg_di_mapping',
+    onPageChange: () => renderMappingPage()
+});
+
+function renderMappingPage() {
+    const tbody = document.getElementById('mapping-tbody');
+    tbody.innerHTML = '';
+    if (_allMappings.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">No mappings found.</td></tr>';
+        mappingPg.setTotal(0);
+        mappingPg.render();
+        return;
+    }
+    const page = mappingPg.slice(_allMappings);
+    page.forEach((r, i) => {
+        const idx = mappingPg.startRecord - 1 + i;
+        const badge = r.is_active
+            ? '<span class="badge badge-green"><i class="bi bi-check-circle-fill"></i> Active</span>'
+            : '<span class="badge badge-yellow">Inactive</span>';
+        const diagSafe = (r.diagnosis_name || '').replace(/'/g, "\\'" );
+        const ageSafe  = (r.age_group_name || '').replace(/'/g, "\\'" );
+        tbody.innerHTML += `
+        <tr>
+            <td>${idx + 1}</td>
+            <td style="font-weight:500;">${r.diagnosis_name}</td>
+            <td>${r.age_group_name}</td>
+            <td>${r.age_range}</td>
+            <td><div style="max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${r.investigation_names || ''}">${r.investigation_names || '—'}</div></td>
+            <td style="text-align:center;"><span class="badge badge-blue">${r.investigation_count}</span></td>
+            <td style="text-align:center;">${badge}</td>
+            <td style="text-align:center;">
+                <button class="btn-edit-sm action-btn" style="margin-right:2px;"
+                    onclick="editMapping('${r.diagnosis_id}','${diagSafe}','${r.age_group_id}','${ageSafe}')">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn-danger-sm action-btn"
+                    onclick="deleteMapping('${r.diagnosis_id}','${r.age_group_id}')">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>`;
+    });
+    mappingPg.setTotal(_allMappings.length);
+    mappingPg.render();
+}
+
 function buildListUrl() {
     let url = "{% url 'lab:api_diagnosis_investigation_map_list' %}?";
     if (fDiagSelect.selectedItem) url += `&diagnosis_id=${fDiagSelect.selectedItem.id}`;
@@ -418,40 +467,8 @@ function loadMappingList() {
     fetch(buildListUrl())
         .then(r => r.json())
         .then(res => {
-            tbody.innerHTML = '';
-            if (!res.mappings || res.mappings.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">No mappings found.</td></tr>';
-                document.getElementById('pagination-info').textContent = 'Showing 0 to 0 of 0 entries';
-                return;
-            }
-            res.mappings.forEach((r, idx) => {
-                const badge = r.is_active
-                    ? '<span class="badge badge-green"><i class="bi bi-check-circle-fill"></i> Active</span>'
-                    : '<span class="badge badge-yellow">Inactive</span>';
-                const diagSafe = (r.diagnosis_name || '').replace(/'/g, "\\'");
-                const ageSafe  = (r.age_group_name || '').replace(/'/g, "\\'");
-                tbody.innerHTML += `
-                <tr>
-                    <td>${idx + 1}</td>
-                    <td style="font-weight:500;">${r.diagnosis_name}</td>
-                    <td>${r.age_group_name}</td>
-                    <td>${r.age_range}</td>
-                    <td><div style="max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${r.investigation_names || ''}">${r.investigation_names || '—'}</div></td>
-                    <td style="text-align:center;"><span class="badge badge-blue">${r.investigation_count}</span></td>
-                    <td style="text-align:center;">${badge}</td>
-                    <td style="text-align:center;">
-                        <button class="btn-edit-sm action-btn" style="margin-right:2px;"
-                            onclick="editMapping('${r.diagnosis_id}','${diagSafe}','${r.age_group_id}','${ageSafe}')">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn-danger-sm action-btn"
-                            onclick="deleteMapping('${r.diagnosis_id}','${r.age_group_id}')">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>`;
-            });
-            document.getElementById('pagination-info').textContent = `Showing 1 to ${res.mappings.length} of ${res.mappings.length} entries`;
+            _allMappings = (res.mappings && res.mappings.length) ? res.mappings : [];
+            mappingPg.reset();
         })
         .catch(() => {
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--accent-red);">Failed to load data.</td></tr>';

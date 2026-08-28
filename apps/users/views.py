@@ -60,7 +60,13 @@ class UserListView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
     model = User
     template_name = 'users/user_list.html'
     context_object_name = 'system_users'
-    paginate_by = 20
+    paginate_by = 25
+
+    def get_paginate_by(self, queryset):
+        page_size = self.request.GET.get('page_size')
+        if page_size and page_size.isdigit() and int(page_size) in [10, 25, 50, 100]:
+            return int(page_size)
+        return super().get_paginate_by(queryset)
 
     def get_queryset(self):
         return User.objects.order_by('-id')
@@ -71,7 +77,13 @@ class StaffListView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
     model = User
     template_name = 'users/staff_list.html'
     context_object_name = 'staff_members'
-    paginate_by = 20
+    paginate_by = 25
+
+    def get_paginate_by(self, queryset):
+        page_size = self.request.GET.get('page_size')
+        if page_size and page_size.isdigit() and int(page_size) in [10, 25, 50, 100]:
+            return int(page_size)
+        return super().get_paginate_by(queryset)
 
     def get_queryset(self):
         return User.objects.filter(role=User.Roles.STAFF).order_by('-id')
