@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Auto Trigger Time Settings | VMMC ERP{% endblock %}
+
+{% block content %}
+<div class="content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <div>
+            <h2 style="font-size:1.5rem;font-weight:700;color:var(--text-main);margin-bottom:0.25rem;">Auto Trigger Time Settings</h2>
+            <p style="color:var(--text-muted);font-size:0.9rem;margin:0;">Configure how the patient entries should be automatically processed throughout the laboratory day.</p>
+        </div>
+    </div>
+
+    <!-- Configuration Form -->
+    <div class="card" style="margin-bottom:2rem;">
+        <div class="card-header" style="border-bottom:1px solid var(--border-color);padding-bottom:1rem;margin-bottom:1rem;">
+            <h3 style="color:var(--accent-blue);font-size:1.1rem;font-weight:600;">Time Settings Profile</h3>
+        </div>
+        <div class="card-body">
+            <form id="tsForm">
+                <input type="hidden" id="ts_id" value="">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <label class="form-label">Profile Name <span style="color:red;">*</span></label>
+                        <input type="text" id="name" class="form-control" placeholder="e.g. Default Schedule" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Laboratory Day Start Time <span style="color:red;">*</span></label>
+                        <input type="time" id="lab_day_start" class="form-control" value="16:00" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Laboratory Day End Time <span style="color:red;">*</span></label>
+                        <input type="time" id="lab_day_end" class="form-control" value="15:59" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Rush Start Time <span style="color:red;">*</span></label>
+                        <input type="time" id="rush_start" class="form-control" value="10:00" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Rush End Time <span style="color:red;">*</span></label>
+                        <input type="time" id="rush_end" class="form-control" value="14:00" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Rush Processing Percentage <span style="color:red;">*</span></label>
+                        <input type="number" id="rush_percentage" class="form-control" value="75" min="1" max="100" required oninput="calcRemaining()">
+                    </div>
+                    <div>
+                        <label class="form-label">Remaining Processing Percentage</label>
+                        <input type="text" id="rem_percentage" class="form-control" value="25%" disabled style="background:#f1f5f9;">
+                    </div>
+                    <div>
+                        <label class="form-label">Processing Interval <span style="color:red;">*</span></label>
+                        <select id="processing_interval" class="form-select" required>
+                            <option value="15">15 minutes</option>
+                            <option value="30" selected>30 minutes</option>
+                            <option value="60">60 minutes</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Enable Automation Default</label>
+                        <select id="is_active" class="form-select">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">Reset</button>
+                    <button type="button" class="btn btn-primary" style="background-color: var(--accent-green); border-color: var(--accent-green);" onclick="saveSettings()">Save Settings</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Time Settings List -->
+    <div class="card" style="margin-bottom:2rem;">
+        <div class="card-header" style="border-bottom:1px solid var(--border-color);padding-bottom:1rem;margin-bottom:1rem;">
+            <h3 style="color:var(--accent-blue);font-size:1.1rem;font-weight:600;">Saved Time Settings</h3>
+        </div>
+        <div>
+            <div class="table-responsive" style="border:1px solid var(--border-color);border-radius:8px;">
+                <table class="table" style="width: 100%; border-collapse: collapse;">
+                    <thead style="background: var(--bg-main); border-bottom: 2px solid var(--border-color);">
+                        <tr>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Profile Name</th>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Lab Day</th>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Rush Window</th>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Allocation (%)</th>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Interval</th>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Status</th>
+                            <th style="padding: 1rem; text-align: center; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ts-tbody">
+                        <tr><td colspan="7" style="text-align:center;padding:2rem;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:9999;"></div>
+
+<script>
+    function showToast(msg, type='danger') {
+        const t = document.createElement('div');
+        t.style = `background:${type==='danger'?'#ef4444':'#10b981'}; color:white; padding:1rem 1.5rem; border-radius:6px; margin-bottom:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1); font-weight:600; opacity:0; transition:opacity 0.3s;`;
+        t.innerText = msg;
+        document.getElementById('toast-container').appendChild(t);
+        setTimeout(() => t.style.opacity = '1', 10);
+        setTimeout(() => {
+            t.style.opacity = '0';
+            setTimeout(() => t.remove(), 300);
+        }, 3000);
+    }
+    function calcRemaining() {
+        let rp = document.getElementById('rush_percentage').value;
+        if(rp) {
+            rp = parseInt(rp);
+            if(rp > 100) rp = 100;
+            if(rp < 0) rp = 0;
+            document.getElementById('rem_percentage').value = (100 - rp) + '%';
+        }
+    }
+
+    function resetForm() {
+        document.getElementById('tsForm').reset();
+        document.getElementById('ts_id').value = '';
+        calcRemaining();
+    }
+
+    function saveSettings() {
+        const id = document.getElementById('ts_id').value;
+        const name = document.getElementById('name').value;
+        const ls = document.getElementById('lab_day_start').value;
+        const le = document.getElementById('lab_day_end').value;
+        const rs = document.getElementById('rush_start').value;
+        const re = document.getElementById('rush_end').value;
+        const rp = document.getElementById('rush_percentage').value;
+        const pi = document.getElementById('processing_interval').value;
+        const act = document.getElementById('is_active').value === 'true';
+
+        if(!name || !ls || !le || !rs || !re || !rp || !pi) {
+            showToast('All fields are required.', 'danger');
+            return;
+        }
+
+        const data = {
+            id: id, name: name, lab_day_start: ls, lab_day_end: le,
+            rush_start: rs, rush_end: re, rush_percentage: parseInt(rp),
+            processing_interval: parseInt(pi), is_active: act
+        };
+
+        fetch('{% url "lab:api_save_time_setting" %}', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(data)
+        }).then(r=>r.json()).then(res=>{
+            if(res.success) {
+                showToast(res.message, 'success');
+                loadSettings();
+                resetForm();
+            } else {
+                showToast(res.message, 'danger');
+            }
+        });
+    }
+
+    function loadSettings() {
+        fetch('{% url "lab:api_get_time_settings" %}')
+        .then(r=>r.json()).then(res=>{
+            const tbody = document.getElementById('ts-tbody');
+            tbody.innerHTML = '';
+            if(res.success) {
+                if(res.data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;">No time settings found.</td></tr>`;
+                    return;
+                }
+                res.data.forEach(s => {
+                    const cStr = encodeURIComponent(JSON.stringify(s));
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid #e2e8f0';
+                    tr.innerHTML = `
+                        <td style="padding:1rem;"><strong>${s.name}</strong></td>
+                        <td style="padding:1rem;">${s.lab_day_start} &rarr; ${s.lab_day_end}</td>
+                        <td style="padding:1rem;">${s.rush_start} &rarr; ${s.rush_end}</td>
+                        <td style="padding:1rem;">Rush: ${s.rush_percentage}% <br> Rem: ${100 - s.rush_percentage}%</td>
+                        <td style="padding:1rem;">${s.processing_interval} mins</td>
+                        <td style="padding:1rem;"><span class="badge ${s.is_active?'bg-success':'bg-secondary'}">${s.is_active?'Active':'Inactive'}</span></td>
+                        <td style="padding:1rem; text-align:center;">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editSettings('${cStr}')" title="Edit"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteSettings(${s.id})" title="Delete"><i class="bi bi-trash"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        });
+    }
+
+    function editSettings(str) {
+        const s = JSON.parse(decodeURIComponent(str));
+        document.getElementById('ts_id').value = s.id;
+        document.getElementById('name').value = s.name;
+        document.getElementById('lab_day_start').value = s.lab_day_start;
+        document.getElementById('lab_day_end').value = s.lab_day_end;
+        document.getElementById('rush_start').value = s.rush_start;
+        document.getElementById('rush_end').value = s.rush_end;
+        document.getElementById('rush_percentage').value = s.rush_percentage;
+        document.getElementById('processing_interval').value = s.processing_interval;
+        document.getElementById('is_active').value = s.is_active ? 'true' : 'false';
+        calcRemaining();
+        window.scrollTo({top:0, behavior:'smooth'});
+    }
+
+    function deleteSettings(id) {
+        if(!confirm('Delete this setting?')) return;
+        fetch(`/lab/api/auto-trigger/time-setting/${id}/delete/`, {method:'POST'})
+        .then(r=>r.json()).then(res=>{
+            if(res.success) loadSettings();
+            else showToast(res.message, 'danger');
+        });
+    }
+
+    window.onload = loadSettings;
+</script>
+{% endblock %}

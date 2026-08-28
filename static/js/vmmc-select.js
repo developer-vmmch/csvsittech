@@ -59,7 +59,7 @@ class VMMCSearchSelect {
         this.input.addEventListener('focus', () => {
             this.wrapper.classList.add('active');
             if (this.input.value.trim().length >= this.options.minChars) {
-                this.dropdown.classList.add('show');
+                this.openDropdown();
                 if (this.results.length === 0) this.fetchData(this.input.value);
             }
         });
@@ -73,7 +73,7 @@ class VMMCSearchSelect {
         this.input.addEventListener('input', (e) => {
             const val = e.target.value;
             this.clearBtn.style.display = val.length > 0 ? 'block' : 'none';
-            this.dropdown.classList.add('show');
+            this.openDropdown();
 
             if (val.trim().length < this.options.minChars) {
                 this.list.innerHTML = '';
@@ -167,9 +167,30 @@ class VMMCSearchSelect {
         this.fetchData('');
     }
 
+    setValue(id, mainText, subText) {
+        this.selectedItem = { id: id, text: mainText, code: subText };
+        this.input.value = mainText;
+        this.clearBtn.style.display = 'block';
+    }
+
     closeDropdown() {
         this.dropdown.classList.remove('show');
         this.wrapper.classList.remove('active');
+    }
+
+    openDropdown() {
+        this.dropdown.classList.add('show');
+        
+        const rect = this.wrapper.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        const dropdownHeight = 260; // Max height we set in CSS
+
+        if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+            this.dropdown.classList.add('dropup');
+        } else {
+            this.dropdown.classList.remove('dropup');
+        }
     }
 
     showLoading() {
@@ -193,7 +214,7 @@ class VMMCSearchSelect {
     handleKeydown(e) {
         if (!this.dropdown.classList.contains('show')) {
             if (e.key === 'ArrowDown' || e.key === 'Enter') {
-                this.dropdown.classList.add('show');
+                this.openDropdown();
                 if (this.results.length === 0) this.fetchData(this.input.value);
             }
             return;
@@ -230,5 +251,21 @@ class VMMCSearchSelect {
         this.highlightIndex = index;
         items[index].classList.add('highlighted');
         items[index].scrollIntoView({ block: 'nearest' });
+    }
+
+    setDisabled(disabled) {
+        this.input.disabled = disabled;
+        if (disabled) {
+            this.container.classList.add('vss-disabled');
+            this.wrapper.style.backgroundColor = '#f1f5f9';
+            this.input.style.backgroundColor = '#f1f5f9';
+            this.input.style.cursor = 'not-allowed';
+            this.closeDropdown();
+        } else {
+            this.container.classList.remove('vss-disabled');
+            this.wrapper.style.backgroundColor = '#fff';
+            this.input.style.backgroundColor = '#fff';
+            this.input.style.cursor = 'text';
+        }
     }
 }

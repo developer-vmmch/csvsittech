@@ -20,6 +20,20 @@
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+.vmmc-search-select .vss-input-wrapper::after {
+    content: '';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 4px solid #94a3b8;
+    pointer-events: none;
+}
+
 .vmmc-search-select .vss-icon {
     padding-left: 10px;
     color: #64748b;
@@ -40,7 +54,7 @@
 
 .vmmc-search-select .vss-clear,
 .vmmc-search-select .vss-spinner {
-    padding-right: 10px;
+    padding-right: 25px; /* Leave space for chevron */
     color: #94a3b8;
     background: none;
     border: none;
@@ -49,6 +63,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    z-index: 2;
 }
 
 .vmmc-search-select .vss-clear:hover {
@@ -64,14 +80,27 @@
     border: 1px solid var(--border-color, #cbd5e1);
     border-radius: 6px;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    max-height: 280px;
+    max-height: 260px;
     overflow-y: auto;
     z-index: 9999;
-    display: none;
+    
+    /* Animation settings */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out, visibility 0.2s ease-out;
+}
+
+.vmmc-search-select .vss-dropdown.dropup {
+    top: auto;
+    bottom: calc(100% + 4px);
+    transform: translateY(10px);
 }
 
 .vmmc-search-select .vss-dropdown.show {
-    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }
 
 .vmmc-search-select .vss-list {
@@ -81,7 +110,7 @@
 }
 
 .vmmc-search-select .vss-item {
-    padding: 8px 12px;
+    padding: 10px 12px;
     cursor: pointer;
     font-size: 0.85rem;
     color: var(--text-main, #334155);
@@ -99,6 +128,7 @@
 .vmmc-search-select .vss-item-main {
     font-weight: 500;
     color: var(--text-main, #0f172a);
+    font-size: 0.95rem;
 }
 
 .vmmc-search-select .vss-item-sub {

@@ -1,0 +1,443 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Auto Trigger Configuration | VMMC ERP{% endblock %}
+
+{% block content %}
+<div class="content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <div>
+            <h2 style="font-size:1.5rem;font-weight:700;color:var(--text-main);margin-bottom:0.25rem;">Auto Trigger Configuration</h2>
+            <p style="color:var(--text-muted);font-size:0.9rem;margin:0;">Configure automation settings, timing and day-end to process patient entries.</p>
+        </div>
+    </div>
+
+    <!-- Automation Day & Time Info -->
+    <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+        <div class="card flex-fill" style="padding: 1rem; border-left: 4px solid var(--accent-blue);">
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Automation Day Start</div>
+            <div id="disp_day_start" style="font-size: 1.25rem; font-weight: 700; color: var(--text-main);">04:00 AM</div>
+            <small style="color: #64748b;" id="disp_day_start_date">Today</small>
+        </div>
+        <div class="card flex-fill" style="padding: 1rem; border-left: 4px solid var(--accent-blue);">
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Automation Day End</div>
+            <div id="disp_day_end" style="font-size: 1.25rem; font-weight: 700; color: var(--text-main);">03:59 AM <small>(Next Day)</small></div>
+            <small style="color: #64748b;" id="disp_day_end_date">Tomorrow</small>
+        </div>
+        <div class="card flex-fill" style="padding: 1rem; border-left: 4px solid var(--accent-green);">
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Current Time</div>
+            <div id="disp_current_time" style="font-size: 1.25rem; font-weight: 700; color: var(--text-main);">--:-- --</div>
+            <small style="color: #64748b;" id="disp_current_date">Today</small>
+        </div>
+        <div class="card flex-fill" style="padding: 1rem; border-left: 4px solid #f59e0b;">
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Time Remaining in Day</div>
+            <div id="disp_time_remaining" style="font-size: 1.25rem; font-weight: 700; color: var(--text-main);">--h --m</div>
+            <small style="color: #64748b;">Until Day End</small>
+        </div>
+    </div>
+
+    <!-- Configuration Form -->
+    <div class="card" style="margin-bottom:2rem;">
+        <div class="card-header" style="border-bottom:1px solid var(--border-color);padding-bottom:1rem;margin-bottom:1rem;">
+            <h3 style="color:var(--accent-blue);font-size:1.1rem;font-weight:600;">Automation Settings</h3>
+        </div>
+        <div class="card-body">
+            <form id="configForm">
+                <input type="hidden" id="config_id" value="">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <label class="form-label">Department <span style="color:red;">*</span></label>
+                        <select id="department_id" class="form-select" required>
+                            <option value="">Select Department</option>
+                            {% for dept in departments %}
+                                <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">From Date <span style="color:red;">*</span></label>
+                        <input type="date" id="from_date" class="form-control" required>
+                    </div>
+                    <div>
+                        <label class="form-label">To Date <span style="color:red;">*</span></label>
+                        <input type="date" id="to_date" class="form-control" required>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Minimum No. of Entries <span style="color:red;">*</span></label>
+                        <input type="number" id="min_entries" class="form-control" min="1" value="80" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Maximum No. of Entries <span style="color:red;">*</span></label>
+                        <input type="number" id="max_entries" class="form-control" min="1" value="125" required>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Trigger Start Time <span style="color:red;">*</span></label>
+                        <input type="time" id="trigger_start_time" class="form-control" value="10:00" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Day Start Time <span style="color:red;">*</span></label>
+                        <input type="time" id="day_start_time" class="form-control" value="04:00" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Day End Time <span style="color:red;">*</span></label>
+                        <input type="time" id="day_end_time" class="form-control" value="03:59" required>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Active Automation Time Profile <span style="color:red;">*</span></label>
+                        <select id="time_setting_id" class="form-select" required>
+                            <option value="">Select Time Setting Profile</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Automation Status</label>
+                        <select id="is_active" class="form-select">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                            <option value="false">Paused</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">Reset</button>
+                    <button type="button" class="btn btn-primary" onclick="saveConfig(false)">Save Configuration</button>
+                    <button type="button" class="btn btn-primary" style="background-color: var(--accent-green); border-color: var(--accent-green);" onclick="saveConfig(true)">Save & Trigger</button>
+                    <button type="button" class="btn btn-secondary" id="btn-trigger-now" style="display: none;" onclick="triggerNow()">Trigger Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Progress UI -->
+    <div id="progress-container" class="card" style="margin-bottom:2rem; display:none;">
+        <div class="card-header" style="border-bottom:1px solid var(--border-color);padding-bottom:1rem;margin-bottom:1rem;display:flex;justify-content:space-between;">
+            <h3 style="color:var(--accent-blue);font-size:1.1rem;font-weight:600;">Automation Progress</h3>
+            <span id="progress-status-badge" class="badge bg-primary">Processing</span>
+        </div>
+        <div class="card-body">
+            <!-- Progress KPIs -->
+            <div style="display:flex; justify-content:space-between; margin-bottom:1.5rem; text-align:center;">
+                <div><div style="font-size:0.8rem; color:#64748b; font-weight:600;">Minimum Entries</div><div id="prog-min" style="font-size:1.5rem; font-weight:700;">0</div></div>
+                <div><div style="font-size:0.8rem; color:#64748b; font-weight:600;">Maximum Entries</div><div id="prog-max" style="font-size:1.5rem; font-weight:700;">0</div></div>
+                <div><div style="font-size:0.8rem; color:#64748b; font-weight:600;">Processed</div><div id="prog-proc" style="font-size:1.5rem; font-weight:700; color:var(--accent-blue);">0</div></div>
+                <div><div style="font-size:0.8rem; color:#64748b; font-weight:600;">Successful</div><div id="prog-success" style="font-size:1.5rem; font-weight:700; color:var(--accent-green);">0</div></div>
+                <div><div style="font-size:0.8rem; color:#64748b; font-weight:600;">Failed</div><div id="prog-failed" style="font-size:1.5rem; font-weight:700; color:#ef4444;">0</div></div>
+                <div><div style="font-size:0.8rem; color:#64748b; font-weight:600;">Remaining to Min</div><div id="prog-rem-min" style="font-size:1.5rem; font-weight:700;">0</div></div>
+                <div><div style="font-size:0.8rem; color:#64748b; font-weight:600;">Remaining Cap.</div><div id="prog-rem-cap" style="font-size:1.5rem; font-weight:700;">0</div></div>
+                <div><div style="font-size:0.8rem; color:#64748b; font-weight:600;">Overall Progress</div><div id="prog-pct-txt" style="font-size:1.5rem; font-weight:700; color:var(--accent-blue);">0%</div></div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div style="margin-bottom:2rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                    <span style="font-size:0.85rem; font-weight:600;" id="prog-text">Processed: 0 / 0</span>
+                </div>
+                <div style="height:12px; background:#e2e8f0; border-radius:6px; overflow:hidden;">
+                    <div id="prog-bar" style="height:100%; width:0%; background:var(--accent-blue); transition:width 0.3s ease;"></div>
+                </div>
+            </div>
+
+            <!-- Current Time Window Info -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom: 1rem;">
+                    <h4 style="font-size: 1rem; color: var(--accent-blue); margin:0;">Current Time Window</h4>
+                    <span id="prog-schedule-status" class="badge bg-success">On Schedule</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <div><small style="color:#64748b;display:block;">Time Window</small><strong id="prog-cw-time">--:-- to --:--</strong></div>
+                    <div><small style="color:#64748b;display:block;">Expected Target</small><strong id="prog-cw-target">0</strong></div>
+                    <div><small style="color:#64748b;display:block;">Current Rate</small><strong id="prog-cw-crate">0/hr</strong></div>
+                    <div><small style="color:#64748b;display:block;">Required Rate</small><strong id="prog-cw-rrate">0/hr</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Saved Configurations -->
+    <div class="card" style="margin-bottom:2rem;">
+        <div class="card-header" style="border-bottom:1px solid var(--border-color);padding-bottom:1rem;margin-bottom:1rem;display:flex;justify-content:space-between;">
+            <h3 style="color:var(--accent-blue);font-size:1.1rem;font-weight:600;">Saved Configurations</h3>
+            <div>
+                <input type="text" id="search-config" class="form-control form-control-sm" placeholder="Search by department..." onkeyup="loadConfigs()">
+            </div>
+        </div>
+        <div>
+            <div class="table-responsive" style="border:1px solid var(--border-color);border-radius:8px;">
+                <table class="table" style="width: 100%; border-collapse: collapse;">
+                    <thead style="background: var(--bg-main); border-bottom: 2px solid var(--border-color);">
+                        <tr>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Sl No</th>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Department</th>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Date Range</th>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Min/Max</th>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Day Times</th>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Status</th>
+                            <th style="padding: 1rem; text-align: center; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="config-list-tbody">
+                        <!-- Loaded via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+<!-- Toast Container -->
+<div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:9999;"></div>
+
+<script>
+    let activeInterval = null;
+    let clockInterval = null;
+
+    function showToast(msg, type='danger') {
+        const t = document.createElement('div');
+        t.style = `background:${type==='danger'?'#ef4444':'#10b981'}; color:white; padding:1rem 1.5rem; border-radius:6px; margin-bottom:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1); font-weight:600; opacity:0; transition:opacity 0.3s;`;
+        t.innerText = msg;
+        document.getElementById('toast-container').appendChild(t);
+        setTimeout(() => t.style.opacity = '1', 10);
+        setTimeout(() => {
+            t.style.opacity = '0';
+            setTimeout(() => t.remove(), 300);
+        }, 3000);
+    }
+
+    function startClock() {
+        clockInterval = setInterval(() => {
+            const now = new Date();
+            document.getElementById('disp_current_time').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit', hour12: true});
+            document.getElementById('disp_current_date').textContent = now.toLocaleDateString();
+
+            // Calculate Day Start / End based on input values if available
+            const dsInput = document.getElementById('day_start_time').value || '04:00';
+            const deInput = document.getElementById('day_end_time').value || '03:59';
+            
+            // Just updating display headers
+            document.getElementById('disp_day_start').textContent = formatAMPM(dsInput);
+            document.getElementById('disp_day_end').innerHTML = `${formatAMPM(deInput)} <small style="font-size:0.6em;">(Next Day)</small>`;
+
+            // Time remaining calculation logic can be added here
+        }, 1000);
+    }
+
+    function formatAMPM(time24) {
+        let [h, m] = time24.split(':');
+        h = parseInt(h);
+        let ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return `${h < 10 ? '0'+h : h}:${m} ${ampm}`;
+    }
+
+    function resetForm() {
+        document.getElementById('configForm').reset();
+        document.getElementById('config_id').value = '';
+        document.getElementById('btn-trigger-now').style.display = 'none';
+        document.getElementById('progress-container').style.display = 'none';
+        if(activeInterval) clearInterval(activeInterval);
+    }
+
+    function fetchTimeSettings() {
+        fetch('{% url "lab:api_get_time_settings" %}')
+        .then(r=>r.json()).then(res=>{
+            const sel = document.getElementById('time_setting_id');
+            sel.innerHTML = '<option value="">Select Time Setting Profile</option>';
+            if(res.success) {
+                res.data.forEach(ts => {
+                    const opt = document.createElement('option');
+                    opt.value = ts.id;
+                    opt.textContent = ts.name;
+                    if(ts.is_active) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+            }
+        });
+    }
+
+    function saveConfig(trigger) {
+        const d_id = document.getElementById('department_id').value;
+        const ts_id = document.getElementById('time_setting_id').value;
+        const f_date = document.getElementById('from_date').value;
+        const t_date = document.getElementById('to_date').value;
+        const min_e = document.getElementById('min_entries').value;
+        const max_e = document.getElementById('max_entries').value;
+        const trg_s = document.getElementById('trigger_start_time').value;
+        const day_s = document.getElementById('day_start_time').value;
+        const day_e = document.getElementById('day_end_time').value;
+        
+        if (!d_id || !f_date || !t_date || !min_e || !max_e || !ts_id) {
+            showToast('Please fill all required fields.', 'danger');
+            return;
+        }
+        if (new Date(f_date) > new Date(t_date)) {
+            showToast('To Date must be on or after From Date.', 'danger');
+            return;
+        }
+        
+        const data = {
+            config_id: document.getElementById('config_id').value,
+            department_id: d_id,
+            time_setting_id: ts_id,
+            from_date: f_date,
+            to_date: t_date,
+            min_entries: parseInt(min_e),
+            max_entries: parseInt(max_e),
+            trigger_start_time: trg_s,
+            day_start_time: day_s,
+            day_end_time: day_e,
+            is_active: document.getElementById('is_active').value === 'true',
+            trigger_now: trigger
+        };
+
+        fetch('{% url "lab:api_save_auto_trigger_config" %}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => {
+            if (res.success) {
+                showToast(res.message, 'success');
+                loadConfigs();
+                if (trigger && res.history_id) {
+                    startPolling(res.history_id);
+                } else if (!document.getElementById('config_id').value) {
+                    document.getElementById('config_id').value = res.config_id;
+                    document.getElementById('btn-trigger-now').style.display = 'inline-block';
+                }
+            } else {
+                showToast(res.message, 'danger');
+            }
+        });
+    }
+
+    function triggerNow() {
+        const cid = document.getElementById('config_id').value;
+        if (!cid) return;
+        if (!confirm('Are you sure you want to trigger this automation?')) return;
+
+        fetch('{% url "lab:api_execute_auto_trigger" %}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({config_id: cid})
+        }).then(r => r.json()).then(res => {
+            if (res.success) {
+                startPolling(res.history_id);
+            } else {
+                showToast(res.message, 'danger');
+            }
+        });
+    }
+
+    function editConfig(configStr) {
+        const c = JSON.parse(decodeURIComponent(configStr));
+        document.getElementById('config_id').value = c.id;
+        document.getElementById('department_id').value = c.department_id;
+        document.getElementById('time_setting_id').value = c.time_setting_id;
+        document.getElementById('from_date').value = c.from_date;
+        document.getElementById('to_date').value = c.to_date;
+        document.getElementById('min_entries').value = c.min_entries;
+        document.getElementById('max_entries').value = c.max_entries;
+        document.getElementById('trigger_start_time').value = c.trigger_start_time;
+        document.getElementById('day_start_time').value = c.day_start_time;
+        document.getElementById('day_end_time').value = c.day_end_time;
+        document.getElementById('is_active').value = c.is_active ? 'true' : 'false';
+        document.getElementById('btn-trigger-now').style.display = 'inline-block';
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    function deleteConfig(id) {
+        if(!confirm('Are you sure you want to delete this configuration?')) return;
+        fetch(`/lab/api/auto-trigger/config/${id}/delete/`, {
+            method: 'POST'
+        }).then(r=>r.json()).then(res=>{
+            if(res.success) loadConfigs();
+            else showToast(res.message, 'danger');
+        });
+    }
+
+    function loadConfigs() {
+        const search = document.getElementById('search-config').value;
+        fetch(`{% url "lab:api_get_auto_trigger_configs" %}?search=${search}`)
+        .then(r => r.json()).then(res => {
+            if (res.success) {
+                const tbody = document.getElementById('config-list-tbody');
+                tbody.innerHTML = '';
+                if(res.data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;">No configurations found.</td></tr>`;
+                    return;
+                }
+                res.data.forEach((c, idx) => {
+                    const cStr = encodeURIComponent(JSON.stringify(c));
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid #e2e8f0';
+                    tr.innerHTML = `
+                        <td style="padding:1rem;">${idx + 1}</td>
+                        <td style="padding:1rem;">${c.department}</td>
+                        <td style="padding:1rem;">${c.from_date} to ${c.to_date}</td>
+                        <td style="padding:1rem;">${c.min_entries} / ${c.max_entries}</td>
+                        <td style="padding:1rem;">${formatAMPM(c.day_start_time)} &rarr; ${formatAMPM(c.day_end_time)}</td>
+                        <td style="padding:1rem;"><span class="badge ${c.is_active?'bg-success':'bg-secondary'}">${c.is_active?'Active':'Inactive'}</span></td>
+                        <td style="padding:1rem; text-align:center;">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editConfig('${cStr}')" title="Edit/Trigger"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(${c.id})" title="Delete"><i class="bi bi-trash"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        });
+    }
+
+    function startPolling(history_id) {
+        document.getElementById('progress-container').style.display = 'block';
+        if(activeInterval) clearInterval(activeInterval);
+        
+        const poll = () => {
+            fetch(`/lab/api/auto-trigger/history/${history_id}/`)
+            .then(r=>r.json()).then(res => {
+                if(res.success) {
+                    const d = res.details;
+                    
+                    document.getElementById('prog-min').textContent = d.min_entries;
+                    document.getElementById('prog-max').textContent = d.max_entries;
+                    document.getElementById('prog-proc').textContent = d.processed_entries;
+                    document.getElementById('prog-success').textContent = d.successful;
+                    document.getElementById('prog-failed').textContent = d.failed;
+                    
+                    const rem_min = Math.max(0, d.min_entries - d.successful);
+                    const rem_cap = Math.max(0, d.max_entries - d.successful);
+                    document.getElementById('prog-rem-min').textContent = rem_min;
+                    document.getElementById('prog-rem-cap').textContent = rem_cap;
+                    
+                    const pct = d.min_entries > 0 ? Math.round((d.successful / d.min_entries) * 100) : 0;
+                    document.getElementById('prog-pct-txt').textContent = pct + '%';
+                    
+                    const bar_pct = d.max_entries > 0 ? Math.round((d.processed_entries / d.max_entries) * 100) : 0;
+                    document.getElementById('prog-text').textContent = `Processed: ${d.processed_entries} / Max Limit: ${d.max_entries}`;
+                    document.getElementById('prog-bar').style.width = bar_pct + '%';
+
+                    const badge = document.getElementById('progress-status-badge');
+                    badge.textContent = d.status;
+                    if(d.status === 'Completed') badge.className = 'badge bg-success';
+                    else if(d.status === 'Failed') badge.className = 'badge bg-danger';
+                    else if(d.status === 'Processing') badge.className = 'badge bg-primary';
+                    else if(d.status === 'Partially Completed') badge.className = 'badge bg-warning';
+                    else badge.className = 'badge bg-secondary';
+
+                    if(['Completed', 'Failed', 'Partially Completed', 'Cancelled'].includes(d.status)) {
+                        clearInterval(activeInterval);
+                    }
+                }
+            });
+        };
+        poll();
+        activeInterval = setInterval(poll, 2000);
+    }
+
+    window.onload = function() {
+        startClock();
+        fetchTimeSettings();
+        loadConfigs();
+    };
+</script>
+{% endblock %}

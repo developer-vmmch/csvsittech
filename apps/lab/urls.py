@@ -25,7 +25,28 @@ from .import_views import (
     ReferenceRangeImportView, ReferenceRangeImportHistoryView,
     api_referencerange_download_template, api_referencerange_preview, api_referencerange_import,
     AgeGroupImportView, AgeGroupImportHistoryView,
-    api_agegroup_download_template, api_agegroup_preview, api_agegroup_import
+    api_agegroup_download_template, api_agegroup_preview, api_agegroup_import,
+    DiagnosisInvestigationMapImportView,
+    api_diag_inv_map_download_template, api_diag_inv_map_preview, api_diag_inv_map_import
+)
+
+from .reference_range_grid_views import (
+    api_reference_ranges_grid_list, api_reference_ranges_grid_detail,
+    api_reference_ranges_grid_save, api_reference_ranges_grid_delete,
+    api_agegroup_search
+)
+
+from .diagnosis_investigation_map_views import (
+    diagnosis_investigation_mapping_view,
+    api_diagnosis_investigation_map_list, api_diagnosis_investigation_map_detail,
+    api_diagnosis_investigation_map_save, api_diagnosis_investigation_map_delete
+)
+from .auto_trigger_views import (
+    AutoTriggerConfigurationView, AutoTriggerHistoryView, AutoTriggerTimeSettingsView,
+    api_save_auto_trigger_config, api_get_auto_trigger_configs,
+    api_execute_auto_trigger, api_get_auto_trigger_history,
+    api_get_auto_trigger_history_detail, api_delete_auto_trigger_config,
+    api_retry_failed_entries, api_save_time_setting, api_get_time_settings, api_delete_time_setting
 )
 
 app_name = 'lab'
@@ -76,9 +97,13 @@ urlpatterns = [
     path('age-group/import/history/', AgeGroupImportHistoryView.as_view(), name='agegroup_import_history'),
     
     # Age Group Import APIs
+    path('api/age-group/search/', api_agegroup_search, name='api_agegroup_search'),
     path('api/age-group/import/template/', api_agegroup_download_template, name='api_agegroup_import_template'),
     path('api/age-group/import/preview/', api_agegroup_preview, name='api_agegroup_import_preview'),
     path('api/age-group/import/process/', api_agegroup_import, name='api_agegroup_import_process'),
+    
+    # Diagnosis Investigation Mapping
+    path('diagnosis-investigation-age-mapping/', diagnosis_investigation_mapping_view, name='diagnosis_investigation_age_mapping'),
     
     # Reference Range Grid & Lookups
     path('reference-range/', ReferenceRangeGridView.as_view(), name='reference_range_grid'),
@@ -93,12 +118,30 @@ urlpatterns = [
     path('api/reference-ranges/save/', save_reference_range, name='api_reference_ranges_save'),
     path('api/reference-ranges/save-multiple/', save_multiple_reference_ranges, name='api_reference_ranges_save_multiple'),
     path('api/reference-ranges/<int:pk>/delete/', delete_reference_range, name='api_reference_ranges_delete'),
+    path('api/reference-ranges-grid/list/', api_reference_ranges_grid_list, name='api_reference_ranges_grid_list'),
+    path('api/reference-ranges-grid/detail/', api_reference_ranges_grid_detail, name='api_reference_ranges_grid_detail'),
+    path('api/reference-ranges-grid/save/', api_reference_ranges_grid_save, name='api_reference_ranges_grid_save'),
+    path('api/reference-ranges-grid/delete/', api_reference_ranges_grid_delete, name='api_reference_ranges_grid_delete'),
+
+    # Diagnosis Investigation Mapping APIs
+    path('api/diagnosis-investigation-map/list/', api_diagnosis_investigation_map_list, name='api_diagnosis_investigation_map_list'),
+    path('api/diagnosis-investigation-map/detail/', api_diagnosis_investigation_map_detail, name='api_diagnosis_investigation_map_detail'),
+    path('api/diagnosis-investigation-map/save/', api_diagnosis_investigation_map_save, name='api_diagnosis_investigation_map_save'),
+    path('api/diagnosis-investigation-map/delete/', api_diagnosis_investigation_map_delete, name='api_diagnosis_investigation_map_delete'),
     
     path('reference-range/import/', ReferenceRangeImportView.as_view(), name='reference_range_import'),
     path('reference-range/import/history/', ReferenceRangeImportHistoryView.as_view(), name='reference_range_import_history'),
     path('api/reference-range/import/template/', api_referencerange_download_template, name='api_referencerange_import_template'),
     path('api/reference-range/import/preview/', api_referencerange_preview, name='api_referencerange_preview'),
     path('api/reference-range/import/save/', api_referencerange_import, name='api_referencerange_import'),
+
+    # Diagnosis–Investigation Map Import
+    path('diagnosis-investigation-age-mapping/import/', DiagnosisInvestigationMapImportView.as_view(), name='diagnosis_investigation_map_import'),
+    path('api/diagnosis-investigation-map/import/template/', api_diag_inv_map_download_template, name='api_diag_inv_map_import_template'),
+    path('api/diagnosis-investigation-map/import/preview/', api_diag_inv_map_preview, name='api_diag_inv_map_import_preview'),
+    path('api/diagnosis-investigation-map/import/process/', api_diag_inv_map_import, name='api_diag_inv_map_import_process'),
+
+
 
     path('api/departments/add/', api_add_department, name='api_department_add'),
     path('api/sample-types/add/', api_add_sample_type, name='api_sample_type_add'),
@@ -138,4 +181,21 @@ urlpatterns = [
     path('api/diagnoses/count/', api_diagnosis_count, name='api_diagnosis_count'),
     path('api/investigations/count/', api_investigation_count, name='api_investigation_count'),
     path('api/investigation-parameters/count/', api_parameter_count, name='api_parameter_count'),
+
+    # Auto Trigger
+    path('auto-trigger/configuration/', AutoTriggerConfigurationView.as_view(), name='auto_trigger_configuration'),
+    path('auto-trigger/time-settings/', AutoTriggerTimeSettingsView.as_view(), name='auto_trigger_time_settings'),
+    path('auto-trigger/history/', AutoTriggerHistoryView.as_view(), name='auto_trigger_history'),
+    
+    path('api/auto-trigger/save/', api_save_auto_trigger_config, name='api_save_auto_trigger_config'),
+    path('api/auto-trigger/list/', api_get_auto_trigger_configs, name='api_get_auto_trigger_configs'),
+    path('api/auto-trigger/execute/', api_execute_auto_trigger, name='api_execute_auto_trigger'),
+    path('api/auto-trigger/history/', api_get_auto_trigger_history, name='api_get_auto_trigger_history'),
+    path('api/auto-trigger/history/<int:pk>/', api_get_auto_trigger_history_detail, name='api_get_auto_trigger_history_detail'),
+    path('api/auto-trigger/config/<int:pk>/delete/', api_delete_auto_trigger_config, name='api_delete_auto_trigger_config'),
+    path('api/auto-trigger/history/<int:pk>/retry/', api_retry_failed_entries, name='api_retry_failed_entries'),
+    
+    path('api/auto-trigger/time-setting/save/', api_save_time_setting, name='api_save_time_setting'),
+    path('api/auto-trigger/time-setting/list/', api_get_time_settings, name='api_get_time_settings'),
+    path('api/auto-trigger/time-setting/<int:pk>/delete/', api_delete_time_setting, name='api_delete_time_setting'),
 ]

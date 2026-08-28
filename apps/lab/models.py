@@ -201,20 +201,7 @@ class AgeGroup(TimeStampedModel):
     def __str__(self):
         return self.label
 
-class DiagnosisInvestigationMap(TimeStampedModel):
-    diagnosis = models.ForeignKey(Diagnosis, on_delete=models.CASCADE, related_name='investigation_maps')
-    investigation = models.ForeignKey(Investigation, on_delete=models.CASCADE, related_name='diagnosis_maps')
-    age_group = models.ForeignKey('AgeGroup', on_delete=models.SET_NULL, null=True, blank=True, related_name='diagnosis_maps', verbose_name="Specific Age Group")
-    is_default = models.BooleanField(default=False, verbose_name="Is Default for Diagnosis")
-    is_active = models.BooleanField(default=True, verbose_name="Active Status")
 
-    class Meta:
-        unique_together = ('diagnosis', 'investigation', 'age_group')
-        ordering = ['diagnosis', 'investigation']
-
-    def __str__(self):
-        age_suffix = f" ({self.age_group.label})" if self.age_group else " (All Ages)"
-        return f"{self.investigation.name} for {self.diagnosis.name}{age_suffix}"
 
 class InvestigationParameter(TimeStampedModel):
     investigation = models.ForeignKey(Investigation, on_delete=models.CASCADE, related_name='parameters')
@@ -279,7 +266,7 @@ class ParameterReferenceRange(TimeStampedModel):
     is_active = models.BooleanField(default=True, verbose_name="Active Status")
 
     class Meta:
-        unique_together = ('investigation_parameter', 'age_group', 'gender', 'pregnancy')
+        unique_together = ('investigation_parameter', 'age_group', 'diagnosis', 'gender')
 
     def __str__(self):
         return f"Range for {self.investigation_parameter} ({self.age_group})"
@@ -464,4 +451,95 @@ class PatientVisitDiagnosis(TimeStampedModel):
 
     def __str__(self):
         return f"Visit #{self.visit.visit_no} - {self.diagnosis.name if self.diagnosis else self.chief_complaint.name}"
+
+class DiagnosisInvestigationMap(TimeStampedModel):
+    diagnosis = models.ForeignKey(Diagnosis, on_delete=models.CASCADE, related_name='investigation_mappings')
+    age_group = models.ForeignKey(AgeGroup, on_delete=models.CASCADE, related_name='investigation_mappings')
+    investigation = models.ForeignKey(Investigation, on_delete=models.CASCADE)
+    is_default = models.BooleanField(default=False, verbose_name="Default Investigation")
+    is_active = models.BooleanField(default=True, verbose_name="Active Status")
+
+    class Meta:
+        unique_together = ('diagnosis', 'age_group', 'investigation')
+        ordering = ['diagnosis', 'age_group', 'investigation']
+
+    def __str__(self):
+        return f"{self.diagnosis.name} -> {self.investigation.name}"
+
+
+class AutoTriggerTimeSetting(TimeStampedModel):
+    name = models.CharField(max_length=150, default="Default Schedule")
+    department = models.ForeignKey('patients.Department', on_delete=models.SET_NULL, null=True, blank=True, help_text="Optional department specific setting")
+    lab_day_start = models.TimeField(default='04:00:00')
+    lab_day_end = models.TimeField(default='03:59:00')
+    rush_start = models.TimeField(default='10:00:00')
+    rush_end = models.TimeField(default='14:00:00')
+    rush_percentage = models.PositiveIntegerField(default=75)
+    processing_interval = models.PositiveIntegerField(default=30, help_text="In minutes")
+    is_active = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+
+class AutoTriggerConfig(TimeStampedModel):
+    department = models.ForeignKey('patients.Department', on_delete=models.CASCADE)
+    time_setting = models.ForeignKey(AutoTriggerTimeSetting, on_delete=models.SET_NULL, null=True, blank=True)
+    from_date = models.DateField()
+    to_date = models.DateField()
+    min_entries = models.PositiveIntegerField(default=80)
+    max_entries = models.PositiveIntegerField(default=125)
+    trigger_start_time = models.TimeField(default='10:00:00')
+    day_start_time = models.TimeField(default='04:00:00')
+    day_end_time = models.TimeField(default='03:59:00')
+    is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+class AutoTriggerHistory(TimeStampedModel):
+    STATUS_CHOICES = (
+        ('Queued', 'Queued'),
+        ('Processing', 'Processing'),
+        ('Completed', 'Completed'),
+        ('Partially Completed', 'Partially Completed'),
+        ('Failed', 'Failed'),
+        ('Cancelled', 'Cancelled'),
+    )
+    config = models.ForeignKey(AutoTriggerConfig, on_delete=models.SET_NULL, null=True, blank=True)
+    department = models.ForeignKey('patients.Department', on_delete=models.SET_NULL, null=True)
+    from_date = models.DateField()
+    to_date = models.DateField()
+    
+    # Rush configuration snapshotted at run time
+    rush_percentage = models.PositiveIntegerField(default=75)
+    rush_entries = models.PositiveIntegerField(default=0)
+    remaining_entries = models.PositiveIntegerField(default=0)
+    schedule_data = models.JSONField(null=True, blank=True)
+    
+    min_entries = models.PositiveIntegerField(default=80)
+    max_entries = models.PositiveIntegerField(default=125)
+    trigger_start_time = models.TimeField(default='10:00:00')
+    day_start_time = models.TimeField(default='04:00:00')
+    day_end_time = models.TimeField(default='03:59:00')
+    
+    processed_entries = models.PositiveIntegerField(default=0)
+    successful = models.PositiveIntegerField(default=0)
+    failed = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Queued')
+    triggered_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    last_processed_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+class AutoTriggerLog(TimeStampedModel):
+    STATUS_CHOICES = (
+        ('Success', 'Success'),
+        ('Failed', 'Failed'),
+        ('Skipped', 'Skipped'),
+    )
+    history = models.ForeignKey(AutoTriggerHistory, on_delete=models.CASCADE, related_name='logs')
+    entry_no = models.PositiveIntegerField()
+    entry_date = models.DateField()
+    department = models.CharField(max_length=200, blank=True, null=True)
+    visit = models.ForeignKey('patients.PatientVisit', on_delete=models.SET_NULL, null=True, blank=True)
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES)
+    message = models.TextField(blank=True, null=True)
 

@@ -1,7 +1,7 @@
 from django import forms
 from .models import (
     Diagnosis, Investigation, Parameter, AgeGroup,
-    DiagnosisInvestigationMap, InvestigationParameter,
+    InvestigationParameter,
     ParameterReferenceRange, PatientInvestigationOrder, PatientInvestigationResult,
     ServiceRequest
 )
@@ -89,16 +89,6 @@ class AgeGroupForm(forms.ModelForm):
         # Complex validation across units (e.g. 1 month > 30 days) is better done on save or explicitly
         return cleaned_data
 
-class DiagnosisInvestigationMapForm(forms.ModelForm):
-    class Meta:
-        model = DiagnosisInvestigationMap
-        fields = ['diagnosis', 'investigation', 'is_default', 'is_active']
-        widgets = {
-            'diagnosis': forms.Select(attrs={'class': 'form-select'}),
-            'investigation': forms.Select(attrs={'class': 'form-select'}),
-            'is_default': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        }
 
 class InvestigationParameterForm(forms.ModelForm):
     class Meta:

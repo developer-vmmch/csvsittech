@@ -179,10 +179,17 @@
                             <span>Reference Range Grid</span>
                         </a>
                     </li>
+
                     <li class="{% if request.resolver_match.url_name == 'legacy_mapping' %}active{% endif %}">
                         <a href="{% url 'lab:legacy_mapping' %}">
                             <i class="bi bi-arrow-left-right"></i>
                             <span>Legacy Mapping</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'diagnosis_investigation_age_mapping' %}active{% endif %}">
+                        <a href="{% url 'lab:diagnosis_investigation_age_mapping' %}">
+                            <i class="bi bi-link-45deg"></i>
+                            <span>Diagnosis-Investigation Mapping</span>
                         </a>
                     </li>
                 </ul>
@@ -235,6 +242,35 @@
                         <a href="{% url 'lab:result_entry_list' %}">
                             <i class="bi bi-journal-text"></i>
                             <span>Result Entry</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Auto Trigger Module -->
+            <li class="nav-item has-submenu">
+                <a href="javascript:void(0);" class="submenu-toggle" title="Auto Trigger">
+                    <i class="bi bi-cpu" style="color: #f59e0b;"></i>
+                    <span>Auto Trigger</span>
+                    <i class="bi bi-chevron-down submenu-chevron"></i>
+                </a>
+                <ul class="submenu-list">
+                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_configuration' %}active{% endif %}">
+                        <a href="{% url 'lab:auto_trigger_configuration' %}">
+                            <i class="bi bi-sliders"></i>
+                            <span>Auto Trigger Configuration</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_time_settings' %}active{% endif %}">
+                        <a href="{% url 'lab:auto_trigger_time_settings' %}">
+                            <i class="bi bi-clock"></i>
+                            <span>Auto Trigger Time Settings</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_history' %}active{% endif %}">
+                        <a href="{% url 'lab:auto_trigger_history' %}">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Auto Trigger History</span>
                         </a>
                     </li>
                 </ul>

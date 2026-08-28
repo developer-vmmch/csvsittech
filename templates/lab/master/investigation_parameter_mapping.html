@@ -187,10 +187,15 @@
 
 {% block content %}
 <div class="panel" style="background: transparent; border: none; box-shadow: none; padding: 0;">
-    <div class="panel-header-action" style="margin-bottom: 1.5rem; padding: 0 0.5rem;">
+    <div class="panel-header-action" style="margin-bottom: 1.5rem; padding: 0 0.5rem; display: flex; justify-content: space-between; align-items: center;">
         <div>
             <h2 class="panel-title" style="margin: 0; font-size: 1.5rem;">Investigation Parameter Mapping</h2>
             <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 6px;">Map multiple laboratory parameters to an investigation.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <a href="{% url 'lab:parameter_import' %}" class="btn btn-secondary">
+                <i class="bi bi-upload"></i> Import
+            </a>
         </div>
     </div>
 

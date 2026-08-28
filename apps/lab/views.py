@@ -15,7 +15,7 @@ from django.utils import timezone
 
 from .models import (
     Diagnosis, Investigation, Parameter, AgeGroup,
-    DiagnosisInvestigationMap, InvestigationParameter,
+    InvestigationParameter,
     ParameterReferenceRange, PatientInvestigationOrder, PatientInvestigationResult,
     LabDepartment, SampleType,
     ChiefComplaint, HospitalService, StagingDiagnosis, StagingInvestigation,
@@ -24,7 +24,7 @@ from .models import (
 )
 from .forms import (
     DiagnosisForm, InvestigationForm, ParameterForm, AgeGroupForm,
-    DiagnosisInvestigationMapForm, InvestigationParameterForm, ServiceRequestForm
+    InvestigationParameterForm, ServiceRequestForm
 )
 from apps.patients.models import Patient
 
@@ -704,14 +704,7 @@ class OrderEntryView(LoginRequiredMixin, GranularPermissionRequiredMixin, Templa
         if patient_id:
             context['patient'] = Patient.objects.filter(id=patient_id).first()
         context['diagnoses'] = Diagnosis.objects.filter(is_active=True)
-        # Mapping mapping for JS
-        maps = DiagnosisInvestigationMap.objects.filter(is_active=True).select_related('investigation')
-        diag_map = {}
-        for m in maps:
-            if m.diagnosis_id not in diag_map:
-                diag_map[m.diagnosis_id] = []
-            diag_map[m.diagnosis_id].append({'id': m.investigation.id, 'name': m.investigation.name})
-        context['diagnosis_investigation_map_json'] = json.dumps(diag_map)
+        context['diagnosis_investigation_map_json'] = json.dumps({})
         context['all_investigations'] = Investigation.objects.filter(is_active=True)
         return context
 
@@ -854,6 +847,9 @@ class ServiceRequestCreateView(LoginRequiredMixin, GranularPermissionRequiredMix
                 diagnoses_data = data.get('diagnoses', [])
                 investigations_data = data.get('investigations', [])
                 
+                if not diagnoses_data:
+                    return JsonResponse({'status': 'error', 'message': 'At least one diagnosis is required to save investigations.'})
+                
                 from apps.patients.models import Department
                 patient = Patient.objects.get(id=patient_id)
                 
@@ -952,58 +948,8 @@ def api_search_diagnosis(request):
 @login_required
 @csrf_exempt
 def api_suggest_investigations(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            diagnosis_ids = data.get('diagnosis_ids', [])
-            patient_id = data.get('patient_id')
-            
-            # Map diagnosis directly
-            maps_qs = DiagnosisInvestigationMap.objects.filter(
-                diagnosis_id__in=diagnosis_ids, 
-                is_active=True
-            ).select_related('investigation', 'age_group')
-            
-            if patient_id:
-                p = get_object_or_404(Patient, id=patient_id)
-                age_days = p.age_years * 365 # Approx, enough for basic matching
-                
-                # Match Age Groups
-                valid_age_groups = []
-                for ag in AgeGroup.objects.filter(is_active=True):
-                    if ag.gender not in ['All', p.gender]:
-                        continue
-                    
-                    min_days = 0
-                    if ag.min_age_value:
-                        if ag.min_age_unit == 'Days': min_days = ag.min_age_value
-                        elif ag.min_age_unit == 'Months': min_days = ag.min_age_value * 30
-                        else: min_days = ag.min_age_value * 365
-                        
-                    max_days = 99999
-                    if ag.max_age_value:
-                        if ag.max_age_unit == 'Days': max_days = ag.max_age_value
-                        elif ag.max_age_unit == 'Months': max_days = ag.max_age_value * 30
-                        else: max_days = ag.max_age_value * 365
-                        
-                    if min_days <= age_days <= max_days:
-                        valid_age_groups.append(ag.id)
-                
-                maps_qs = maps_qs.filter(Q(age_group__isnull=True) | Q(age_group_id__in=valid_age_groups))
-            
-            investigations = {}
-            for m in maps_qs:
-                if m.investigation.id not in investigations:
-                    investigations[m.investigation.id] = {
-                        'id': m.investigation.id,
-                        'name': m.investigation.name,
-                        'code': m.investigation.legacy_code or m.investigation.code
-                    }
-                
-            return JsonResponse({'status': 'success', 'investigations': list(investigations.values())})
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)})
-    return JsonResponse({'status': 'error'})
+    # Mapping has been removed, so we return empty suggestions.
+    return JsonResponse({'status': 'success', 'investigations': [], 'message': 'No investigations mapped'})
 
 
 def api_investigation_count(request):
@@ -1026,19 +972,23 @@ def api_parameter_count(request):
 
 def api_search_investigation(request):
     query = request.GET.get('q', '').strip()
+    diagnosis_ids_str = request.GET.get('diagnosis_ids', '')
+    patient_id = request.GET.get('patient_id')
         
     investigations = Investigation.objects.filter(is_active=True)
     if query:
         investigations = investigations.filter(
             Q(name__icontains=query) | Q(code__icontains=query) | Q(short_name__icontains=query)
         )
-    
+        
+
     results = []
     for inv in investigations:
         results.append({
             'id': inv.id,
             'text': inv.name,
-            'code': inv.code
+            'code': inv.code,
+            'sample': inv.sample_type.name if inv.sample_type else 'Whole Blood'
         })
         
     return JsonResponse({'results': results})

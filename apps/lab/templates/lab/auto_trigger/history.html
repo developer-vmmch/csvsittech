@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Auto Trigger History | VMMC ERP{% endblock %}
+
+{% block content %}
+<div class="content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <div>
+            <h2 style="font-size:1.5rem;font-weight:700;color:var(--text-main);margin-bottom:0.25rem;">Auto Trigger History</h2>
+            <p style="color:var(--text-muted);font-size:0.9rem;margin:0;">View detailed execution logs and status of automated processes.</p>
+        </div>
+    </div>
+
+    <!-- History Filters -->
+    <div class="card" style="margin-bottom:2rem;">
+        <div class="card-body" style="display:flex; gap:1rem; align-items:flex-end;">
+            <div style="flex:1;">
+                <label class="form-label">Department</label>
+                <select id="filter-dept" class="form-select">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}">{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="flex:1;">
+                <label class="form-label">Status</label>
+                <select id="filter-status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Partially Completed">Partially Completed</option>
+                    <option value="Failed">Failed</option>
+                </select>
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="loadHistory()">Filter</button>
+                <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Table -->
+    <div class="card">
+        <div class="table-responsive" style="border:1px solid var(--border-color);border-radius:8px;">
+            <table class="table" style="width: 100%; border-collapse: collapse;">
+                <thead style="background: var(--bg-main); border-bottom: 2px solid var(--border-color);">
+                    <tr>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Trigger ID</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Department</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Date Range</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Min/Max</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Processed</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Started At</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Status</th>
+                        <th style="padding: 1rem; text-align: center; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="history-list-tbody">
+                    <tr><td colspan="8" style="text-align:center;padding:2rem;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div id="details-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1050; align-items:center; justify-content:center;">
+    <div class="card" style="width:90%; max-width:800px; max-height:90vh; display:flex; flex-direction:column;">
+        <div class="card-header" style="border-bottom:1px solid var(--border-color); padding:1rem 1.5rem; display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="color:var(--accent-blue); font-size:1.1rem; font-weight:600; margin:0;">Trigger Details: <span id="mod-trig-id"></span></h3>
+            <span id="mod-status" class="badge bg-secondary">Status</span>
+        </div>
+        <div class="card-body" style="padding:1.5rem; overflow-y:auto; flex:1;">
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1rem; margin-bottom:1.5rem; background:#f8fafc; padding:1rem; border-radius:6px; border:1px solid #e2e8f0;">
+                <div><small style="color:#64748b;display:block;">Department</small><strong id="mod-dept"></strong></div>
+                <div><small style="color:#64748b;display:block;">Date Range</small><strong id="mod-dates"></strong></div>
+                <div><small style="color:#64748b;display:block;">Min / Max Targets</small><strong id="mod-req"></strong></div>
+                
+                <div><small style="color:#64748b;display:block;">Processed Entries</small><strong id="mod-proc" style="color:var(--accent-blue);"></strong></div>
+                <div><small style="color:#64748b;display:block;">Successful</small><strong id="mod-succ" style="color:var(--accent-green);"></strong></div>
+                <div><small style="color:#64748b;display:block;">Failed</small><strong id="mod-fail" style="color:#ef4444;"></strong></div>
+                
+                <div><small style="color:#64748b;display:block;">Started At</small><strong id="mod-start"></strong></div>
+                <div><small style="color:#64748b;display:block;">Completed At</small><strong id="mod-comp"></strong></div>
+                <div><small style="color:#64748b;display:block;">Triggered By</small><strong id="mod-user"></strong></div>
+            </div>
+
+            <h4 style="font-size:1rem; margin-bottom:0.5rem; color:var(--text-main);">Schedule Timeline</h4>
+            <div class="table-responsive" style="border:1px solid var(--border-color); border-radius:6px; margin-bottom: 1.5rem; max-height:200px; overflow-y:auto;">
+                <table class="table table-sm table-hover" style="width:100%; margin:0; font-size:0.9rem;">
+                    <thead style="background:var(--bg-main); position:sticky; top:0; z-index:1; border-bottom:1px solid var(--border-color);">
+                        <tr>
+                            <th style="padding:0.5rem;">Window</th>
+                            <th style="padding:0.5rem;">Time Interval</th>
+                            <th style="padding:0.5rem;">Target Entries</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schedule-tbody">
+                    </tbody>
+                </table>
+            </div>
+
+            <h4 style="font-size:1rem; margin-bottom:0.5rem; color:var(--text-main);">Entry Logs</h4>
+            <div class="table-responsive" style="border:1px solid var(--border-color); border-radius:6px; max-height:300px; overflow-y:auto;">
+                <table class="table table-sm table-hover" style="width:100%; margin:0; font-size:0.9rem;">
+                    <thead style="background:var(--bg-main); position:sticky; top:0; z-index:1; border-bottom:1px solid var(--border-color);">
+                        <tr>
+                            <th style="padding:0.5rem;">Entry No</th>
+                            <th style="padding:0.5rem;">Patient</th>
+                            <th style="padding:0.5rem;">Date</th>
+                            <th style="padding:0.5rem;">Status</th>
+                            <th style="padding:0.5rem;">Message</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-tbody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div style="text-align:right; margin-top:1rem; border-top:1px solid #e2e8f0; padding-top:1rem; display: flex; justify-content: space-between; padding: 1rem 1.5rem;">
+            <button class="btn btn-warning" id="btn-retry" style="display:none;" onclick="retryFailed()">Retry Failed Entries</button>
+            <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:9999;"></div>
+
+<script>
+    let currentHistoryId = null;
+
+    function showToast(msg, type='danger') {
+        const t = document.createElement('div');
+        t.style = `background:${type==='danger'?'#ef4444':'#10b981'}; color:white; padding:1rem 1.5rem; border-radius:6px; margin-bottom:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1); font-weight:600; opacity:0; transition:opacity 0.3s;`;
+        t.innerText = msg;
+        document.getElementById('toast-container').appendChild(t);
+        setTimeout(() => t.style.opacity = '1', 10);
+        setTimeout(() => {
+            t.style.opacity = '0';
+            setTimeout(() => t.remove(), 300);
+        }, 3000);
+    }
+
+    function getStatusBadge(status) {
+        if(status === 'Completed') return `<span class="badge bg-success">${status}</span>`;
+        if(status === 'Processing') return `<span class="badge bg-primary">${status}</span>`;
+        if(status === 'Failed') return `<span class="badge bg-danger">${status}</span>`;
+        if(status === 'Partially Completed') return `<span class="badge bg-warning">${status}</span>`;
+        return `<span class="badge bg-secondary">${status}</span>`;
+    }
+
+    function resetFilters() {
+        document.getElementById('filter-dept').value = '';
+        document.getElementById('filter-status').value = '';
+        loadHistory();
+    }
+
+    function loadHistory() {
+        const dept = document.getElementById('filter-dept').value;
+        const status = document.getElementById('filter-status').value;
+        
+        fetch(`{% url "lab:api_get_auto_trigger_history" %}?department_id=${dept}&status=${status}`)
+        .then(r=>r.json()).then(res=>{
+            const tbody = document.getElementById('history-list-tbody');
+            tbody.innerHTML = '';
+            if(res.success) {
+                if(res.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;">No history found.</td></tr>';
+                    return;
+                }
+                res.data.forEach(h => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid #e2e8f0';
+                    tr.innerHTML = `
+                        <td style="padding:1rem;"><strong>${h.trigger_id}</strong></td>
+                        <td style="padding:1rem;">${h.department}</td>
+                        <td style="padding:1rem;">${h.from_date} to ${h.to_date}</td>
+                        <td style="padding:1rem;">${h.min_entries} / ${h.max_entries}</td>
+                        <td style="padding:1rem;">${h.processed_entries} <small>(${h.successful} S, ${h.failed} F)</small></td>
+                        <td style="padding:1rem;">${h.started_at}</td>
+                        <td style="padding:1rem;">${getStatusBadge(h.status)}</td>
+                        <td style="padding:1rem; text-align:center;">
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewDetails(${h.id})">Details</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        });
+    }
+
+    function viewDetails(id) {
+        currentHistoryId = id;
+        document.getElementById('details-modal').style.display = 'flex';
+        document.getElementById('logs-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading logs...</td></tr>';
+        document.getElementById('schedule-tbody').innerHTML = '<tr><td colspan="3" style="text-align:center;">Loading schedule...</td></tr>';
+        document.getElementById('btn-retry').style.display = 'none';
+
+        fetch(`/lab/api/auto-trigger/history/${id}/`)
+        .then(r=>r.json()).then(res=>{
+            if(res.success) {
+                const d = res.details;
+                document.getElementById('mod-trig-id').textContent = d.trigger_id;
+                document.getElementById('mod-dept').textContent = d.department;
+                document.getElementById('mod-dates').textContent = d.date_range;
+                document.getElementById('mod-req').textContent = `${d.min_entries} / ${d.max_entries}`;
+                document.getElementById('mod-proc').textContent = d.processed_entries;
+                document.getElementById('mod-succ').textContent = d.successful;
+                document.getElementById('mod-fail').textContent = d.failed;
+                document.getElementById('mod-start').textContent = d.started_at;
+                document.getElementById('mod-comp').textContent = d.completed_at;
+                document.getElementById('mod-user').textContent = d.triggered_by;
+                document.getElementById('mod-status').outerHTML = getStatusBadge(d.status).replace('<span', '<span id="mod-status"');
+
+                if (d.failed > 0 && d.status !== 'Processing') {
+                    document.getElementById('btn-retry').style.display = 'inline-block';
+                }
+
+                const sTbody = document.getElementById('schedule-tbody');
+                sTbody.innerHTML = '';
+                if(d.schedule_data && d.schedule_data.length > 0) {
+                    d.schedule_data.forEach(s => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td style="padding:0.5rem;"><span class="badge bg-${s.type === 'Rush' ? 'warning' : 'secondary'}">${s.type}</span></td>
+                            <td style="padding:0.5rem;">${s.start} - ${s.end}</td>
+                            <td style="padding:0.5rem;"><strong>${s.target}</strong></td>
+                        `;
+                        sTbody.appendChild(tr);
+                    });
+                } else {
+                    sTbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No schedule data available.</td></tr>';
+                }
+
+                const tbody = document.getElementById('logs-tbody');
+                tbody.innerHTML = '';
+                if(res.logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No logs available.</td></tr>';
+                } else {
+                    res.logs.forEach(l => {
+                        let badge = 'bg-secondary';
+                        if(l.status === 'Success') badge = 'bg-success';
+                        if(l.status === 'Failed') badge = 'bg-danger';
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td style="padding:0.5rem;">${l.entry_no}</td>
+                            <td style="padding:0.5rem;">${l.patient}</td>
+                            <td style="padding:0.5rem;">${l.entry_date}</td>
+                            <td style="padding:0.5rem;"><span class="badge ${badge}">${l.status}</span></td>
+                            <td style="padding:0.5rem; font-size:0.8rem; color:#475569;">${l.message || ''}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            }
+        });
+    }
+
+    function retryFailed() {
+        if(!currentHistoryId) return;
+        if(!confirm('Are you sure you want to retry failed entries?')) return;
+        
+        fetch(`/lab/api/auto-trigger/history/${currentHistoryId}/retry/`, {
+            method: 'POST'
+        }).then(r=>r.json()).then(res=>{
+            if(res.success) {
+                showToast(res.message, 'success');
+                closeModal();
+                loadHistory();
+            } else {
+                showToast(res.message, 'danger');
+            }
+        });
+    }
+
+    function closeModal() {
+        document.getElementById('details-modal').style.display = 'none';
+    }
+
+    window.onload = loadHistory;
+</script>
+{% endblock %}

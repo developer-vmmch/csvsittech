@@ -70,6 +70,15 @@ PERMISSION_MODULES = [
             {"code": "administration.permissions", "label": "Permissions", "actions": ["view", "update"]},
             {"code": "administration.import_history", "label": "Import History", "actions": ["view", "export"]},
         ]
+    },
+    {
+        "module": "auto_trigger",
+        "label": "Auto Trigger",
+        "sub_modules": [
+            {"code": "auto_trigger.configuration", "label": "Auto Trigger Configuration", "actions": ["view", "create", "update", "delete", "trigger", "export"]},
+            {"code": "auto_trigger.time_settings", "label": "Auto Trigger Time Settings", "actions": ["view", "create", "update", "delete"]},
+            {"code": "auto_trigger.history", "label": "Auto Trigger History", "actions": ["view", "retry", "export"]},
+        ]
     }
 ]
 
