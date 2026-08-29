@@ -19,43 +19,43 @@ class Department(TimeStampedModel):
     def seed_defaults(cls):
         """Ensures default departments and units exist in DB"""
         deps = [
-            {'code': 'GENMED', 'name': 'GENERAL MEDICINE'},
-            {'code': 'PED', 'name': 'PEDIATRICS'},
-            {'code': 'ORTHO', 'name': 'ORTHOPEDICS'},
+            {'code': 'CTB', 'name': 'CHEST & TB'},
+            {'code': 'DENTAL', 'name': 'DENTAL'},
             {'code': 'DERM', 'name': 'DERMATOLOGY'},
-            {'code': 'SURG', 'name': 'SURGERY'},
-            {'code': 'CARD', 'name': 'CARDIOLOGY'},
+            {'code': 'EMR', 'name': 'EMERGENCY MEDICINE'},
+            {'code': 'ENT', 'name': 'ENT'},
+            {'code': 'GM', 'name': 'GENERAL MEDICINE'},
+            {'code': 'GS', 'name': 'GENERAL SURGERY'},
+            {'code': 'GYN', 'name': 'GYNAECOLOGY'},
+            {'code': 'OBS', 'name': 'OBSTETRICS'},
+            {'code': 'OPH', 'name': 'OPHTHALMOLOGY'},
+            {'code': 'ORTHO', 'name': 'ORTHOPAEDICS'},
+            {'code': 'PED', 'name': 'PAEDIATRICS'},
+            {'code': 'PSY', 'name': 'PSYCHIATRY'},
         ]
         for d in deps:
-            dep_obj, _ = cls.objects.get_or_create(code=d['code'], defaults=d)
-            
-            # Create default units for department if missing
-            if not dep_obj.units.exists():
-                if d['code'] == 'GENMED':
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='HOD-GENERAL MEDICINE-V', head_doctor='Dr. V. General')
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='UNIT-I DR. KUMAR', head_doctor='Dr. Kumar')
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='UNIT-II DR. SHARMA', head_doctor='Dr. Sharma')
-                elif d['code'] == 'PED':
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='UNIT-I DR. ANITA (PEDIATRICS)', head_doctor='Dr. Anita')
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='UNIT-II DR. RAHUL', head_doctor='Dr. Rahul')
-                elif d['code'] == 'ORTHO':
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='UNIT-I DR. RAJESH (ORTHO)', head_doctor='Dr. Rajesh')
-                elif d['code'] == 'DERM':
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='UNIT-I DR. MEENA (DERM)', head_doctor='Dr. Meena')
-                elif d['code'] == 'SURG':
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='UNIT-I DR. SURESH (SURGERY)', head_doctor='Dr. Suresh')
-                elif d['code'] == 'CARD':
-                    DepartmentUnit.objects.get_or_create(department=dep_obj, unit_name='UNIT-I DR. ANAND (CARDIOLOGY)', head_doctor='Dr. Anand')
+            if not cls.objects.filter(name__iexact=d['name']).exists():
+                cls.objects.create(name=d['name'], code=d['code'], is_active=True)
 
 
 class DepartmentUnit(TimeStampedModel):
+    class UnitTypeChoices(models.TextChoices):
+        HOD = 'HOD', 'HOD'
+        UNIT = 'Unit', 'Unit'
+        DOCTOR = 'Doctor', 'Doctor'
+        CONSULTANT = 'Consultant', 'Consultant'
+        OTHER = 'Other', 'Other'
+
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='units')
     unit_name = models.CharField(max_length=150, verbose_name="Unit / Doctor Name")
+    code = models.CharField(max_length=50, unique=True, null=True, blank=True, verbose_name="Unit/Doctor Code")
+    unit_type = models.CharField(max_length=20, choices=UnitTypeChoices.choices, default=UnitTypeChoices.OTHER, verbose_name="Type")
     head_doctor = models.CharField(max_length=100, blank=True, null=True, verbose_name="Head Doctor")
+    display_order = models.PositiveIntegerField(default=0, verbose_name="Display Order")
     is_active = models.BooleanField(default=True, verbose_name="Active Status")
 
     class Meta:
-        ordering = ['unit_name']
+        ordering = ['department', 'display_order', 'unit_name']
         unique_together = ('department', 'unit_name')
 
     def __str__(self):
@@ -142,10 +142,59 @@ class Patient(TimeStampedModel):
         RURAL = 'RURAL', 'Rural'
         URBAN = 'URBAN', 'Urban'
 
+    class SourceChoices(models.TextChoices):
+        NORMAL = 'O', 'Normal Entry'
+        AUTO_TRIGGER = 'D', 'Auto Trigger Entry'
+
     # Patient Identification
     patient_id = models.CharField(max_length=50, unique=True, db_index=True)
+    op_number = models.CharField(max_length=50, unique=True, blank=True, null=True, verbose_name="OP Number")
     ipno = models.CharField(max_length=50, blank=True, null=True, verbose_name="IPNO")
     centre = models.CharField(max_length=50, choices=CentreChoices.choices, default=CentreChoices.VMMCH, verbose_name="Centre")
+    registration_date = models.DateField(default=timezone.now, verbose_name="Registration Date")
+    patient_type = models.CharField(
+        max_length=1, 
+        choices=SourceChoices.choices, 
+        default=SourceChoices.NORMAL, 
+        db_index=True,
+        verbose_name="Patient Type"
+    )
+    created_source = models.CharField(
+        max_length=1, 
+        choices=SourceChoices.choices, 
+        default=SourceChoices.NORMAL, 
+        db_index=True,
+        verbose_name="Entry Type / Source"
+    )
+    automation_scheduled_at = models.DateTimeField(
+        null=True, 
+        blank=True, 
+        db_index=True, 
+        verbose_name="Scheduled Creation Date & Time"
+    )
+    auto_trigger_run = models.ForeignKey(
+        'lab.AutoTriggerHistory', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='generated_patients',
+        verbose_name="Auto Trigger Run"
+    )
+    auto_trigger_stage = models.CharField(
+        max_length=100, 
+        blank=True, 
+        null=True, 
+        default='STAGE 1 - PATIENT CREATION',
+        verbose_name="Auto Trigger Stage"
+    )
+    source_patient = models.ForeignKey(
+        'self', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='auto_triggered_copies',
+        verbose_name="Source Patient Reference"
+    )
     
     # Personal Info
     title = models.CharField(max_length=10, choices=TitleChoices.choices, default='-')
@@ -164,8 +213,10 @@ class Patient(TimeStampedModel):
     religion = models.CharField(max_length=30, blank=True, null=True)
     
     # Guardian Info
+    guardian_title = models.CharField(max_length=10, choices=TitleChoices.choices, default='-')
     guardian_relationship = models.CharField(max_length=10, choices=GuardianRelChoices.choices, default='-')
     guardian_name = models.CharField(max_length=100, blank=True, null=True)
+    guardian_phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Guardian Phone")
     company_name = models.CharField(max_length=100, default="INDIVIDUAL")
     patient_company = models.ForeignKey(PatientCompany, on_delete=models.SET_NULL, null=True, blank=True, related_name='patients')
     abha_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="ABHAID")
@@ -181,6 +232,9 @@ class Patient(TimeStampedModel):
     
     # Medical & Doctor Assignment
     mobile_no = models.CharField(max_length=20, verbose_name="Mobile No (without 91)")
+    alternate_phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Alternate Phone")
+    email = models.EmailField(blank=True, null=True, verbose_name="Email")
+    emergency_contact_phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Emergency Contact Phone")
     blood_group = models.CharField(max_length=10, blank=True, null=True)
     complaint = models.TextField(blank=True, null=True)
     occupation = models.CharField(max_length=100, blank=True, null=True)
@@ -206,9 +260,19 @@ class Patient(TimeStampedModel):
         return f"{self.name} ({self.patient_id})"
 
     def save(self, *args, **kwargs):
+        if not self.patient_type:
+            self.patient_type = self.created_source or 'O'
+        if not self.created_source:
+            self.created_source = self.patient_type or 'O'
         if not self.patient_id:
             self.patient_id = self.generate_next_patient_id()
         super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if self.patient_type == 'D' or self.created_source == 'D':
+            from django.core.exceptions import ValidationError
+            raise ValidationError("Auto Trigger generated patients cannot be deleted.")
+        super().delete(*args, **kwargs)
 
     @classmethod
     def generate_next_patient_id(cls):
@@ -237,6 +301,25 @@ class Patient(TimeStampedModel):
                     max_num = val
 
         return str(max_num + 1)
+
+    @classmethod
+    def generate_next_op_number(cls):
+        """Generates sequential numeric OP number starting from OP-2026-000001 (or numeric 26100000 based on old data)"""
+        last_patient = cls.objects.exclude(op_number__isnull=True).exclude(op_number='').order_by('-id').first()
+        if last_patient and last_patient.op_number:
+            op = last_patient.op_number
+            if op.startswith("OP-2026-"):
+                try:
+                    seq = int(op.split("-")[-1])
+                    return f"OP-2026-{seq + 1:06d}"
+                except ValueError:
+                    pass
+            elif op.isdigit():
+                return str(int(op) + 1)
+        
+        # If no previous valid OP number found, start fresh for Auto Trigger generated ones, 
+        # or just continue from a base number. The test dataset had 26100000.
+        return "OP-2026-000001"
 
 
 class PatientVisit(TimeStampedModel):
@@ -274,3 +357,20 @@ class PatientVisit(TimeStampedModel):
 
     def __str__(self):
         return f"Visit #{self.visit_no} - {self.patient.name} ({self.visit_date.strftime('%d/%b/%Y')})"
+
+class PatientImportHistory(TimeStampedModel):
+    file_name = models.CharField(max_length=255)
+    upload_file = models.FileField(upload_to='patient_imports/', null=True, blank=True)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    total_records = models.IntegerField(default=0)
+    imported = models.IntegerField(default=0)
+    updated = models.IntegerField(default=0)
+    skipped = models.IntegerField(default=0)
+    failed = models.IntegerField(default=0)
+    status = models.CharField(max_length=50, default='Completed')
+    
+    class Meta:
+        ordering = ['-created_at']
+        
+    def __str__(self):
+        return f"{self.file_name} on {self.created_at.strftime('%Y-%m-%d %H:%M')}"

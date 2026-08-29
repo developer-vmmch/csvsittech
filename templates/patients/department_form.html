@@ -45,5 +45,67 @@
             <a href="{% url 'patients:department_list' %}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
+    
+    {% if object.pk %}
+    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
+    <div class="form-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+            <h2><i class="bi bi-people" style="color: var(--accent-blue);"></i> UNIT / DOCTOR MAPPING</h2>
+            <p>Units and doctors assigned to {{ object.name }}</p>
+        </div>
+        <a href="{% url 'patients:unit_add' %}?department={{ object.pk }}" class="btn btn-secondary">
+            + Add Unit/Doctor
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Unit/Doctor Name</th>
+                    <th>Code</th>
+                    <th>Type</th>
+                    <th>Display Order</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for unit in units %}
+                <tr>
+                    <td><strong>{{ unit.unit_name }}</strong></td>
+                    <td>{{ unit.code }}</td>
+                    <td>{{ unit.get_unit_type_display }}</td>
+                    <td>{{ unit.display_order }}</td>
+                    <td>
+                        {% if unit.is_active %}
+                            <span class="badge badge-green">Active</span>
+                        {% else %}
+                            <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <a href="{% url 'patients:unit_edit' unit.id %}" class="btn-icon" title="Edit Unit" style="color: var(--accent-blue);">
+                                <i class="bi bi-pencil-square"></i> Edit
+                            </a>
+                            <form method="post" action="{% url 'patients:unit_delete' unit.id %}" onsubmit="return confirm('Remove unit {{ unit.unit_name }}?');" style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-danger-sm" title="Delete Unit">
+                                    <i class="bi bi-x-circle-fill"></i> Deactivate/Remove
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted);">No units configured for this department.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

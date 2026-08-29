@@ -27,11 +27,22 @@
             </div>
 
             <div class="form-group">
-                <label for="{{ form.head_doctor.id_for_label }}">Head Doctor Name</label>
-                {{ form.head_doctor }}
+                <label for="{{ form.code.id_for_label }}">Unit / Doctor Code *</label>
+                {{ form.code }}
+                {% if form.code.errors %}<div class="field-error">{{ form.code.errors }}</div>{% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.unit_type.id_for_label }}">Type *</label>
+                {{ form.unit_type }}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.display_order.id_for_label }}">Display Order</label>
+                {{ form.display_order }}
             </div>
 
-            <div class="form-group checkbox-group">
+            <div class="form-group checkbox-group" style="grid-column: 1 / -1; margin-top: 10px;">
                 <label class="checkbox-label" for="{{ form.is_active.id_for_label }}">
                     {{ form.is_active }} <span>Active Unit Status</span>
                 </label>

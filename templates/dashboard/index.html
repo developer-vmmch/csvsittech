@@ -35,6 +35,37 @@
             <span class="badge badge-blue">SQLite3</span>
         </div>
         <div class="card-value">Connected</div>
+</div>
+
+<div class="panel" style="margin-bottom: 2rem;">
+    <div class="panel-title">Master Dashboard / Summary</div>
+    <div class="grid-cards" style="margin-top: 1rem;">
+        <div class="card" style="border-left: 4px solid var(--accent-blue);">
+            <div class="card-header">
+                <span class="card-title">Diagnosis</span>
+            </div>
+            <div class="card-value" style="font-size: 1.5rem; color: var(--accent-blue);">
+                {{ diagnosis_count }} Entries
+            </div>
+        </div>
+
+        <div class="card" style="border-left: 4px solid #166534;">
+            <div class="card-header">
+                <span class="card-title">Investigations</span>
+            </div>
+            <div class="card-value" style="font-size: 1.5rem; color: #166534;">
+                {{ investigation_count }} Entries
+            </div>
+        </div>
+
+        <div class="card" style="border-left: 4px solid #854d0e;">
+            <div class="card-header">
+                <span class="card-title">Investigation Parameters</span>
+            </div>
+            <div class="card-value" style="font-size: 1.5rem; color: #854d0e;">
+                {{ parameter_count }} Entries
+            </div>
+        </div>
     </div>
 </div>
 

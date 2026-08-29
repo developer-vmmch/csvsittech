@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Service Requests{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Service Requests</h2>
+    <a href="{% url 'lab:service_request_add' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> New Service Request
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Sample ID</th>
+                        <th>Patient</th>
+                        <th>Consultant</th>
+                        <th>Department</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in service_requests %}
+                    <tr>
+                        <td>{{ req.request_date }}</td>
+                        <td>{{ req.sample_id }}</td>
+                        <td>{{ req.patient.name }} ({{ req.patient.uhid }})</td>
+                        <td>{% if req.consultant %}{{ req.consultant.get_full_name|default:req.consultant.username }}{% else %}-{% endif %}</td>
+                        <td>{{ req.department.name|default:"-" }}</td>
+                        <td>{{ req.visit_type }}</td>
+                        <td>
+                            <span class="badge {% if req.status == 'Saved' %}bg-info{% elif req.status == 'Completed' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ req.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">No service requests found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

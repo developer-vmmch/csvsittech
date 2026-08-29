@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}{% if object %}Edit Investigation{% else %}Add Investigation{% endif %} | VMMCerp{% endblock %}
+{% block page_heading %}{% if object %}Edit Investigation{% else %}Add New Investigation{% endif %}{% endblock %}
+
+{% block extra_head %}
+<!-- Select2 for searchable dropdowns -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .select2-container .select2-selection--single {
+        height: 38px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 36px;
+        color: #334155;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    }
+    .input-group-custom {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    .input-group-custom .select2-container {
+        flex: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 800px; margin: 0 auto;">
+    <div class="panel-header" style="margin-bottom: 1.5rem;">
+        <h2 class="panel-title">Investigation Details</h2>
+    </div>
+
+    <form method="post" id="investigationForm">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+        <div class="alert alert-error">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div>
+                <label for="{{ form.code.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Code *</label>
+                {{ form.code }}
+                <div style="color: red; font-size: 0.8rem;">{{ form.code.errors }}</div>
+            </div>
+            
+            <div>
+                <label for="{{ form.name.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Investigation Name *</label>
+                {{ form.name }}
+                <div style="color: red; font-size: 0.8rem;">{{ form.name.errors }}</div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div>
+                <label for="{{ form.short_name.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Short Name / Alias</label>
+                {{ form.short_name }}
+                <div style="color: red; font-size: 0.8rem;">{{ form.short_name.errors }}</div>
+            </div>
+
+            <div>
+                <label for="{{ form.turnaround_time_hours.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Turnaround Time (Hours)</label>
+                {{ form.turnaround_time_hours }}
+                <div style="color: red; font-size: 0.8rem;">{{ form.turnaround_time_hours.errors }}</div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <!-- Department Dropdown with Inline Add -->
+            <div>
+                <label for="{{ form.department.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Department</label>
+                <div class="input-group-custom">
+                    {{ form.department }}
+                    <button type="button" class="btn btn-secondary" style="padding: 0.4rem 0.6rem;" onclick="promptAddLookup('department')">
+                        <i class="bi bi-plus"></i> New
+                    </button>
+                </div>
+                <div style="color: red; font-size: 0.8rem;">{{ form.department.errors }}</div>
+            </div>
+
+            <!-- Sample Type Dropdown with Inline Add -->
+            <div>
+                <label for="{{ form.sample_type.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Sample Type</label>
+                <div class="input-group-custom">
+                    {{ form.sample_type }}
+                    <button type="button" class="btn btn-secondary" style="padding: 0.4rem 0.6rem;" onclick="promptAddLookup('sample_type')">
+                        <i class="bi bi-plus"></i> New
+                    </button>
+                </div>
+                <div style="color: red; font-size: 0.8rem;">{{ form.sample_type.errors }}</div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem; background: #f8fafc; padding: 1rem; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                {{ form.is_panel }}
+                <label for="{{ form.is_panel.id_for_label }}" style="font-weight: 600; margin: 0; cursor: pointer;">Is Panel (Multi-parameter)</label>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                {{ form.is_active }}
+                <label for="{{ form.is_active.id_for_label }}" style="font-weight: 600; margin: 0; cursor: pointer;">Active Status</label>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+            <a href="{% url 'lab:investigation_list' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save"></i> {% if object %}Update{% else %}Save{% endif %} Investigation
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Initialize Select2 for searchable dropdowns
+        $('#{{ form.department.id_for_label }}').select2({
+            placeholder: "Select Department",
+            allowClear: true,
+            width: '100%'
+        });
+        
+        $('#{{ form.sample_type.id_for_label }}').select2({
+            placeholder: "Select Sample Type",
+            allowClear: true,
+            width: '100%'
+        });
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function promptAddLookup(type) {
+        const title = type === 'department' ? 'Department' : 'Sample Type';
+        const val = prompt(`Enter new ${title} name:`);
+        if (!val || val.trim() === '') return;
+        
+        const url = type === 'department' ? "{% url 'lab:api_department_add' %}" : "{% url 'lab:api_sample_type_add' %}";
+        
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+                'name': val,
+                'csrfmiddlewaretoken': getCookie('csrftoken')
+            },
+            success: function(response) {
+                if(response.status === 'success') {
+                    const selectId = type === 'department' ? '#{{ form.department.id_for_label }}' : '#{{ form.sample_type.id_for_label }}';
+                    // Create the new option and select it
+                    var newOption = new Option(response.name, response.id, true, true);
+                    $(selectId).append(newOption).trigger('change');
+                } else {
+                    alert('Error creating ' + title);
+                }
+            },
+            error: function() {
+                alert('Server error creating ' + title);
+            }
+        });
+    }
+</script>
+{% endblock %}

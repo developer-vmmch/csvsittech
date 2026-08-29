@@ -1,0 +1,2605 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Auto Trigger Configuration | VMMC ERP{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Custom Styling for Auto Trigger Dashboard matching VMMC ERP Reference UI */
+    :root {
+        --card-bg: #ffffff;
+        --card-border: #e2e8f0;
+        --card-radius: 12px;
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --text-muted: #64748b;
+        --accent-blue-bg: #eff6ff;
+        --accent-blue: #2563eb;
+        --accent-green-bg: #f0fdf4;
+        --accent-green: #16a34a;
+        --accent-purple-bg: #f3e8ff;
+        --accent-purple: #9333ea;
+        --accent-amber-bg: #fffbeb;
+        --accent-amber: #d97706;
+    }
+
+    .at-dashboard-container {
+        padding: 0.5rem 0;
+    }
+
+    /* Page Header */
+    .at-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+    }
+
+    .at-breadcrumb {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .at-title-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .at-title {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin: 0;
+        letter-spacing: -0.02em;
+    }
+
+    .badge-status-active {
+        background-color: #dcfce7;
+        color: #15803d;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.25rem 0.65rem;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        border: 1px solid #bbf7d0;
+    }
+
+    .badge-status-active::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        background-color: #16a34a;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .at-subtitle {
+        color: var(--text-muted);
+        font-size: 0.88rem;
+        margin-top: 0.25rem;
+        margin-bottom: 0;
+    }
+
+    .btn-top-time-setting {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #334155;
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        text-decoration: none;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        transition: all 0.2s ease;
+    }
+
+    .btn-top-time-setting:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: #0f172a;
+    }
+
+    /* Section Headers */
+    .at-section-title {
+        font-size: 1.02rem;
+        font-weight: 700;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Summary Row Cards */
+    .at-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.75rem;
+    }
+
+    .at-summary-card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: var(--card-radius);
+        padding: 1.1rem 1rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.85rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .at-summary-card:hover {
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+
+    .at-icon-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .icon-green { background: var(--accent-green-bg); color: var(--accent-green); }
+    .icon-blue { background: var(--accent-blue-bg); color: var(--accent-blue); }
+    .icon-purple { background: var(--accent-purple-bg); color: var(--accent-purple); }
+    .icon-amber { background: var(--accent-amber-bg); color: var(--accent-amber); }
+
+    .at-card-meta {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.2rem;
+    }
+
+    .at-card-value {
+        font-size: 1.28rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+
+    .at-card-sub {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+        font-weight: 500;
+    }
+
+    .next-day-tag {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    /* Main Grid Layout */
+    .at-main-grid {
+        display: grid;
+        grid-template-columns: 1.35fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.75rem;
+    }
+
+    .at-card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: var(--card-radius);
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .at-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 0.85rem;
+        margin-bottom: 1.1rem;
+    }
+
+    .at-card-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+    }
+
+    /* Forms */
+    .form-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .at-label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 0.35rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .required-star { color: #ef4444; }
+
+    /* Time Picker Wrapper with Clock Icon */
+    .at-time-input-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .at-time-input-wrap .time-icon {
+        position: absolute;
+        left: 0.75rem;
+        color: #64748b;
+        font-size: 0.95rem;
+        pointer-events: auto;
+        cursor: pointer;
+    }
+
+    .at-input-time {
+        padding-left: 2.2rem !important;
+        cursor: pointer;
+    }
+
+    .at-input, .at-select, .at-textarea {
+        width: 100%;
+        padding: 0.55rem 0.75rem;
+        font-size: 0.88rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background-color: #ffffff;
+        color: #0f172a;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .at-input:focus, .at-select:focus, .at-textarea:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    /* Profile action control row */
+    .profile-ctrl-row {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.45rem;
+    }
+
+    .btn-profile-action {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #334155;
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        transition: all 0.15s ease;
+    }
+
+    .btn-profile-action:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: #0f172a;
+    }
+
+    .btn-new-profile {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #1d4ed8;
+    }
+
+    .btn-new-profile:hover {
+        background: #dbeafe;
+        border-color: #93c5fd;
+        color: #1e40af;
+    }
+
+    .at-form-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .btn-reset {
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.55rem 1.25rem;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .btn-save-config {
+        background: #2563eb;
+        border: 1px solid #2563eb;
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.55rem 1.25rem;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    .btn-save-config:hover { background: #1d4ed8; }
+
+    .btn-save-trigger {
+        background: #059669;
+        border: 1px solid #059669;
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.55rem 1.25rem;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    .btn-save-trigger:hover { background: #047857; }
+
+    .at-info-callout {
+        background-color: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 8px;
+        padding: 0.65rem 0.85rem;
+        font-size: 0.8rem;
+        color: #0369a1;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+    }
+
+    /* Automation Time Schedule & Timeline Card */
+    .at-schedule-banner {
+        background-color: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        padding: 0.6rem 0.85rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #1d4ed8;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-bottom: 1.1rem;
+    }
+
+    .at-timeline-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1.1rem 1rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Visual Step Timeline Component */
+    .at-step-timeline {
+        position: relative;
+        margin: 1.5rem 0.5rem 2.2rem 0.5rem;
+    }
+
+    .at-timeline-track-bg {
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 3px;
+        position: relative;
+        width: 100%;
+    }
+
+    .at-timeline-segment {
+        position: absolute;
+        height: 100%;
+        top: 0;
+        border-radius: 3px;
+    }
+
+    .segment-rush-fill { background: #10b981; }
+    .segment-rem-fill { background: #3b82f6; }
+
+    .at-timeline-nodes-container {
+        display: flex;
+        justify-content: space-between;
+        position: absolute;
+        width: 100%;
+        top: -5px;
+    }
+
+    .at-node-point {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+
+    .at-node-circle {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 3px solid #94a3b8;
+        z-index: 2;
+    }
+
+    .node-green { border-color: #10b981; background: #10b981; }
+    .node-blue { border-color: #3b82f6; background: #3b82f6; }
+
+    .at-node-text {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #334155;
+        text-align: center;
+        margin-top: 0.4rem;
+        white-space: nowrap;
+    }
+
+    .at-node-sub { font-weight: 500; color: #64748b; font-size: 0.68rem; }
+
+    .at-time-box-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.6rem;
+    }
+
+    .at-tb-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .pill-pct {
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 0.2rem 0.55rem;
+        border-radius: 12px;
+        color: #ffffff;
+    }
+    .pill-pct-green { background: #10b981; }
+    .pill-pct-blue { background: #3b82f6; }
+
+    .at-tb-meta-grid {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        background: #ffffff;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #f1f5f9;
+    }
+
+    .at-schedule-footer {
+        background: #fefce8;
+        border: 1px solid #fef08a;
+        border-radius: 8px;
+        padding: 0.6rem 0.85rem;
+        font-size: 0.8rem;
+        color: #854d0e;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-weight: 600;
+    }
+
+    /* Progress & Time Window Grid */
+    .at-secondary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.75rem;
+    }
+
+    .at-kpi-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: center;
+        margin-bottom: 1rem;
+        background: #f8fafc;
+        padding: 0.75rem 0.5rem;
+        border-radius: 8px;
+        border: 1px solid #f1f5f9;
+    }
+
+    .at-kpi-item { flex: 1; }
+    .at-kpi-lbl { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.2rem; }
+    .at-kpi-val { font-size: 1.15rem; font-weight: 800; color: var(--text-primary); }
+
+    .at-progress-bar-wrap {
+        height: 10px;
+        background: #e2e8f0;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-bottom: 1.1rem;
+    }
+
+    .at-progress-bar-fill {
+        height: 100%;
+        background: #2563eb;
+        border-radius: 5px;
+        transition: width 0.4s ease;
+    }
+
+    .at-sub-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+        text-align: center;
+    }
+
+    .at-sub-kpi-box {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.5rem;
+    }
+
+    .badge-rush {
+        background-color: #dcfce7;
+        color: #15803d;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+    }
+
+    /* Saved Configs Table */
+    .at-table-controls {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .at-search-input {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.82rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        width: 220px;
+    }
+
+    .btn-filter {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.82rem;
+        border-radius: 6px;
+        font-weight: 600;
+        color: #475569;
+        cursor: pointer;
+    }
+
+    .at-table-responsive {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow-x: auto;
+    }
+
+    .at-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+    }
+
+    .at-table th {
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+        letter-spacing: 0.03em;
+        padding: 0.75rem 0.85rem;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .at-table td {
+        padding: 0.85rem;
+        border-bottom: 1px solid #f1f5f9;
+        color: #1e293b;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    .at-table tr:last-child td { border-bottom: none; }
+    .at-table tr:hover td { background-color: #f8fafc; }
+
+    .at-action-btns {
+        display: flex;
+        gap: 0.35rem;
+        align-items: center;
+    }
+
+    .btn-icon-action {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #475569;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.82rem;
+        transition: all 0.15s ease;
+    }
+
+    .btn-icon-action:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+    }
+
+    .btn-icon-delete:hover {
+        background: #fef2f2;
+        border-color: #fca5a5;
+        color: #dc2626;
+    }
+
+    .btn-icon-trigger:hover {
+        background: #f0fdf4;
+        border-color: #86efac;
+        color: #16a34a;
+    }
+
+    /* Interactive Custom Time Picker Dropdown Popup */
+    .at-clock-popover {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        margin-top: 4px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        z-index: 10000;
+        padding: 0.85rem;
+        width: 260px;
+        display: none;
+    }
+
+    .at-clock-title {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #475569;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .at-clock-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.35rem;
+        margin-bottom: 0.6rem;
+    }
+
+    .btn-time-opt {
+        padding: 0.3rem 0;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #334155;
+        cursor: pointer;
+        text-align: center;
+    }
+
+    .btn-time-opt:hover, .btn-time-opt.active {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #ffffff;
+    }
+
+    .ampm-toggle-wrap {
+        display: flex;
+        gap: 0.4rem;
+        margin-top: 0.5rem;
+    }
+
+    .btn-ampm {
+        flex: 1;
+        padding: 0.35rem 0;
+        font-size: 0.8rem;
+        font-weight: 700;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        background: #f8fafc;
+        color: #475569;
+        cursor: pointer;
+        text-align: center;
+    }
+
+    .btn-ampm.active {
+        background: #10b981;
+        border-color: #10b981;
+        color: #ffffff;
+    }
+
+    /* Modal styling */
+    .at-modal-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(2px);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .at-modal {
+        background: #ffffff;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 580px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .at-modal-wide {
+        max-width: 780px !important;
+    }
+
+    .at-modal-header {
+        padding: 1rem 1.25rem;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .at-modal-title { font-weight: 700; font-size: 1rem; color: #0f172a; margin: 0; }
+    .at-modal-body { padding: 1.25rem; }
+    .at-modal-footer { padding: 1rem 1.25rem; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 0.75rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="at-dashboard-container">
+    <!-- Top Breadcrumb & Page Header -->
+    <div class="at-page-header">
+        <div>
+            <div class="at-breadcrumb">
+                <i class="bi bi-gear-fill"></i> Auto Trigger / Configuration
+            </div>
+            <div class="at-title-wrapper">
+                <h2 class="at-title">Auto Trigger Configuration</h2>
+                <span class="badge-status-active">Active</span>
+            </div>
+            <p class="at-subtitle">Configure automation settings, timing and day-end to process patient entries based on department, date range and time schedule.</p>
+        </div>
+        <div>
+            <button type="button" class="btn-top-time-setting" onclick="openProfileModal(false)">
+                <i class="bi bi-plus-circle" style="color: #2563eb;"></i> + Create Time Profile
+            </button>
+        </div>
+    </div>
+
+    <!-- Section 1: Automation Day & Time Summary Row (5 Cards) -->
+    <div class="at-section-title">
+        <i class="bi bi-clock-history" style="color: var(--accent-blue);"></i> Automation Day & Time
+    </div>
+    <div class="at-summary-grid">
+        <!-- Card 1: Day Start -->
+        <div class="at-summary-card">
+            <div class="at-icon-avatar icon-green">
+                <i class="bi bi-calendar-event"></i>
+            </div>
+            <div>
+                <div class="at-card-meta">AUTOMATION DAY START</div>
+                <div class="at-card-value" id="disp_day_start_val">04:00 AM</div>
+                <div class="at-card-sub" id="disp_day_start_sub">28 Aug 2026</div>
+            </div>
+        </div>
+
+        <!-- Card 2: Day End -->
+        <div class="at-summary-card">
+            <div class="at-icon-avatar icon-blue">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+            <div>
+                <div class="at-card-meta">AUTOMATION DAY END</div>
+                <div class="at-card-value" id="disp_day_end_val">03:59 AM <span class="next-day-tag">(Next Day)</span></div>
+                <div class="at-card-sub" id="disp_day_end_sub">29 Aug 2026</div>
+            </div>
+        </div>
+
+        <!-- Card 3: Current Time -->
+        <div class="at-summary-card">
+            <div class="at-icon-avatar icon-purple">
+                <i class="bi bi-clock"></i>
+            </div>
+            <div>
+                <div class="at-card-meta">CURRENT TIME</div>
+                <div class="at-card-value" id="disp_live_clock">09:42:16 AM</div>
+                <div class="at-card-sub" id="disp_live_date">28 Aug 2026</div>
+            </div>
+        </div>
+
+        <!-- Card 4: Time Remaining in Day -->
+        <div class="at-summary-card">
+            <div class="at-icon-avatar icon-amber">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div>
+                <div class="at-card-meta">TIME REMAINING IN DAY</div>
+                <div class="at-card-value" id="disp_countdown">18h 16m 43s</div>
+                <div class="at-card-sub" id="disp_countdown_until">until 29 Aug 2026, 03:59 AM</div>
+            </div>
+        </div>
+
+        <!-- Card 5: Automation Status -->
+        <div class="at-summary-card">
+            <div class="at-icon-avatar icon-green">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div>
+                <div class="at-card-meta">AUTOMATION STATUS</div>
+                <div class="at-card-value" style="color: #16a34a;" id="disp_system_status">Active</div>
+                <div class="at-card-sub">System is running as per schedule</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main 2-Column Grid: Automation Settings & Automation Time Schedule -->
+    <div class="at-main-grid">
+        <!-- Left: Automation Settings Form Card -->
+        <div class="at-card">
+            <div class="at-card-header">
+                <h3 class="at-card-title">
+                    <i class="bi bi-sliders" style="color: var(--accent-blue);"></i> Automation Settings
+                </h3>
+            </div>
+            <form id="configForm">
+                <input type="hidden" id="config_id" value="">
+                
+                <!-- Row 1: Dept, From Date, To Date -->
+                <div class="form-grid-3">
+                    <div>
+                        <label class="at-label">Department <span class="required-star">*</span></label>
+                        <select id="department_id" class="at-select" required onchange="updateCalculatedSchedule()">
+                            <option value="">Select Department</option>
+                            {% for dept in departments %}
+                                <option value="{{ dept.id }}" {% if dept.name|upper == 'DERMATOLOGY' %}selected{% endif %}>{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="at-label">From Date <span class="required-star">*</span></label>
+                        <input type="date" id="from_date" class="at-input" value="2026-08-28" required onchange="updateCalculatedSchedule()">
+                    </div>
+                    <div>
+                        <label class="at-label">To Date <span class="required-star">*</span></label>
+                        <input type="date" id="to_date" class="at-input" value="2026-08-29" required onchange="updateCalculatedSchedule()">
+                    </div>
+                </div>
+
+                <!-- Row 2: Min Entries, Max Entries, Trigger Start Time -->
+                <div class="form-grid-3">
+                    <div>
+                        <label class="at-label">Minimum No. of Entries <span class="required-star">*</span></label>
+                        <input type="number" id="min_entries" class="at-input" min="1" value="80" required oninput="updateCalculatedSchedule()">
+                    </div>
+                    <div>
+                        <label class="at-label">Maximum No. of Entries <span class="required-star">*</span></label>
+                        <input type="number" id="max_entries" class="at-input" min="1" value="125" required oninput="updateCalculatedSchedule()">
+                    </div>
+                    <div>
+                        <label class="at-label">Trigger Start Time <span class="required-star">*</span></label>
+                        <div class="at-time-input-wrap">
+                            <i class="bi bi-clock time-icon" onclick="openClockPicker('trigger_start_time')"></i>
+                            <input type="text" id="trigger_start_time" class="at-input at-input-time" value="10:00 AM" required readonly onclick="openClockPicker('trigger_start_time')">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3: Day Start Time, Day End Time, Status -->
+                <div class="form-grid-3">
+                    <div>
+                        <label class="at-label">Day Start Time <span class="required-star">*</span></label>
+                        <div class="at-time-input-wrap">
+                            <i class="bi bi-clock time-icon" onclick="openClockPicker('day_start_time')"></i>
+                            <input type="text" id="day_start_time" class="at-input at-input-time" value="04:00 AM" required readonly onclick="openClockPicker('day_start_time')">
+                        </div>
+                        <small style="font-size:0.7rem; color:#64748b; margin-top:0.2rem; display:block;">Laboratory day starts at 04:00 AM</small>
+                    </div>
+                    <div>
+                        <label class="at-label">
+                            Day End Time <span class="required-star">*</span>
+                            <i class="bi bi-info-circle" style="color: var(--text-muted); cursor: help;" title="The laboratory operational day ends at 03:59 AM on the next calendar day."></i>
+                        </label>
+                        <div class="at-time-input-wrap">
+                            <i class="bi bi-clock time-icon" onclick="openClockPicker('day_end_time')"></i>
+                            <input type="text" id="day_end_time" class="at-input at-input-time" value="03:59 AM (Next Day)" required readonly onclick="openClockPicker('day_end_time')">
+                        </div>
+                        <small style="font-size:0.7rem; color:#64748b; margin-top:0.2rem; display:block;">Laboratory day ends at 03:59 AM next day</small>
+                    </div>
+                    <div>
+                        <label class="at-label">Automation Status <span class="required-star">*</span></label>
+                        <select id="is_active" class="at-select">
+                            <option value="true" selected>Active</option>
+                            <option value="false">Inactive</option>
+                            <option value="paused">Paused</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Row 4: Active Automation Time Profile & Quick Create / Edit Actions -->
+                <div style="margin-bottom: 1rem;">
+                    <label class="at-label">Active Automation Time Profile <span class="required-star">*</span></label>
+                    <select id="time_setting_id" class="at-select" required onchange="onTimeSettingChanged()">
+                        <!-- Options populated via JS -->
+                    </select>
+                    <div class="profile-ctrl-row">
+                        <button type="button" class="btn-profile-action btn-new-profile" onclick="openProfileModal(false)">
+                            <i class="bi bi-plus-lg"></i> + New Profile
+                        </button>
+                        <button type="button" class="btn-profile-action" onclick="openProfileModal(true)">
+                            <i class="bi bi-pencil"></i> Edit Profile
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Row 5: Description -->
+                <div style="margin-bottom: 1rem;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <label class="at-label">Description</label>
+                        <small style="font-size:0.72rem; color:#64748b;" id="desc_counter">0/250</small>
+                    </div>
+                    <textarea id="description" class="at-textarea" rows="2" maxlength="250" placeholder="Enter automation description (optional)" oninput="updateCharCounter()"></textarea>
+                </div>
+
+                <!-- Form Action Buttons -->
+                <div class="at-form-actions">
+                    <button type="button" class="btn-reset" onclick="resetForm()">Reset</button>
+                    <button type="button" class="btn-save-config" onclick="submitConfig(false)">Save Configuration</button>
+                    <button type="button" class="btn-save-trigger" onclick="openTriggerModal()">Save & Trigger</button>
+                </div>
+
+                <!-- Info Callout Banner -->
+                <div class="at-info-callout">
+                    <i class="bi bi-info-circle-fill" style="font-size: 0.95rem;"></i>
+                    <span>Automation will start at <strong id="banner_start_txt">10:00 AM</strong>. All entries must be completed before day end: <strong id="banner_end_txt">29 Aug 2026, 03:59 AM</strong></span>
+                </div>
+            </form>
+        </div>
+
+        <!-- Right: Automation Time Schedule & Timeline Card -->
+        <div class="at-card">
+            <div class="at-card-header">
+                <h3 class="at-card-title">
+                    <i class="bi bi-clock-fill" style="color: var(--accent-blue);"></i> Automation Time Schedule (Today's Automation Day)
+                </h3>
+            </div>
+            
+            <div class="at-schedule-banner">
+                <i class="bi bi-calendar3"></i>
+                <span id="sched_banner_text">Automation Day: 28 Aug 2026 04:00 AM &nbsp;&rarr;&nbsp; 29 Aug 2026 03:59 AM (Next Day)</span>
+            </div>
+
+            <!-- Visual Step Timeline Component -->
+            <div class="at-timeline-box">
+                <div class="at-step-timeline">
+                    <div class="at-timeline-track-bg">
+                        <div class="at-timeline-segment segment-rush-fill" id="timeline_rush_fill" style="left: 25%; width: 25%;"></div>
+                        <div class="at-timeline-segment segment-rem-fill" id="timeline_rem_fill" style="left: 50%; width: 50%;"></div>
+                    </div>
+                    <div class="at-timeline-nodes-container">
+                        <div class="at-node-point" style="left: 0%;">
+                            <div class="at-node-circle"></div>
+                            <div class="at-node-text">04:00 AM<br><span class="at-node-sub">Day Start</span></div>
+                        </div>
+                        <div class="at-node-point" style="left: 0%;">
+                            <div class="at-node-circle node-green"></div>
+                            <div class="at-node-text" id="node_rush_start">10:00 AM<br><span class="at-node-sub">Rush Start</span></div>
+                        </div>
+                        <div class="at-node-point" style="left: 0%;">
+                            <div class="at-node-circle node-blue"></div>
+                            <div class="at-node-text" id="node_rush_end">02:00 PM<br><span class="at-node-sub">Rush End</span></div>
+                        </div>
+                        <div class="at-node-point" style="right: 0%;">
+                            <div class="at-node-circle"></div>
+                            <div class="at-node-text">03:59 AM<br><span class="at-node-sub">(Next Day) Day End</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time Period Item 1: Rush Period -->
+            <div class="at-time-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:0.9rem 1rem; margin-bottom:0.85rem;">
+                <div class="at-time-box-header">
+                    <div class="at-tb-title">
+                        <i class="bi bi-clock-fill" style="color: #10b981;"></i>
+                        <span>Rush Period &nbsp;<small style="font-weight: 500; color: #64748b;" id="rush_time_range">10:00 AM &rarr; 02:00 PM (Same Day)</small></span>
+                    </div>
+                    <span class="pill-pct pill-pct-green" id="rush_pct_badge">75%</span>
+                </div>
+                <div class="at-tb-meta-grid">
+                    <div>Target Entries (Based on Max): <strong id="rush_target_val">&approx; 94</strong></div>
+                    <div>Duration: <strong id="rush_duration_val">04h 00m</strong></div>
+                </div>
+            </div>
+
+            <!-- Time Period Item 2: Remaining Period -->
+            <div class="at-time-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:0.9rem 1rem; margin-bottom:0.85rem;">
+                <div class="at-time-box-header">
+                    <div class="at-tb-title">
+                        <i class="bi bi-clock-fill" style="color: #3b82f6;"></i>
+                        <span>Remaining Period &nbsp;<small style="font-weight: 500; color: #64748b;" id="rem_time_range">02:00 PM (Same Day) &rarr; 03:59 AM (Next Day)</small></span>
+                    </div>
+                    <span class="pill-pct pill-pct-blue" id="rem_pct_badge">25%</span>
+                </div>
+                <div class="at-tb-meta-grid">
+                    <div>Target Entries (Based on Max): <strong id="rem_target_val">&approx; 31</strong></div>
+                    <div>Duration: <strong id="rem_duration_val">13h 59m</strong></div>
+                </div>
+            </div>
+
+            <!-- Schedule Footer Summary -->
+            <div class="at-schedule-footer">
+                <div>
+                    <i class="bi bi-info-circle"></i>
+                    Based on Maximum Entries: <strong id="sched_footer_max">125</strong> &nbsp;(<span id="sched_footer_calc">94 + 31</span>) = <strong id="sched_footer_total">125</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTOMATION PIPELINE Execution Header Card -->
+    <div class="at-card" style="margin-bottom: 1.5rem;">
+        <div class="at-card-header">
+            <h3 class="at-card-title">
+                <i class="bi bi-diagram-3-fill" style="color: var(--accent-blue);"></i> Auto Trigger Process
+            </h3>
+            <span class="badge-status-active" id="pipeline_stage1_status">Stage 1 Active</span>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: #f8fafc; padding: 1.1rem 1rem; border-radius: 10px; border: 1px solid #e2e8f0; overflow-x: auto;">
+            <!-- Stage 1 -->
+            <div style="flex: 1; min-width: 140px; text-align: center; background: #ffffff; padding: 0.85rem 0.5rem; border-radius: 8px; border: 2px solid #3b82f6; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.15);">
+                <div id="stage1_icon" style="width: 28px; height: 28px; border-radius: 50%; background: #3b82f6; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4rem; font-weight: 800; font-size: 0.82rem;">①</div>
+                <div style="font-weight: 700; font-size: 0.82rem; color: #1e293b;">Patient Generation</div>
+                <div id="stage1_text" style="font-size: 0.72rem; color: #3b82f6; font-weight: 700; margin-top: 0.15rem;">● Running</div>
+            </div>
+
+            <div style="color: #94a3b8; font-size: 1.1rem;"><i class="bi bi-chevron-right"></i></div>
+
+            <!-- Stage 2 -->
+            <div style="flex: 1; min-width: 140px; text-align: center; background: #f8fafc; padding: 0.85rem 0.5rem; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                <div id="stage2_icon" style="width: 28px; height: 28px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4rem; font-weight: 800; font-size: 0.82rem;">②</div>
+                <div style="font-weight: 700; font-size: 0.82rem; color: #64748b;">Diagnosis Assignment</div>
+                <div id="stage2_text" style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.15rem;">○ Pending</div>
+            </div>
+
+            <div style="color: #94a3b8; font-size: 1.1rem;"><i class="bi bi-chevron-right"></i></div>
+
+            <!-- Stage 3 -->
+            <div style="flex: 1; min-width: 140px; text-align: center; background: #f8fafc; padding: 0.85rem 0.5rem; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                <div id="stage3_icon" style="width: 28px; height: 28px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4rem; font-weight: 800; font-size: 0.82rem;">③</div>
+                <div style="font-weight: 700; font-size: 0.82rem; color: #64748b;">Investigation Assignment</div>
+                <div id="stage3_text" style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.15rem;">○ Pending</div>
+            </div>
+
+            <div style="color: #94a3b8; font-size: 1.1rem;"><i class="bi bi-chevron-right"></i></div>
+
+            <!-- Stage 4 -->
+            <div style="flex: 1; min-width: 140px; text-align: center; background: #f8fafc; padding: 0.85rem 0.5rem; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                <div id="stage4_icon" style="width: 28px; height: 28px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4rem; font-weight: 800; font-size: 0.82rem;">④</div>
+                <div style="font-weight: 700; font-size: 0.82rem; color: #64748b;">Lab Order / Entry Creation</div>
+                <div id="stage4_text" style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.15rem;">○ Pending</div>
+            </div>
+
+            <div style="color: #94a3b8; font-size: 1.1rem;"><i class="bi bi-chevron-right"></i></div>
+
+            <!-- Stage 5 -->
+            <div style="flex: 1; min-width: 140px; text-align: center; background: #f8fafc; padding: 0.85rem 0.5rem; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                <div id="stage5_icon" style="width: 28px; height: 28px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4rem; font-weight: 800; font-size: 0.82rem;">⑤</div>
+                <div style="font-weight: 700; font-size: 0.82rem; color: #64748b;">Validation & Completion</div>
+                <div id="stage5_text" style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.15rem;">○ Pending</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Automation Progress & Current Time Window -->
+    <div class="at-secondary-grid">
+        <!-- Automation Progress Card -->
+        <div class="at-card">
+            <div class="at-card-header">
+                <h3 class="at-card-title">
+                    <i class="bi bi-shield-check" style="color: var(--accent-blue);"></i> Automation Progress (Stage 1 — Patient Creation)
+                </h3>
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <button type="button" class="btn-profile-action" onclick="openCurrentHistoryDetails()" style="font-size:0.75rem; padding:0.25rem 0.55rem;"><i class="bi bi-list-ul"></i> View Details</button>
+                    <span id="prog_status_badge" class="badge-status-active">Processing</span>
+                </div>
+            </div>
+
+            <div class="at-kpi-row">
+                <div class="at-kpi-item">
+                    <div class="at-kpi-lbl">Minimum Entries</div>
+                    <div class="at-kpi-val" id="prog_min">80</div>
+                </div>
+                <div class="at-kpi-item">
+                    <div class="at-kpi-lbl">Maximum Entries</div>
+                    <div class="at-kpi-val" id="prog_max">125</div>
+                </div>
+                <div class="at-kpi-item">
+                    <div class="at-kpi-lbl">Processed</div>
+                    <div class="at-kpi-val" style="color: var(--accent-blue);" id="prog_proc">76 / 125</div>
+                </div>
+                <div class="at-kpi-item">
+                    <div class="at-kpi-lbl">Successful</div>
+                    <div class="at-kpi-val" style="color: #16a34a;" id="prog_success">72</div>
+                </div>
+                <div class="at-kpi-item">
+                    <div class="at-kpi-lbl">Failed</div>
+                    <div class="at-kpi-val" style="color: #dc2626;" id="prog_failed">4</div>
+                </div>
+                <div class="at-kpi-item">
+                    <div class="at-kpi-lbl">Remaining</div>
+                    <div class="at-kpi-val" style="color: #2563eb;" id="prog_rem">49</div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="at-progress-bar-wrap">
+                <div class="at-progress-bar-fill" id="prog_bar_fill" style="width: 0%; transition: width 0.4s ease;"></div>
+            </div>
+
+            <!-- Rate Statistics -->
+            <div style="margin-top: 1.5rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; overflow: hidden;">
+                <div style="padding: 0.75rem 1rem; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-weight: 600; font-size: 0.85rem; color: #1e293b;">
+                        Current Time Window: <span id="prog_window_str" style="color: #2563eb; font-weight: 700; margin-left: 0.25rem;">-</span>
+                    </div>
+                    <div style="font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 20px; background: #e0e7ff; color: #4f46e5;" id="prog_rate_status">
+                        -
+                    </div>
+                </div>
+                <div class="at-kpi-row" style="padding: 1rem; margin: 0; border: none; background: transparent;">
+                    <div class="at-kpi-item" style="padding: 0; border: none;">
+                        <div class="at-kpi-lbl" style="font-size: 0.75rem;">Window Target</div>
+                        <div class="at-kpi-val" style="font-size: 1.1rem; color: #475569;" id="prog_window_target">-</div>
+                    </div>
+                    <div class="at-kpi-item" style="padding: 0; border: none;">
+                        <div class="at-kpi-lbl" style="font-size: 0.75rem;">Completed</div>
+                        <div class="at-kpi-val" style="font-size: 1.1rem; color: #16a34a;" id="prog_window_completed">-</div>
+                    </div>
+                    <div class="at-kpi-item" style="padding: 0; border: none;">
+                        <div class="at-kpi-lbl" style="font-size: 0.75rem;">Remaining</div>
+                        <div class="at-kpi-val" style="font-size: 1.1rem; color: #f59e0b;" id="prog_window_remaining">-</div>
+                    </div>
+                    <div class="at-kpi-item" style="padding: 0; border: none;">
+                        <div class="at-kpi-lbl" style="font-size: 0.75rem;">Required Rate</div>
+                        <div class="at-kpi-val" style="font-size: 1.1rem; color: #475569;"><span id="prog_req_rate">-</span> <span style="font-size:0.75rem; font-weight:500;">/ hr</span></div>
+                    </div>
+                    <div class="at-kpi-item" style="padding: 0; border: none;">
+                        <div class="at-kpi-lbl" style="font-size: 0.75rem;">Current Rate</div>
+                        <div class="at-kpi-val" style="font-size: 1.1rem; color: #2563eb;"><span id="prog_cur_rate">-</span> <span style="font-size:0.75rem; font-weight:500;">/ hr</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="at-sub-kpi-grid" style="margin-top: 1.5rem;">
+                <div class="at-sub-kpi-box">
+                    <div class="at-kpi-lbl">Remaining to Minimum</div>
+                    <div class="at-kpi-val" style="font-size: 1rem;" id="prog_rem_min">4</div>
+                </div>
+                <div class="at-sub-kpi-box">
+                    <div class="at-kpi-lbl">Remaining Capacity</div>
+                    <div class="at-kpi-val" style="font-size: 1rem;" id="prog_rem_cap">49</div>
+                </div>
+                <div class="at-sub-kpi-box">
+                    <div class="at-kpi-lbl">Progress to Minimum</div>
+                    <div class="at-kpi-val" style="font-size: 1rem; color: #2563eb;" id="prog_pct_min">95.0%</div>
+                </div>
+                <div class="at-sub-kpi-box">
+                    <div class="at-kpi-lbl">Overall Progress</div>
+                    <div class="at-kpi-val" style="font-size: 1rem; color: #16a34a;" id="prog_pct_overall">60.8%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Time Window Card -->
+        <div class="at-card">
+            <div class="at-card-header">
+                <h3 class="at-card-title">
+                    <i class="bi bi-clock-history" style="color: var(--accent-blue);"></i> Current Time Window
+                </h3>
+                <span class="badge-rush" id="cur_window_tag">Rush Period</span>
+            </div>
+
+            <div class="at-kpi-row">
+                <div class="at-kpi-item">
+                    <div class="at-kpi-lbl">Time Window</div>
+                    <div class="at-kpi-val" style="font-size: 0.95rem;" id="cur_tw_range">10:00 AM &rarr; 02:00 PM</div>
+                </div>
+                <div class="at-kpi-item">
+                    <div class="at-kpi-lbl">Window Target (Based on Max)</div>
+                    <div class="at-kpi-val" id="cur_tw_target">94</div>
+                </div>
+                <div class="at-kpi-item">
+                    <div class="at-kpi-lbl">Completed</div>
+                    <div class="at-kpi-val" style="color: #16a34a;" id="cur_tw_completed">72</div>
+                </div>
+                <div class="at-kpi-item">
+                    <div class="at-kpi-lbl">Remaining</div>
+                    <div class="at-kpi-val" style="color: #2563eb;" id="cur_tw_remaining">22</div>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:700; color:var(--text-muted); margin-bottom:0.3rem;">
+                <span>Window Progress</span>
+                <span id="cur_tw_pct_txt">76.6%</span>
+            </div>
+            <div class="at-progress-bar-wrap">
+                <div class="at-progress-bar-fill" id="cur_tw_bar" style="width: 76.6%; background: #16a34a;"></div>
+            </div>
+
+            <div class="at-sub-kpi-grid">
+                <div class="at-sub-kpi-box">
+                    <div class="at-kpi-lbl">Required Rate</div>
+                    <div class="at-kpi-val" style="font-size: 0.95rem;" id="cur_req_rate">23.5 / hr</div>
+                </div>
+                <div class="at-sub-kpi-box">
+                    <div class="at-kpi-lbl">Current Rate</div>
+                    <div class="at-kpi-val" style="font-size: 0.95rem; color: #2563eb;" id="cur_act_rate">18.2 / hr</div>
+                </div>
+                <div class="at-sub-kpi-box">
+                    <div class="at-kpi-lbl">Estimated Completion</div>
+                    <div class="at-kpi-val" style="font-size: 0.85rem;" id="cur_est_comp">03:41 AM (Next Day)</div>
+                </div>
+                <div class="at-sub-kpi-box">
+                    <div class="at-kpi-lbl">Schedule Status</div>
+                    <div class="at-kpi-val" style="font-size: 0.85rem; color: #16a34a;" id="cur_sched_status">
+                        <i class="bi bi-check-circle-fill"></i> On Schedule
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4: Saved Configurations Table -->
+    <div class="at-card" style="margin-bottom: 2rem;">
+        <div class="at-card-header">
+            <h3 class="at-card-title">
+                <i class="bi bi-journal-text" style="color: var(--accent-blue);"></i> Saved Configurations
+            </h3>
+            <div class="at-table-controls">
+                <input type="text" id="search-config" class="at-search-input" placeholder="Search by department..." onkeyup="loadConfigs()">
+                <button type="button" class="btn-filter" onclick="loadConfigs()"><i class="bi bi-funnel"></i> Filter</button>
+            </div>
+        </div>
+
+        <div class="at-table-responsive">
+            <table class="at-table">
+                <thead>
+                    <tr>
+                        <th>SL NO</th>
+                        <th>DEPARTMENT</th>
+                        <th>DATE RANGE</th>
+                        <th>MIN ENTRIES</th>
+                        <th>MAX ENTRIES</th>
+                        <th>DAY START</th>
+                        <th>DAY END</th>
+                        <th>TRIGGER START</th>
+                        <th>RUSH PERIOD</th>
+                        <th>RUSH %</th>
+                        <th>INTERVAL</th>
+                        <th>STATUS</th>
+                        <th>LAST TRIGGERED</th>
+                        <th>PROGRESS</th>
+                        <th style="text-align: center;">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody id="config-list-tbody">
+                    <!-- Populated via Javascript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Custom Clock Picker Popover -->
+<div id="clockPopover" class="at-clock-popover">
+    <div class="at-clock-title">
+        <span>Select Time</span>
+        <span style="cursor:pointer;" onclick="closeClockPicker()">&times;</span>
+    </div>
+    <div style="font-size:0.75rem; color:#64748b; margin-bottom:0.3rem;">Hour</div>
+    <div class="at-clock-grid" id="clock_hours_grid">
+        <!-- 01 to 12 -->
+    </div>
+    <div style="font-size:0.75rem; color:#64748b; margin-bottom:0.3rem;">Minute</div>
+    <div class="at-clock-grid" id="clock_mins_grid">
+        <!-- 00 to 55 -->
+    </div>
+    <div class="ampm-toggle-wrap">
+        <button type="button" class="btn-ampm active" id="btn_am" onclick="setAMPM('AM')">AM</button>
+        <button type="button" class="btn-ampm" id="btn_pm" onclick="setAMPM('PM')">PM</button>
+    </div>
+</div>
+
+<!-- Trigger Confirmation Modal -->
+<div id="triggerModal" class="at-modal-overlay">
+    <div class="at-modal">
+        <div class="at-modal-header">
+            <h4 class="at-modal-title"><i class="bi bi-lightning-charge-fill" style="color: #f59e0b;"></i> Start Automation Trigger</h4>
+            <button type="button" style="border:none; background:none; font-size:1.2rem; cursor:pointer;" onclick="closeTriggerModal()">&times;</button>
+        </div>
+        <div class="at-modal-body">
+            <p style="font-size: 0.9rem; color: #334155; margin-bottom: 1rem;">Are you sure you want to start the patient entry automation for this configuration?</p>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.85rem; font-size: 0.85rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+                    <span style="color: #64748b;">Department:</span>
+                    <strong id="modal_dept_name">DERMATOLOGY</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+                    <span style="color: #64748b;">Date Range:</span>
+                    <strong id="modal_date_range">28 Aug 2026 to 29 Aug 2026</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+                    <span style="color: #64748b;">Minimum Entries:</span>
+                    <strong id="modal_min_entries">80</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+                    <span style="color: #64748b;">Maximum Entries:</span>
+                    <strong id="modal_max_entries">125</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+                    <span style="color: #64748b;">Trigger Start Time:</span>
+                    <strong id="modal_trigger_time">10:00 AM</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #64748b;">Day End Deadline:</span>
+                    <strong id="modal_day_end">03:59 AM (Next Day)</strong>
+                </div>
+            </div>
+        </div>
+        <div class="at-modal-footer">
+            <button type="button" class="btn-reset" onclick="closeTriggerModal()">Cancel</button>
+            <button type="button" class="btn-save-trigger" onclick="confirmTriggerExecution()">Confirm & Start</button>
+        </div>
+    </div>
+</div>
+
+<!-- Create / Edit Time Profile Modal -->
+<div id="profileModal" class="at-modal-overlay">
+    <div class="at-modal" style="max-width: 650px;">
+        <div class="at-modal-header">
+            <h4 class="at-modal-title" id="profile_modal_title">
+                <i class="bi bi-clock-history" style="color: #2563eb;"></i> Create Custom Time Profile
+            </h4>
+            <button type="button" style="border:none; background:none; font-size:1.2rem; cursor:pointer;" onclick="closeProfileModal()">&times;</button>
+        </div>
+        <div class="at-modal-body">
+            <form id="profileModalForm">
+                <input type="hidden" id="prof_id" value="">
+                
+                <!-- Row 1: Profile Name & Status -->
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.85rem; margin-bottom: 0.85rem;">
+                    <div>
+                        <label class="at-label">Profile Name <span class="required-star">*</span></label>
+                        <input type="text" id="prof_name" class="at-input" placeholder="e.g. Custom Dermatology Schedule" required>
+                    </div>
+                    <div>
+                        <label class="at-label">Status <span class="required-star">*</span></label>
+                        <select id="prof_is_active" class="at-select">
+                            <option value="true" selected>Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Row 2: Lab Day Times -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 0.85rem;">
+                    <div>
+                        <label class="at-label">Lab Day Start <span class="required-star">*</span></label>
+                        <div class="at-time-input-wrap">
+                            <i class="bi bi-clock time-icon" onclick="openClockPicker('prof_lab_day_start')"></i>
+                            <input type="text" id="prof_lab_day_start" class="at-input at-input-time" value="04:00 AM" required readonly onclick="openClockPicker('prof_lab_day_start')" style="padding-left:2.5rem !important;">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="at-label">Lab Day End <span class="required-star">*</span></label>
+                        <div class="at-time-input-wrap">
+                            <i class="bi bi-clock time-icon" onclick="openClockPicker('prof_lab_day_end')"></i>
+                            <input type="text" id="prof_lab_day_end" class="at-input at-input-time" value="03:59 AM (Next Day)" required readonly onclick="openClockPicker('prof_lab_day_end')" style="padding-left:2.5rem !important;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3: Rush Times -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 0.85rem;">
+                    <div>
+                        <label class="at-label">Rush Start Time <span class="required-star">*</span></label>
+                        <div class="at-time-input-wrap">
+                            <i class="bi bi-clock time-icon" onclick="openClockPicker('prof_rush_start')"></i>
+                            <input type="text" id="prof_rush_start" class="at-input at-input-time" value="10:00 AM" required readonly onclick="openClockPicker('prof_rush_start')" style="padding-left:2.5rem !important;">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="at-label">Rush End Time <span class="required-star">*</span></label>
+                        <div class="at-time-input-wrap">
+                            <i class="bi bi-clock time-icon" onclick="openClockPicker('prof_rush_end')"></i>
+                            <input type="text" id="prof_rush_end" class="at-input at-input-time" value="02:00 PM" required readonly onclick="openClockPicker('prof_rush_end')" style="padding-left:2.5rem !important;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 4: Rush %, Remaining %, Processing Interval -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 0.85rem;">
+                    <div>
+                        <label class="at-label">Rush Percentage <span class="required-star">*</span></label>
+                        <div style="position: relative;">
+                            <input type="number" id="prof_rush_percentage" class="at-input" min="1" max="99" value="75" required oninput="syncProfRemPct(); renderTimelineChart();">
+                            <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b; font-size: 0.82rem;">%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="at-label">Remaining Percentage</label>
+                        <div style="position: relative;">
+                            <input type="number" id="prof_rem_percentage" class="at-input" value="25" min="1" max="99" oninput="syncProfRushPct(); renderTimelineChart();">
+                            <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b; font-size: 0.82rem;">%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="at-label">Processing Interval <span class="required-star">*</span></label>
+                        <select id="prof_processing_interval_select" class="at-select" onchange="renderTimelineChart();">
+                            <option value="1" selected>1 Minute</option>
+                        </select>
+                        <div id="prof_custom_interval_wrap" style="display: none;"></div>
+                    </div>
+                </div>
+                
+                <!-- Dynamic Live Preview & Timeline Breakdown -->
+                <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.85rem 1rem; background: #f8fafc;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                        <h5 style="margin: 0; font-size: 0.85rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 0.4rem;">
+                            <i class="bi bi-bar-chart-line-fill" style="color: #2563eb;"></i> Time Profile Breakdown Preview
+                        </h5>
+                        <span id="prof_total_duration_badge" class="badge-status-active" style="font-size: 0.72rem; padding: 0.15rem 0.5rem;">Total Day: 23h 59m</span>
+                    </div>
+
+                    <!-- Visual Segment Bar -->
+                    <div style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; display: flex; margin-bottom: 0.65rem;">
+                        <div id="prof_chart_bar_rush" style="width: 75%; background: #10b981; height: 100%; transition: width 0.3s ease;"></div>
+                        <div id="prof_chart_bar_rem" style="width: 25%; background: #3b82f6; height: 100%; transition: width 0.3s ease;"></div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.78rem;">
+                        <div style="background: #ffffff; border: 1px solid #dcfce7; border-radius: 6px; padding: 0.45rem 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; font-weight: 700; color: #15803d; margin-bottom: 0.15rem;">
+                                <span><i class="bi bi-clock-fill"></i> Rush Period</span>
+                                <span><span id="prof_preview_rush_pct">75%</span> (<span id="prof_preview_rush_interval">30 Minutes</span>)</span>
+                            </div>
+                            <div style="color: #475569; font-weight: 500;" id="prof_preview_rush_time">10:00 AM &rarr; 02:00 PM</div>
+                        </div>
+                        <div style="background: #ffffff; border: 1px solid #dbeafe; border-radius: 6px; padding: 0.45rem 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; font-weight: 700; color: #1d4ed8; margin-bottom: 0.15rem;">
+                                <span><i class="bi bi-clock-fill"></i> Remaining Period</span>
+                                <span><span id="prof_preview_rem_pct">25%</span> (<span id="prof_preview_rem_interval">30 Minutes</span>)</span>
+                            </div>
+                            <div style="color: #475569; font-weight: 500;" id="prof_preview_rem_time">02:00 PM &rarr; 03:59 AM (Next Day)</div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="at-modal-footer" style="padding: 0.85rem 1.25rem; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 0.75rem; background: #f8fafc; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+            <button type="button" class="btn-reset" onclick="closeProfileModal()">Cancel</button>
+            <button type="button" class="btn-save-config" id="btn_save_profile" onclick="saveCustomProfile()">Save Time Profile</button>
+        </div>
+<!-- Stage 1 History Details Modal -->
+<div id="historyDetailModal" class="at-modal-overlay">
+    <div class="at-modal" style="max-width: 880px;">
+        <div class="at-modal-header">
+            <h4 class="at-modal-title" id="hdetail_title">
+                <i class="bi bi-list-ul" style="color: #2563eb;"></i> Stage 1 — Patient Data Selection & Creation Log Details
+            </h4>
+            <button type="button" style="border:none; background:none; font-size:1.2rem; cursor:pointer;" onclick="closeHistoryDetailModal()">&times;</button>
+        </div>
+        <div class="at-modal-body">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.85rem; margin-bottom: 1rem; font-size: 0.85rem;" id="hdetail_summary_box">
+                <!-- Summary info populated dynamically -->
+            </div>
+            
+            <div style="max-height: 380px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <table class="at-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>STAGE</th>
+                            <th>SOURCE PATIENT ID</th>
+                            <th>SOURCE PATIENT NAME</th>
+                            <th>CREATED PATIENT ID</th>
+                            <th>NEW PATIENT NAME</th>
+                            <th>STATUS</th>
+                            <th>MESSAGE</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hdetail_logs_tbody">
+                        <!-- Populated via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="at-modal-footer">
+            <button type="button" class="btn-reset" onclick="closeHistoryDetailModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification Container -->
+<div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:99999;"></div>
+
+<script>
+    let activeInterval = null;
+    let timeSettingProfiles = [];
+    let activeClockTargetId = null;
+
+    let selectedHour = '10';
+    let selectedMin = '00';
+    let selectedAMPM = 'AM';
+
+    // Format 24hr time string to 12hr AM/PM
+    function formatAMPM(timeStr) {
+        if (!timeStr) return '04:00 AM';
+        if (timeStr.includes('AM') || timeStr.includes('PM')) return timeStr;
+        let parts = timeStr.split(':');
+        let h = parseInt(parts[0], 10);
+        let m = parts[1] || '00';
+        let ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12;
+        h = h ? h : 12;
+        let hStr = h < 10 ? '0' + h : h;
+        return `${hStr}:${m} ${ampm}`;
+    }
+
+    // Convert 12hr AM/PM time string to 24hr format HH:MM:SS
+    function parse24Hr(timeStr) {
+        if (!timeStr) return '04:00:00';
+        let cleanStr = timeStr.replace('(Next Day)', '').replace('(Same Day)', '').trim();
+        let parts = cleanStr.split(' ');
+        if (parts.length < 2) return cleanStr + ':00';
+        let timeParts = parts[0].split(':');
+        let h = parseInt(timeParts[0], 10);
+        let m = timeParts[1] || '00';
+        let ampm = parts[1].toUpperCase();
+        if (ampm === 'PM' && h < 12) h += 12;
+        if (ampm === 'AM' && h === 12) h = 0;
+        let hStr = h < 10 ? '0' + h : h;
+        return `${hStr}:${m}:00`;
+    }
+
+    // Initialize Interactive Clock Picker Grid
+    function initClockPickerGrid() {
+        const hGrid = document.getElementById('clock_hours_grid');
+        hGrid.innerHTML = '';
+        for (let i = 1; i <= 12; i++) {
+            let val = i < 10 ? '0' + i : '' + i;
+            let btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `btn-time-opt ${val === selectedHour ? 'active' : ''}`;
+            btn.textContent = val;
+            btn.onclick = () => {
+                selectedHour = val;
+                initClockPickerGrid();
+                applyClockPickerValue();
+            };
+            hGrid.appendChild(btn);
+        }
+
+        const mGrid = document.getElementById('clock_mins_grid');
+        mGrid.innerHTML = '';
+        let mins = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
+        mins.forEach(val => {
+            let btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `btn-time-opt ${val === selectedMin ? 'active' : ''}`;
+            btn.textContent = val;
+            btn.onclick = () => {
+                selectedMin = val;
+                initClockPickerGrid();
+                applyClockPickerValue();
+            };
+            mGrid.appendChild(btn);
+        });
+    }
+
+    function setAMPM(ampm) {
+        selectedAMPM = ampm;
+        document.getElementById('btn_am').className = `btn-ampm ${ampm === 'AM' ? 'active' : ''}`;
+        document.getElementById('btn_pm').className = `btn-ampm ${ampm === 'PM' ? 'active' : ''}`;
+        applyClockPickerValue();
+    }
+
+    function openClockPicker(targetInputId) {
+        activeClockTargetId = targetInputId;
+        const targetInput = document.getElementById(targetInputId);
+        const popover = document.getElementById('clockPopover');
+
+        // Position popover relative to input
+        const rect = targetInput.getBoundingClientRect();
+        popover.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+        popover.style.left = (rect.left + window.scrollX) + 'px';
+        popover.style.display = 'block';
+
+        initClockPickerGrid();
+    }
+
+    function closeClockPicker() {
+        document.getElementById('clockPopover').style.display = 'none';
+        activeClockTargetId = null;
+    }
+
+    function applyClockPickerValue() {
+        if (!activeClockTargetId) return;
+        const formatted = `${selectedHour}:${selectedMin} ${selectedAMPM}`;
+        let suffix = '';
+        if (activeClockTargetId === 'day_end_time' || activeClockTargetId === 'prof_lab_day_end') {
+            suffix = ' (Next Day)';
+        }
+        document.getElementById(activeClockTargetId).value = formatted + suffix;
+        updateCalculatedSchedule();
+        if (typeof renderTimelineChart === 'function') renderTimelineChart();
+    }
+
+    // Dynamic Live Clock and Countdown Timer
+    function startLiveClockEngine() {
+        setInterval(() => {
+            const now = new Date();
+            
+            let timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+            document.getElementById('disp_live_clock').textContent = timeStr;
+
+            let dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            document.getElementById('disp_live_date').textContent = dateStr;
+
+            let labDayStart = new Date(now);
+            labDayStart.setHours(4, 0, 0, 0);
+
+            let labDayEnd = new Date(now);
+            if (now.getHours() < 4) {
+                labDayStart.setDate(labDayStart.getDate() - 1);
+                labDayEnd.setHours(3, 59, 59, 999);
+            } else {
+                labDayEnd.setDate(labDayEnd.getDate() + 1);
+                labDayEnd.setHours(3, 59, 59, 999);
+            }
+
+            document.getElementById('disp_day_start_sub').textContent = labDayStart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            document.getElementById('disp_day_end_sub').textContent = labDayEnd.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+            let diffMs = labDayEnd - now;
+            if (diffMs > 0) {
+                let totalSecs = Math.floor(diffMs / 1000);
+                let hrs = Math.floor(totalSecs / 3600);
+                let mins = Math.floor((totalSecs % 3600) / 60);
+                let secs = totalSecs % 60;
+                document.getElementById('disp_countdown').textContent = `${hrs}h ${mins}m ${secs}s`;
+                document.getElementById('disp_countdown_until').textContent = `until ${labDayEnd.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}, 03:59 AM`;
+            } else {
+                document.getElementById('disp_countdown').textContent = "Day Completed";
+                document.getElementById('disp_countdown_until').textContent = "Automation day has ended";
+            }
+        }, 1000);
+    }
+
+    // Fetch Time Settings Profiles Dropdown
+    function fetchTimeSettings(selectId = null) {
+        fetch('{% url "lab:api_get_time_settings" %}')
+        .then(r => r.json()).then(res => {
+            const sel = document.getElementById('time_setting_id');
+            sel.innerHTML = '';
+            if (res.success && res.data.length > 0) {
+                timeSettingProfiles = res.data;
+                res.data.forEach(ts => {
+                    const opt = document.createElement('option');
+                    opt.value = ts.id;
+                    opt.textContent = `${ts.name} (Rush ${ts.rush_percentage}%)`;
+                    if (selectId ? (ts.id == selectId) : ts.is_active) {
+                        opt.selected = true;
+                    }
+                    sel.appendChild(opt);
+                });
+
+                // Add Custom Schedule Option at end
+                const customOpt = document.createElement('option');
+                customOpt.value = "CUSTOM";
+                customOpt.textContent = "🕒 Custom Schedule (Create custom time profile)";
+                sel.appendChild(customOpt);
+
+                onTimeSettingChanged();
+            } else {
+                sel.innerHTML = `<option value="">Default Lab Schedule (Rush 75%)</option><option value="CUSTOM">🕒 Custom Schedule</option>`;
+                updateCalculatedSchedule();
+            }
+        });
+    }
+
+    // Triggered when user selects a different Time Profile in dropdown
+    function onTimeSettingChanged() {
+        const tsId = document.getElementById('time_setting_id').value;
+
+        if (tsId === "CUSTOM") {
+            openProfileModal(false);
+            return;
+        }
+
+        const selectedTs = timeSettingProfiles.find(t => t.id == tsId);
+        
+        if (selectedTs) {
+            if (selectedTs.lab_day_start) document.getElementById('day_start_time').value = formatAMPM(selectedTs.lab_day_start);
+            if (selectedTs.lab_day_end) document.getElementById('day_end_time').value = formatAMPM(selectedTs.lab_day_end) + " (Next Day)";
+            if (selectedTs.rush_start) document.getElementById('trigger_start_time').value = formatAMPM(selectedTs.rush_start);
+        }
+
+        updateCalculatedSchedule();
+    }
+
+    // Dynamic Calculation of Rush & Remaining Periods based on Form Values
+    function updateCalculatedSchedule() {
+        const maxEntries = parseInt(document.getElementById('max_entries').value, 10) || 125;
+        const tsId = document.getElementById('time_setting_id').value;
+
+        let rushPct = 75;
+        let rushStartStr = "10:00 AM";
+        let rushEndStr = "02:00 PM";
+
+        if (timeSettingProfiles.length > 0 && tsId !== "CUSTOM") {
+            let selectedTs = timeSettingProfiles.find(t => t.id == tsId) || timeSettingProfiles[0];
+            if (selectedTs) {
+                rushPct = selectedTs.rush_percentage;
+                rushStartStr = formatAMPM(selectedTs.rush_start);
+                rushEndStr = formatAMPM(selectedTs.rush_end);
+            }
+        }
+
+        let remPct = 100 - rushPct;
+
+        let rushTarget = Math.round((rushPct / 100.0) * maxEntries);
+        let remTarget = maxEntries - rushTarget;
+
+        document.getElementById('rush_pct_badge').textContent = `${rushPct}%`;
+        document.getElementById('rush_time_range').textContent = `${rushStartStr} \u2192 ${rushEndStr} (Same Day)`;
+        document.getElementById('rush_target_val').textContent = `\u2248 ${rushTarget}`;
+        document.getElementById('rush_duration_val').textContent = `04h 00m`;
+
+        document.getElementById('rem_pct_badge').textContent = `${remPct}%`;
+        document.getElementById('rem_time_range').textContent = `${rushEndStr} (Same Day) \u2192 03:59 AM (Next Day)`;
+        document.getElementById('rem_target_val').textContent = `\u2248 ${remTarget}`;
+        document.getElementById('rem_duration_val').textContent = `13h 59m`;
+
+        document.getElementById('sched_footer_max').textContent = maxEntries;
+        document.getElementById('sched_footer_calc').textContent = `${rushTarget} + ${remTarget}`;
+        document.getElementById('sched_footer_total').textContent = maxEntries;
+
+        const trgTime = document.getElementById('trigger_start_time').value || '10:00 AM';
+        document.getElementById('banner_start_txt').textContent = trgTime;
+
+        document.getElementById('node_rush_start').innerHTML = `${rushStartStr}<br><span class="at-node-sub">Rush Start</span>`;
+        document.getElementById('node_rush_end').innerHTML = `${rushEndStr}<br><span class="at-node-sub">Rush End</span>`;
+
+        const reqRate = (rushTarget / 4.0).toFixed(1);
+        document.getElementById('cur_req_rate').textContent = `${reqRate} / hr`;
+        document.getElementById('cur_tw_target').textContent = rushTarget;
+    }
+
+    function toggleCustomIntervalField() {
+        const sel = document.getElementById('prof_processing_interval_select').value;
+        const wrap = document.getElementById('prof_custom_interval_wrap');
+        if (sel === 'CUSTOM') {
+            wrap.style.display = 'grid';
+        } else {
+            wrap.style.display = 'none';
+        }
+    }
+
+    function getProcessingIntervalValue() {
+        const sel = document.getElementById('prof_processing_interval_select').value;
+        if (sel === 'CUSTOM') {
+            const val = parseFloat(document.getElementById('prof_custom_interval_val').value) || 1;
+            const unit = document.getElementById('prof_custom_interval_unit').value;
+            if (unit === 'sec') return val / 60.0;
+            return val;
+        }
+        return parseFloat(sel);
+    }
+
+    function formatIntervalText(intervalMins) {
+        let mins = parseFloat(intervalMins);
+        if (isNaN(mins) || mins <= 0) return '30 Minutes';
+        if (mins < 1) {
+            let secs = Math.round(mins * 60);
+            return `${secs} Second${secs !== 1 ? 's' : ''}`;
+        } else {
+            let formatted = (mins % 1 === 0) ? mins.toFixed(0) : mins.toFixed(1);
+            return `${formatted} Minute${mins !== 1 ? 's' : ''}`;
+        }
+    }
+
+    // Modal for Create / Edit Custom Time Profile
+    function openProfileModal(isEdit) {
+        if (isEdit) {
+            const tsId = document.getElementById('time_setting_id').value;
+            const selectedTs = timeSettingProfiles.find(t => t.id == tsId);
+            if (!selectedTs) {
+                showToast('Please select a valid time profile to edit.', 'danger');
+                return;
+            }
+
+            document.getElementById('profile_modal_title').innerHTML = `<i class="bi bi-pencil" style="color:#2563eb;"></i> Edit Automation Time Profile`;
+            document.getElementById('btn_save_profile').textContent = 'Save Profile';
+            document.getElementById('prof_id').value = selectedTs.id;
+            document.getElementById('prof_name').value = selectedTs.name;
+            document.getElementById('prof_lab_day_start').value = formatAMPM(selectedTs.lab_day_start);
+            document.getElementById('prof_lab_day_end').value = formatAMPM(selectedTs.lab_day_end) + " (Next Day)";
+            document.getElementById('prof_rush_start').value = formatAMPM(selectedTs.rush_start);
+            document.getElementById('prof_rush_end').value = formatAMPM(selectedTs.rush_end);
+            document.getElementById('prof_rush_percentage').value = selectedTs.rush_percentage || 75;
+            document.getElementById('prof_rem_percentage').value = 100 - (selectedTs.rush_percentage || 75);
+            
+            const intervalVal = parseFloat(selectedTs.processing_interval) || 30;
+            const standardOpts = ['0.5', '1', '5', '10', '15', '20', '30'];
+            const strVal = intervalVal % 1 === 0 ? intervalVal.toString() : intervalVal.toFixed(1);
+            if (standardOpts.includes(strVal) || standardOpts.includes(intervalVal.toString())) {
+                document.getElementById('prof_processing_interval_select').value = standardOpts.includes(strVal) ? strVal : intervalVal.toString();
+                document.getElementById('prof_custom_interval_wrap').style.display = 'none';
+            } else {
+                document.getElementById('prof_processing_interval_select').value = 'CUSTOM';
+                document.getElementById('prof_custom_interval_wrap').style.display = 'grid';
+                if (intervalVal < 1) {
+                    document.getElementById('prof_custom_interval_val').value = Math.round(intervalVal * 60);
+                    document.getElementById('prof_custom_interval_unit').value = 'sec';
+                } else {
+                    document.getElementById('prof_custom_interval_val').value = intervalVal;
+                    document.getElementById('prof_custom_interval_unit').value = 'min';
+                }
+            }
+            
+            document.getElementById('prof_is_active').value = selectedTs.is_active ? 'true' : 'false';
+        } else {
+            document.getElementById('profile_modal_title').innerHTML = `<i class="bi bi-clock-history" style="color:#2563eb;"></i> Create Custom Time Profile`;
+            document.getElementById('btn_save_profile').textContent = 'Save Profile';
+            document.getElementById('prof_id').value = '';
+            document.getElementById('prof_name').value = 'Custom Dermatology Schedule';
+            document.getElementById('prof_lab_day_start').value = '04:00 AM';
+            document.getElementById('prof_lab_day_end').value = '03:59 AM (Next Day)';
+            document.getElementById('prof_rush_start').value = '10:00 AM';
+            document.getElementById('prof_rush_end').value = '02:00 PM';
+            document.getElementById('prof_rush_percentage').value = 75;
+            document.getElementById('prof_rem_percentage').value = 25;
+            document.getElementById('prof_processing_interval_select').value = '30';
+            document.getElementById('prof_custom_interval_wrap').style.display = 'none';
+            document.getElementById('prof_is_active').value = 'true';
+        }
+
+        document.getElementById('profileModal').style.display = 'flex';
+        renderTimelineChart();
+    }
+
+    function closeProfileModal() {
+        document.getElementById('profileModal').style.display = 'none';
+    }
+
+    function syncProfRemPct() {
+        let rushPct = parseInt(document.getElementById('prof_rush_percentage').value, 10) || 75;
+        if (rushPct > 99) rushPct = 99;
+        if (rushPct < 1) rushPct = 1;
+        document.getElementById('prof_rem_percentage').value = 100 - rushPct;
+    }
+
+    function syncProfRushPct() {
+        let remPct = parseInt(document.getElementById('prof_rem_percentage').value, 10) || 25;
+        if (remPct > 99) remPct = 99;
+        if (remPct < 1) remPct = 1;
+        document.getElementById('prof_rush_percentage').value = 100 - remPct;
+    }
+
+    function updateCharCounter() {
+        const txt = document.getElementById('description').value;
+        document.getElementById('desc_counter').textContent = `${txt.length}/250`;
+    }
+
+    function saveTimeProfile() {
+        const name = document.getElementById('prof_name').value.trim();
+        const lds = parse24Hr(document.getElementById('prof_lab_day_start').value);
+        const lde = parse24Hr(document.getElementById('prof_lab_day_end').value);
+        const rs = parse24Hr(document.getElementById('prof_rush_start').value);
+        const re = parse24Hr(document.getElementById('prof_rush_end').value);
+        const rp = parseInt(document.getElementById('prof_rush_percentage').value, 10);
+        const remP = parseInt(document.getElementById('prof_rem_percentage').value, 10);
+        const pi = parseInt(document.getElementById('prof_processing_interval').value, 10);
+        const isActive = document.getElementById('prof_is_active').value === 'true';
+        const pid = document.getElementById('prof_id').value;
+
+        if (rp + remP !== 100) {
+            showToast('Rush % + Remaining % must equal 100%.', 'danger');
+            return;
+        }
+
+        if (!name) {
+            showToast('Please enter a profile name.', 'danger');
+            return;
+        }
+
+        const data = {
+            id: pid,
+            name: name,
+            lab_day_start: lds,
+            lab_day_end: lde,
+            rush_start: rs,
+            rush_end: re,
+            rush_percentage: rp,
+            processing_interval: pi,
+            is_active: isActive
+        };
+
+        fetch('{% url "lab:api_save_time_setting" %}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => {
+            if (res.success) {
+                showToast('Custom Time Profile saved successfully!', 'success');
+                closeProfileModal();
+                fetchTimeSettings(res.id);
+            } else {
+                showToast(res.message, 'danger');
+            }
+        });
+    }
+
+    // Reset Form
+    function resetForm() {
+        document.getElementById('configForm').reset();
+        document.getElementById('config_id').value = '';
+        onTimeSettingChanged();
+        showToast('Form reset to default values.', 'info');
+    }
+
+    // Toast Notification helper
+    function showToast(msg, type='success') {
+        const t = document.createElement('div');
+        let bg = type === 'danger' ? '#ef4444' : (type === 'info' ? '#3b82f6' : '#10b981');
+        t.style = `background:${bg}; color:white; padding:0.85rem 1.25rem; border-radius:8px; margin-bottom:10px; box-shadow:0 4px 12px rgba(0,0,0,0.15); font-weight:600; font-size:0.85rem; opacity:0; transition:opacity 0.3s; z-index:9999;`;
+        t.innerText = msg;
+        document.getElementById('toast-container').appendChild(t);
+        setTimeout(() => t.style.opacity = '1', 10);
+        setTimeout(() => {
+            t.style.opacity = '0';
+            setTimeout(() => t.remove(), 300);
+        }, 3000);
+    }
+
+    // Save Configuration or Save & Trigger
+    function submitConfig(triggerNow) {
+        const deptId = document.getElementById('department_id').value;
+        const fromDate = document.getElementById('from_date').value;
+        const toDate = document.getElementById('to_date').value;
+        const minEntries = parseInt(document.getElementById('min_entries').value, 10);
+        const maxEntries = parseInt(document.getElementById('max_entries').value, 10);
+        const tsId = document.getElementById('time_setting_id').value;
+
+        if (!deptId || !fromDate || !toDate || isNaN(minEntries) || isNaN(maxEntries) || !tsId || tsId === "CUSTOM") {
+            showToast('Please select a valid Time Profile or save custom profile first.', 'danger');
+            return;
+        }
+
+        if (minEntries < 1) {
+            showToast('Minimum entries must be at least 1.', 'danger');
+            return;
+        }
+
+        if (maxEntries < minEntries) {
+            showToast('Maximum entries cannot be less than Minimum entries.', 'danger');
+            return;
+        }
+
+        if (new Date(fromDate) > new Date(toDate)) {
+            showToast('From Date cannot be after To Date.', 'danger');
+            return;
+        }
+
+        const data = {
+            config_id: document.getElementById('config_id').value,
+            department_id: deptId,
+            time_setting_id: tsId,
+            from_date: fromDate,
+            to_date: toDate,
+            min_entries: minEntries,
+            max_entries: maxEntries,
+            trigger_start_time: parse24Hr(document.getElementById('trigger_start_time').value),
+            day_start_time: parse24Hr(document.getElementById('day_start_time').value),
+            day_end_time: parse24Hr(document.getElementById('day_end_time').value),
+            description: document.getElementById('description').value,
+            is_active: document.getElementById('is_active').value === 'true',
+            trigger_now: triggerNow
+        };
+
+        fetch('{% url "lab:api_save_auto_trigger_config" %}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => {
+            if (res.success) {
+                showToast(res.message, 'success');
+                loadConfigs();
+                if (triggerNow && res.history_id) {
+                    startPollingProgress(res.history_id);
+                }
+            } else {
+                showToast(res.message, 'danger');
+            }
+        });
+    }
+
+    // Open Confirmation Modal for Triggering
+    function openTriggerModal() {
+        const deptSel = document.getElementById('department_id');
+        const deptText = deptSel.options[deptSel.selectedIndex] ? deptSel.options[deptSel.selectedIndex].text : 'DERMATOLOGY';
+        const fromDate = document.getElementById('from_date').value;
+        const toDate = document.getElementById('to_date').value;
+        
+        document.getElementById('modal_dept_name').textContent = deptText;
+        document.getElementById('modal_date_range').textContent = `${fromDate} to ${toDate}`;
+        document.getElementById('modal_min_entries').textContent = document.getElementById('min_entries').value;
+        document.getElementById('modal_max_entries').textContent = document.getElementById('max_entries').value;
+        document.getElementById('modal_trigger_time').textContent = document.getElementById('trigger_start_time').value;
+
+        document.getElementById('triggerModal').style.display = 'flex';
+    }
+
+    function closeTriggerModal() {
+        document.getElementById('triggerModal').style.display = 'none';
+    }
+
+    function confirmTriggerExecution() {
+        closeTriggerModal();
+        submitConfig(true);
+    }
+
+    // Load Configurations List into Table
+    function loadConfigs() {
+        const search = document.getElementById('search-config').value;
+        fetch(`{% url "lab:api_get_auto_trigger_configs" %}?search=${search}`)
+        .then(r => r.json()).then(res => {
+            if (res.success) {
+                const tbody = document.getElementById('config-list-tbody');
+                tbody.innerHTML = '';
+                if (res.data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="15" style="text-align:center; padding:2rem; color:var(--text-muted);">No configurations found.</td></tr>`;
+                    return;
+                }
+
+                res.data.forEach((c, idx) => {
+                    const cStr = encodeURIComponent(JSON.stringify(c));
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="font-weight:700; color:var(--text-muted);">${idx + 1}</td>
+                        <td><strong style="color:var(--text-primary);">${c.department}</strong></td>
+                        <td>${c.from_date} to ${c.to_date}</td>
+                        <td><span style="font-weight:700;">${c.min_entries}</span></td>
+                        <td><span style="font-weight:700; color:#2563eb;">${c.max_entries}</span></td>
+                        <td>${formatAMPM(c.day_start_time)}</td>
+                        <td>${formatAMPM(c.day_end_time)} <span style="font-size:0.7rem; color:#64748b;">(Next Day)</span></td>
+                        <td>${formatAMPM(c.trigger_start_time)}</td>
+                        <td>${c.rush_period}</td>
+                        <td><span class="pill-pct pill-pct-green">${c.rush_percentage}%</span></td>
+                        <td>${c.interval}</td>
+                        <td>
+                            <span class="badge-status-active" style="${c.is_active ? '' : 'background:#f1f5f9; color:#475569; border-color:#cbd5e1;'}">
+                                ${c.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                        </td>
+                        <td style="font-size:0.78rem; color:var(--text-muted);">${c.last_triggered}</td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:0.4rem;">
+                                <div style="width:50px; height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden;">
+                                    <div style="width:${c.progress}%; height:100%; background:#2563eb;"></div>
+                                </div>
+                                <span style="font-weight:700; font-size:0.78rem;">${c.progress}%</span>
+                            </div>
+                        </td>
+                        <td style="text-align:center;">
+                            <div class="at-action-btns" style="justify-content:center;">
+                                <button class="btn-icon-action" onclick="viewConfigDetails('${cStr}')" title="View"><i class="bi bi-eye"></i></button>
+                                <button class="btn-icon-action" onclick="editConfig('${cStr}')" title="Edit"><i class="bi bi-pencil"></i></button>
+                                <button class="btn-icon-action btn-icon-trigger" onclick="triggerConfigDirect(${c.id})" title="Trigger Now"><i class="bi bi-play-circle"></i></button>
+                                <button class="btn-icon-action btn-icon-delete" onclick="deleteConfig(${c.id})" title="Delete"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                if (res.data.length > 0 && res.data[0].last_history_id) {
+                    startPollingProgress(res.data[0].last_history_id);
+                }
+            }
+        });
+    }
+
+    // Populate Form when Editing
+    function editConfig(cStr) {
+        const c = JSON.parse(decodeURIComponent(cStr));
+        document.getElementById('config_id').value = c.id;
+        document.getElementById('department_id').value = c.department_id;
+        document.getElementById('from_date').value = c.from_date;
+        document.getElementById('to_date').value = c.to_date;
+        document.getElementById('min_entries').value = c.min_entries;
+        document.getElementById('max_entries').value = c.max_entries;
+        document.getElementById('trigger_start_time').value = formatAMPM(c.trigger_start_time);
+        document.getElementById('day_start_time').value = formatAMPM(c.day_start_time);
+        document.getElementById('day_end_time').value = formatAMPM(c.day_end_time) + " (Next Day)";
+        document.getElementById('description').value = c.description;
+        document.getElementById('is_active').value = c.is_active ? 'true' : 'false';
+        
+        fetchTimeSettings(c.time_setting_id);
+        window.scrollTo({top: 0, behavior: 'smooth'});
+        showToast(`Editing configuration for ${c.department}`, 'info');
+    }
+
+    function viewConfigDetails(cStr) {
+        editConfig(cStr);
+    }
+
+    function triggerConfigDirect(cid) {
+        document.getElementById('config_id').value = cid;
+        openTriggerModal();
+    }
+
+    // Delete Config
+    function deleteConfig(id) {
+        if (!confirm('Are you sure you want to delete this configuration?')) return;
+        fetch(`/lab/api/auto-trigger/config/${id}/delete/`, {
+            method: 'POST'
+        }).then(r => r.json()).then(res => {
+            if (res.success) {
+                showToast(res.message, 'success');
+                loadConfigs();
+            } else {
+                showToast(res.message, 'danger');
+            }
+        });
+    }
+
+    let currentActiveHistoryId = null;
+
+    function openCurrentHistoryDetails() {
+        if (!currentActiveHistoryId) {
+            showToast('No active or recent automation run available to view.', 'info');
+            return;
+        }
+        openHistoryDetailModal(currentActiveHistoryId);
+    }
+
+    function openHistoryDetailModal(historyId) {
+        fetch(`/lab/api/auto-trigger/history/${historyId}/`)
+        .then(r => r.json()).then(res => {
+            if (res.success) {
+                const d = res.details;
+                const summaryBox = document.getElementById('hdetail_summary_box');
+                summaryBox.innerHTML = `
+                    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; text-align: center;">
+                        <div><span style="color:#64748b; font-size:0.75rem;">RUN ID:</span><br><strong>${d.trigger_id}</strong></div>
+                        <div><span style="color:#64748b; font-size:0.75rem;">DEPARTMENT:</span><br><strong>${d.department}</strong></div>
+                        <div><span style="color:#64748b; font-size:0.75rem;">TARGET ENTRIES:</span><br><strong style="color:#2563eb;">${d.max_entries}</strong></div>
+                        <div><span style="color:#64748b; font-size:0.75rem;">STAGE 1 SUCCESSFUL:</span><br><strong style="color:#16a34a;">${d.successful} / ${d.max_entries}</strong></div>
+                    </div>
+                `;
+
+                const tbody = document.getElementById('hdetail_logs_tbody');
+                tbody.innerHTML = '';
+                if (!res.logs || res.logs.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:#64748b;">No log records found for this run.</td></tr>`;
+                } else {
+                    res.logs.forEach(l => {
+                        const tr = document.createElement('tr');
+                        let statusBadge = l.status === 'Success' ? 
+                            `<span class="pill-pct pill-pct-green">Success</span>` : 
+                            (l.status === 'Skipped' ? `<span class="pill-pct" style="background:#64748b;">Skipped</span>` : `<span class="pill-pct" style="background:#dc2626;">Failed</span>`);
+                        
+                        tr.innerHTML = `
+                            <td style="font-weight:700;">${l.entry_no}</td>
+                            <td><span style="font-size:0.72rem; font-weight:700; color:#2563eb;">${l.stage || 'STAGE 1'}</span></td>
+                            <td><strong style="color:#475569;">${l.source_patient_id || 'N/A'}</strong></td>
+                            <td>${l.source_patient_name || '-'}</td>
+                            <td><strong style="color:#16a34a;">${l.new_patient_id || 'N/A'}</strong></td>
+                            <td><strong>${l.new_patient_name || '-'}</strong></td>
+                            <td>${statusBadge}</td>
+                            <td style="font-size:0.75rem; color:#475569;">${l.message || ''}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+
+                document.getElementById('historyDetailModal').style.display = 'flex';
+            } else {
+                showToast(res.message, 'danger');
+            }
+        });
+    }
+
+    function closeHistoryDetailModal() {
+        document.getElementById('historyDetailModal').style.display = 'none';
+    }
+
+    // Singleton Poll Progress Status Manager
+    function stopPollingProgress() {
+        if (window._atPollTimer) {
+            clearInterval(window._atPollTimer);
+            window._atPollTimer = null;
+        }
+    }
+
+    function startPollingProgress(historyId) {
+        currentActiveHistoryId = historyId;
+        stopPollingProgress();
+
+        const poll = () => {
+            fetch(`/lab/api/auto-trigger/status/${historyId}/`)
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
+            .then(res => {
+                if (res.success) {
+                    updateLiveStatusDisplay(res);
+                    if (['Completed', 'Failed', 'Partially Completed', 'Cancelled'].includes(res.status)) {
+                        stopPollingProgress();
+                    }
+                }
+            })
+            .catch(err => {
+                console.warn("Auto Trigger polling temporary error:", err);
+                const statusBadge = document.getElementById('prog_status_badge');
+                if (statusBadge) {
+                    statusBadge.textContent = 'Status temporarily unavailable';
+                    statusBadge.style.background = '#fef3c7';
+                    statusBadge.style.color = '#d97706';
+                }
+            });
+        };
+
+        poll();
+        window._atPollTimer = setInterval(poll, 6000);
+    }
+
+    function updateLiveStatusDisplay(d) {
+        if (!d) return;
+        currentActiveHistoryId = d.history_id;
+
+        const progMin = document.getElementById('prog_min');
+        const progMax = document.getElementById('prog_max');
+        const progProc = document.getElementById('prog_proc');
+        const progSuccess = document.getElementById('prog_success');
+        const progFailed = document.getElementById('prog_failed');
+        const progRem = document.getElementById('prog_rem');
+        const progRemMin = document.getElementById('prog_rem_min');
+        const progRemCap = document.getElementById('prog_rem_cap');
+        const progPctMin = document.getElementById('prog_pct_min');
+        const progPctOverall = document.getElementById('prog_pct_overall');
+        const progBarFill = document.getElementById('prog_bar_fill');
+        const statusBadge = document.getElementById('prog_status_badge');
+
+        if (progMin) progMin.textContent = d.min_entries;
+        if (progMax) progMax.textContent = d.max_entries;
+        if (progProc) progProc.textContent = `${d.total_processed} / ${d.max_entries}`;
+        if (progSuccess) progSuccess.textContent = d.total_created;
+        if (progFailed) progFailed.textContent = d.total_failed;
+        if (progRem) progRem.textContent = d.total_remaining;
+        
+        const remMin = Math.max(0, d.min_entries - d.total_created);
+        if (progRemMin) progRemMin.textContent = remMin;
+        
+        const remCap = Math.max(0, d.max_entries - d.total_created);
+        if (progRemCap) progRemCap.textContent = remCap;
+
+        const pctMin = d.min_entries > 0 ? ((d.total_created / d.min_entries) * 100).toFixed(1) : '0.0';
+        if (progPctMin) progPctMin.textContent = `${pctMin}%`;
+
+        const pctOverall = d.max_entries > 0 ? ((d.total_processed / d.max_entries) * 100).toFixed(1) : '0.0';
+        if (progPctOverall) progPctOverall.textContent = `${pctOverall}%`;
+        if (progBarFill) progBarFill.style.width = `${pctOverall}%`;
+
+        if (statusBadge) {
+            statusBadge.textContent = d.status;
+            if (d.status === 'Processing') {
+                statusBadge.className = 'badge-status-active';
+            } else if (d.status === 'Completed') {
+                statusBadge.className = 'pill-pct pill-pct-green';
+            } else if (d.status === 'Failed') {
+                statusBadge.className = 'pill-pct pill-pct-red';
+            } else {
+                statusBadge.className = 'pill-pct pill-pct-amber';
+            }
+        }
+
+        updateStageTracker(d.current_stage || 'STAGE 1 — PATIENT CREATION', d.status);
+    }
+
+    function updateStageTracker(stageText, runStatus) {
+        let activeStageNum = 1;
+        if (stageText.includes('STAGE 2')) activeStageNum = 2;
+        else if (stageText.includes('STAGE 3')) activeStageNum = 3;
+        else if (stageText.includes('STAGE 4')) activeStageNum = 4;
+        else if (stageText.includes('STAGE 5')) activeStageNum = 5;
+
+        if (['Completed', 'Partially Completed'].includes(runStatus)) {
+            activeStageNum = 6;
+        }
+
+        const pipelineStatus = document.getElementById('pipeline_stage1_status');
+        if (pipelineStatus) {
+            if (['Completed', 'Partially Completed'].includes(runStatus)) {
+                pipelineStatus.textContent = 'Automation Completed';
+                pipelineStatus.style.background = '#d1fae5';
+                pipelineStatus.style.color = '#065f46';
+                pipelineStatus.style.border = '1px solid #34d399';
+            } else if (runStatus === 'Failed') {
+                pipelineStatus.textContent = 'Automation Failed';
+                pipelineStatus.style.background = '#fee2e2';
+                pipelineStatus.style.color = '#dc2626';
+                pipelineStatus.style.border = '1px solid #f87171';
+            } else {
+                pipelineStatus.textContent = `Stage ${activeStageNum} Active`;
+                pipelineStatus.style.background = '#eff6ff';
+                pipelineStatus.style.color = '#1d4ed8';
+                pipelineStatus.style.border = '1px solid #bfdbfe';
+            }
+        }
+
+        for (let i = 1; i <= 5; i++) {
+            const icon = document.getElementById(`stage${i}_icon`);
+            const text = document.getElementById(`stage${i}_text`);
+            if (!icon || !text) continue;
+
+            if (i < activeStageNum) {
+                icon.style.background = '#10b981';
+                icon.style.color = '#ffffff';
+                icon.innerHTML = '<i class="bi bi-check-lg"></i>';
+                if (icon.parentElement) {
+                    icon.parentElement.style.borderColor = '#10b981';
+                    icon.parentElement.style.background = '#f0fdf4';
+                }
+                text.style.color = '#10b981';
+                text.style.fontWeight = '700';
+                text.textContent = '✓ Completed';
+            } else if (i === activeStageNum && !['Completed', 'Failed', 'Partially Completed'].includes(runStatus)) {
+                icon.style.background = '#3b82f6';
+                icon.style.color = '#ffffff';
+                icon.innerHTML = `${i}`;
+                if (icon.parentElement) {
+                    icon.parentElement.style.borderColor = '#3b82f6';
+                    icon.parentElement.style.background = '#ffffff';
+                    icon.parentElement.style.boxShadow = '0 2px 4px rgba(59, 130, 246, 0.15)';
+                }
+                text.style.color = '#3b82f6';
+                text.style.fontWeight = '700';
+                text.textContent = '● Running';
+            } else {
+                icon.style.background = '#e2e8f0';
+                icon.style.color = '#64748b';
+                icon.innerHTML = `${i}`;
+                if (icon.parentElement) {
+                    icon.parentElement.style.borderColor = '#cbd5e1';
+                    icon.parentElement.style.background = '#f8fafc';
+                    icon.parentElement.style.boxShadow = 'none';
+                }
+                text.style.color = '#94a3b8';
+                text.style.fontWeight = '400';
+                text.textContent = '○ Pending';
+            }
+        }
+    }
+
+    function checkActiveRunOnLoad() {
+        fetch('/lab/api/auto-trigger/active-run/')
+        .then(r => r.json())
+        .then(res => {
+            if (res.success && res.has_active && res.data) {
+                updateLiveStatusDisplay(res.data);
+                startPollingProgress(res.data.history_id);
+            }
+        })
+        .catch(err => console.log('Active run check:', err));
+    }
+
+    function renderTimelineChart() {
+        const start = document.getElementById('prof_lab_day_start').value || '04:00 AM';
+        const trigger = document.getElementById('prof_rush_start').value || '10:00 AM';
+        const rush = document.getElementById('prof_rush_end').value || '02:00 PM';
+        const end = document.getElementById('prof_lab_day_end').value || '03:59 AM (Next Day)';
+        
+        let rushPct = parseInt(document.getElementById('prof_rush_percentage').value, 10);
+        if (isNaN(rushPct) || rushPct < 1) rushPct = 75;
+        if (rushPct > 99) rushPct = 99;
+        let remPct = 100 - rushPct;
+        
+        const rushBar = document.getElementById('prof_chart_bar_rush');
+        const remBar = document.getElementById('prof_chart_bar_rem');
+        if (rushBar && remBar) {
+            rushBar.style.width = `${rushPct}%`;
+            remBar.style.width = `${remPct}%`;
+        }
+
+        const rushPctEl = document.getElementById('prof_preview_rush_pct');
+        const remPctEl = document.getElementById('prof_preview_rem_pct');
+        if (rushPctEl && remPctEl) {
+            rushPctEl.textContent = `${rushPct}%`;
+            remPctEl.textContent = `${remPct}%`;
+        }
+
+        const rushTimeEl = document.getElementById('prof_preview_rush_time');
+        const remTimeEl = document.getElementById('prof_preview_rem_time');
+        if (rushTimeEl && remTimeEl) {
+            rushTimeEl.textContent = `${trigger} \u2192 ${rush}`;
+            remTimeEl.textContent = `${rush} \u2192 ${end}`;
+        }
+
+        const intervalMins = getProcessingIntervalValue();
+        const intervalTxt = formatIntervalText(intervalMins);
+        const intervalRushEl = document.getElementById('prof_preview_rush_interval');
+        const intervalRemEl = document.getElementById('prof_preview_rem_interval');
+        if (intervalRushEl) intervalRushEl.textContent = intervalTxt;
+        if (intervalRemEl) intervalRemEl.textContent = intervalTxt;
+    }
+
+    function saveCustomProfile() {
+        const name = document.getElementById('prof_name').value.trim();
+        if (!name) {
+            showToast('Profile name is required.', 'danger');
+            return;
+        }
+
+        const intervalValue = getProcessingIntervalValue();
+        if (isNaN(intervalValue) || intervalValue <= 0) {
+            showToast('Please enter a valid processing interval.', 'danger');
+            return;
+        }
+
+        const data = {
+            id: document.getElementById('prof_id').value,
+            name: name,
+            lab_day_start: parse24Hr(document.getElementById('prof_lab_day_start').value),
+            lab_day_end: parse24Hr(document.getElementById('prof_lab_day_end').value),
+            rush_start: parse24Hr(document.getElementById('prof_rush_start').value),
+            rush_end: parse24Hr(document.getElementById('prof_rush_end').value),
+            rush_percentage: parseInt(document.getElementById('prof_rush_percentage').value, 10) || 75,
+            processing_interval: intervalValue,
+            is_active: document.getElementById('prof_is_active').value === 'true'
+        };
+
+        if (data.rush_percentage < 1 || data.rush_percentage > 99) {
+            showToast('Rush percentage must be between 1 and 99', 'danger');
+            return;
+        }
+
+        const now = new Date();
+        const ymd = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}T`;
+        
+        let ds = new Date(ymd + data.lab_day_start);
+        let de = new Date(ymd + data.lab_day_end);
+        if (de <= ds) de.setDate(de.getDate() + 1);
+        
+        let ts = new Date(ymd + data.rush_start);
+        if (ts < ds) ts.setDate(ts.getDate() + 1);
+        
+        let re = new Date(ymd + data.rush_end);
+        if (re < ts) re.setDate(re.getDate() + 1);
+
+        if (ts < ds || ts > de) {
+            showToast('Trigger Start Time must be within the laboratory day.', 'danger');
+            return;
+        }
+        
+        if (re <= ts || re > de) {
+            showToast('Rush Period End Time must be after Rush Start and before Day End.', 'danger');
+            return;
+        }
+        
+        const btn = document.getElementById('btn_save_profile');
+        const origText = btn.textContent;
+        btn.textContent = 'Saving...';
+        btn.disabled = true;
+
+        const csrfTokenEl = document.querySelector('[name=csrfmiddlewaretoken]');
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfTokenEl) headers['X-CSRFToken'] = csrfTokenEl.value;
+
+        fetch('{% url "lab:api_save_time_setting" %}', {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: headers
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                showToast(res.message || 'Custom Time Profile saved successfully!', 'success');
+                closeProfileModal();
+                fetchTimeSettings(res.id);
+            } else {
+                showToast(res.error || res.message || 'Failed to save profile.', 'danger');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showToast('Network error while saving profile.', 'danger');
+        })
+        .finally(() => {
+            btn.textContent = origText;
+            btn.disabled = false;
+        });
+    }
+
+    // Close clock popover when clicking outside
+    document.addEventListener('click', function(e) {
+        const popover = document.getElementById('clockPopover');
+        if (popover && popover.style.display === 'block') {
+            if (!popover.contains(e.target) && !e.target.classList.contains('at-input-time') && !e.target.classList.contains('time-icon')) {
+                closeClockPicker();
+            }
+        }
+    });
+
+    // Initialization on Page Load
+    window.onload = function() {
+        startLiveClockEngine();
+        fetchTimeSettings();
+        loadConfigs();
+        checkActiveRunOnLoad();
+        // Requirement 11: Auto refresh every 2 minutes (non-blocking, non-interrupting)
+        setInterval(function() {
+            loadConfigs(true);
+            checkActiveRunOnLoad();
+        }, 120000);
+    };
+</script>
+{% endblock %}

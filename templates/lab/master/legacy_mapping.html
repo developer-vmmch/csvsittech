@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block title %}Legacy Data Mapping | VMMCerp{% endblock %}
+{% block page_heading %}Legacy Data Mapping{% endblock %}
+
+{% block extra_head %}
+<style>
+    .tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .tab-btn {
+        padding: 0.5rem 1rem;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-weight: 600;
+        color: #64748b;
+    }
+    .tab-btn.active {
+        color: var(--accent-blue);
+        border-bottom-color: var(--accent-blue);
+    }
+    .tab-content {
+        display: none;
+    }
+    .tab-content.active {
+        display: block;
+    }
+    .action-panel {
+        background: #f8fafc;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        border: 1px solid #e2e8f0;
+    }
+    .stats-badge {
+        background: var(--accent-blue);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 99px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+    .checkbox-col { width: 40px; text-align: center; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header-action" style="margin-bottom: 1.5rem;">
+        <div>
+            <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">Legacy Dropdown Triage</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Map legacy free-text data to structured masters.</p>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('diagnosis')">
+            Diagnosis Mapping <span class="stats-badge">{{ diag_total_count|add:"-"|add:diag_unmapped_count }} / {{ diag_total_count }} Mapped</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('investigation')">
+            Investigation Mapping <span class="stats-badge">{{ inv_total_count|add:"-"|add:inv_unmapped_count }} / {{ inv_total_count }} Mapped</span>
+        </button>
+    </div>
+
+    <!-- Diagnosis Tab -->
+    <div id="tab-diagnosis" class="tab-content active">
+        <div class="action-panel">
+            <strong>Bulk Actions:</strong>
+            <button class="btn btn-secondary btn-sm" onclick="bulkAction('diagnosis', 'chief_complaint')">Mark as Chief Complaint</button>
+            <button class="btn btn-danger-sm btn-sm" onclick="bulkAction('diagnosis', 'skip')">Skip / Mark as Duplicate</button>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="checkbox-col"><input type="checkbox" onchange="toggleAll('diag', this.checked)"></th>
+                        <th>Legacy ID</th>
+                        <th>Legacy Text</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for st in staging_diagnosis %}
+                    <tr>
+                        <td class="checkbox-col"><input type="checkbox" class="cb-diag" value="{{ st.id }}"></td>
+                        <td>{{ st.legacy_id }}</td>
+                        <td><strong>{{ st.legacy_text }}</strong></td>
+                        <td>
+                            <button class="btn btn-primary btn-sm" onclick="openDiagMappingModal({{ st.id }}, '{{ st.legacy_text|escapejs }}', '{{ st.legacy_id|escapejs }}')">Map to True Diagnosis</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align: center; padding: 2rem;">All legacy diagnoses have been mapped!</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Investigation Tab -->
+    <div id="tab-investigation" class="tab-content">
+        <div class="action-panel">
+            <strong>Bulk Actions:</strong>
+            <select id="bulk-hs-category" class="form-select" style="width: 200px;">
+                <option value="">-- Select Service Category --</option>
+                {% for code, name in hospital_service_categories %}
+                <option value="{{ code }}">{{ name }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="bulkActionHs()">Mark as Hospital Service</button>
+            <button class="btn btn-danger-sm btn-sm" onclick="bulkAction('investigation', 'skip')">Skip / Mark as Duplicate</button>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="checkbox-col"><input type="checkbox" onchange="toggleAll('inv', this.checked)"></th>
+                        <th>Legacy Code</th>
+                        <th>Legacy Text</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for st in staging_investigation %}
+                    <tr>
+                        <td class="checkbox-col"><input type="checkbox" class="cb-inv" value="{{ st.id }}"></td>
+                        <td>{{ st.legacy_code }}</td>
+                        <td><strong>{{ st.legacy_text }}</strong></td>
+                        <td>
+                            <button class="btn btn-primary btn-sm" onclick="openInvMappingModal({{ st.id }}, '{{ st.legacy_text|escapejs }}', '{{ st.legacy_code|escapejs }}')">Map to True Investigation</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align: center; padding: 2rem;">All legacy investigations have been mapped!</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Diagnosis Mapping Modal -->
+<div id="diagModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;">
+    <div style="background:#fff; width:500px; margin: 100px auto; padding: 20px; border-radius: 8px;">
+        <h3>Map to ICD-11 Diagnosis</h3>
+        <p id="diagModalText"></p>
+        <input type="hidden" id="diagModalId">
+        
+        <div style="margin-bottom: 1rem;">
+            <label>ICD-11 Code</label>
+            <input type="text" id="icdCode" class="form-control" placeholder="e.g. 1A00">
+        </div>
+        <div style="margin-bottom: 1rem;">
+            <label>ICD-11 Title (Optional, defaults to legacy text)</label>
+            <input type="text" id="icdTitle" class="form-control" placeholder="Diagnosis Title">
+        </div>
+        
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <button class="btn btn-secondary" onclick="$('#diagModal').hide()">Cancel</button>
+            <button class="btn btn-primary" onclick="submitDiagMapping()">Save Mapping</button>
+        </div>
+    </div>
+</div>
+
+<!-- Investigation Mapping Modal -->
+<div id="invModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;">
+    <div style="background:#fff; width:600px; margin: 100px auto; padding: 20px; border-radius: 8px;">
+        <h3>Create True Investigation</h3>
+        <p id="invModalText"></p>
+        <input type="hidden" id="invModalId">
+        <input type="hidden" id="invModalCode">
+        
+        <div style="margin-bottom: 1rem;">
+            <label>Investigation Name</label>
+            <input type="text" id="invName" class="form-control">
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div>
+                <label>Department</label>
+                <select id="invDept" class="form-select">
+                    <option value="">-- None --</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}">{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Sample Type</label>
+                <select id="invSample" class="form-select">
+                    <option value="">-- None --</option>
+                    {% for st in sample_types %}
+                    <option value="{{ st.id }}">{{ st.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 1rem;">
+            <label><input type="checkbox" id="invIsPanel"> Is Panel (Multi-parameter)</label>
+        </div>
+        
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <button class="btn btn-secondary" onclick="$('#invModal').hide()">Cancel</button>
+            <button class="btn btn-primary" onclick="submitInvMapping()">Save Mapping</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function switchTab(tab) {
+        $('.tab-content').removeClass('active');
+        $('.tab-btn').removeClass('active');
+        $('#tab-' + tab).addClass('active');
+        $(`button[onclick="switchTab('${tab}')"]`).addClass('active');
+    }
+
+    function toggleAll(prefix, checked) {
+        $(`.cb-${prefix}`).prop('checked', checked);
+    }
+
+    function getSelected(prefix) {
+        let ids = [];
+        $(`.cb-${prefix}:checked`).each(function() {
+            ids.push($(this).val());
+        });
+        return ids;
+    }
+
+    function sendMappingRequest(payload) {
+        $.ajax({
+            url: "{% url 'lab:api_legacy_mapping_process' %}",
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            headers: {'X-CSRFToken': getCookie('csrftoken')},
+            success: function(response) {
+                if(response.status === 'success') {
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Server error processing mapping.');
+            }
+        });
+    }
+
+    function bulkAction(tab, action) {
+        let prefix = tab === 'diagnosis' ? 'diag' : 'inv';
+        let ids = getSelected(prefix);
+        if (ids.length === 0) {
+            alert('Select at least one item');
+            return;
+        }
+        if (!confirm(`Are you sure you want to process ${ids.length} items?`)) return;
+        
+        sendMappingRequest({
+            tab: tab,
+            action: action,
+            ids: ids
+        });
+    }
+
+    function bulkActionHs() {
+        let ids = getSelected('inv');
+        if (ids.length === 0) {
+            alert('Select at least one item');
+            return;
+        }
+        let category = $('#bulk-hs-category').val();
+        if (!category) {
+            alert('Please select a category first');
+            return;
+        }
+        if (!confirm(`Mark ${ids.length} items as Hospital Service (${category})?`)) return;
+        
+        sendMappingRequest({
+            tab: 'investigation',
+            action: 'hospital_service',
+            category: category,
+            ids: ids
+        });
+    }
+
+    function openDiagMappingModal(id, text, legacyId) {
+        $('#diagModalId').val(id);
+        $('#diagModalText').html(`Mapping legacy item: <strong>${text}</strong> (${legacyId})`);
+        $('#icdCode').val('');
+        $('#icdTitle').val('');
+        $('#diagModal').show();
+    }
+
+    function submitDiagMapping() {
+        let id = $('#diagModalId').val();
+        let icdCode = $('#icdCode').val().trim();
+        let icdTitle = $('#icdTitle').val().trim();
+        
+        if (!icdCode) {
+            alert("ICD-11 code is required.");
+            return;
+        }
+        
+        sendMappingRequest({
+            tab: 'diagnosis',
+            action: 'true_diagnosis',
+            ids: [id],
+            icd_code: icdCode,
+            icd_title: icdTitle
+        });
+    }
+
+    function openInvMappingModal(id, text, code) {
+        $('#invModalId').val(id);
+        $('#invModalCode').val(code);
+        $('#invModalText').html(`Mapping legacy item: <strong>${text}</strong> (${code})`);
+        $('#invName').val(text);
+        $('#invDept').val('');
+        $('#invSample').val('');
+        $('#invIsPanel').prop('checked', false);
+        $('#invModal').show();
+    }
+
+    function submitInvMapping() {
+        let id = $('#invModalId').val();
+        let name = $('#invName').val().trim();
+        
+        if (!name) {
+            alert("Investigation name is required.");
+            return;
+        }
+        
+        sendMappingRequest({
+            tab: 'investigation',
+            action: 'true_investigation',
+            ids: [id],
+            name: name,
+            short_name: '', // Optional in UI, could add if needed
+            department_id: $('#invDept').val() || null,
+            sample_type_id: $('#invSample').val() || null,
+            is_panel: $('#invIsPanel').is(':checked')
+        });
+    }
+</script>
+{% endblock %}

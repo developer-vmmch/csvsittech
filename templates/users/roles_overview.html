@@ -95,7 +95,10 @@
                 <i class="bi bi-shield-plus"></i> + Add New Role
             </a>
             <a href="{% url 'users:role_permissions' %}" class="btn btn-primary" style="font-size: 0.85rem;">
-                <i class="bi bi-sliders"></i> Role Access Matrix
+                <i class="bi bi-grid-3x3-gap-fill"></i> Role Access Matrix
+            </a>
+            <a href="{% url 'users:profile_permissions' %}" class="btn btn-primary" style="font-size: 0.85rem; background: var(--accent-blue);">
+                <i class="bi bi-shield-lock"></i> Permissions
             </a>
             <a href="{% url 'users:list' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
                 <i class="bi bi-person-lines-fill"></i> View All Users

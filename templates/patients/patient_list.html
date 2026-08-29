@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load permission_tags %}
 
 {% block title %}Patients Directory | VMMCerp{% endblock %}
 {% block page_heading %}Registered Patients{% endblock %}
@@ -10,112 +11,366 @@
             <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">Patient Directory</h2>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; margin-bottom: 0;">Comprehensive list of registered OPD and IPD hospital patients.</p>
         </div>
+        {% if request.user|has_perm:'patients.patient_list.create' %}
         <a href="{% url 'patients:add' %}" class="btn btn-primary">
             <i class="bi bi-person-plus-fill"></i> Add New Patient
         </a>
+        {% endif %}
     </div>
 
-    <!-- Patient ID Search Bar & Today Filter Indicator -->
-    <div style="margin-bottom: 1.25rem; background: #f8fafc; padding: 1rem 1.25rem; border-radius: 10px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <form method="get" action="{% url 'patients:list' %}" style="display: flex; align-items: center; gap: 0.6rem; flex: 1; max-width: 520px; margin: 0;">
-            <div style="position: relative; flex: 1;">
-                <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.95rem;"></i>
-                <input type="text" name="q_patient_id" value="{{ q_patient_id }}" class="form-input" placeholder="Enter Patient ID (e.g. 26148646) or Name..." style="padding-left: 2.2rem; font-weight: 600;">
+    <!-- Filter Form -->
+    <form id="filterForm" method="get" action="{% url 'patients:list' %}" style="background: #f8fafc; padding: 1.25rem; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 1.25rem;">
+        <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 2; min-width: 200px;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.25rem;">Search (Name / ID / OP)</label>
+                <input type="text" name="search" value="{{ search }}" class="form-input" placeholder="Search..." style="width: 100%;">
             </div>
-            <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-                <i class="bi bi-search"></i> Search ID
-            </button>
-            {% if q_patient_id or filter_date %}
-            <a href="{% url 'patients:list' %}" class="btn btn-secondary" style="padding: 0.5rem 0.85rem; font-size: 0.85rem;" title="Clear Search & Show Today's Patients">
-                <i class="bi bi-x-circle"></i>
-            </a>
-            {% endif %}
-        </form>
-
-        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
-            <span class="badge badge-blue" style="font-size: 0.82rem; padding: 0.4rem 0.85rem; font-weight: 700;">
-                <i class="bi bi-calendar-check-fill"></i> {% if filter_date == 'today' %}Today's Registrations ({{ today|date:"d/M/Y" }}){% elif q_patient_id %}Search Result{% else %}All Registered Patients{% endif %}
-            </span>
-            {% if filter_date != 'today' and not q_patient_id %}
-            <a href="{% url 'patients:list' %}?filter_date=today" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;">
-                <i class="bi bi-calendar-event"></i> View Today's Patients Only
-            </a>
-            {% elif filter_date == 'today' %}
-            <a href="{% url 'patients:list' %}" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;">
-                <i class="bi bi-people-fill"></i> View All Patients
-            </a>
-            {% endif %}
+            <div style="flex: 1; min-width: 150px;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.25rem;">From Date</label>
+                <input type="date" id="from_date" name="from_date" value="{{ from_date }}" class="form-input" style="width: 100%;" onclick="if(this.showPicker) this.showPicker();">
+            </div>
+            <div style="flex: 1; min-width: 150px;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.25rem;">To Date</label>
+                <input type="date" id="to_date" name="to_date" value="{{ to_date }}" class="form-input" style="width: 100%;" onclick="if(this.showPicker) this.showPicker();">
+            </div>
+            <div style="flex: 1; min-width: 150px;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.25rem;">Patient Type</label>
+                <select name="patient_type" class="form-input" style="width: 100%; font-size: 0.85rem; height: 38px;">
+                    <option value="A" {% if patient_type == 'A' or not patient_type %}selected{% endif %}>A</option>
+                    <option value="O" {% if patient_type == 'O' %}selected{% endif %}>O</option>
+                    <option value="D" {% if patient_type == 'D' %}selected{% endif %}>D</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+                <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1rem;"><i class="bi bi-funnel"></i> Apply Filter</button>
+                <a href="{% url 'patients:list' %}" class="btn btn-secondary" style="padding: 0.5rem 1rem;"><i class="bi bi-x-circle"></i> Clear</a>
+            </div>
         </div>
+    </form>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <div style="position: relative;">
+            <button type="button" class="btn btn-secondary" onclick="toggleColumnDropdown()" style="padding: 0.5rem 1rem;">
+                <i class="bi bi-layout-three-columns"></i> Columns ▾
+            </button>
+            <div id="columnDropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; z-index: 100; min-width: 280px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); margin-top: 0.5rem; max-height: 400px; overflow-y: auto;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">
+                    <button type="button" class="badge" style="background: #e2e8f0; border: none; cursor: pointer; color: #475569;" onclick="selectAllColumns(true)">Select All</button>
+                    <button type="button" class="badge" style="background: #e2e8f0; border: none; cursor: pointer; color: #475569;" onclick="selectAllColumns(false)">Clear All</button>
+                    <button type="button" class="badge" style="background: #e0f2fe; border: none; cursor: pointer; color: #0284c7;" onclick="resetColumns()">Reset</button>
+                </div>
+                <div id="columnCheckboxes" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <!-- Checkboxes will be rendered via JS -->
+                </div>
+            </div>
+        </div>
+        
+        {% if request.user|has_perm:'patients.patient_list.export' %}
+        <div>
+            <button type="button" class="btn" style="background: #16a34a; color: white; border: none; padding: 0.5rem 1rem;" onclick="exportExcel()">
+                <i class="bi bi-file-earmark-excel"></i> Export Excel
+            </button>
+        </div>
+        {% endif %}
     </div>
+
+    {% if has_filter %}
+    <div style="margin-bottom: 1rem; color: #475569; font-size: 0.95rem;">
+        Showing patients {% if from_date %}from <strong>{{ from_date }}</strong>{% endif %} {% if to_date %}to <strong>{{ to_date }}</strong>{% endif %} {% if search %}matching "<strong>{{ search }}</strong>"{% endif %} {% if patient_type and patient_type != 'A' %}(Type: <strong>{{ patient_type }}</strong>){% endif %}
+        <br>Total matching patients: <strong>{{ filtered_patients }}</strong>
+    </div>
+    {% endif %}
 
     {% if patients %}
     <div class="table-responsive">
-        <table>
+        <table id="patientTable">
             <thead>
-                <tr>
-                    <th>Patient ID</th>
-                    <th>Patient Name</th>
-                    <th>Age / Gender</th>
-                    <th>Mobile No</th>
-                    <th>Department</th>
-                    <th>Doctor</th>
-                    <th>Company</th>
-                    <th>Registered By</th>
-                    <th>Registered On</th>
-                    <th>Actions</th>
+                <tr id="tableHeader">
+                    <!-- Headers rendered via JS based on selected columns -->
                 </tr>
             </thead>
             <tbody>
                 {% for patient in patients %}
-                <tr>
-                    <td><strong>{{ patient.patient_id }}</strong></td>
-                    <td>{{ patient.title }} {{ patient.name }}</td>
-                    <td>{{ patient.age_years }} Y / {{ patient.gender }}</td>
-                    <td>{{ patient.mobile_no }}</td>
-                    <td><span class="badge badge-blue">{{ patient.department }}</span></td>
-                    <td>{{ patient.unit_doctor }}</td>
-                    <td><span class="badge badge-purple">{{ patient.company_name|default:"INDIVIDUAL" }}</span></td>
-                    <td>
-                        {% if patient.created_by %}
-                        <span class="badge" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; font-weight: 700; font-size: 0.82rem;">
-                            <i class="bi bi-person-circle"></i> {{ patient.created_by.get_full_name|default:patient.created_by.username|upper }}
-                        </span>
-                        {% else %}
-                        <span class="badge" style="background: #f1f5f9; color: #64748b; font-weight: 600; font-size: 0.8rem;">
-                            <i class="bi bi-gear-fill"></i> System
-                        </span>
-                        {% endif %}
-                    </td>
-                    <td>{{ patient.created_at|date:"d/M/Y H:i" }}</td>
-                    <td>
-                        <div style="display: flex; align-items: center; gap: 0.4rem;">
-                            <a href="{% url 'patients:edit' patient.id %}" class="btn-edit-sm" title="Edit Patient Details">
-                                <i class="bi bi-pencil"></i> Edit
-                            </a>
-                            <a href="{% url 'patients:print' patient.id %}" target="_blank" class="btn-print-sm" title="Print OP Pass">
-                                <i class="bi bi-printer"></i> Print OP
-                            </a>
-                            <form method="post" action="{% url 'patients:delete' patient.id %}" onsubmit="return confirm('Are you sure you want to delete patient record {{ patient.name }} ({{ patient.patient_id }})?');" style="margin: 0;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn-danger-sm" title="Delete Patient Record">
-                                    <i class="bi bi-trash"></i> Delete
-                                </button>
-                            </form>
-                        </div>
-                    </td>
+                <tr class="patient-row"
+                    data-patient-id="{{ patient.patient_id }}"
+                    data-op-number="{{ patient.op_number|default:'' }}"
+                    data-patient-title="{{ patient.title }}"
+                    data-first-name="{{ patient.name }}"
+                    data-last-name=""
+                    data-patient-name="{{ patient.name }}"
+                    data-patient-type="{% if patient.patient_type == 'D' or patient.created_source == 'D' %}D{% else %}O{% endif %}"
+                    data-gender="{{ patient.gender }}"
+                    data-date-of-birth="{{ patient.dob|date:'Y-m-d'|default:'' }}"
+                    data-age="{{ patient.age_years }}"
+                    data-age-display="{{ patient.age_years }}"
+                    data-gender-age="{{ patient.gender }} / {{ patient.age_years }} Y"
+                    data-department="{% if patient.department_obj %}{{ patient.department_obj.name }}{% elif patient.department %}{{ patient.department }}{% else %}Not Assigned{% endif %}"
+                    data-mobile-number="{{ patient.mobile_no }}"
+                    data-alternate-phone="{{ patient.alternate_phone|default:'' }}"
+                    data-email="{{ patient.email|default:'' }}"
+                    data-address="{{ patient.street|default:'' }}"
+                    data-city="{{ patient.city }}"
+                    data-state="{{ patient.state }}"
+                    data-city-state="{{ patient.city }}, {{ patient.state }}"
+                    data-country="{{ patient.country }}"
+                    data-pincode="{{ patient.pincode|default:'' }}"
+                    data-blood-group="{{ patient.blood_group|default:'' }}"
+                    data-marital-status="{{ patient.marital_status|default:'' }}"
+                    data-guardian-title="{{ patient.guardian_title }}"
+                    data-guardian-name="{{ patient.guardian_name|default:'' }}"
+                    data-guardian-relation="{{ patient.guardian_relationship }}"
+                    data-guardian="{% if patient.guardian_name %}{{ patient.guardian_relationship }} {{ patient.guardian_name }}{% else %}-{% endif %}"
+                    data-guardian-phone="{{ patient.guardian_phone|default:'' }}"
+                    data-emergency-contact=""
+                    data-emergency-phone="{{ patient.emergency_contact_phone|default:'' }}"
+                    data-registration-date="{{ patient.registration_date|date:'Y-m-d' }}"
+                    data-patient-pk="{{ patient.id }}">
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="color: #64748b; font-size: 0.85rem; font-weight: 500;">
+            Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ filtered_patients }} entries
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <label style="font-size:0.82rem; color:#475569; font-weight:500; display:flex; align-items:center; gap:0.4rem;">Rows per page:
+                <select id="pageSizeSelect" onchange="changePageSize(this.value)" style="padding:0.22rem 0.45rem; border:1px solid #e2e8f0; border-radius:5px; font-size:0.8rem; background:#fff; color:#334155; font-family:inherit;">
+                    <option value="10" {% if page_obj.paginator.per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="25" {% if page_obj.paginator.per_page == 25 %}selected{% endif %}>25</option>
+                    <option value="50" {% if page_obj.paginator.per_page == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if page_obj.paginator.per_page == 100 %}selected{% endif %}>100</option>
+                </select>
+            </label>
+            <div style="display: flex; gap: 0.2rem;">
+                {% if page_obj.has_previous %}
+                <a href="?page=1&search={{ search }}&from_date={{ from_date }}&to_date={{ to_date }}&patient_type={{ patient_type }}&page_size={{ page_obj.paginator.per_page }}" class="btn btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.8rem; border-radius:5px;" title="First">&laquo;</a>
+                <a href="?page={{ page_obj.previous_page_number }}&search={{ search }}&from_date={{ from_date }}&to_date={{ to_date }}&patient_type={{ patient_type }}&page_size={{ page_obj.paginator.per_page }}" class="btn btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.8rem; border-radius:5px;" title="Previous">&lsaquo;</a>
+                {% else %}
+                <span class="btn btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.8rem; border-radius:5px; opacity:0.4; cursor:not-allowed;">&laquo;</span>
+                <span class="btn btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.8rem; border-radius:5px; opacity:0.4; cursor:not-allowed;">&lsaquo;</span>
+                {% endif %}
+
+                <span class="btn btn-primary" style="padding:0.25rem 0.6rem; font-size:0.8rem; border-radius:5px; background:var(--accent-blue); color:#fff; border-color:var(--accent-blue); font-weight:700; pointer-events:none;">
+                    {{ page_obj.number }}
+                </span>
+                <span style="padding:0.25rem 0.2rem; font-size:0.8rem; color:#64748b;">of {{ page_obj.paginator.num_pages }}</span>
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&search={{ search }}&from_date={{ from_date }}&to_date={{ to_date }}&patient_type={{ patient_type }}&page_size={{ page_obj.paginator.per_page }}" class="btn btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.8rem; border-radius:5px;" title="Next">&rsaquo;</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}&search={{ search }}&from_date={{ from_date }}&to_date={{ to_date }}&patient_type={{ patient_type }}&page_size={{ page_obj.paginator.per_page }}" class="btn btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.8rem; border-radius:5px;" title="Last">&raquo;</a>
+                {% else %}
+                <span class="btn btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.8rem; border-radius:5px; opacity:0.4; cursor:not-allowed;">&rsaquo;</span>
+                <span class="btn btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.8rem; border-radius:5px; opacity:0.4; cursor:not-allowed;">&raquo;</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     {% else %}
-    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
-        <i class="bi bi-person-exclamation" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
-        <p style="font-size: 1.1rem;">No registered patients found.</p>
-        <a href="{% url 'patients:add' %}" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">
-            <i class="bi bi-person-plus-fill"></i> Add Your First Patient
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted); background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1;">
+        <i class="bi bi-person-exclamation" style="font-size: 3rem; display: block; margin-bottom: 1rem; color: #94a3b8;"></i>
+        <p style="font-size: 1.1rem; font-weight: 600;">No patients found for the selected filter criteria.</p>
+        <a href="{% url 'patients:list' %}" class="btn btn-secondary" style="margin-top: 1rem; display: inline-block;">
+            <i class="bi bi-x-circle"></i> Clear Filters
         </a>
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const availableColumns = [
+        "Patient ID", "OP Number", "Patient Title", "First Name", "Last Name", "Patient Name", 
+        "Gender", "Date of Birth", "Age", "Age Display", "Gender / Age", "Department", "Mobile Number", "Alternate Phone", 
+        "Email", "Address", "City", "State", "City / State", "Country", "Pincode", "Blood Group", "Marital Status", 
+        "Guardian Title", "Guardian Name", "Guardian Relation", "Guardian", "Guardian Phone", 
+        "Emergency Contact", "Emergency Phone", "Registration Date", "Actions"
+    ];
+
+    const defaultColumns = [
+        "Patient ID", "OP Number", "Patient Name", "Gender / Age", "Department",
+        "Mobile Number", "City / State", "Guardian", "Registration Date", "Actions"
+    ];
+
+    let activeColumns = [...defaultColumns];
+
+    function initColumns() {
+        const saved = localStorage.getItem('vmmc_patient_cols');
+        if (saved) {
+            try {
+                activeColumns = JSON.parse(saved).filter(c => c !== 'Patient Type' && c !== 'Entry Type');
+            } catch(e){}
+        }
+        renderCheckboxes();
+        renderTable();
+    }
+
+    function renderCheckboxes() {
+        const container = document.getElementById('columnCheckboxes');
+        container.innerHTML = '';
+        availableColumns.forEach(col => {
+            const label = document.createElement('label');
+            label.style.display = 'flex';
+            label.style.alignItems = 'center';
+            label.style.gap = '0.5rem';
+            label.style.fontSize = '0.85rem';
+            label.style.cursor = 'pointer';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = col;
+            checkbox.checked = activeColumns.includes(col);
+            checkbox.onchange = (e) => {
+                if (e.target.checked) {
+                    activeColumns.push(col);
+                } else {
+                    activeColumns = activeColumns.filter(c => c !== col);
+                }
+                localStorage.setItem('vmmc_patient_cols', JSON.stringify(activeColumns));
+                renderTable();
+            };
+            
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(col));
+            container.appendChild(label);
+        });
+    }
+
+    function renderTable() {
+        // Headers
+        const headerRow = document.getElementById('tableHeader');
+        if (headerRow) {
+            headerRow.innerHTML = '';
+            // Render headers in order of availableColumns for consistency, but only active ones
+            availableColumns.forEach(col => {
+                if (activeColumns.includes(col)) {
+                    const th = document.createElement('th');
+                    th.textContent = col;
+                    headerRow.appendChild(th);
+                }
+            });
+        }
+        
+        // Rows
+        document.querySelectorAll('.patient-row').forEach(row => {
+            row.innerHTML = '';
+            availableColumns.forEach(col => {
+                if (activeColumns.includes(col)) {
+                    const td = document.createElement('td');
+                    if (col === 'Actions') {
+                        const pk = row.getAttribute('data-patient-pk');
+                        const name = row.getAttribute('data-patient-name');
+                        const pid = row.getAttribute('data-patient-id');
+                        
+                        let actionsHtml = '<div style="display: flex; align-items: center; gap: 0.4rem;">';
+                        
+                        {% if request.user|has_perm:'patients.patient_list.update' %}
+                        actionsHtml += `
+                            <a href="/patients/${pk}/edit/" class="btn-edit-sm" title="Edit Patient Details">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>`;
+                        {% endif %}
+                        
+                        {% if request.user|has_perm:'patients.patient_list.delete' %}
+                        const ptype = row.getAttribute('data-patient-type');
+                        if (ptype !== 'D') {
+                            actionsHtml += `
+                                <form method="post" action="/patients/${pk}/delete/" onsubmit="return confirm('Are you sure you want to delete patient record ${name} (${pid})?');" style="margin: 0;">
+                                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                                    <button type="submit" class="btn-danger-sm" title="Delete Patient Record">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </form>`;
+                        }
+                        {% endif %}
+                        
+                        actionsHtml += '</div>';
+                        td.innerHTML = actionsHtml;
+                    } else {
+                        // Data formatting
+                        const val = row.getAttribute('data-' + col.toLowerCase().replace(/ \/ /g, '-').replace(/ /g, '-'));
+                        if (col === 'Patient ID' || col === 'Registration Date') {
+                            td.innerHTML = `<strong>${val}</strong>`;
+                        } else {
+                            td.textContent = val || '-';
+                        }
+                    }
+                    row.appendChild(td);
+                }
+            });
+        });
+    }
+
+    function toggleColumnDropdown() {
+        const dropdown = document.getElementById('columnDropdown');
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function selectAllColumns(select) {
+        if (select) {
+            activeColumns = [...availableColumns];
+        } else {
+            activeColumns = [];
+        }
+        localStorage.setItem('vmmc_patient_cols', JSON.stringify(activeColumns));
+        renderCheckboxes();
+        renderTable();
+    }
+
+    function resetColumns() {
+        activeColumns = [...defaultColumns];
+        localStorage.setItem('vmmc_patient_cols', JSON.stringify(activeColumns));
+        renderCheckboxes();
+        renderTable();
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('columnDropdown');
+        if (dropdown && dropdown.style.display === 'block') {
+            if (!event.target.closest('#columnDropdown') && !event.target.closest('button[onclick="toggleColumnDropdown()"]')) {
+                dropdown.style.display = 'none';
+            }
+        }
+    });
+
+    function exportExcel() {
+        const form = document.getElementById('filterForm');
+        const url = new URL(form.action, window.location.origin);
+        
+        // Append form parameters
+        const formData = new FormData(form);
+        for (const [key, value] of formData.entries()) {
+            url.searchParams.append(key, value);
+        }
+        
+        // Append export param
+        url.searchParams.append('export', 'excel');
+        
+        // Append selected columns (exclude Actions)
+        const exportCols = activeColumns.filter(c => c !== 'Actions');
+        url.searchParams.append('columns', exportCols.join(','));
+        
+        window.location.href = url.toString();
+    }
+
+
+    
+    function changePageSize(size) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('page_size', size);
+        url.searchParams.set('page', '1'); // Reset to page 1 on size change
+        window.location.href = url.toString();
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', initColumns);
+</script>
 {% endblock %}

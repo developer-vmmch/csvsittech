@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Reference Range Grid | VMMC ERP{% endblock %}
+{% block page_heading %}{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/vmmc-select.css' %}">
+<style>
+    th, td {
+        vertical-align: middle;
+    }
+    .th-grouped {
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.5rem 1rem;
+    }
+</style>
+
+<div class="content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;">Reference Range Grid</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">Define reference ranges for parameters based on age group and gender</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <a href="{% url 'lab:reference_range_import' %}" class="btn btn-secondary">
+                <i class="bi bi-upload"></i> Import
+            </a>
+            <button class="btn btn-primary" style="background-color: var(--accent-green);" id="addReferenceRangeBtn">
+                <i class="bi bi-plus"></i> Add Reference Range
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card" style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem;">
+        <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 2; min-width: 250px;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Parameter <span style="color: var(--accent-red);">*</span></label>
+                <div id="filterParameterSelect"></div>
+            </div>
+            <div style="flex: 1.5; min-width: 200px;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Age Group <span style="color: var(--accent-red);">*</span></label>
+                <div id="filterAgeGroupSelect"></div>
+            </div>
+            <div style="flex: 1.5; min-width: 150px;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Gender <span style="color: var(--accent-red);">*</span></label>
+                <select class="form-select" id="filterGender">
+                    <option value="All">All</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" id="searchBtn" style="background-color: var(--accent-blue); height: 40px; margin-bottom: 1px;"><i class="bi bi-search"></i> Search</button>
+            <button class="btn btn-secondary" id="resetBtn" style="height: 40px; margin-bottom: 1px;"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+        </div>
+    </div>
+
+    <!-- Add / Edit Panel -->
+    <div class="card" style="margin-bottom: 2rem;" id="addEditCard">
+        <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1rem;">
+            <h3 style="color: var(--accent-blue); font-size: 1.1rem; font-weight: 600;">Add / Edit Reference Range</h3>
+        </div>
+        
+        <div>
+            <!-- ROW 1 -->
+            <div style="display: flex; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px;">
+                    <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Parameter <span style="color: var(--accent-red);">*</span></label>
+                    <div id="formParameterSelect"></div>
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Age Group <span style="color: var(--accent-red);">*</span></label>
+                    <div id="formAgeGroupSelect"></div>
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Gender <span style="color: var(--accent-red);">*</span></label>
+                    <select class="form-select" id="formGender">
+                        <option value="All">All</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- ROW 2 -->
+            <div style="display: flex; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px;">
+                    <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Unit</label>
+                    <input type="text" class="form-input" id="formUnit" placeholder="e.g. g/dL">
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Decimal Places</label>
+                    <input type="number" class="form-input" id="formDecimalPlaces" placeholder="0">
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Method</label>
+                    <select class="form-select" id="formMethod">
+                        <option value="">Select method</option>
+                        <option value="Photometric">Photometric</option>
+                        <option value="Manual">Manual</option>
+                        <option value="Automated">Automated</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- ROW 3 -->
+            <h6 style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 1rem;">Reference Range <span style="color: var(--accent-red);">*</span></h6>
+            <div style="display: flex; gap: 1.5rem; margin-bottom: 2rem; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Min Value <span style="color: var(--accent-red);">*</span></label>
+                    <input type="number" step="any" class="form-input" id="formMinValue" placeholder="0.0">
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="font-size: 0.85rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.4rem;">Max Value <span style="color: var(--accent-red);">*</span></label>
+                    <input type="number" step="any" class="form-input" id="formMaxValue" placeholder="0.0">
+                </div>
+                <div style="flex: 1; min-width: 200px;"></div> <!-- Empty space for 3 column alignment -->
+            </div>
+            
+            <div style="display: flex; gap: 1rem;">
+                <button id="saveBtn" class="btn btn-primary" style="background-color: var(--accent-green);">
+                    <i class="bi bi-hdd"></i> Save Reference Range
+                </button>
+                <button id="clearBtn" class="btn btn-secondary">
+                    <i class="bi bi-arrow-counterclockwise"></i> Clear
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- List Panel -->
+    <div class="card">
+        <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1rem;">
+            <h3 style="color: var(--accent-blue); font-size: 1.1rem; font-weight: 600;">Reference Range List</h3>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+            <div style="display: flex; gap: 0.5rem; flex: 1; min-width: 300px;">
+                <div style="position: relative; width: 100%; max-width: 400px;">
+                    <i class="bi bi-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                    <input type="text" class="form-input" id="listSearchBox" placeholder="Search parameter / age group..." style="padding-left: 35px; width: 100%;">
+                </div>
+            </div>
+            <button class="btn btn-secondary" id="exportBtn"><i class="bi bi-download"></i> Export</button>
+        </div>
+
+        <div class="table-responsive" style="border: 1px solid var(--border-color); border-radius: 8px;">
+            <table id="reference-range-table" style="min-width: 1100px;">
+                <thead>
+                    <tr>
+                        <th rowspan="2" style="width: 5%; text-align: center; border-right: 1px solid var(--border-color);">S.No</th>
+                        <th rowspan="2" style="width: 18%; border-right: 1px solid var(--border-color);">Parameter</th>
+                        <th rowspan="2" style="width: 15%; border-right: 1px solid var(--border-color);">Age Group</th>
+                        <th rowspan="2" style="width: 8%; border-right: 1px solid var(--border-color);">Gender</th>
+                        <th rowspan="2" style="width: 8%; border-right: 1px solid var(--border-color);">Unit</th>
+                        <th colspan="2" style="text-align: center; border-bottom: 1px solid var(--border-color); border-right: 1px solid var(--border-color); padding: 0.5rem 1rem;">Reference Range</th>
+                        <th rowspan="2" style="width: 12%; border-right: 1px solid var(--border-color);">Method</th>
+                        <th rowspan="2" style="width: 8%; text-align: center; border-right: 1px solid var(--border-color);">Decimal Places</th>
+                        <th rowspan="2" style="width: 8%; text-align: center; border-right: 1px solid var(--border-color);">Status</th>
+                        <th rowspan="2" style="width: 8%; text-align: center;">Action</th>
+                    </tr>
+                    <tr>
+                        <th style="text-align: center; border-right: 1px solid var(--border-color); background: #f8fafc; padding: 0.5rem;">Min Value</th>
+                        <th style="text-align: center; border-right: 1px solid var(--border-color); background: #f8fafc; padding: 0.5rem;">Max Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- JS will populate -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+            <span style="color: var(--text-muted); font-size: 0.85rem;" id="pagination-info">Showing 1 to 5 of 5 entries</span>
+            <div style="display: flex; gap: 0.25rem;">
+                <button class="btn-secondary" style="padding: 0.2rem 0.5rem; border-radius: 4px;" disabled><i class="bi bi-chevron-left"></i></button>
+                <button class="btn-primary" style="padding: 0.2rem 0.6rem; border-radius: 4px; background-color: var(--accent-blue);">1</button>
+                <button class="btn-secondary" style="padding: 0.2rem 0.6rem; border-radius: 4px;">2</button>
+                <button class="btn-secondary" style="padding: 0.2rem 0.6rem; border-radius: 4px;">3</button>
+                <span style="padding: 0.2rem 0.6rem; color: var(--text-muted);">...</span>
+                <button class="btn-secondary" style="padding: 0.2rem 0.6rem; border-radius: 4px;">10</button>
+                <button class="btn-secondary" style="padding: 0.2rem 0.5rem; border-radius: 4px;"><i class="bi bi-chevron-right"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/vmmc-select.js' %}"></script>
+<script>
+$(document).ready(function() {
+    let dummyData = [
+        { id: 1, parameter: "Hemoglobin (HB)", ageGroup: "Adult (18 - 59 Years)", gender: "All", unit: "g/dL", minVal: "13.0", maxVal: "17.0", method: "Photometric", decimalPlaces: "1", status: "Active" },
+        { id: 2, parameter: "Hemoglobin (HB)", ageGroup: "Adult (18 - 59 Years)", gender: "Male", unit: "g/dL", minVal: "14.0", maxVal: "18.0", method: "Photometric", decimalPlaces: "1", status: "Active" },
+        { id: 3, parameter: "Hemoglobin (HB)", ageGroup: "Adult (18 - 59 Years)", gender: "Female", unit: "g/dL", minVal: "12.0", maxVal: "16.0", method: "Photometric", decimalPlaces: "1", status: "Active" },
+        { id: 4, parameter: "Hemoglobin (HB)", ageGroup: "Child (1 - 17 Years)", gender: "All", unit: "g/dL", minVal: "11.0", maxVal: "15.0", method: "Photometric", decimalPlaces: "1", status: "Active" },
+        { id: 5, parameter: "Hemoglobin (HB)", ageGroup: "Infant (0 - 1 Years)", gender: "All", unit: "g/dL", minVal: "9.5", maxVal: "14.0", method: "Photometric", decimalPlaces: "1", status: "Active" }
+    ];
+
+    const fParamSelect = new VMMCSearchSelect('#filterParameterSelect', {
+        placeholder: 'Search parameter by name / code...',
+        searchUrl: "{% url 'lab:api_search_investigation' %}" // Assuming parameters can be searched here for now
+    });
+    
+    const fAgeSelect = new VMMCSearchSelect('#filterAgeGroupSelect', {
+        placeholder: 'Select age group',
+        searchUrl: "{% url 'lab:api_agegroup_search' %}"
+    });
+
+    const formParamSelect = new VMMCSearchSelect('#formParameterSelect', {
+        placeholder: 'Hemoglobin (HB)',
+        searchUrl: "{% url 'lab:api_search_investigation' %}"
+    });
+    
+    const formAgeSelect = new VMMCSearchSelect('#formAgeGroupSelect', {
+        placeholder: 'Adult (18 - 59 Years)',
+        searchUrl: "{% url 'lab:api_agegroup_search' %}"
+    });
+
+    function renderTable(dataToRender) {
+        const tbody = $('#reference-range-table tbody');
+        tbody.empty();
+        
+        if (dataToRender.length === 0) {
+            tbody.html('<tr><td colspan="11" style="text-align: center; padding: 2rem; color: var(--text-muted);">No reference ranges found.</td></tr>');
+            $('#pagination-info').text(`Showing 0 to 0 of 0 entries`);
+            return;
+        }
+
+        dataToRender.forEach((r, idx) => {
+            const tr = `
+                <tr>
+                    <td style="text-align: center;">${idx + 1}</td>
+                    <td>${r.parameter}</td>
+                    <td>${r.ageGroup}</td>
+                    <td>${r.gender}</td>
+                    <td>${r.unit}</td>
+                    <td style="text-align: right;">${r.minVal}</td>
+                    <td style="text-align: right;">${r.maxVal}</td>
+                    <td>${r.method}</td>
+                    <td style="text-align: center;">${r.decimalPlaces}</td>
+                    <td style="text-align: center;"><span class="badge badge-green">Active</span></td>
+                    <td style="text-align: center;">
+                        <button class="btn-edit-sm action-btn" onclick="editEntry(${r.id})" title="Edit" style="margin-right: 2px;">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn-danger-sm action-btn" onclick="deleteEntry(${r.id})" title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.append(tr);
+        });
+        
+        $('#pagination-info').text(`Showing 1 to ${dataToRender.length} of 50 entries`);
+    }
+
+    renderTable(dummyData);
+
+    $('#searchBtn').click(function() {
+        // Filter dummy data based on gender just to show it works
+        const g = $('#filterGender').val();
+        let filtered = dummyData;
+        if (g && g !== 'All') {
+            filtered = dummyData.filter(d => d.gender === g || (g === 'M' && d.gender === 'Male') || (g === 'F' && d.gender === 'Female'));
+        }
+        renderTable(filtered);
+    });
+
+    $('#resetBtn').click(function() {
+        fParamSelect.clear();
+        fAgeSelect.clear();
+        $('#filterGender').val('All');
+        $('#listSearchBox').val('');
+        renderTable(dummyData);
+    });
+    
+    $('#listSearchBox').on('keyup', function() {
+        const term = $(this).val().toLowerCase();
+        const filtered = dummyData.filter(d => 
+            d.parameter.toLowerCase().includes(term) || 
+            d.ageGroup.toLowerCase().includes(term) ||
+            d.gender.toLowerCase().includes(term)
+        );
+        renderTable(filtered);
+    });
+
+    $('#clearBtn').click(function() {
+        formParamSelect.clear();
+        formAgeSelect.clear();
+        $('#formGender').val('All');
+        $('#formUnit').val('');
+        $('#formDecimalPlaces').val('');
+        $('#formMethod').val('');
+        $('#formMinValue').val('');
+        $('#formMaxValue').val('');
+    });
+
+    $('#addReferenceRangeBtn').click(function() {
+        $('#clearBtn').click();
+        $('html, body').animate({
+            scrollTop: $("#addEditCard").offset().top - 100
+        }, 300);
+    });
+
+    $('#saveBtn').click(function() {
+        const minVal = parseFloat($('#formMinValue').val());
+        const maxVal = parseFloat($('#formMaxValue').val());
+        
+        if (!$('#formMinValue').val() || !$('#formMaxValue').val()) {
+            alert('Please fill in both Min Value and Max Value.');
+            return;
+        }
+        
+        if (minVal > maxVal) {
+            alert('Min Value cannot be greater than Max Value.');
+            return;
+        }
+        
+        alert('Reference range saved successfully!');
+        $('#clearBtn').click();
+    });
+
+    window.editEntry = function(id) {
+        const entry = dummyData.find(d => d.id === id);
+        if (entry) {
+            // Setup form values
+            $('#formGender').val(entry.gender);
+            $('#formUnit').val(entry.unit);
+            $('#formDecimalPlaces').val(entry.decimalPlaces);
+            $('#formMethod').val(entry.method);
+            $('#formMinValue').val(entry.minVal);
+            $('#formMaxValue').val(entry.maxVal);
+            
+            $('html, body').animate({
+                scrollTop: $("#addEditCard").offset().top - 100
+            }, 300);
+        }
+    };
+
+    window.deleteEntry = function(id) {
+        if(confirm('Are you sure you want to delete this reference range?')) {
+            dummyData = dummyData.filter(d => d.id !== id);
+            renderTable(dummyData);
+        }
+    };
+});
+</script>
+{% endblock %}

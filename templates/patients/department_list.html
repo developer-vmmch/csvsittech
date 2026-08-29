@@ -38,21 +38,9 @@
                     <td><strong>{{ dept.code }}</strong></td>
                     <td><strong style="color: var(--accent-blue);">{{ dept.name }}</strong></td>
                     <td>
-                        {% if dept.units.exists %}
-                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
-                            {% for unit in dept.units.all %}
-                                <div class="unit-badge-wrapper">
-                                    <span class="badge badge-purple" title="Head: {{ unit.head_doctor|default:'N/A' }}">{{ unit.unit_name }}</span>
-                                    <form method="post" action="{% url 'patients:unit_delete' unit.id %}" style="display: inline;" onsubmit="return confirm('Remove unit {{ unit.unit_name }}?');">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn-icon-delete" title="Delete Unit"><i class="bi bi-x-circle-fill"></i></button>
-                                    </form>
-                                </div>
-                            {% endfor %}
-                            </div>
-                        {% else %}
-                            <span style="color: var(--text-muted); font-size: 0.85rem;">No units mapped</span>
-                        {% endif %}
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span class="badge badge-gray">{{ dept.units.count }} Units</span>
+                        </div>
                     </td>
                     <td>
                         {% if dept.is_active %}
@@ -63,7 +51,11 @@
                     </td>
                     <td>
                         <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <a href="{% url 'patients:unit_add' %}?department={{ dept.id }}" class="action-link-add">+ Add Unit</a>
+                            <a href="{% url 'patients:department_edit' dept.id %}" class="btn-icon" title="Edit Department" style="color: var(--accent-blue);">
+                                <i class="bi bi-pencil-square"></i> Edit
+                            </a>
+                            <a href="{% url 'patients:unit_add' %}?department={{ dept.id }}" class="action-link-add" title="Add Unit">+ Add Unit</a>
+                            <!-- Soft delete or delete based on logic, leaving as delete for now -->
                             <form method="post" action="{% url 'patients:department_delete' dept.id %}" onsubmit="return confirm('Are you sure you want to delete department {{ dept.name }}?');" style="margin: 0;">
                                 {% csrf_token %}
                                 <button type="submit" class="btn-danger-sm" title="Delete Department">

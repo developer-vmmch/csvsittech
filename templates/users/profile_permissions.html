@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Profile Permissions Matrix | VMMCerp{% endblock %}
+{% block page_heading %}Profile Permissions Matrix{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">Profile Permissions Matrix</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; margin-bottom: 0;">Configure granular sub-module and action permissions for each profile.</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <a href="{% url 'users:roles_overview' %}" class="btn btn-secondary"><i class="bi bi-gear"></i> Manage Profiles</a>
+            <a href="{% url 'users:role_permissions' %}" class="btn btn-secondary"><i class="bi bi-grid-3x3-gap-fill"></i> Role Access Matrix</a>
+            <a href="{% url 'users:role_add' %}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Add Profile</a>
+        </div>
+    </div>
+
+    <!-- Profile Selector -->
+    <div style="background: #f8fafc; padding: 1.25rem; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;">
+        <label for="profileSelect" style="font-weight: 600; color: #334155;">Select Profile:</label>
+        <select id="profileSelect" class="form-select" style="max-width: 300px;" onchange="window.location.href='?role='+this.value">
+            {% for role in roles %}
+                <option value="{{ role.code }}" {% if role.code == selected_role %}selected{% endif %} {% if role.code == 'ADMIN' %}disabled{% endif %}>
+                    {{ role.label }} {% if role.code == 'ADMIN' %}(Super Admin - All Access){% endif %}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <form method="post" id="permissionsForm">
+        {% csrf_token %}
+        <input type="hidden" name="role" value="{{ selected_role }}">
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+            <div style="flex: 1; min-width: 250px;">
+                <input type="text" id="searchInput" class="form-input" placeholder="Search Module / Sub-Module..." style="width: 100%; max-width: 400px;" onkeyup="filterModules()">
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="btn btn-secondary" onclick="selectAll()">Select All</button>
+                <button type="button" class="btn btn-secondary" onclick="clearAll()">Clear All</button>
+                <button type="reset" class="btn btn-secondary" onclick="setTimeout(setupDependencies, 50)">Reset</button>
+            </div>
+        </div>
+
+        <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+            <table class="table" style="width: 100%; text-align: left; border-collapse: collapse;">
+                <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                    <tr>
+                        <th style="padding: 1rem; border-bottom: 2px solid #e2e8f0; width: 30%;">Module / Sub-Module</th>
+                        <th style="padding: 1rem; border-bottom: 2px solid #e2e8f0; text-align: center;">View</th>
+                        <th style="padding: 1rem; border-bottom: 2px solid #e2e8f0; text-align: center;">Add/Create</th>
+                        <th style="padding: 1rem; border-bottom: 2px solid #e2e8f0; text-align: center;">Edit/Update</th>
+                        <th style="padding: 1rem; border-bottom: 2px solid #e2e8f0; text-align: center;">Cancel</th>
+                        <th style="padding: 1rem; border-bottom: 2px solid #e2e8f0; text-align: center;">Delete</th>
+                        <th style="padding: 1rem; border-bottom: 2px solid #e2e8f0; text-align: center;">Export</th>
+                    </tr>
+                </thead>
+                {% for module in modules %}
+                <tbody class="module-group">
+                    <!-- Module Header Row (Dummy Checkboxes) -->
+                    <tr class="module-header-row" style="background: #f1f5f9; font-weight: bold;">
+                        <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; color: #334155;">
+                                <input type="checkbox" onchange="toggleModule(this, '{{ module.module }}')" style="transform: scale(1.1); cursor: pointer;" title="Select/Deselect All in {{ module.label }}">
+                                <i class="bi bi-folder2-open" style="color: #64748b;"></i> {{ module.label }}
+                            </div>
+                        </td>
+                        {% for action in actions_list %}
+                        <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                            <input type="checkbox" 
+                                   class="dummy-cb dummy-mod-{{ module.module }}"
+                                   onchange="toggleModuleAction('{{ module.module }}', '{{ action }}', this.checked)"
+                                   style="transform: scale(1.1); cursor: pointer; opacity: 0.8;"
+                                   title="Select/Deselect all {{ action }} for {{ module.label }}">
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <!-- Sub-Modules -->
+                    {% for sub in module.sub_modules %}
+                    <tr class="perm-row" data-search="{{ module.label|lower }} {{ sub.label|lower }}">
+                        <td style="padding: 0.75rem 1rem; padding-left: 2.5rem; border-bottom: 1px solid #e2e8f0; background: #fff;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="bi bi-arrow-return-right" style="color: #94a3b8; font-size: 0.85rem;"></i> {{ sub.label }}
+                            </div>
+                        </td>
+                        {% for action in actions_list %}
+                        <td style="padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid #e2e8f0; background: #fff;">
+                            {% if action in sub.actions %}
+                                <input type="checkbox" 
+                                       name="perm_{{ sub.code }}.{{ action }}" 
+                                       id="chk_{{ sub.code|slugify }}_{{ action }}"
+                                       class="perm-cb mod-{{ module.module }} sub-{{ sub.code|slugify }} action-{{ action }}"
+                                       data-sub="{{ sub.code|slugify }}"
+                                       data-action="{{ action }}"
+                                       style="transform: scale(1.2); cursor: pointer;"
+                                       {% for k, v in current_perms.items %}
+                                           {% if k == sub.code|add:"."|add:action and v %}checked{% endif %}
+                                       {% endfor %}
+                                >
+                            {% else %}
+                                <span style="color: #cbd5e1;">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                {% endfor %}
+            </table>
+        </div>
+
+        <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1rem;">
+                <i class="bi bi-save"></i> Save Permissions
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filterModules() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        
+        document.querySelectorAll('.module-group').forEach(group => {
+            let hasVisible = false;
+            group.querySelectorAll('.perm-row').forEach(row => {
+                const text = row.getAttribute('data-search');
+                if (text.includes(query)) {
+                    row.style.display = '';
+                    hasVisible = true;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            const header = group.querySelector('.module-header-row');
+            if (header) {
+                header.style.display = hasVisible ? '' : 'none';
+            }
+        });
+    }
+
+    function selectAll() {
+        document.querySelectorAll('.perm-cb').forEach(cb => { cb.checked = true; triggerChange(cb); });
+        document.querySelectorAll('.dummy-cb').forEach(cb => cb.checked = true);
+        document.querySelectorAll('input[type="checkbox"][onchange^="toggleModule"]').forEach(cb => cb.checked = true);
+    }
+
+    function clearAll() {
+        document.querySelectorAll('.perm-cb').forEach(cb => { cb.checked = false; triggerChange(cb); });
+        document.querySelectorAll('.dummy-cb').forEach(cb => cb.checked = false);
+        document.querySelectorAll('input[type="checkbox"][onchange^="toggleModule"]').forEach(cb => cb.checked = false);
+    }
+
+    function toggleModule(masterCheckbox, moduleClass) {
+        document.querySelectorAll(`.mod-${moduleClass}`).forEach(cb => {
+            cb.checked = masterCheckbox.checked;
+            triggerChange(cb);
+        });
+        document.querySelectorAll(`.dummy-mod-${moduleClass}`).forEach(cb => {
+            cb.checked = masterCheckbox.checked;
+        });
+    }
+    
+    function toggleModuleAction(moduleClass, action, isChecked) {
+        document.querySelectorAll(`.mod-${moduleClass}.action-${action}`).forEach(cb => {
+            cb.checked = isChecked;
+            triggerChange(cb);
+        });
+    }
+    
+    function triggerChange(element) {
+        const event = new Event('change', { bubbles: true });
+        element.dispatchEvent(event);
+    }
+
+    function setupDependencies() {
+        document.querySelectorAll('.perm-cb').forEach(cb => {
+            cb.addEventListener('change', function() {
+                const sub = this.getAttribute('data-sub');
+                const action = this.getAttribute('data-action');
+                
+                // If checking create/update/delete/export, auto-check view
+                if (this.checked && ['create', 'update', 'delete', 'export'].includes(action)) {
+                    const viewCb = document.querySelector(`.sub-${sub}.action-view`);
+                    if (viewCb && !viewCb.checked) {
+                        viewCb.checked = true;
+                        triggerChange(viewCb); // cascade triggers if needed
+                    }
+                }
+                
+                // If unchecking view, auto-uncheck others
+                if (!this.checked && action === 'view') {
+                    ['create', 'update', 'delete', 'export', 'cancel'].forEach(act => {
+                        const otherCb = document.querySelector(`.sub-${sub}.action-${act}`);
+                        if (otherCb && otherCb.checked) {
+                            otherCb.checked = false;
+                        }
+                    });
+                }
+            });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', setupDependencies);
+</script>
+{% endblock %}

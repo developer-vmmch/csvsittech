@@ -1,0 +1,548 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Diagnosis–Investigation Age Mapping | VMMC ERP{% endblock %}
+{% block page_heading %}{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/vmmc-select.css' %}">
+<style>
+    .empty-state-icon-wrapper {
+        width: 80px; height: 80px; border-radius: 50%;
+        background-color: #eff6ff; display: flex;
+        align-items: center; justify-content: center;
+        margin: 0 auto 1rem;
+    }
+    .empty-state-icon { font-size: 2.5rem; color: var(--accent-blue); }
+</style>
+
+<div class="content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <div>
+            <h2 style="font-size:1.5rem;font-weight:700;color:var(--text-main);margin-bottom:0.25rem;">Diagnosis–Investigation Age Mapping</h2>
+            <p style="color:var(--text-muted);font-size:0.9rem;margin:0;">Map investigations to diagnosis based on age group</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <a href="{% url 'lab:diagnosis_investigation_map_import' %}" class="btn btn-secondary">
+                <i class="bi bi-upload"></i> Import
+            </a>
+            <button class="btn btn-primary" style="background-color:var(--accent-green);" id="addMappingBtn">
+                <i class="bi bi-plus"></i> Add Mapping
+            </button>
+        </div>
+    </div>
+
+    <!-- Add / Edit Panel -->
+    <div class="card" style="margin-bottom:2rem;">
+        <div class="card-header" style="border-bottom:1px solid var(--border-color);padding-bottom:1rem;margin-bottom:1rem;">
+            <h3 style="color:var(--accent-blue);font-size:1.1rem;font-weight:600;">Add / Edit Mapping</h3>
+        </div>
+        <div>
+            <div style="display:flex;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+                <div style="flex:2;min-width:250px;">
+                    <label style="font-size:0.85rem;font-weight:600;color:#334155;display:block;margin-bottom:0.4rem;">Diagnosis <span style="color:var(--accent-red);">*</span></label>
+                    <div id="diagnosisSelect"></div>
+                </div>
+                <div style="flex:1.5;min-width:200px;">
+                    <label style="font-size:0.85rem;font-weight:600;color:#334155;display:block;margin-bottom:0.4rem;">Age Group <span style="color:var(--accent-red);">*</span></label>
+                    <div id="ageGroupSelect"></div>
+                </div>
+                <div style="flex:1.5;min-width:200px;">
+                    <label style="font-size:0.85rem;font-weight:600;color:#334155;display:block;margin-bottom:0.4rem;">Age Range</label>
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <input type="text" id="ageRangeMin" class="form-input" style="background:#f8fafc;width:60px;text-align:center;" placeholder="--" readonly>
+                        <span style="color:var(--text-muted);">-</span>
+                        <input type="text" id="ageRangeMax" class="form-input" style="background:#f8fafc;width:60px;text-align:center;" placeholder="--" readonly>
+                        <input type="text" id="ageRangeUnit" class="form-input" style="background:#f8fafc;width:80px;" placeholder="Years" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:1.5rem;margin-bottom:2rem;align-items:flex-end;flex-wrap:wrap;">
+                <div style="flex:1;min-width:300px;">
+                    <label style="font-size:0.85rem;font-weight:600;color:#334155;display:block;margin-bottom:0.4rem;">Investigation <span style="color:var(--accent-red);">*</span></label>
+                    <div id="investigationSelect"></div>
+                </div>
+                <button type="button" class="btn btn-primary" id="addInvestigationBtn" style="background-color:var(--accent-green);height:40px;margin-bottom:2px;" disabled>
+                    <i class="bi bi-plus"></i> Add Investigation
+                </button>
+            </div>
+
+            <h6 style="font-size:0.95rem;font-weight:600;color:var(--text-main);margin-bottom:1rem;">Selected Investigations (<span id="invCount">0</span>)</h6>
+
+            <div class="table-responsive" style="border:1px solid var(--border-color);border-radius:8px;margin-bottom:1.5rem;">
+                <table id="investigations-table">
+                    <thead>
+                        <tr>
+                            <th style="width:5%;">S.No</th>
+                            <th style="width:30%;">Investigation Name</th>
+                            <th style="width:20%;">Code</th>
+                            <th style="width:25%;">Sample Type</th>
+                            <th style="width:10%;text-align:center;">Active</th>
+                            <th style="width:10%;text-align:center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inv-tbody">
+                        <tr id="no-inv-row">
+                            <td colspan="6" style="text-align:center;padding:3rem 1rem;">
+                                <div class="empty-state-icon-wrapper"><i class="bi bi-file-medical empty-state-icon"></i></div>
+                                <h5 style="color:var(--text-main);font-weight:600;margin-bottom:0.25rem;">No investigations added yet.</h5>
+                                <p style="color:var(--text-muted);font-size:0.9rem;margin:0;">Search and add investigations to map to the selected diagnosis.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display:flex;gap:1rem;">
+                <button id="saveMappingBtn" class="btn btn-primary" style="background-color:var(--accent-green);" disabled>
+                    <i class="bi bi-hdd"></i> Save Mapping
+                </button>
+                <button id="clearFormBtn" class="btn btn-secondary">
+                    <i class="bi bi-arrow-counterclockwise"></i> Clear
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- List Panel -->
+    <div class="card">
+        <div class="card-header" style="border-bottom:1px solid var(--border-color);padding-bottom:1rem;margin-bottom:1rem;">
+            <h3 style="color:var(--accent-blue);font-size:1.1rem;font-weight:600;">Mapping List</h3>
+        </div>
+        <div>
+            <div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+                <input type="text" class="form-input" id="searchBox" placeholder="Search diagnosis / investigation / code..." style="flex:2;min-width:200px;">
+                <div style="flex:2;min-width:200px;" id="filterDiagnosis"></div>
+                <div style="flex:1.5;min-width:150px;" id="filterAgeGroup"></div>
+                <select class="form-select" id="filterStatus" style="flex:1;min-width:120px;">
+                    <option value="">All Status</option>
+                    <option value="1">Active</option>
+                    <option value="0">Inactive</option>
+                </select>
+                <button class="btn btn-primary" id="searchBtn" style="background-color:var(--accent-blue);"><i class="bi bi-search"></i> Search</button>
+                <button class="btn btn-secondary" id="resetBtn"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+                <button class="btn btn-secondary" id="exportBtn"><i class="bi bi-download"></i> Export</button>
+            </div>
+
+            <div class="table-responsive" style="border:1px solid var(--border-color);border-radius:8px;">
+                <table id="mapping-list-table">
+                    <thead>
+                        <tr>
+                            <th style="width:5%;">S.No</th>
+                            <th style="width:15%;">Diagnosis</th>
+                            <th style="width:10%;">Age Group</th>
+                            <th style="width:15%;">Age Range</th>
+                            <th style="width:30%;">Investigations</th>
+                            <th style="width:10%;text-align:center;">Count</th>
+                            <th style="width:8%;text-align:center;">Status</th>
+                            <th style="width:7%;text-align:center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mapping-tbody">
+                        <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="padding-top:1rem; margin-top:1rem; border-top:1px solid var(--border-color);" id="mapping-pagination"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/vmmc-select.js' %}"></script>
+<script src="{% static 'js/vmmc-pagination.js' %}"></script>
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+let currentInvestigations = [];
+let selectedDiagnosis = null;   // { id, text, code }
+let selectedAgeGroup  = null;   // { id, text, min_age, max_age, min_age_unit_display }
+let selectedInvestigation = null; // { id, text, code, sample }
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function getCookie(name) {
+    let v = null;
+    if (document.cookie) {
+        document.cookie.split(';').forEach(c => {
+            c = c.trim();
+            if (c.startsWith(name + '=')) v = decodeURIComponent(c.slice(name.length + 1));
+        });
+    }
+    return v;
+}
+
+function checkEnableAddInvestigation() {
+    const ready = selectedDiagnosis && selectedAgeGroup && selectedInvestigation;
+    document.getElementById('addInvestigationBtn').disabled = !ready;
+}
+
+function checkEnableSave() {
+    document.getElementById('saveMappingBtn').disabled = !(selectedDiagnosis && selectedAgeGroup && currentInvestigations.length > 0);
+}
+
+function emptyTableRow() {
+    return `<tr id="no-inv-row">
+        <td colspan="6" style="text-align:center;padding:3rem 1rem;">
+            <div class="empty-state-icon-wrapper"><i class="bi bi-file-medical empty-state-icon"></i></div>
+            <h5 style="color:var(--text-main);font-weight:600;margin-bottom:0.25rem;">No investigations added yet.</h5>
+            <p style="color:var(--text-muted);font-size:0.9rem;margin:0;">Search and add investigations to map to the selected diagnosis.</p>
+        </td></tr>`;
+}
+
+// ─── Render selected-investigations table ────────────────────────────────────
+function renderInvTable() {
+    const tbody = document.getElementById('inv-tbody');
+    document.getElementById('invCount').textContent = currentInvestigations.length;
+    if (currentInvestigations.length === 0) {
+        tbody.innerHTML = emptyTableRow();
+        checkEnableSave();
+        return;
+    }
+    tbody.innerHTML = currentInvestigations.map((inv, i) => `
+        <tr data-inv-id="${inv.investigation_id}">
+            <td>${i + 1}</td>
+            <td style="font-weight:500;">${inv.investigation_name}</td>
+            <td>${inv.investigation_code || '-'}</td>
+            <td>${inv.sample_type || 'Not Specified'}</td>
+            <td style="text-align:center;"><span class="badge badge-green"><i class="bi bi-check-circle-fill"></i> Active</span></td>
+            <td style="text-align:center;">
+                <button class="btn-danger-sm action-btn remove-inv-btn" title="Remove"><i class="bi bi-trash"></i></button>
+            </td>
+        </tr>`).join('');
+
+    tbody.querySelectorAll('.remove-inv-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.closest('tr').dataset.invId;
+            currentInvestigations = currentInvestigations.filter(i => String(i.investigation_id) !== String(id));
+            renderInvTable();
+        });
+    });
+    checkEnableSave();
+}
+
+// ─── Load existing mapping when diag+age selected ───────────────────────────
+function fetchExistingMapping() {
+    if (!selectedDiagnosis || !selectedAgeGroup) {
+        currentInvestigations = [];
+        renderInvTable();
+        return;
+    }
+    fetch(`{% url 'lab:api_diagnosis_investigation_map_detail' %}?diagnosis_id=${selectedDiagnosis.id}&age_group_id=${selectedAgeGroup.id}`)
+        .then(r => r.json())
+        .then(res => {
+            if (res.status === 'success') {
+                currentInvestigations = res.data.map(d => ({
+                    investigation_id: d.investigation_id,
+                    investigation_name: d.investigation_name,
+                    investigation_code: d.investigation_code,
+                    sample_type: d.sample_type,
+                    is_active: d.is_active
+                }));
+            } else {
+                currentInvestigations = [];
+            }
+            renderInvTable();
+        })
+        .catch(() => { currentInvestigations = []; renderInvTable(); });
+}
+
+// ─── VMMCSearchSelect instances ──────────────────────────────────────────────
+const diagSelect = new VMMCSearchSelect('#diagnosisSelect', {
+    url: "{% url 'lab:api_search_diagnosis' %}",
+    placeholder: 'Search diagnosis by name / ICD code...',
+    renderMain: item => item.text || item.name || '',
+    renderSub: item => item.code || '',
+    onSelect: function(item) {
+        selectedDiagnosis = item;
+        checkEnableAddInvestigation();
+        fetchExistingMapping();
+    },
+    onClear: function() {
+        selectedDiagnosis = null;
+        checkEnableAddInvestigation();
+        currentInvestigations = [];
+        renderInvTable();
+    }
+});
+
+const ageGroupSelect = new VMMCSearchSelect('#ageGroupSelect', {
+    url: "{% url 'lab:api_agegroup_search' %}",
+    placeholder: 'Select age group',
+    renderMain: item => item.text || '',
+    renderSub: item => (item.min_age !== '' && item.max_age !== '') ? `${item.min_age} – ${item.max_age} ${item.min_age_unit_display || ''}` : '',
+    onSelect: function(item) {
+        selectedAgeGroup = item;
+        document.getElementById('ageRangeMin').value  = item.min_age !== undefined ? item.min_age : '';
+        document.getElementById('ageRangeMax').value  = item.max_age !== undefined ? item.max_age : '';
+        document.getElementById('ageRangeUnit').value = item.min_age_unit_display || '';
+        checkEnableAddInvestigation();
+        fetchExistingMapping();
+    },
+    onClear: function() {
+        selectedAgeGroup = null;
+        document.getElementById('ageRangeMin').value  = '';
+        document.getElementById('ageRangeMax').value  = '';
+        document.getElementById('ageRangeUnit').value = '';
+        checkEnableAddInvestigation();
+        currentInvestigations = [];
+        renderInvTable();
+    }
+});
+
+const invSelect = new VMMCSearchSelect('#investigationSelect', {
+    url: "{% url 'lab:api_search_investigation' %}",
+    placeholder: 'Search investigation by name / code...',
+    renderMain: item => item.text || item.name || '',
+    renderSub: item => item.code || '',
+    onSelect: function(item) {
+        selectedInvestigation = item;
+        checkEnableAddInvestigation();
+    },
+    onClear: function() {
+        selectedInvestigation = null;
+        checkEnableAddInvestigation();
+    }
+});
+
+// Filter selects
+const fDiagSelect = new VMMCSearchSelect('#filterDiagnosis', {
+    url: "{% url 'lab:api_search_diagnosis' %}",
+    placeholder: 'All Diagnosis',
+    renderMain: item => item.text || '',
+    renderSub: item => item.code || ''
+});
+
+const fAgeSelect = new VMMCSearchSelect('#filterAgeGroup', {
+    url: "{% url 'lab:api_agegroup_search' %}",
+    placeholder: 'All Age Groups',
+    renderMain: item => item.text || ''
+});
+
+// ─── Add Investigation ────────────────────────────────────────────────────────
+document.getElementById('addInvestigationBtn').addEventListener('click', function() {
+    if (!selectedDiagnosis) { alert('Please select a Diagnosis first.'); return; }
+    if (!selectedAgeGroup)  { alert('Please select an Age Group first.'); return; }
+    if (!selectedInvestigation) { alert('Please select an Investigation.'); return; }
+
+    const inv = selectedInvestigation;
+    if (currentInvestigations.some(i => String(i.investigation_id) === String(inv.id))) {
+        alert('This investigation is already added.');
+        return;
+    }
+    currentInvestigations.push({
+        investigation_id:   inv.id,
+        investigation_name: inv.text || inv.name || '',
+        investigation_code: inv.code || '-',
+        sample_type:        inv.sample || 'Not Specified',
+        is_active: true
+    });
+    selectedInvestigation = null;
+    invSelect.clear();
+    renderInvTable();
+});
+
+// ─── Clear Form ──────────────────────────────────────────────────────────────
+function clearForm() {
+    selectedDiagnosis = null;
+    selectedAgeGroup  = null;
+    selectedInvestigation = null;
+    currentInvestigations = [];
+    diagSelect.clear();
+    ageGroupSelect.clear();
+    invSelect.clear();
+    document.getElementById('ageRangeMin').value  = '';
+    document.getElementById('ageRangeMax').value  = '';
+    document.getElementById('ageRangeUnit').value = '';
+    renderInvTable();
+    checkEnableAddInvestigation();
+}
+
+document.getElementById('clearFormBtn').addEventListener('click', clearForm);
+document.getElementById('addMappingBtn').addEventListener('click', clearForm);
+
+// ─── Save Mapping ────────────────────────────────────────────────────────────
+document.getElementById('saveMappingBtn').addEventListener('click', function() {
+    if (!selectedDiagnosis || !selectedAgeGroup) { alert('Diagnosis and Age Group are required.'); return; }
+    if (currentInvestigations.length === 0) { alert('Please add at least one investigation.'); return; }
+
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span style="font-size:0.85em;">Saving...</span>';
+
+    fetch("{% url 'lab:api_diagnosis_investigation_map_save' %}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({
+            diagnosis_id: selectedDiagnosis.id,
+            age_group_id: selectedAgeGroup.id,
+            investigations: currentInvestigations
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-hdd"></i> Save Mapping';
+        if (res.status === 'success') {
+            clearForm();
+            loadMappingList();
+        } else {
+            alert(res.message || 'Failed to save.');
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-hdd"></i> Save Mapping';
+        alert('Server error. Please try again.');
+    });
+});
+
+// ─── Mapping List with Pagination ───────────────────────────────────────────
+let _allMappings = [];
+const mappingPg = new VMMCPagination({
+    containerId: 'mapping-pagination',
+    defaultPageSize: 25,
+    storageKey: 'vmmc_pg_di_mapping',
+    onPageChange: () => renderMappingPage()
+});
+
+function renderMappingPage() {
+    const tbody = document.getElementById('mapping-tbody');
+    tbody.innerHTML = '';
+    if (_allMappings.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">No mappings found.</td></tr>';
+        mappingPg.setTotal(0);
+        mappingPg.render();
+        return;
+    }
+    const page = mappingPg.slice(_allMappings);
+    page.forEach((r, i) => {
+        const idx = mappingPg.startRecord - 1 + i;
+        const badge = r.is_active
+            ? '<span class="badge badge-green"><i class="bi bi-check-circle-fill"></i> Active</span>'
+            : '<span class="badge badge-yellow">Inactive</span>';
+        const diagSafe = (r.diagnosis_name || '').replace(/'/g, "\\'" );
+        const ageSafe  = (r.age_group_name || '').replace(/'/g, "\\'" );
+        tbody.innerHTML += `
+        <tr>
+            <td>${idx + 1}</td>
+            <td style="font-weight:500;">${r.diagnosis_name}</td>
+            <td>${r.age_group_name}</td>
+            <td>${r.age_range}</td>
+            <td><div style="max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${r.investigation_names || ''}">${r.investigation_names || '—'}</div></td>
+            <td style="text-align:center;"><span class="badge badge-blue">${r.investigation_count}</span></td>
+            <td style="text-align:center;">${badge}</td>
+            <td style="text-align:center;">
+                <button class="btn-edit-sm action-btn" style="margin-right:2px;"
+                    onclick="editMapping('${r.diagnosis_id}','${diagSafe}','${r.age_group_id}','${ageSafe}')">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn-danger-sm action-btn"
+                    onclick="deleteMapping('${r.diagnosis_id}','${r.age_group_id}')">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>`;
+    });
+    mappingPg.setTotal(_allMappings.length);
+    mappingPg.render();
+}
+
+function buildListUrl() {
+    let url = "{% url 'lab:api_diagnosis_investigation_map_list' %}?";
+    if (fDiagSelect.selectedItem) url += `&diagnosis_id=${fDiagSelect.selectedItem.id}`;
+    if (fAgeSelect.selectedItem)  url += `&age_group_id=${fAgeSelect.selectedItem.id}`;
+    const status = document.getElementById('filterStatus').value;
+    const q = document.getElementById('searchBox').value.trim();
+    if (status) url += `&status=${status}`;
+    if (q)      url += `&q=${encodeURIComponent(q)}`;
+    return url;
+}
+
+function loadMappingList() {
+    const tbody = document.getElementById('mapping-tbody');
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">Loading...</td></tr>';
+
+    fetch(buildListUrl())
+        .then(r => r.json())
+        .then(res => {
+            _allMappings = (res.mappings && res.mappings.length) ? res.mappings : [];
+            mappingPg.reset();
+        })
+        .catch(() => {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--accent-red);">Failed to load data.</td></tr>';
+        });
+}
+
+// ─── Edit & Delete ────────────────────────────────────────────────────────────
+function editMapping(diagId, diagName, ageId, ageName) {
+    clearForm();
+    // pre-set state so fetchExistingMapping works
+    selectedDiagnosis = { id: diagId, text: diagName };
+    selectedAgeGroup  = { id: ageId,  text: ageName  };
+    diagSelect.setValue(diagId, diagName);
+    ageGroupSelect.setValue(ageId, ageName);
+    fetchExistingMapping();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteMapping(diagId, ageId) {
+    if (!confirm('Delete all investigation mappings for this Diagnosis + Age Group?')) return;
+    fetch("{% url 'lab:api_diagnosis_investigation_map_delete' %}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ diagnosis_id: diagId, age_group_id: ageId })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.status === 'success') {
+            if (selectedDiagnosis && String(selectedDiagnosis.id) === String(diagId) &&
+                selectedAgeGroup  && String(selectedAgeGroup.id)  === String(ageId)) {
+                clearForm();
+            }
+            loadMappingList();
+        } else { alert(res.message || 'Delete failed.'); }
+    })
+    .catch(() => alert('Server error.'));
+}
+
+// ─── Filters / Search / Export ───────────────────────────────────────────────
+document.getElementById('searchBtn').addEventListener('click', loadMappingList);
+
+document.getElementById('resetBtn').addEventListener('click', function() {
+    fDiagSelect.clear();
+    fAgeSelect.clear();
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('searchBox').value = '';
+    loadMappingList();
+});
+
+document.getElementById('exportBtn').addEventListener('click', function() {
+    const btn = this;
+    btn.innerHTML = '<i class="bi bi-hourglass"></i> Exporting...';
+    btn.disabled = true;
+    fetch(buildListUrl())
+        .then(r => r.json())
+        .then(res => {
+            btn.innerHTML = '<i class="bi bi-download"></i> Export';
+            btn.disabled = false;
+            if (!res.mappings || !res.mappings.length) { alert('No data to export.'); return; }
+            let csv = 'S.No,Diagnosis,Age Group,Age Range,Investigations,Count,Status\n';
+            res.mappings.forEach((r, i) => {
+                csv += `${i+1},"${r.diagnosis_name}","${r.age_group_name}","${r.age_range}","${r.investigation_names}",${r.investigation_count},${r.is_active ? 'Active' : 'Inactive'}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'diagnosis_investigation_mapping.csv';
+            a.click();
+        })
+        .catch(() => { btn.innerHTML = '<i class="bi bi-download"></i> Export'; btn.disabled = false; alert('Export failed.'); });
+});
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+renderInvTable();
+loadMappingList();
+</script>
+{% endblock %}

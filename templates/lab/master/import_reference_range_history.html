@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Reference Range Import History | VMMCerp{% endblock %}
+{% block page_heading %}Reference Range Import History{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header-action" style="margin-bottom: 1.5rem; display:flex; justify-content: space-between; align-items:center;">
+        <div>
+            <h2 class="panel-title">Import History</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Log of past reference range file imports.</p>
+        </div>
+        <div>
+            <a href="{% url 'lab:reference_range_import' %}" class="btn btn-primary">
+                <i class="bi bi-cloud-arrow-up"></i> New Import
+            </a>
+            <a href="{% url 'lab:reference_range_grid' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Master
+            </a>
+        </div>
+    </div>
+
+    {% if histories %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Import ID</th>
+                    <th>File Name</th>
+                    <th>Uploaded By</th>
+                    <th>Date</th>
+                    <th>Total Rows</th>
+                    <th>Imported</th>
+                    <th>Updated</th>
+                    <th>Failed/Skipped</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hist in histories %}
+                <tr>
+                    <td><strong>#{{ hist.id }}</strong></td>
+                    <td><i class="bi bi-file-earmark-excel" style="color: var(--accent-blue);"></i> {{ hist.file_name }}</td>
+                    <td>{{ hist.uploaded_by.username|default:"System" }}</td>
+                    <td>{{ hist.created_at|date:"Y-m-d H:i" }}</td>
+                    <td>{{ hist.total_records }}</td>
+                    <td style="color: #166534; font-weight: 600;">{{ hist.imported }}</td>
+                    <td style="color: var(--accent-blue);">{{ hist.updated }}</td>
+                    <td style="color: #991b1b;">{{ hist.failed }}</td>
+                    <td>
+                        <span class="badge badge-green">{{ hist.status }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        <i class="bi bi-clock-history" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+        <p style="font-size: 1.1rem;">No import history found.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

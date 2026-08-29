@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Parameter Master | VMMCerp{% endblock %}
+{% block page_heading %}Lab Parameter Master{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">Investigation Parameter Master</h2>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; display: flex; gap: 1rem;">
+                <span id="total-count-badge">Total Entries: <i class="spinner-border spinner-border-sm"></i></span>
+                <span id="active-count-badge">Active: <i class="spinner-border spinner-border-sm"></i></span>
+                <span id="inactive-count-badge">Inactive: <i class="spinner-border spinner-border-sm"></i></span>
+                <span id="filtered-count-badge" style="color: var(--accent-blue); font-weight: bold; display: none;">Filtered Results: 0</span>
+            </div>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <input type="text" id="searchInput" placeholder="Search parameters..." class="form-control" style="width: 250px;">
+            <a href="{% url 'lab:parameter_import' %}" class="btn btn-secondary">
+                <i class="bi bi-file-earmark-spreadsheet"></i> Import
+            </a>
+            <a href="{% url 'lab:parameter_add' %}" class="btn btn-primary">
+                <i class="bi bi-list-check"></i> + Add Parameter
+            </a>
+        </div>
+    </div>
+
+    {% if parameters %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Investigation</th>
+                    <th>Unit</th>
+                    <th>Result Type</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for param in parameters %}
+                <tr data-active="{% if param.is_active %}Active{% else %}Inactive{% endif %}">
+                    <td><strong>{{ param.code }}</strong></td>
+                    <td><strong style="color: var(--accent-blue);">{{ param.name }}</strong></td>
+                    <td><span class="badge badge-purple">{{ param.investigation.name|default:"-" }}</span></td>
+                    <td>{{ param.unit|default:"-" }}</td>
+                    <td><span class="badge badge-blue">{{ param.result_type }}</span></td>
+                    <td>
+                        {% if param.is_active %}
+                            <span class="badge badge-green">Active</span>
+                        {% else %}
+                            <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <a href="{% url 'lab:parameter_edit' param.id %}" class="btn-icon" title="Edit Parameter">
+                                <i class="bi bi-pencil-square" style="color: var(--accent-blue);"></i> Edit
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        <i class="bi bi-list-check" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+        <p style="font-size: 1.1rem;">No parameters configured.</p>
+        <a href="{% url 'lab:parameter_add' %}" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">
+            <i class="bi bi-list-check"></i> Add First Parameter
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            let visibleCount = 0;
+            
+            document.querySelectorAll('.table-responsive tbody tr').forEach(row => {
+                let text = row.textContent.toLowerCase();
+                let match = true;
+                
+                if(search && !text.includes(search)) match = false;
+                
+                row.style.display = match ? '' : 'none';
+                if (match) visibleCount++;
+            });
+
+            const filteredBadge = document.getElementById('filtered-count-badge');
+            if (search) {
+                filteredBadge.style.display = 'inline-block';
+                filteredBadge.textContent = `Filtered Results: ${visibleCount}`;
+            } else {
+                filteredBadge.style.display = 'none';
+            }
+        }
+        
+        document.getElementById('searchInput').addEventListener('keyup', applyFilters);
+
+        // Fetch Counts from API
+        fetch("{% url 'lab:api_parameter_count' %}")
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('total-count-badge').innerHTML = `Total Entries: <strong>${data.total}</strong>`;
+                document.getElementById('active-count-badge').innerHTML = `Active: <strong>${data.active}</strong>`;
+                document.getElementById('inactive-count-badge').innerHTML = `Inactive: <strong>${data.inactive}</strong>`;
+            });
+    });
+</script>
+{% endblock %}

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}VMMCerp - Enterprise Management System{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/vmmc-select.css' %}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     {% block extra_head %}{% endblock %}
 </head>
@@ -59,6 +60,12 @@
                         <a href="{% url 'patients:list' %}">
                             <i class="bi bi-people"></i>
                             <span>Patient List</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'import' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
+                        <a href="{% url 'patients:import' %}">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                            <span>Patient Import</span>
                         </a>
                     </li>
                     {% endif %}
@@ -125,6 +132,141 @@
                         </a>
                     </li>
                     {% endif %}
+                </ul>
+            </li>
+
+            <!-- Lab Master Module -->
+            <li class="nav-item has-submenu {% if request.resolver_match.namespace == 'lab' %}open active-parent{% endif %}">
+                <a href="javascript:void(0);" class="submenu-toggle" title="Lab Investigation Master">
+                    <i class="bi bi-droplet-fill" style="color: #ef4444;"></i>
+                    <span>Lab Master</span>
+                    <i class="bi bi-chevron-down submenu-chevron"></i>
+                </a>
+                <ul class="submenu-list">
+                    <li class="{% if request.resolver_match.url_name == 'diagnosis_list' %}active{% endif %}">
+                        <a href="{% url 'lab:diagnosis_list' %}">
+                            <i class="bi bi-heart-pulse"></i>
+                            <span>Diagnosis</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'investigation_list' %}active{% endif %}">
+                        <a href="{% url 'lab:investigation_list' %}">
+                            <i class="bi bi-file-medical"></i>
+                            <span>Investigation</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'parameter_list' %}active{% endif %}">
+                        <a href="{% url 'lab:parameter_list' %}">
+                            <i class="bi bi-list-check"></i>
+                            <span>Parameter</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'agegroup_list' %}active{% endif %}">
+                        <a href="{% url 'lab:agegroup_list' %}">
+                            <i class="bi bi-person-lines-fill"></i>
+                            <span>Age Group</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'investigation_parameter_mapping' %}active{% endif %}">
+                        <a href="{% url 'lab:investigation_parameter_mapping' %}">
+                            <i class="bi bi-diagram-3"></i>
+                            <span>Investigation Parameter Mapping</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'reference_range_grid' %}active{% endif %}">
+                        <a href="{% url 'lab:reference_range_grid' %}">
+                            <i class="bi bi-grid-3x3-gap"></i>
+                            <span>Reference Range Grid</span>
+                        </a>
+                    </li>
+
+                    <li class="{% if request.resolver_match.url_name == 'legacy_mapping' %}active{% endif %}">
+                        <a href="{% url 'lab:legacy_mapping' %}">
+                            <i class="bi bi-arrow-left-right"></i>
+                            <span>Legacy Mapping</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'diagnosis_investigation_age_mapping' %}active{% endif %}">
+                        <a href="{% url 'lab:diagnosis_investigation_age_mapping' %}">
+                            <i class="bi bi-link-45deg"></i>
+                            <span>Diagnosis-Investigation Mapping</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Consultant Module -->
+            <li class="nav-item has-submenu">
+                <a href="javascript:void(0);" class="submenu-toggle" title="Consultant">
+                    <i class="bi bi-person-badge" style="color: #ec4899;"></i>
+                    <span>Consultant</span>
+                    <i class="bi bi-chevron-down submenu-chevron"></i>
+                </a>
+                <ul class="submenu-list">
+                    <li class="{% if request.resolver_match.url_name == 'doctor_window' %}active{% endif %}">
+                        <a href="{% url 'lab:doctor_window' %}">
+                            <i class="bi bi-window-desktop"></i>
+                            <span>Doctor Window</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'service_request_list' or request.resolver_match.url_name == 'service_request_add' %}active{% endif %}">
+                        <a href="{% url 'lab:service_request_add' %}">
+                            <i class="bi bi-file-earmark-medical"></i>
+                            <span>Service Request</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <!-- Lab Orders Module -->
+            <li class="nav-item has-submenu">
+                <a href="javascript:void(0);" class="submenu-toggle" title="Lab Orders & Results">
+                    <i class="bi bi-clipboard2-pulse" style="color: #8b5cf6;"></i>
+                    <span>Lab Orders</span>
+                    <i class="bi bi-chevron-down submenu-chevron"></i>
+                </a>
+                <ul class="submenu-list">
+
+                    <li class="{% if request.resolver_match.url_name == 'work_orders' %}active{% endif %}">
+                        <a href="{% url 'lab:work_orders' %}">
+                            <i class="bi bi-list-task"></i>
+                            <span>Work Orders</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'order_entry' %}active{% endif %}">
+                        <a href="{% url 'lab:order_entry' %}">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>New Order</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'result_entry_list' or request.resolver_match.url_name == 'result_entry_detail' %}active{% endif %}">
+                        <a href="{% url 'lab:result_entry_list' %}">
+                            <i class="bi bi-journal-text"></i>
+                            <span>Result Entry</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Auto Trigger Module -->
+            <li class="nav-item has-submenu {% if 'auto_trigger' in request.resolver_match.url_name %}open active-parent{% endif %}">
+                <a href="javascript:void(0);" class="submenu-toggle" title="Auto Trigger">
+                    <i class="bi bi-cpu" style="color: #f59e0b;"></i>
+                    <span>Auto Trigger</span>
+                    <i class="bi bi-chevron-down submenu-chevron"></i>
+                </a>
+                <ul class="submenu-list">
+                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_configuration' %}active{% endif %}">
+                        <a href="{% url 'lab:auto_trigger_configuration' %}">
+                            <i class="bi bi-sliders"></i>
+                            <span>Auto Trigger Configuration</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_history' %}active{% endif %}">
+                        <a href="{% url 'lab:auto_trigger_history' %}">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Auto Trigger History</span>
+                        </a>
+                    </li>
                 </ul>
             </li>
 
@@ -242,6 +384,7 @@
     </button>
 
     <script src="{% static 'js/main.js' %}"></script>
+    <script src="{% static 'js/vmmc-select.js' %}"></script>
     <script>
         function updateLiveHeaderClock() {
             const now = new Date();

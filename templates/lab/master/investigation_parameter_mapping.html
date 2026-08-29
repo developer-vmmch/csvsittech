@@ -1,0 +1,624 @@
+{% extends "base.html" %}
+
+{% block title %}Investigation Parameter Mapping | VMMCerp{% endblock %}
+{% block page_heading %}Investigation Parameter Mapping{% endblock %}
+
+{% block extra_head %}
+<style>
+    .section-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .ms-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        background: #fff;
+        overflow: hidden;
+    }
+    .ms-header {
+        padding: 0.75rem;
+        background: #f8fafc;
+        border-bottom: 1px solid #cbd5e1;
+    }
+    .ms-header input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        font-size: 0.95rem;
+    }
+    .ms-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        background: #f1f5f9;
+        border-bottom: 1px solid #cbd5e1;
+        font-size: 0.85rem;
+    }
+    .ms-actions a {
+        color: var(--accent-blue);
+        text-decoration: none;
+        font-weight: 500;
+        cursor: pointer;
+    }
+    .ms-actions a:hover {
+        text-decoration: underline;
+    }
+    .custom-dropdown-btn {
+        width: 100%;
+        text-align: left;
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .custom-dropdown-btn:hover {
+        border-color: #94a3b8;
+    }
+    .dropdown-menu-container {
+        display: none;
+        border: 1px solid #cbd5e1;
+        border-top: none;
+        background: #fff;
+        border-radius: 0 0 4px 4px;
+        position: absolute;
+        width: 100%;
+        z-index: 50;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .ms-list {
+        max-height: 350px;
+        overflow-y: auto;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+    .ms-list li {
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+    }
+    .ms-list li:hover {
+        background: #f8fafc;
+    }
+    .ms-list li label {
+        margin: 0;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        font-weight: normal;
+    }
+    .ms-list li input[type="checkbox"] {
+        margin-right: 0.75rem;
+        transform: scale(1.1);
+    }
+    .param-code {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        margin-left: auto;
+    }
+    .selected-badges-container {
+        padding: 0.75rem 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+    .removable-badge {
+        display: inline-flex;
+        align-items: center;
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 0.35rem 0.6rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        border: 1px solid #bae6fd;
+    }
+    .removable-badge .remove-btn {
+        margin-left: 0.5rem;
+        cursor: pointer;
+        font-weight: bold;
+        color: #0284c7;
+    }
+    .removable-badge .remove-btn:hover {
+        color: #0c4a6e;
+    }
+    .modal-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        width: 400px;
+        max-width: 90%;
+    }
+    .param-badge {
+        display: inline-block;
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        margin: 0.15rem;
+        border: 1px solid #bae6fd;
+    }
+    .expand-btn {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+        cursor: pointer;
+    }
+    .expand-btn:hover {
+        background: #e2e8f0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="panel" style="background: transparent; border: none; box-shadow: none; padding: 0;">
+    <div class="panel-header-action" style="margin-bottom: 1.5rem; padding: 0 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 class="panel-title" style="margin: 0; font-size: 1.5rem;">Investigation Parameter Mapping</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 6px;">Map multiple laboratory parameters to an investigation.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <a href="{% url 'lab:parameter_import' %}" class="btn btn-secondary">
+                <i class="bi bi-upload"></i> Import
+            </a>
+        </div>
+    </div>
+
+    <!-- Section A: Investigation Selection -->
+    <div class="section-card">
+        <div class="section-title">
+            <span class="badge" style="background: var(--accent-blue); color: white;">A</span> Investigation Selection
+        </div>
+        <div style="max-width: 600px;">
+            <div id="investigationSelect" style="width: 100%;"></div>
+        </div>
+    </div>
+
+    <!-- Sections B & C: Parameter Selection and Actions -->
+    <div id="parameterContainer" style="display: none;">
+        <div class="section-card">
+            <div class="section-title">
+                <span class="badge" style="background: var(--accent-blue); color: white;">B</span> Parameter Selection
+            </div>
+            
+            <div style="max-width: 600px;">
+                <label style="display:block; margin-bottom: 0.5rem; font-weight: 600;">Parameter</label>
+                
+                <div style="position: relative;">
+                    <button id="paramDropdownBtn" class="custom-dropdown-btn" type="button">
+                        Select Parameters ▼
+                    </button>
+                    
+                    <div id="paramDropdownMenu" class="dropdown-menu-container">
+                        <ul class="ms-list" id="paramList">
+                            <!-- Populated via AJAX -->
+                        </ul>
+                        <div class="ms-actions">
+                            <a id="selectAllBtn">Select All</a>
+                            <a id="clearAllBtn">Clear All</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1rem;">
+                    <span id="selectedCount" style="font-weight: 600; color: var(--accent-blue);">Selected Parameters: 0</span>
+                    <div class="selected-badges-container" id="selectedBadges" style="display: none;">
+                        <!-- Badges injected here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section C: Mapping Actions -->
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #f1f5f9;">
+                <button id="saveMappingBtn" class="btn btn-primary" style="font-size: 1.1rem; padding: 0.5rem 1.5rem;">
+                    <i class="bi bi-diagram-3"></i> Save Mapping
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section D: Existing Mappings -->
+    <div class="section-card">
+        <div class="section-title">
+            <span class="badge" style="background: var(--accent-blue); color: white;">C</span> Existing Mappings
+        </div>
+        <div class="table-responsive">
+            <table class="table" id="mappingsTable">
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">Investigation</th>
+                        <th style="width: 10%;">Code</th>
+                        <th style="width: 45%;">Parameters</th>
+                        <th style="width: 10%;">Count</th>
+                        <th style="width: 10%;">Status</th>
+                        <th style="width: 5%;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in mappings %}
+                    <tr>
+                        <td><strong>{{ m.name }}</strong></td>
+                        <td>{{ m.code }}</td>
+                        <td>
+                            <div class="param-tags-container" id="tags_{{ m.id }}">
+                                <!-- Tags rendered via JS to handle expansion -->
+                            </div>
+                            <script>
+                                (function() {
+                                    const paramsStr = "{{ m.param_names|escapejs }}";
+                                    const params = paramsStr ? paramsStr.split(", ") : [];
+                                    const container = document.getElementById("tags_{{ m.id }}");
+                                    
+                                    if(params.length <= 5) {
+                                        params.forEach(p => {
+                                            const span = document.createElement('span');
+                                            span.className = 'param-badge';
+                                            span.textContent = p;
+                                            container.appendChild(span);
+                                        });
+                                    } else {
+                                        for(let i=0; i<5; i++) {
+                                            const span = document.createElement('span');
+                                            span.className = 'param-badge';
+                                            span.textContent = params[i];
+                                            container.appendChild(span);
+                                        }
+                                        const expandBtn = document.createElement('span');
+                                        expandBtn.className = 'param-badge expand-btn';
+                                        expandBtn.textContent = `+${params.length - 5} more`;
+                                        expandBtn.onclick = function() {
+                                            container.innerHTML = '';
+                                            params.forEach(p => {
+                                                const span = document.createElement('span');
+                                                span.className = 'param-badge';
+                                                span.textContent = p;
+                                                container.appendChild(span);
+                                            });
+                                        };
+                                        container.appendChild(expandBtn);
+                                    }
+                                })();
+                            </script>
+                        </td>
+                        <td><span class="badge badge-blue">{{ m.param_count }}</span></td>
+                        <td>
+                            {% if m.status %}
+                            <span class="badge badge-green">Active</span>
+                            {% else %}
+                            <span class="badge badge-red">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn-icon" onclick="editMapping({{ m.id }}, '{{ m.name|escapejs }}')" style="color: var(--accent-blue);" title="Edit Mapping">
+                                <i class="bi bi-pencil-square"></i> Edit
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No mappings configured yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Parameter Modal -->
+<div id="addParamModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 style="margin-top: 0; margin-bottom: 1.5rem;">Add New Parameter</h3>
+        <div style="margin-bottom: 1rem;">
+            <label style="display:block; font-weight: 600; margin-bottom: 0.25rem;">Parameter Name <span style="color:red;">*</span></label>
+            <input type="text" id="newParamName" class="form-input" style="width: 100%;">
+        </div>
+        <div style="margin-bottom: 1rem;">
+            <label style="display:block; font-weight: 600; margin-bottom: 0.25rem;">Parameter Code</label>
+            <input type="text" id="newParamCode" class="form-input" style="width: 100%;">
+        </div>
+        <div style="margin-bottom: 1rem;">
+            <label style="display:block; font-weight: 600; margin-bottom: 0.25rem;">Unit</label>
+            <input type="text" id="newParamUnit" class="form-input" style="width: 100%;">
+        </div>
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display:block; font-weight: 600; margin-bottom: 0.25rem;">Status</label>
+            <select id="newParamStatus" class="form-select" style="width: 100%;">
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+            </select>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button id="closeModalBtn" class="btn btn-secondary">Cancel</button>
+            <button id="saveNewParamBtn" class="btn btn-primary">Save Parameter</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    let allParameters = [];
+    let mappedParameterIds = [];
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Load all master parameters once
+    $.get("{% url 'lab:api_get_all_parameters' %}", function(data) {
+        allParameters = data.parameters;
+    });
+
+    function updateSelectedCount() {
+        const count = $('.param-cb:checked').length;
+        $('#selectedCount').text(`Selected Parameters: ${count}`);
+        
+        // Update badges
+        const badgesContainer = $('#selectedBadges');
+        badgesContainer.empty();
+        
+        let checkedBoxes = $('.param-cb:checked');
+        if (checkedBoxes.length > 0) {
+            badgesContainer.show();
+            checkedBoxes.each(function() {
+                const id = $(this).val();
+                const name = $(this).closest('.param-item').find('.param-name').text();
+                badgesContainer.append(`
+                    <div class="removable-badge">
+                        ${name}
+                        <span class="remove-btn" onclick="removeParameter('${id}')" title="Remove">×</span>
+                    </div>
+                `);
+            });
+        } else {
+            badgesContainer.hide();
+        }
+    }
+    
+    window.removeParameter = function(id) {
+        $(`.param-cb[value="${id}"]`).prop('checked', false).trigger('change');
+    };
+
+    function renderParameters() {
+        const list = $('#paramList');
+        list.empty();
+        
+        allParameters.forEach(p => {
+            const isChecked = mappedParameterIds.includes(p.id) ? 'checked' : '';
+            list.append(`
+                <li class="param-item" data-name="${(p.name||'').toLowerCase()}" data-code="${(p.code||'').toLowerCase()}">
+                    <label>
+                        <input type="checkbox" class="param-cb" value="${p.id}" ${isChecked}>
+                        <span class="param-name">${p.name}</span>
+                        <span class="param-code">${p.code || ''}</span>
+                    </label>
+                </li>
+            `);
+        });
+        updateSelectedCount();
+    }
+
+    let currentInvId = null;
+    let invSelect = new VMMCSearchSelect('#investigationSelect', {
+        url: "{% url 'lab:api_search_investigation' %}",
+        placeholder: '-- Select Investigation --',
+        searchParam: 'q',
+        processResults: (data) => data.results,
+        renderMain: (item) => item.text,
+        renderSub: (item) => item.code,
+        onClear: () => {
+            currentInvId = null;
+            $('#parameterContainer').slideUp();
+        },
+        onSelect: (item) => {
+            currentInvId = item.id;
+            // Fetch existing mapped parameters for this investigation
+            $.get("{% url 'lab:api_investigation_parameters' %}?investigation_id=" + item.id, function(data) {
+                mappedParameterIds = data.parameters.map(p => p.parameter_id);
+                renderParameters();
+                $('#parameterContainer').slideDown();
+                
+                // clear search
+                $('#paramSearch').val('').trigger('input');
+            });
+        }
+    });
+    
+    window.editMapping = function(invId, invName) {
+        currentInvId = invId;
+        invSelect.input.value = invName;
+        invSelect.clearBtn.style.display = 'block';
+        
+        // Fetch existing mapped parameters for this investigation
+        $.get("{% url 'lab:api_investigation_parameters' %}?investigation_id=" + invId, function(data) {
+            mappedParameterIds = data.parameters.map(p => p.parameter_id);
+            renderParameters();
+            $('#parameterContainer').slideDown();
+        });
+        
+        $('html, body').animate({ scrollTop: 0 }, 'fast');
+    };
+
+    // Toggle Dropdown
+    $('#paramDropdownBtn').click(function(e) {
+        e.stopPropagation();
+        $('#paramDropdownMenu').slideToggle('fast');
+    });
+    
+    // Close dropdown when clicking outside
+    $(document).click(function(e) {
+        if (!$(e.target).closest('#paramDropdownBtn, #paramDropdownMenu').length) {
+            $('#paramDropdownMenu').slideUp('fast');
+        }
+    });
+
+    // Select All / Clear All
+    $('#selectAllBtn').click(function(e) {
+        e.preventDefault();
+        $('.param-item:visible .param-cb').prop('checked', true);
+        updateSelectedCount();
+    });
+
+    $('#clearAllBtn').click(function(e) {
+        e.preventDefault();
+        $('.param-cb').prop('checked', false).trigger('change');
+    });
+
+    // Update count on individual click
+    $(document).on('change', '.param-cb', function() {
+        // update mappedParameterIds locally so re-renders maintain state
+        const val = $(this).val();
+        if ($(this).is(':checked')) {
+            if (!mappedParameterIds.includes(val)) mappedParameterIds.push(val);
+        } else {
+            mappedParameterIds = mappedParameterIds.filter(id => id !== val);
+        }
+        updateSelectedCount();
+    });
+
+    // Modal Logic
+    $('#openAddParamBtn').click(function() {
+        $('#newParamName').val('');
+        $('#newParamCode').val('');
+        $('#newParamUnit').val('');
+        $('#newParamStatus').val('true');
+        $('#addParamModal').css('display', 'flex');
+    });
+    
+    $('#closeModalBtn').click(function() {
+        $('#addParamModal').hide();
+    });
+    
+    $('#saveNewParamBtn').click(function() {
+        const name = $('#newParamName').val().trim();
+        if (!name) { alert("Parameter Name is required"); return; }
+        
+        const btn = $(this);
+        btn.prop('disabled', true).text('Saving...');
+        
+        $.ajax({
+            url: "{% url 'lab:api_add_parameter' %}",
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                name: name,
+                code: $('#newParamCode').val().trim(),
+                unit: $('#newParamUnit').val().trim(),
+                is_active: $('#newParamStatus').val() === 'true'
+            }),
+            headers: {'X-CSRFToken': getCookie('csrftoken')},
+            success: function(response) {
+                if(response.status === 'success') {
+                    // Add to allParameters
+                    allParameters.push(response.parameter);
+                    // Add to mapped
+                    mappedParameterIds.push(response.parameter.id);
+                    // Re-render
+                    renderParameters();
+                    $('#addParamModal').hide();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Server error.');
+            },
+            complete: function() {
+                btn.prop('disabled', false).text('Save Parameter');
+            }
+        });
+    });
+
+    // Save
+    $('#saveMappingBtn').click(function() {
+        const invId = currentInvId;
+        if (!invId) {
+            alert('Please select an investigation.');
+            return;
+        }
+
+        const selectedIds = [];
+        $('.param-cb:checked').each(function() {
+            selectedIds.push($(this).val());
+        });
+
+        const btn = $(this);
+        btn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Saving...');
+
+        const payload = {
+            investigation_id: invId,
+            parameter_ids: selectedIds
+        };
+
+        $.ajax({
+            url: "{% url 'lab:api_save_investigation_parameters' %}",
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            headers: {'X-CSRFToken': getCookie('csrftoken')},
+            success: function(response) {
+                if(response.status === 'success') {
+                    alert('Investigation Parameter Mapping saved successfully!');
+                    location.reload(); // Reload to update the table below
+                } else {
+                    alert('Error saving: ' + response.message);
+                    btn.prop('disabled', false).html('<i class="bi bi-diagram-3"></i> Save Mapping');
+                }
+            },
+            error: function() {
+                alert('Server error while saving.');
+                btn.prop('disabled', false).html('<i class="bi bi-diagram-3"></i> Save Mapping');
+            }
+        });
+    });
+</script>
+{% endblock %}
