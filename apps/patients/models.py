@@ -34,11 +34,8 @@ class Department(TimeStampedModel):
             {'code': 'PSY', 'name': 'PSYCHIATRY'},
         ]
         for d in deps:
-            try:
-                cls.objects.get_or_create(name__iexact=d['name'], defaults={'name': d['name'], 'code': d['code'], 'is_active': True})
-            except cls.MultipleObjectsReturned:
-                # If there are duplicates, we ignore instead of breaking the app
-                pass
+            if not cls.objects.filter(name__iexact=d['name']).exists():
+                cls.objects.create(name=d['name'], code=d['code'], is_active=True)
 
 
 class DepartmentUnit(TimeStampedModel):
@@ -145,12 +142,59 @@ class Patient(TimeStampedModel):
         RURAL = 'RURAL', 'Rural'
         URBAN = 'URBAN', 'Urban'
 
+    class SourceChoices(models.TextChoices):
+        NORMAL = 'O', 'Normal Entry'
+        AUTO_TRIGGER = 'D', 'Auto Trigger Entry'
+
     # Patient Identification
     patient_id = models.CharField(max_length=50, unique=True, db_index=True)
     op_number = models.CharField(max_length=50, unique=True, blank=True, null=True, verbose_name="OP Number")
     ipno = models.CharField(max_length=50, blank=True, null=True, verbose_name="IPNO")
     centre = models.CharField(max_length=50, choices=CentreChoices.choices, default=CentreChoices.VMMCH, verbose_name="Centre")
     registration_date = models.DateField(default=timezone.now, verbose_name="Registration Date")
+    patient_type = models.CharField(
+        max_length=1, 
+        choices=SourceChoices.choices, 
+        default=SourceChoices.NORMAL, 
+        db_index=True,
+        verbose_name="Patient Type"
+    )
+    created_source = models.CharField(
+        max_length=1, 
+        choices=SourceChoices.choices, 
+        default=SourceChoices.NORMAL, 
+        db_index=True,
+        verbose_name="Entry Type / Source"
+    )
+    automation_scheduled_at = models.DateTimeField(
+        null=True, 
+        blank=True, 
+        db_index=True, 
+        verbose_name="Scheduled Creation Date & Time"
+    )
+    auto_trigger_run = models.ForeignKey(
+        'lab.AutoTriggerHistory', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='generated_patients',
+        verbose_name="Auto Trigger Run"
+    )
+    auto_trigger_stage = models.CharField(
+        max_length=100, 
+        blank=True, 
+        null=True, 
+        default='STAGE 1 - PATIENT CREATION',
+        verbose_name="Auto Trigger Stage"
+    )
+    source_patient = models.ForeignKey(
+        'self', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='auto_triggered_copies',
+        verbose_name="Source Patient Reference"
+    )
     
     # Personal Info
     title = models.CharField(max_length=10, choices=TitleChoices.choices, default='-')
@@ -216,9 +260,19 @@ class Patient(TimeStampedModel):
         return f"{self.name} ({self.patient_id})"
 
     def save(self, *args, **kwargs):
+        if not self.patient_type:
+            self.patient_type = self.created_source or 'O'
+        if not self.created_source:
+            self.created_source = self.patient_type or 'O'
         if not self.patient_id:
             self.patient_id = self.generate_next_patient_id()
         super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if self.patient_type == 'D' or self.created_source == 'D':
+            from django.core.exceptions import ValidationError
+            raise ValidationError("Auto Trigger generated patients cannot be deleted.")
+        super().delete(*args, **kwargs)
 
     @classmethod
     def generate_next_patient_id(cls):

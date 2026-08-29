@@ -89,6 +89,15 @@
                         {% endfor %}
                     </select>
                 </div>
+
+                <div class="form-group">
+                    <label for="q_entry_type">Patient Type</label>
+                    <select id="q_entry_type" name="q_entry_type" class="form-select">
+                        <option value="A" {% if q_entry_type == 'A' or not q_entry_type %}selected{% endif %}>A</option>
+                        <option value="O" {% if q_entry_type == 'O' %}selected{% endif %}>O</option>
+                        <option value="D" {% if q_entry_type == 'D' %}selected{% endif %}>D</option>
+                    </select>
+                </div>
             </div>
 
             <div class="form-actions" style="margin-top: 1.25rem;">
@@ -110,7 +119,7 @@
         <i class="bi bi-search" style="font-size: 3.2rem; display: block; margin-bottom: 1rem; color: var(--accent-teal);"></i>
         <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">Enter Search Criteria to Find Patients</h3>
         <p style="font-size: 0.9rem; color: var(--text-muted); max-width: 550px; margin: 0 auto;">
-            Use the search filter panel above (Patient Name, ID, Mobile No, Aadhar, ABHA ID, or Date Range) and click <strong>"Search Patient"</strong> to view matching records.
+            Use the search filter panel above (Patient Name, ID, Mobile No, Aadhar, ABHA ID, Patient Type, or Date Range) and click <strong>"Search Patients"</strong> to view matching records.
         </p>
     </div>
     {% else %}
@@ -136,6 +145,7 @@
                 <thead>
                     <tr>
                         <th>Patient ID</th>
+                        <th>OP Number</th>
                         <th>Patient Name</th>
                         <th>Age / Gender</th>
                         <th>Mobile No</th>
@@ -152,6 +162,7 @@
                     {% for patient in patients %}
                     <tr>
                         <td><strong>{{ patient.patient_id }}</strong></td>
+                        <td><strong style="color: var(--accent-purple);">{{ patient.op_number|default:"--" }}</strong></td>
                         <td><strong>{{ patient.title }} {{ patient.name }}</strong></td>
                         <td>{{ patient.age_years }} Y / {{ patient.gender }}</td>
                         <td>{{ patient.mobile_no }}</td>
@@ -177,12 +188,14 @@
                                 <a href="{% url 'patients:print' patient.id %}" target="_blank" class="btn-print-sm" title="Print OP Pass">
                                     <i class="bi bi-printer"></i> Print OP
                                 </a>
+                                {% if patient.patient_type != 'D' and patient.created_source != 'D' %}
                                 <form method="post" action="{% url 'patients:delete' patient.id %}" onsubmit="return confirm('Delete patient {{ patient.name }}?');" style="margin: 0;">
                                     {% csrf_token %}
                                     <button type="submit" class="btn-danger-sm" title="Delete Patient Record">
                                         <i class="bi bi-trash"></i> Delete
                                     </button>
                                 </form>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>

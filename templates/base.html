@@ -261,12 +261,6 @@
                             <span>Auto Trigger Configuration</span>
                         </a>
                     </li>
-                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_time_settings' %}active{% endif %}">
-                        <a href="{% url 'lab:auto_trigger_time_settings' %}">
-                            <i class="bi bi-clock"></i>
-                            <span>Auto Trigger Time Settings</span>
-                        </a>
-                    </li>
                     <li class="{% if request.resolver_match.url_name == 'auto_trigger_history' %}active{% endif %}">
                         <a href="{% url 'lab:auto_trigger_history' %}">
                             <i class="bi bi-clock-history"></i>

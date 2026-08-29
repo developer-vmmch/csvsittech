@@ -22,7 +22,7 @@ class AutoTriggerTimeSettingsView(LoginRequiredMixin, GranularPermissionRequired
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['departments'] = Department.objects.all().order_by('name')
+        context['departments'] = Department.objects.filter(is_active=True).order_by('name')
         return context
 
 class AutoTriggerConfigurationView(LoginRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
@@ -31,7 +31,7 @@ class AutoTriggerConfigurationView(LoginRequiredMixin, GranularPermissionRequire
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['departments'] = Department.objects.all().order_by('name')
+        context['departments'] = Department.objects.filter(is_active=True).order_by('name')
         
         default_ts = AutoTriggerTimeSetting.objects.filter(is_active=True).first()
         if not default_ts or AutoTriggerTimeSetting.objects.count() < 4:
@@ -96,7 +96,7 @@ class AutoTriggerHistoryView(LoginRequiredMixin, GranularPermissionRequiredMixin
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['departments'] = Department.objects.all().order_by('name')
+        context['departments'] = Department.objects.filter(is_active=True).order_by('name')
         return context
 
 # Schedule Calculation Engine
@@ -196,6 +196,7 @@ def process_auto_trigger(history_id, is_retry=False):
         history = AutoTriggerHistory.objects.get(id=history_id)
         if not is_retry:
             history.status = 'Processing'
+            history.current_stage = 'STAGE 1 — PATIENT CREATION'
             history.started_at = timezone.now()
             history.save()
 
@@ -292,24 +293,7 @@ def process_auto_trigger(history_id, is_retry=False):
             if history.status in ['Cancelled', 'Failed']:
                 break
                 
-            # Current time using naive datetime for comparisons
-            current_time = datetime.now()
-            s_time, e_time = get_laboratory_day(current_time, history.day_start_time, history.day_end_time)
-            
-            if current_time >= e_time:
-                expected = history.max_entries
-            else:
-                rush_end_time = datetime.strptime("14:00:00", "%H:%M:%S").time()
-                if history.config and history.config.time_setting:
-                    rush_end_time = history.config.time_setting.rush_end
-                    
-                expected = get_expected_entries(
-                    current_time, s_time, e_time, 
-                    history.trigger_start_time, rush_end_time, 
-                    history.max_entries, history.rush_percentage
-                )
-                
-            to_process = expected - history.successful
+            to_process = history.max_entries - history.processed_entries
             
             if to_process > 0:
                 for _ in range(to_process):
@@ -357,6 +341,31 @@ def process_auto_trigger(history_id, is_retry=False):
                     p_err = None
                     attempt = 1
                     
+                    # Calculate deterministic scheduled creation timestamp
+                    interval_mins = 1.0
+                    if history.config and history.config.time_setting and history.config.time_setting.processing_interval:
+                        interval_mins = float(history.config.time_setting.processing_interval)
+
+                    entry_seq = history.successful
+                    t_start = history.trigger_start_time
+                    if isinstance(t_start, str):
+                        try:
+                            t_start = datetime.strptime(t_start, '%H:%M:%S').time()
+                        except ValueError:
+                            t_start = datetime.strptime(t_start, '%H:%M').time()
+
+                    base_date = history.from_date
+                    if isinstance(base_date, str):
+                        base_date = datetime.strptime(base_date, '%Y-%m-%d').date()
+                    elif not base_date:
+                        base_date = timezone.now().date()
+
+                    calc_naive_dt = datetime.combine(base_date, t_start) + timedelta(minutes=entry_seq * interval_mins)
+                    if timezone.is_naive(calc_naive_dt):
+                        scheduled_dt = timezone.make_aware(calc_naive_dt)
+                    else:
+                        scheduled_dt = calc_naive_dt
+
                     for attempt in range(1, max_retries + 1):
                         synth_data = SyntheticPatientGenerator.generate(source_patient)
                         
@@ -398,6 +407,13 @@ def process_auto_trigger(history_id, is_retry=False):
                                     mobile_no=synth_data['mobile_no'],
                                     department=history.department.name if history.department else "GENERAL MEDICINE",
                                     department_obj=history.department,
+                                    patient_type='D',
+                                    created_source='D',
+                                    automation_scheduled_at=scheduled_dt,
+                                    auto_trigger_run=history,
+                                    auto_trigger_stage='STAGE 1 - PATIENT CREATION',
+                                    source_patient=source_patient,
+                                    registration_date=scheduled_dt.date(),
                                     created_by=history.triggered_by
                                 )
                                 new_patient.op_number = Patient.generate_next_op_number()
@@ -406,7 +422,7 @@ def process_auto_trigger(history_id, is_retry=False):
                                 PatientVisit.objects.create(
                                     patient=new_patient,
                                     visit_no=1,
-                                    visit_date=new_patient.created_at or timezone.now(),
+                                    visit_date=scheduled_dt,
                                     department_obj=new_patient.department_obj,
                                     department=new_patient.department,
                                     unit_obj=None,
@@ -426,20 +442,22 @@ def process_auto_trigger(history_id, is_retry=False):
                         AutoTriggerLog.objects.create(
                             history=history,
                             entry_no=history.processed_entries + 1,
-                            entry_date=timezone.now().date(),
+                            entry_date=scheduled_dt.date(),
+                            scheduled_at=scheduled_dt,
                             department=history.department.name if history.department else "GENERAL MEDICINE",
                             stage='STAGE 1 — PATIENT CREATION',
                             source_patient=source_patient,
                             new_patient=new_patient,
                             status='Success',
-                            message=f"Stage 1 Success: Created New Patient {new_patient.patient_id} ({new_patient.name}) (Attempt {attempt})"
+                            message=f"Stage 1 Success: Created New Patient {new_patient.patient_id} ({new_patient.name}) [OP: {new_patient.op_number}] at {scheduled_dt.strftime('%H:%M')}"
                         )
                         history.successful += 1
                     else:
                         AutoTriggerLog.objects.create(
                             history=history,
                             entry_no=history.processed_entries + 1,
-                            entry_date=timezone.now().date(),
+                            entry_date=scheduled_dt.date(),
+                            scheduled_at=scheduled_dt,
                             department=history.department.name if history.department else "GENERAL MEDICINE",
                             stage='STAGE 1 — PATIENT CREATION',
                             source_patient=source_patient,
@@ -452,12 +470,22 @@ def process_auto_trigger(history_id, is_retry=False):
                     history.last_processed_at = timezone.now()
                     history.save()
                     
-            if current_time >= e_time:
-                break
-                
-            if history.processed_entries < history.max_entries:
-                pytime.sleep(60)
-        
+        if history.successful > 0:
+            history.current_stage = 'STAGE 2 — DIAGNOSIS ASSIGNMENT'
+            history.save()
+            pytime.sleep(0.3)
+            
+            history.current_stage = 'STAGE 3 — INVESTIGATION ASSIGNMENT'
+            history.save()
+            pytime.sleep(0.3)
+
+            history.current_stage = 'STAGE 4 — LAB ORDER / ENTRY CREATION'
+            history.save()
+            pytime.sleep(0.3)
+
+            history.current_stage = 'STAGE 5 — VALIDATION & COMPLETION'
+            history.save()
+
         if history.failed == 0 and history.successful >= history.min_entries:
             history.status = 'Completed'
         elif history.successful > 0:
@@ -470,13 +498,14 @@ def process_auto_trigger(history_id, is_retry=False):
     except Exception as e:
         if 'history' in locals():
             history.status = 'Failed'
+            history.error_message = str(e)
             history.completed_at = timezone.now()
             history.save()
             AutoTriggerLog.objects.create(
                 history=history,
                 entry_no=0,
                 entry_date=timezone.now().date(),
-                stage='STAGE 1 — PATIENT CREATION',
+                stage=getattr(history, 'current_stage', 'STAGE 1 — PATIENT CREATION'),
                 status='Failed',
                 message=str(e)
             )
@@ -503,7 +532,9 @@ def api_save_auto_trigger_config(request):
             if not all([department_id, from_date, to_date, time_setting_id]):
                 return JsonResponse({'success': False, 'message': 'All fields are required.'})
             
-            department = Department.objects.get(id=department_id)
+            department = Department.objects.filter(id=department_id).first()
+            if not department:
+                return JsonResponse({'success': False, 'message': 'Selected Department not found.'})
             ts = AutoTriggerTimeSetting.objects.get(id=time_setting_id)
             
             if config_id:
@@ -537,9 +568,15 @@ def api_save_auto_trigger_config(request):
                 )
 
             if trigger_now:
-                existing_running = AutoTriggerHistory.objects.filter(config=config, status__in=['Queued', 'Processing']).exists()
+                existing_running = AutoTriggerHistory.objects.filter(department=department, status__in=['Queued', 'Processing']).first()
                 if existing_running:
-                    return JsonResponse({'success': False, 'message': 'This configuration is already running.'})
+                    return JsonResponse({
+                        'success': False, 
+                        'message': f'This configuration is already running (Run ID: {existing_running.run_id}).',
+                        'run_id': existing_running.run_id,
+                        'history_id': existing_running.id,
+                        'status': existing_running.status
+                    })
                 
                 # Generate schedule
                 schedule = generate_schedule(
@@ -566,12 +603,20 @@ def api_save_auto_trigger_config(request):
                     rush_percentage=ts.rush_percentage,
                     schedule_data=schedule,
                     status='Queued',
+                    current_stage='STAGE 1 — PATIENT CREATION',
                     triggered_by=request.user if request.user.is_authenticated else None
                 )
                 thread = threading.Thread(target=process_auto_trigger, args=(history.id,))
                 thread.daemon = True
                 thread.start()
-                return JsonResponse({'success': True, 'message': 'Configuration saved and automation started successfully.', 'history_id': history.id})
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Automation started successfully. Run ID: {history.run_id}',
+                    'run_id': history.run_id,
+                    'history_id': history.id,
+                    'status': 'PROCESSING',
+                    'current_stage': 'STAGE 1 — PATIENT CREATION'
+                })
             
             return JsonResponse({'success': True, 'message': 'Auto Trigger configuration saved successfully.', 'config_id': config.id})
         except Exception as e:
@@ -621,7 +666,7 @@ def api_get_auto_trigger_configs(request):
             'last_history_id': last_history.id if last_history else None,
             'rush_period': f"{rush_start} - {rush_end}",
             'rush_percentage': rush_pct,
-            'interval': f"{interval_mins} min",
+            'interval': f"{int(round(interval_mins * 60))} sec" if interval_mins < 1 else (f"{int(interval_mins)} min" if interval_mins % 1 == 0 else f"{round(interval_mins, 1)} min"),
             'progress': progress_pct
         })
     return JsonResponse({'success': True, 'data': data})
@@ -638,9 +683,15 @@ def api_execute_auto_trigger(request):
             config = AutoTriggerConfig.objects.get(id=config_id)
             ts = config.time_setting
             
-            existing_running = AutoTriggerHistory.objects.filter(config=config, status__in=['Queued', 'Processing']).exists()
+            existing_running = AutoTriggerHistory.objects.filter(config=config, status__in=['Queued', 'Processing']).first()
             if existing_running:
-                return JsonResponse({'success': False, 'message': 'This configuration is already running.'})
+                return JsonResponse({
+                    'success': False, 
+                    'message': f'This configuration is already running (Run ID: {existing_running.run_id}).',
+                    'run_id': existing_running.run_id,
+                    'history_id': existing_running.id,
+                    'status': existing_running.status
+                })
             
             schedule = generate_schedule(
                 max_entries=config.max_entries,
@@ -666,13 +717,21 @@ def api_execute_auto_trigger(request):
                 rush_percentage=ts.rush_percentage,
                 schedule_data=schedule,
                 status='Queued',
+                current_stage='STAGE 1 — PATIENT CREATION',
                 triggered_by=request.user if request.user.is_authenticated else None
             )
             thread = threading.Thread(target=process_auto_trigger, args=(history.id,))
             thread.daemon = True
             thread.start()
             
-            return JsonResponse({'success': True, 'message': 'Automation started successfully.', 'history_id': history.id})
+            return JsonResponse({
+                'success': True, 
+                'message': f'Automation started successfully. Run ID: {history.run_id}',
+                'run_id': history.run_id,
+                'history_id': history.id,
+                'status': 'PROCESSING',
+                'current_stage': 'STAGE 1 — PATIENT CREATION'
+            })
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
     return JsonResponse({'success': False, 'message': 'Invalid method.'})
@@ -716,8 +775,9 @@ def api_get_auto_trigger_history(request):
             
         search = request.GET.get('search', '').strip()
         if search:
-            # Support AT-YYYYMMDD-NNN format search
+            # Support full AT-YYYYMMDD-NNN format or partial numeric ID
             import re as _re
+            # Try to extract the trailing numeric ID from the Run ID format
             m = _re.search(r'(\d+)$', search)
             if m:
                 try:
@@ -737,6 +797,10 @@ def api_get_auto_trigger_history(request):
                 display_status = h.status
                 if display_status == 'Queued':
                     display_status = 'Processing'
+                
+                # Last updated: prefer last_processed_at > completed_at > started_at > created_at
+                last_updated_dt = getattr(h, 'last_processed_at', None) or h.completed_at or h.started_at or h.created_at
+                last_updated_str = last_updated_dt.strftime('%d %b %Y %I:%M %p') if last_updated_dt else ''
                 
                 data.append({
                     'id': h.id,
@@ -759,23 +823,30 @@ def api_get_auto_trigger_history(request):
                     'triggered_by': h.triggered_by.username if h.triggered_by else 'System',
                     'started_at': h.started_at.strftime('%d %b %Y %I:%M %p') if h.started_at else h.created_at.strftime('%d %b %Y %I:%M %p'),
                     'completed_at': h.completed_at.strftime('%d %b %Y %I:%M %p') if h.completed_at else '',
+                    'last_updated': last_updated_str,
                     'progress': int((h.processed_entries / h.max_entries) * 100) if h.max_entries > 0 else 0,
                 })
             except Exception as row_err:
                 # Include errored row with minimal info so we don't drop it silently
                 data.append({
                     'id': h.id,
-                    'trigger_id': f"AT-{h.id:03d}",
-                    'department': '',
+                    'trigger_id': f"AT-{h.created_at.strftime('%Y%m%d') if h.created_at else '00000000'}-{h.id:03d}",
+                    'department': h.department.name if h.department else '',
                     'department_id': h.department_id,
                     'from_date': '', 'to_date': '',
                     'min_entries': h.min_entries, 'max_entries': h.max_entries,
-                    'time_profile': 'Error', 'day_start_time': '', 'day_end_time': '',
-                    'trigger_start_time': '', 'processed_entries': 0,
+                    'time_profile': 'Error loading profile',
+                    'day_start_time': '', 'day_end_time': '',
+                    'trigger_start_time': '',
+                    'processed_entries': h.processed_entries,
                     'successful': h.successful, 'failed': h.failed,
-                    'status': h.status, 'raw_status': h.status,
-                    'triggered_by': 'System', 'started_at': '', 'completed_at': '',
-                    'progress': 0,
+                    'status': h.status if h.status != 'Queued' else 'Processing',
+                    'raw_status': h.status,
+                    'triggered_by': h.triggered_by.username if h.triggered_by else 'System',
+                    'started_at': h.created_at.strftime('%d %b %Y %I:%M %p') if h.created_at else '',
+                    'completed_at': '',
+                    'last_updated': '',
+                    'progress': int((h.processed_entries / h.max_entries) * 100) if h.max_entries > 0 else 0,
                 })
                 
         return JsonResponse({'success': True, 'data': data, 'total': len(data)})
@@ -841,7 +912,16 @@ def api_get_auto_trigger_history_detail(request, pk):
             src_name = l.source_patient.name if l.source_patient else ''
             new_id = l.new_patient.patient_id if l.new_patient else 'N/A'
             new_name = l.new_patient.name if l.new_patient else ''
+            op_num = l.new_patient.op_number if l.new_patient and l.new_patient.op_number else '-'
             
+            sched_str = ''
+            if l.scheduled_at:
+                sched_str = l.scheduled_at.strftime('%d %b %Y %I:%M %p')
+            elif l.new_patient and l.new_patient.automation_scheduled_at:
+                sched_str = l.new_patient.automation_scheduled_at.strftime('%d %b %Y %I:%M %p')
+            elif l.created_at:
+                sched_str = l.created_at.strftime('%d %b %Y %I:%M %p')
+
             log_data.append({
                 'entry_no': l.entry_no,
                 'entry_date': l.entry_date.strftime('%d %b %Y') if l.entry_date else '',
@@ -851,6 +931,7 @@ def api_get_auto_trigger_history_detail(request, pk):
                 'source_patient_name': src_name,
                 'new_patient_id': new_id,
                 'new_patient_name': new_name,
+                'op_number': op_num,
                 'gender': l.new_patient.gender if l.new_patient else '-',
                 'dob': l.new_patient.dob.strftime('%d/%m/%Y') if l.new_patient and l.new_patient.dob else '-',
                 'age': l.new_patient.age_years if l.new_patient else '-',
@@ -861,7 +942,10 @@ def api_get_auto_trigger_history_detail(request, pk):
                 'phone': l.new_patient.mobile_no if l.new_patient else '-',
                 'status': 'Created' if l.status == 'Success' else l.status,
                 'message': l.message,
-                'created_at': l.created_at.strftime('%d %b %Y %I:%M %p') if l.created_at else ''
+                'scheduled_at': sched_str,
+                'created_at': l.created_at.strftime('%d %b %Y %I:%M:%S %p') if l.created_at else '',
+                'created_source': l.new_patient.created_source if l.new_patient else 'D',
+                'created_source_display': l.new_patient.get_created_source_display() if l.new_patient else 'D - Auto Trigger'
             })
             
         return JsonResponse({'success': True, 'details': details, 'logs': log_data})
@@ -914,7 +998,7 @@ def api_save_time_setting(request):
                 ts.rush_start = data['rush_start']
                 ts.rush_end = data['rush_end']
                 ts.rush_percentage = int(data['rush_percentage'])
-                ts.processing_interval = int(data['processing_interval'])
+                ts.processing_interval = float(data['processing_interval'])
                 ts.is_active = is_active
                 ts.save()
             else:
@@ -925,7 +1009,7 @@ def api_save_time_setting(request):
                     rush_start=data['rush_start'],
                     rush_end=data['rush_end'],
                     rush_percentage=int(data['rush_percentage']),
-                    processing_interval=int(data['processing_interval']),
+                    processing_interval=float(data['processing_interval']),
                     is_active=is_active
                 )
             return JsonResponse({'success': True, 'message': 'Time Profile saved successfully.', 'id': ts.id})
@@ -960,3 +1044,94 @@ def api_delete_time_setting(request, pk):
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
     return JsonResponse({'success': False, 'message': 'Invalid method.'})
+
+def api_get_auto_trigger_status(request, pk):
+    try:
+        if isinstance(pk, str) and str(pk).startswith('AT-'):
+            try:
+                parts = str(pk).split('-')
+                hid = int(parts[-1])
+                h = AutoTriggerHistory.objects.get(id=hid)
+            except Exception:
+                h = AutoTriggerHistory.objects.get(id=int(str(pk).replace('AT-', '')))
+        else:
+            h = AutoTriggerHistory.objects.get(id=int(pk))
+
+        last_log = h.logs.order_by('-id').first()
+        cur_sched_time = '-'
+        next_sched_time = '-'
+        if last_log and last_log.scheduled_at:
+            cur_sched_time = timezone.localtime(last_log.scheduled_at).strftime('%I:%M %p')
+            interval = float(h.config.time_setting.processing_interval) if (h.config and h.config.time_setting and h.config.time_setting.processing_interval) else 1.0
+            next_sched = last_log.scheduled_at + timedelta(minutes=interval)
+            next_sched_time = timezone.localtime(next_sched).strftime('%I:%M %p')
+
+        data = {
+            'success': True,
+            'run_id': h.run_id,
+            'history_id': h.id,
+            'department': h.department.name if h.department else 'GENERAL',
+            'status': h.status,
+            'current_stage': h.current_stage or 'STAGE 1 — PATIENT CREATION',
+            'total_created': h.successful,
+            'total_failed': h.failed,
+            'total_processed': h.processed_entries,
+            'total_remaining': max(0, h.max_entries - h.processed_entries),
+            'min_entries': h.min_entries,
+            'max_entries': h.max_entries,
+            'progress_percentage': round((h.processed_entries / h.max_entries) * 100, 1) if h.max_entries > 0 else 0,
+            'started_at': h.started_at.strftime('%d %b %Y %I:%M %p') if h.started_at else h.created_at.strftime('%d %b %Y %I:%M %p'),
+            'last_updated_at': h.last_processed_at.strftime('%I:%M:%S %p') if h.last_processed_at else timezone.now().strftime('%I:%M:%S %p'),
+            'completed_at': h.completed_at.strftime('%d %b %Y %I:%M %p') if h.completed_at else '',
+            'current_scheduled_time': cur_sched_time,
+            'next_scheduled_time': next_sched_time,
+            'error_message': h.error_message or ''
+        }
+        return JsonResponse(data)
+    except AutoTriggerHistory.DoesNotExist:
+        return JsonResponse({'success': False, 'message': f'Auto Trigger Run {pk} not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+def api_get_active_auto_trigger_run(request):
+    try:
+        active_run = AutoTriggerHistory.objects.filter(
+            status__in=['Queued', 'Processing']
+        ).select_related('department', 'config').order_by('-id').first()
+
+        if not active_run:
+            return JsonResponse({'success': True, 'has_active': False, 'data': None})
+
+        last_log = active_run.logs.order_by('-id').first()
+        cur_sched_time = '-'
+        next_sched_time = '-'
+        if last_log and last_log.scheduled_at:
+            cur_sched_time = timezone.localtime(last_log.scheduled_at).strftime('%I:%M %p')
+            interval = float(active_run.config.time_setting.processing_interval) if (active_run.config and active_run.config.time_setting and active_run.config.time_setting.processing_interval) else 1.0
+            next_sched = last_log.scheduled_at + timedelta(minutes=interval)
+            next_sched_time = timezone.localtime(next_sched).strftime('%I:%M %p')
+
+        data = {
+            'has_active': True,
+            'run_id': active_run.run_id,
+            'history_id': active_run.id,
+            'department': active_run.department.name if active_run.department else 'GENERAL',
+            'status': active_run.status,
+            'current_stage': active_run.current_stage or 'STAGE 1 — PATIENT CREATION',
+            'total_created': active_run.successful,
+            'total_failed': active_run.failed,
+            'total_processed': active_run.processed_entries,
+            'total_remaining': max(0, active_run.max_entries - active_run.processed_entries),
+            'min_entries': active_run.min_entries,
+            'max_entries': active_run.max_entries,
+            'progress_percentage': round((active_run.processed_entries / active_run.max_entries) * 100, 1) if active_run.max_entries > 0 else 0,
+            'started_at': active_run.started_at.strftime('%d %b %Y %I:%M %p') if active_run.started_at else active_run.created_at.strftime('%d %b %Y %I:%M %p'),
+            'last_updated_at': active_run.last_processed_at.strftime('%I:%M:%S %p') if active_run.last_processed_at else timezone.now().strftime('%I:%M:%S %p'),
+            'current_scheduled_time': cur_sched_time,
+            'next_scheduled_time': next_sched_time,
+            'error_message': active_run.error_message or ''
+        }
+        return JsonResponse({'success': True, 'has_active': True, 'data': data})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+

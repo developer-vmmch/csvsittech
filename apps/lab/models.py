@@ -475,7 +475,7 @@ class AutoTriggerTimeSetting(TimeStampedModel):
     rush_start = models.TimeField(default='10:00:00')
     rush_end = models.TimeField(default='14:00:00')
     rush_percentage = models.PositiveIntegerField(default=75)
-    processing_interval = models.PositiveIntegerField(default=1, help_text="In minutes")
+    processing_interval = models.FloatField(default=30.0, help_text="In minutes (e.g. 0.5 for 30 seconds)")
     is_active = models.BooleanField(default=False)
 
     def __str__(self):
@@ -525,10 +525,18 @@ class AutoTriggerHistory(TimeStampedModel):
     successful = models.PositiveIntegerField(default=0)
     failed = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Queued')
+    current_stage = models.CharField(max_length=100, default='STAGE 1 — PATIENT CREATION')
+    error_message = models.TextField(blank=True, null=True)
     triggered_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     started_at = models.DateTimeField(null=True, blank=True)
     last_processed_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def run_id(self):
+        if self.created_at:
+            return f"AT-{self.created_at.strftime('%Y%m%d')}-{self.id:03d}"
+        return f"AT-{self.id:03d}"
 
 class AutoTriggerLog(TimeStampedModel):
     STATUS_CHOICES = (
@@ -541,6 +549,7 @@ class AutoTriggerLog(TimeStampedModel):
     entry_date = models.DateField()
     department = models.CharField(max_length=200, blank=True, null=True)
     stage = models.CharField(max_length=50, default='STAGE 1 — PATIENT CREATION')
+    scheduled_at = models.DateTimeField(null=True, blank=True)
     source_patient = models.ForeignKey('patients.Patient', on_delete=models.SET_NULL, null=True, blank=True, related_name='source_trigger_logs')
     new_patient = models.ForeignKey('patients.Patient', on_delete=models.SET_NULL, null=True, blank=True, related_name='created_trigger_logs')
     visit = models.ForeignKey('patients.PatientVisit', on_delete=models.SET_NULL, null=True, blank=True)

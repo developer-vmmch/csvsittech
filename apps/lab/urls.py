@@ -46,7 +46,8 @@ from .auto_trigger_views import (
     api_save_auto_trigger_config, api_get_auto_trigger_configs,
     api_execute_auto_trigger, api_get_auto_trigger_history,
     api_get_auto_trigger_history_detail, api_delete_auto_trigger_config,
-    api_retry_failed_entries, api_save_time_setting, api_get_time_settings, api_delete_time_setting
+    api_retry_failed_entries, api_save_time_setting, api_get_time_settings, api_delete_time_setting,
+    api_get_auto_trigger_status, api_get_active_auto_trigger_run
 )
 
 app_name = 'lab'
@@ -184,12 +185,14 @@ urlpatterns = [
 
     # Auto Trigger
     path('auto-trigger/configuration/', AutoTriggerConfigurationView.as_view(), name='auto_trigger_configuration'),
-    path('auto-trigger/time-settings/', AutoTriggerTimeSettingsView.as_view(), name='auto_trigger_time_settings'),
+    path('auto-trigger/time-settings/', AutoTriggerConfigurationView.as_view(), name='auto_trigger_time_settings'),
     path('auto-trigger/history/', AutoTriggerHistoryView.as_view(), name='auto_trigger_history'),
     
     path('api/auto-trigger/save/', api_save_auto_trigger_config, name='api_save_auto_trigger_config'),
     path('api/auto-trigger/list/', api_get_auto_trigger_configs, name='api_get_auto_trigger_configs'),
     path('api/auto-trigger/execute/', api_execute_auto_trigger, name='api_execute_auto_trigger'),
+    path('api/auto-trigger/status/<str:pk>/', api_get_auto_trigger_status, name='api_auto_trigger_status'),
+    path('api/auto-trigger/active-run/', api_get_active_auto_trigger_run, name='api_auto_trigger_active_run'),
     path('api/auto-trigger/history/', api_get_auto_trigger_history, name='api_get_auto_trigger_history'),
     path('api/auto-trigger/history/<int:pk>/', api_get_auto_trigger_history_detail, name='api_get_auto_trigger_history_detail'),
     path('api/auto-trigger/config/<int:pk>/delete/', api_delete_auto_trigger_config, name='api_delete_auto_trigger_config'),

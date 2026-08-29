@@ -55,6 +55,7 @@ class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermi
                 elif col == 'First Name': row.append(p.name)
                 elif col == 'Last Name': row.append('') 
                 elif col == 'Patient Name': row.append(p.name)
+                elif col == 'Patient Type': row.append("Auto Trigger" if (p.patient_type == 'D' or p.created_source == 'D') else "Normal Entry")
                 elif col == 'Gender': row.append(p.gender)
                 elif col == 'Date of Birth': row.append(p.dob.strftime('%Y-%m-%d') if p.dob else '')
                 elif col == 'Age' or col == 'Age Display': row.append(p.age_years)
@@ -113,8 +114,12 @@ class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermi
         q_search = self.request.GET.get('search', '').strip()
         from_date = self.request.GET.get('from_date', '').strip()
         to_date = self.request.GET.get('to_date', '').strip()
+        patient_type = self.request.GET.get('patient_type', 'A').strip().upper()
 
         queryset = Patient.objects.all().order_by('-id')
+
+        if patient_type in ['O', 'D']:
+            queryset = queryset.filter(Q(patient_type=patient_type) | Q(created_source=patient_type))
 
         if q_search:
             queryset = queryset.filter(
@@ -145,14 +150,16 @@ class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermi
         # Calculate counts
         total_patients = Patient.objects.count()
         filtered_patients = self.get_queryset().count()
+        patient_type = self.request.GET.get('patient_type', 'A').strip().upper()
 
         context['search'] = self.request.GET.get('search', '')
         context['from_date'] = self.request.GET.get('from_date', '')
         context['to_date'] = self.request.GET.get('to_date', '')
+        context['patient_type'] = patient_type
         context['today'] = timezone.localdate().strftime('%Y-%m-%d')
         context['total_patients'] = total_patients
         context['filtered_patients'] = filtered_patients
-        context['has_filter'] = bool(context['search'] or context['from_date'] or context['to_date'])
+        context['has_filter'] = bool(context['search'] or context['from_date'] or context['to_date'] or (patient_type and patient_type != 'A'))
         
         return context
 
@@ -192,61 +199,68 @@ class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
         return super().get_paginate_by(queryset)
 
     def get_queryset(self):
-        q_name = self.request.GET.get('q_name', '').strip()
-        q_from_date = self.request.GET.get('q_from_date', '').strip()
-        q_to_date = self.request.GET.get('q_to_date', '').strip()
-        q_mobile = self.request.GET.get('q_mobile', '').strip()
-        q_aadhar = self.request.GET.get('q_aadhar', '').strip()
-        q_abha = self.request.GET.get('q_abha', '').strip()
-        q_department = self.request.GET.get('q_department', '').strip()
-        q_user = self.request.GET.get('q_user', '').strip()
+        try:
+            q_name = self.request.GET.get('q_name', '').strip()
+            q_from_date = self.request.GET.get('q_from_date', '').strip()
+            q_to_date = self.request.GET.get('q_to_date', '').strip()
+            q_mobile = self.request.GET.get('q_mobile', '').strip()
+            q_aadhar = self.request.GET.get('q_aadhar', '').strip()
+            q_abha = self.request.GET.get('q_abha', '').strip()
+            q_department = self.request.GET.get('q_department', '').strip()
+            q_user = self.request.GET.get('q_user', '').strip()
+            q_entry_type = self.request.GET.get('q_entry_type', '').strip().upper()
 
-        has_search_params = any([q_name, q_from_date, q_to_date, q_mobile, q_aadhar, q_abha, q_department, q_user])
+            has_search_params = any([q_name, q_from_date, q_to_date, q_mobile, q_aadhar, q_abha, q_department, q_user, (q_entry_type and q_entry_type != 'A')])
 
-        if not has_search_params:
+            if not has_search_params:
+                return Patient.objects.none()
+
+            queryset = Patient.objects.all().order_by('-id')
+
+            if q_entry_type in ['O', 'D']:
+                queryset = queryset.filter(Q(patient_type=q_entry_type) | Q(created_source=q_entry_type))
+
+            if q_name:
+                queryset = queryset.filter(name__icontains=q_name)
+
+            if q_from_date:
+                try:
+                    from_dt = datetime.strptime(q_from_date, '%Y-%m-%d').date()
+                    queryset = queryset.filter(created_at__date__gte=from_dt)
+                except ValueError:
+                    pass
+
+            if q_to_date:
+                try:
+                    to_dt = datetime.strptime(q_to_date, '%Y-%m-%d').date()
+                    queryset = queryset.filter(created_at__date__lte=to_dt)
+                except ValueError:
+                    pass
+
+            if q_mobile:
+                queryset = queryset.filter(mobile_no__icontains=q_mobile)
+
+            if q_aadhar:
+                queryset = queryset.filter(aadhar_card__icontains=q_aadhar)
+
+            if q_abha:
+                queryset = queryset.filter(Q(abha_id__icontains=q_abha) | Q(patient_id__icontains=q_abha) | Q(op_number__icontains=q_abha))
+
+            if q_department:
+                if q_department.isdigit():
+                    queryset = queryset.filter(department_obj_id=int(q_department))
+                else:
+                    queryset = queryset.filter(department__icontains=q_department)
+
+            if q_user:
+                if q_user == 'system':
+                    queryset = queryset.filter(created_by__isnull=True)
+                elif q_user.isdigit():
+                    queryset = queryset.filter(created_by_id=int(q_user))
+
+            return queryset
+        except Exception as e:
             return Patient.objects.none()
-
-        queryset = Patient.objects.all().order_by('-id')
-
-        if q_name:
-            queryset = queryset.filter(name__icontains=q_name)
-
-        if q_from_date:
-            try:
-                from_dt = datetime.strptime(q_from_date, '%Y-%m-%d').date()
-                queryset = queryset.filter(created_at__date__gte=from_dt)
-            except ValueError:
-                pass
-
-        if q_to_date:
-            try:
-                to_dt = datetime.strptime(q_to_date, '%Y-%m-%d').date()
-                queryset = queryset.filter(created_at__date__lte=to_dt)
-            except ValueError:
-                pass
-
-        if q_mobile:
-            queryset = queryset.filter(mobile_no__icontains=q_mobile)
-
-        if q_aadhar:
-            queryset = queryset.filter(aadhar_card__icontains=q_aadhar)
-
-        if q_abha:
-            queryset = queryset.filter(Q(abha_id__icontains=q_abha) | Q(patient_id__icontains=q_abha) | Q(op_number__icontains=q_abha))
-
-        if q_department:
-            if q_department.isdigit():
-                queryset = queryset.filter(department_obj_id=int(q_department))
-            else:
-                queryset = queryset.filter(department__icontains=q_department)
-
-        if q_user:
-            if q_user == 'system':
-                queryset = queryset.filter(created_by__isnull=True)
-            elif q_user.isdigit():
-                queryset = queryset.filter(created_by_id=int(q_user))
-
-        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -259,6 +273,7 @@ class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
         context['q_abha'] = self.request.GET.get('q_abha', '')
         context['q_department'] = self.request.GET.get('q_department', '')
         context['q_user'] = self.request.GET.get('q_user', '')
+        context['q_entry_type'] = self.request.GET.get('q_entry_type', 'A').upper()
 
         Department.seed_defaults()
         context['departments'] = Department.objects.filter(is_active=True).order_by('name')
@@ -267,7 +282,8 @@ class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
         context['has_searched'] = any([
             context['q_name'], context['q_from_date'], context['q_to_date'],
             context['q_mobile'], context['q_aadhar'], context['q_abha'],
-            context['q_department'], context['q_user']
+            context['q_department'], context['q_user'],
+            (context['q_entry_type'] and context['q_entry_type'] != 'A')
         ])
         return context
 
@@ -430,6 +446,9 @@ class PatientDeleteView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
 
     def post(self, request, *args, **kwargs):
         patient = self.get_object()
+        if patient.patient_type == 'D' or patient.created_source == 'D':
+            messages.error(request, "Auto Trigger generated patients cannot be deleted.")
+            return redirect('patients:list')
         messages.success(request, f"Patient record '{patient.name}' ({patient.patient_id}) deleted successfully.")
         return super().post(request, *args, **kwargs)
 

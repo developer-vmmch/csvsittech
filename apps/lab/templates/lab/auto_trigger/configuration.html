@@ -780,6 +780,10 @@
         overflow: hidden;
     }
 
+    .at-modal-wide {
+        max-width: 780px !important;
+    }
+
     .at-modal-header {
         padding: 1rem 1.25rem;
         background: #f8fafc;
@@ -810,9 +814,9 @@
             <p class="at-subtitle">Configure automation settings, timing and day-end to process patient entries based on department, date range and time schedule.</p>
         </div>
         <div>
-            <a href="{% url 'lab:auto_trigger_time_settings' %}" class="btn-top-time-setting">
-                <i class="bi bi-gear"></i> View Time Settings
-            </a>
+            <button type="button" class="btn-top-time-setting" onclick="openProfileModal(false)">
+                <i class="bi bi-plus-circle" style="color: #2563eb;"></i> + Create Time Profile
+            </button>
         </div>
     </div>
 
@@ -1107,36 +1111,36 @@
 
             <!-- Stage 2 -->
             <div style="flex: 1; min-width: 140px; text-align: center; background: #f8fafc; padding: 0.85rem 0.5rem; border-radius: 8px; border: 1px dashed #cbd5e1;">
-                <div style="width: 28px; height: 28px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4rem; font-weight: 800; font-size: 0.82rem;">②</div>
+                <div id="stage2_icon" style="width: 28px; height: 28px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4rem; font-weight: 800; font-size: 0.82rem;">②</div>
                 <div style="font-weight: 700; font-size: 0.82rem; color: #64748b;">Diagnosis Assignment</div>
-                <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.15rem;">○ Pending</div>
+                <div id="stage2_text" style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.15rem;">○ Pending</div>
             </div>
 
             <div style="color: #94a3b8; font-size: 1.1rem;"><i class="bi bi-chevron-right"></i></div>
 
             <!-- Stage 3 -->
             <div style="flex: 1; min-width: 140px; text-align: center; background: #f8fafc; padding: 0.85rem 0.5rem; border-radius: 8px; border: 1px dashed #cbd5e1;">
-                <div style="width: 28px; height: 28px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4rem; font-weight: 800; font-size: 0.82rem;">③</div>
+                <div id="stage3_icon" style="width: 28px; height: 28px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4rem; font-weight: 800; font-size: 0.82rem;">③</div>
                 <div style="font-weight: 700; font-size: 0.82rem; color: #64748b;">Investigation Assignment</div>
-                <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.15rem;">○ Pending</div>
+                <div id="stage3_text" style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.15rem;">○ Pending</div>
             </div>
 
             <div style="color: #94a3b8; font-size: 1.1rem;"><i class="bi bi-chevron-right"></i></div>
 
             <!-- Stage 4 -->
             <div style="flex: 1; min-width: 140px; text-align: center; background: #f8fafc; padding: 0.85rem 0.5rem; border-radius: 8px; border: 1px dashed #cbd5e1;">
-                <div style="width: 28px; height: 28px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4rem; font-weight: 800; font-size: 0.82rem;">④</div>
+                <div id="stage4_icon" style="width: 28px; height: 28px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4rem; font-weight: 800; font-size: 0.82rem;">④</div>
                 <div style="font-weight: 700; font-size: 0.82rem; color: #64748b;">Lab Order / Entry Creation</div>
-                <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.15rem;">○ Pending</div>
+                <div id="stage4_text" style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.15rem;">○ Pending</div>
             </div>
 
             <div style="color: #94a3b8; font-size: 1.1rem;"><i class="bi bi-chevron-right"></i></div>
 
             <!-- Stage 5 -->
             <div style="flex: 1; min-width: 140px; text-align: center; background: #f8fafc; padding: 0.85rem 0.5rem; border-radius: 8px; border: 1px dashed #cbd5e1;">
-                <div style="width: 28px; height: 28px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4rem; font-weight: 800; font-size: 0.82rem;">⑤</div>
+                <div id="stage5_icon" style="width: 28px; height: 28px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4rem; font-weight: 800; font-size: 0.82rem;">⑤</div>
                 <div style="font-weight: 700; font-size: 0.82rem; color: #64748b;">Validation & Completion</div>
-                <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.15rem;">○ Pending</div>
+                <div id="stage5_text" style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.15rem;">○ Pending</div>
             </div>
         </div>
     </div>
@@ -1406,7 +1410,7 @@
 
 <!-- Create / Edit Time Profile Modal -->
 <div id="profileModal" class="at-modal-overlay">
-    <div class="at-modal">
+    <div class="at-modal" style="max-width: 650px;">
         <div class="at-modal-header">
             <h4 class="at-modal-title" id="profile_modal_title">
                 <i class="bi bi-clock-history" style="color: #2563eb;"></i> Create Custom Time Profile
@@ -1417,62 +1421,11 @@
             <form id="profileModalForm">
                 <input type="hidden" id="prof_id" value="">
                 
-                <div style="margin-bottom: 0.9rem;">
-                    <label class="at-label">Profile Name <span class="required-star">*</span></label>
-                    <input type="text" id="prof_name" class="at-input" placeholder="e.g. Custom Dermatology Schedule" required>
-                </div>
-
-                <div class="form-grid-2">
+                <!-- Row 1: Profile Name & Status -->
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.85rem; margin-bottom: 0.85rem;">
                     <div>
-                        <label class="at-label">Laboratory Day Start <span class="required-star">*</span></label>
-                        <div class="at-time-input-wrap">
-                            <i class="bi bi-clock time-icon" onclick="openClockPicker('prof_lab_day_start')"></i>
-                            <input type="text" id="prof_lab_day_start" class="at-input at-input-time" value="04:00 AM" required readonly onclick="openClockPicker('prof_lab_day_start')">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="at-label">Laboratory Day End <span class="required-star">*</span></label>
-                        <div class="at-time-input-wrap">
-                            <i class="bi bi-clock time-icon" onclick="openClockPicker('prof_lab_day_end')"></i>
-                            <input type="text" id="prof_lab_day_end" class="at-input at-input-time" value="03:59 AM (Next Day)" required readonly onclick="openClockPicker('prof_lab_day_end')">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-grid-2">
-                    <div>
-                        <label class="at-label">Rush Start Time <span class="required-star">*</span></label>
-                        <div class="at-time-input-wrap">
-                            <i class="bi bi-clock time-icon" onclick="openClockPicker('prof_rush_start')"></i>
-                            <input type="text" id="prof_rush_start" class="at-input at-input-time" value="10:00 AM" required readonly onclick="openClockPicker('prof_rush_start')">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="at-label">Rush End Time <span class="required-star">*</span></label>
-                        <div class="at-time-input-wrap">
-                            <i class="bi bi-clock time-icon" onclick="openClockPicker('prof_rush_end')"></i>
-                            <input type="text" id="prof_rush_end" class="at-input at-input-time" value="02:00 PM" required readonly onclick="openClockPicker('prof_rush_end')">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-grid-2">
-                    <div>
-                        <label class="at-label">Rush Percentage <span class="required-star">*</span></label>
-                        <input type="number" id="prof_rush_percentage" class="at-input" min="1" max="99" value="75" required oninput="syncProfRemPct(); renderTimelineChart();">
-                    </div>
-                    <div>
-                        <label class="at-label">Remaining Percentage</label>
-                        <input type="number" id="prof_rem_percentage" class="at-input" value="25" min="1" max="99" oninput="syncProfRushPct(); renderTimelineChart();">
-                    </div>
-                </div>
-
-                <div class="form-grid-2">
-                    <div>
-                        <label class="at-label">Processing Interval <span class="required-star">*</span></label>
-                        <input type="hidden" id="prof_processing_interval" value="1">
-                        <input type="text" class="at-input" value="1 Minute" disabled style="background-color: #f1f5f9; cursor: not-allowed;">
-                        <small style="color:var(--text-muted); font-size:0.75rem;">System enforced interval</small>
+                        <label class="at-label">Profile Name <span class="required-star">*</span></label>
+                        <input type="text" id="prof_name" class="at-input" placeholder="e.g. Custom Dermatology Schedule" required>
                     </div>
                     <div>
                         <label class="at-label">Status <span class="required-star">*</span></label>
@@ -1482,18 +1435,105 @@
                         </select>
                     </div>
                 </div>
+
+                <!-- Row 2: Lab Day Times -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 0.85rem;">
+                    <div>
+                        <label class="at-label">Lab Day Start <span class="required-star">*</span></label>
+                        <div class="at-time-input-wrap">
+                            <i class="bi bi-clock time-icon" onclick="openClockPicker('prof_lab_day_start')"></i>
+                            <input type="text" id="prof_lab_day_start" class="at-input at-input-time" value="04:00 AM" required readonly onclick="openClockPicker('prof_lab_day_start')" style="padding-left:2.5rem !important;">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="at-label">Lab Day End <span class="required-star">*</span></label>
+                        <div class="at-time-input-wrap">
+                            <i class="bi bi-clock time-icon" onclick="openClockPicker('prof_lab_day_end')"></i>
+                            <input type="text" id="prof_lab_day_end" class="at-input at-input-time" value="03:59 AM (Next Day)" required readonly onclick="openClockPicker('prof_lab_day_end')" style="padding-left:2.5rem !important;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3: Rush Times -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 0.85rem;">
+                    <div>
+                        <label class="at-label">Rush Start Time <span class="required-star">*</span></label>
+                        <div class="at-time-input-wrap">
+                            <i class="bi bi-clock time-icon" onclick="openClockPicker('prof_rush_start')"></i>
+                            <input type="text" id="prof_rush_start" class="at-input at-input-time" value="10:00 AM" required readonly onclick="openClockPicker('prof_rush_start')" style="padding-left:2.5rem !important;">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="at-label">Rush End Time <span class="required-star">*</span></label>
+                        <div class="at-time-input-wrap">
+                            <i class="bi bi-clock time-icon" onclick="openClockPicker('prof_rush_end')"></i>
+                            <input type="text" id="prof_rush_end" class="at-input at-input-time" value="02:00 PM" required readonly onclick="openClockPicker('prof_rush_end')" style="padding-left:2.5rem !important;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 4: Rush %, Remaining %, Processing Interval -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 0.85rem;">
+                    <div>
+                        <label class="at-label">Rush Percentage <span class="required-star">*</span></label>
+                        <div style="position: relative;">
+                            <input type="number" id="prof_rush_percentage" class="at-input" min="1" max="99" value="75" required oninput="syncProfRemPct(); renderTimelineChart();">
+                            <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b; font-size: 0.82rem;">%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="at-label">Remaining Percentage</label>
+                        <div style="position: relative;">
+                            <input type="number" id="prof_rem_percentage" class="at-input" value="25" min="1" max="99" oninput="syncProfRushPct(); renderTimelineChart();">
+                            <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b; font-size: 0.82rem;">%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="at-label">Processing Interval <span class="required-star">*</span></label>
+                        <select id="prof_processing_interval_select" class="at-select" onchange="renderTimelineChart();">
+                            <option value="1" selected>1 Minute</option>
+                        </select>
+                        <div id="prof_custom_interval_wrap" style="display: none;"></div>
+                    </div>
+                </div>
                 
-                <div style="margin-top: 1.5rem; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; background: #f8fafc; transition: all 0.3s ease;">
-                    <h5 style="margin: 0 0 1rem 0; font-size: 0.95rem; color: #1e293b;">Time Profile Chart</h5>
-                    <div id="prof_timeline_chart" style="font-family: monospace; font-size: 0.85rem; color: #475569; white-space: pre-wrap;">
-                        <!-- Updated by JS -->
+                <!-- Dynamic Live Preview & Timeline Breakdown -->
+                <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.85rem 1rem; background: #f8fafc;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                        <h5 style="margin: 0; font-size: 0.85rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 0.4rem;">
+                            <i class="bi bi-bar-chart-line-fill" style="color: #2563eb;"></i> Time Profile Breakdown Preview
+                        </h5>
+                        <span id="prof_total_duration_badge" class="badge-status-active" style="font-size: 0.72rem; padding: 0.15rem 0.5rem;">Total Day: 23h 59m</span>
+                    </div>
+
+                    <!-- Visual Segment Bar -->
+                    <div style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; display: flex; margin-bottom: 0.65rem;">
+                        <div id="prof_chart_bar_rush" style="width: 75%; background: #10b981; height: 100%; transition: width 0.3s ease;"></div>
+                        <div id="prof_chart_bar_rem" style="width: 25%; background: #3b82f6; height: 100%; transition: width 0.3s ease;"></div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.78rem;">
+                        <div style="background: #ffffff; border: 1px solid #dcfce7; border-radius: 6px; padding: 0.45rem 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; font-weight: 700; color: #15803d; margin-bottom: 0.15rem;">
+                                <span><i class="bi bi-clock-fill"></i> Rush Period</span>
+                                <span><span id="prof_preview_rush_pct">75%</span> (<span id="prof_preview_rush_interval">30 Minutes</span>)</span>
+                            </div>
+                            <div style="color: #475569; font-weight: 500;" id="prof_preview_rush_time">10:00 AM &rarr; 02:00 PM</div>
+                        </div>
+                        <div style="background: #ffffff; border: 1px solid #dbeafe; border-radius: 6px; padding: 0.45rem 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; font-weight: 700; color: #1d4ed8; margin-bottom: 0.15rem;">
+                                <span><i class="bi bi-clock-fill"></i> Remaining Period</span>
+                                <span><span id="prof_preview_rem_pct">25%</span> (<span id="prof_preview_rem_interval">30 Minutes</span>)</span>
+                            </div>
+                            <div style="color: #475569; font-weight: 500;" id="prof_preview_rem_time">02:00 PM &rarr; 03:59 AM (Next Day)</div>
+                        </div>
                     </div>
                 </div>
             </form>
         </div>
-        <div class="at-modal-footer" style="padding: 1rem 1.25rem; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 0.75rem; background: #f8fafc; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+        <div class="at-modal-footer" style="padding: 0.85rem 1.25rem; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 0.75rem; background: #f8fafc; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
             <button type="button" class="btn-reset" onclick="closeProfileModal()">Cancel</button>
-            <button type="button" class="btn-save-config" id="btn_save_profile" onclick="saveCustomProfile()">Save Custom Profile</button>
+            <button type="button" class="btn-save-config" id="btn_save_profile" onclick="saveCustomProfile()">Save Time Profile</button>
         </div>
 <!-- Stage 1 History Details Modal -->
 <div id="historyDetailModal" class="at-modal-overlay">
@@ -1791,6 +1831,39 @@
         document.getElementById('cur_tw_target').textContent = rushTarget;
     }
 
+    function toggleCustomIntervalField() {
+        const sel = document.getElementById('prof_processing_interval_select').value;
+        const wrap = document.getElementById('prof_custom_interval_wrap');
+        if (sel === 'CUSTOM') {
+            wrap.style.display = 'grid';
+        } else {
+            wrap.style.display = 'none';
+        }
+    }
+
+    function getProcessingIntervalValue() {
+        const sel = document.getElementById('prof_processing_interval_select').value;
+        if (sel === 'CUSTOM') {
+            const val = parseFloat(document.getElementById('prof_custom_interval_val').value) || 1;
+            const unit = document.getElementById('prof_custom_interval_unit').value;
+            if (unit === 'sec') return val / 60.0;
+            return val;
+        }
+        return parseFloat(sel);
+    }
+
+    function formatIntervalText(intervalMins) {
+        let mins = parseFloat(intervalMins);
+        if (isNaN(mins) || mins <= 0) return '30 Minutes';
+        if (mins < 1) {
+            let secs = Math.round(mins * 60);
+            return `${secs} Second${secs !== 1 ? 's' : ''}`;
+        } else {
+            let formatted = (mins % 1 === 0) ? mins.toFixed(0) : mins.toFixed(1);
+            return `${formatted} Minute${mins !== 1 ? 's' : ''}`;
+        }
+    }
+
     // Modal for Create / Edit Custom Time Profile
     function openProfileModal(isEdit) {
         if (isEdit) {
@@ -1811,7 +1884,25 @@
             document.getElementById('prof_rush_end').value = formatAMPM(selectedTs.rush_end);
             document.getElementById('prof_rush_percentage').value = selectedTs.rush_percentage || 75;
             document.getElementById('prof_rem_percentage').value = 100 - (selectedTs.rush_percentage || 75);
-            document.getElementById('prof_processing_interval').value = selectedTs.processing_interval || 30;
+            
+            const intervalVal = parseFloat(selectedTs.processing_interval) || 30;
+            const standardOpts = ['0.5', '1', '5', '10', '15', '20', '30'];
+            const strVal = intervalVal % 1 === 0 ? intervalVal.toString() : intervalVal.toFixed(1);
+            if (standardOpts.includes(strVal) || standardOpts.includes(intervalVal.toString())) {
+                document.getElementById('prof_processing_interval_select').value = standardOpts.includes(strVal) ? strVal : intervalVal.toString();
+                document.getElementById('prof_custom_interval_wrap').style.display = 'none';
+            } else {
+                document.getElementById('prof_processing_interval_select').value = 'CUSTOM';
+                document.getElementById('prof_custom_interval_wrap').style.display = 'grid';
+                if (intervalVal < 1) {
+                    document.getElementById('prof_custom_interval_val').value = Math.round(intervalVal * 60);
+                    document.getElementById('prof_custom_interval_unit').value = 'sec';
+                } else {
+                    document.getElementById('prof_custom_interval_val').value = intervalVal;
+                    document.getElementById('prof_custom_interval_unit').value = 'min';
+                }
+            }
+            
             document.getElementById('prof_is_active').value = selectedTs.is_active ? 'true' : 'false';
         } else {
             document.getElementById('profile_modal_title').innerHTML = `<i class="bi bi-clock-history" style="color:#2563eb;"></i> Create Custom Time Profile`;
@@ -1820,11 +1911,12 @@
             document.getElementById('prof_name').value = 'Custom Dermatology Schedule';
             document.getElementById('prof_lab_day_start').value = '04:00 AM';
             document.getElementById('prof_lab_day_end').value = '03:59 AM (Next Day)';
-            document.getElementById('prof_rush_start').value = '08:00 AM';
+            document.getElementById('prof_rush_start').value = '10:00 AM';
             document.getElementById('prof_rush_end').value = '02:00 PM';
-            document.getElementById('prof_rush_percentage').value = 80;
-            document.getElementById('prof_rem_percentage').value = 20;
-            document.getElementById('prof_processing_interval').value = 15;
+            document.getElementById('prof_rush_percentage').value = 75;
+            document.getElementById('prof_rem_percentage').value = 25;
+            document.getElementById('prof_processing_interval_select').value = '30';
+            document.getElementById('prof_custom_interval_wrap').style.display = 'none';
             document.getElementById('prof_is_active').value = 'true';
         }
 
@@ -2179,143 +2271,237 @@
         document.getElementById('historyDetailModal').style.display = 'none';
     }
 
-    // Poll Progress Status
+    // Singleton Poll Progress Status Manager
+    function stopPollingProgress() {
+        if (window._atPollTimer) {
+            clearInterval(window._atPollTimer);
+            window._atPollTimer = null;
+        }
+    }
+
     function startPollingProgress(historyId) {
         currentActiveHistoryId = historyId;
-        if (activeInterval) clearInterval(activeInterval);
+        stopPollingProgress();
 
         const poll = () => {
-            fetch(`/lab/api/auto-trigger/history/${historyId}/`)
-            .then(r => r.json()).then(res => {
+            fetch(`/lab/api/auto-trigger/status/${historyId}/`)
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
+            .then(res => {
                 if (res.success) {
-                    const d = res.details;
-                    
-                    document.getElementById('prog_min').textContent = d.min_entries;
-                    document.getElementById('prog_max').textContent = d.max_entries;
-                    document.getElementById('prog_proc').textContent = `${d.processed_entries} / ${d.max_entries}`;
-                    document.getElementById('prog_success').textContent = d.successful;
-                    document.getElementById('prog_failed').textContent = d.failed;
-
-                    const remTotal = Math.max(0, d.max_entries - d.processed_entries);
-                    document.getElementById('prog_rem').textContent = remTotal;
-
-                    const remMin = Math.max(0, d.min_entries - d.successful);
-                    document.getElementById('prog_rem_min').textContent = remMin;
-
-                    const remCap = Math.max(0, d.max_entries - d.successful);
-                    document.getElementById('prog_rem_cap').textContent = remCap;
-
-                    const pctMin = d.min_entries > 0 ? ((d.successful / d.min_entries) * 100).toFixed(1) : '0.0';
-                    document.getElementById('prog_pct_min').textContent = `${pctMin}%`;
-
-                    const pctOverall = d.max_entries > 0 ? ((d.processed_entries / d.max_entries) * 100).toFixed(1) : '0.0';
-                    document.getElementById('prog_pct_overall').textContent = `${pctOverall}%`;
-                    document.getElementById('prog_bar_fill').style.width = `${pctOverall}%`;
-
-                    // Update Rates
-                    if (d.window_str) {
-                        document.getElementById('prog_window_str').textContent = d.window_str;
-                        document.getElementById('prog_window_target').textContent = d.window_target;
-                        document.getElementById('prog_window_completed').textContent = d.window_completed;
-                        document.getElementById('prog_window_remaining').textContent = d.window_remaining;
-                        document.getElementById('prog_req_rate').textContent = d.req_rate;
-                        document.getElementById('prog_cur_rate').textContent = d.cur_rate;
-                        
-                        const rs = document.getElementById('prog_rate_status');
-                        rs.textContent = d.rate_status;
-                        if (d.rate_status === 'Falling Behind') {
-                            rs.style.background = '#fee2e2';
-                            rs.style.color = '#dc2626';
-                        } else if (d.rate_status === 'Completed') {
-                            rs.style.background = '#dcfce7';
-                            rs.style.color = '#16a34a';
-                        } else {
-                            rs.style.background = '#e0e7ff';
-                            rs.style.color = '#4f46e5';
-                        }
+                    updateLiveStatusDisplay(res);
+                    if (['Completed', 'Failed', 'Partially Completed', 'Cancelled'].includes(res.status)) {
+                        stopPollingProgress();
                     }
-
-                    const statusBadge = document.getElementById('prog_status_badge');
-                    statusBadge.textContent = d.status;
-
-                    if (['Completed', 'Failed', 'Partially Completed', 'Cancelled'].includes(d.status)) {
-                        clearInterval(activeInterval);
-                        if (d.status === 'Completed' || d.status === 'Partially Completed') {
-                            const s1Icon = document.getElementById('stage1_icon');
-                            const s1Text = document.getElementById('stage1_text');
-                            const s1Status = document.getElementById('pipeline_stage1_status');
-                            
-                            s1Icon.style.background = '#10b981';
-                            s1Icon.innerHTML = '<i class="bi bi-check-lg"></i>';
-                            s1Icon.parentElement.style.borderColor = '#10b981';
-                            s1Text.style.color = '#10b981';
-                            s1Text.textContent = '✓ Completed (Ready for Stage 2)';
-                            
-                            s1Status.style.background = '#d1fae5';
-                            s1Status.style.color = '#065f46';
-                            s1Status.style.border = '1px solid #34d399';
-                            s1Status.textContent = 'Stage 1 Completed';
-                        }
-                    } else if (d.status === 'Processing') {
-                        const s1Icon = document.getElementById('stage1_icon');
-                        const s1Text = document.getElementById('stage1_text');
-                        const s1Status = document.getElementById('pipeline_stage1_status');
-                        
-                        s1Icon.style.background = '#3b82f6';
-                        s1Icon.innerHTML = '①';
-                        s1Icon.parentElement.style.borderColor = '#3b82f6';
-                        s1Text.style.color = '#3b82f6';
-                        s1Text.textContent = '● Running';
-                        
-                        s1Status.style.background = '#eff6ff';
-                        s1Status.style.color = '#1d4ed8';
-                        s1Status.style.border = '1px solid #bfdbfe';
-                        s1Status.textContent = 'Stage 1 Active';
-                    }
+                }
+            })
+            .catch(err => {
+                console.warn("Auto Trigger polling temporary error:", err);
+                const statusBadge = document.getElementById('prog_status_badge');
+                if (statusBadge) {
+                    statusBadge.textContent = 'Status temporarily unavailable';
+                    statusBadge.style.background = '#fef3c7';
+                    statusBadge.style.color = '#d97706';
                 }
             });
         };
+
         poll();
-        activeInterval = setInterval(poll, 3000);
+        window._atPollTimer = setInterval(poll, 6000);
+    }
+
+    function updateLiveStatusDisplay(d) {
+        if (!d) return;
+        currentActiveHistoryId = d.history_id;
+
+        const progMin = document.getElementById('prog_min');
+        const progMax = document.getElementById('prog_max');
+        const progProc = document.getElementById('prog_proc');
+        const progSuccess = document.getElementById('prog_success');
+        const progFailed = document.getElementById('prog_failed');
+        const progRem = document.getElementById('prog_rem');
+        const progRemMin = document.getElementById('prog_rem_min');
+        const progRemCap = document.getElementById('prog_rem_cap');
+        const progPctMin = document.getElementById('prog_pct_min');
+        const progPctOverall = document.getElementById('prog_pct_overall');
+        const progBarFill = document.getElementById('prog_bar_fill');
+        const statusBadge = document.getElementById('prog_status_badge');
+
+        if (progMin) progMin.textContent = d.min_entries;
+        if (progMax) progMax.textContent = d.max_entries;
+        if (progProc) progProc.textContent = `${d.total_processed} / ${d.max_entries}`;
+        if (progSuccess) progSuccess.textContent = d.total_created;
+        if (progFailed) progFailed.textContent = d.total_failed;
+        if (progRem) progRem.textContent = d.total_remaining;
+        
+        const remMin = Math.max(0, d.min_entries - d.total_created);
+        if (progRemMin) progRemMin.textContent = remMin;
+        
+        const remCap = Math.max(0, d.max_entries - d.total_created);
+        if (progRemCap) progRemCap.textContent = remCap;
+
+        const pctMin = d.min_entries > 0 ? ((d.total_created / d.min_entries) * 100).toFixed(1) : '0.0';
+        if (progPctMin) progPctMin.textContent = `${pctMin}%`;
+
+        const pctOverall = d.max_entries > 0 ? ((d.total_processed / d.max_entries) * 100).toFixed(1) : '0.0';
+        if (progPctOverall) progPctOverall.textContent = `${pctOverall}%`;
+        if (progBarFill) progBarFill.style.width = `${pctOverall}%`;
+
+        if (statusBadge) {
+            statusBadge.textContent = d.status;
+            if (d.status === 'Processing') {
+                statusBadge.className = 'badge-status-active';
+            } else if (d.status === 'Completed') {
+                statusBadge.className = 'pill-pct pill-pct-green';
+            } else if (d.status === 'Failed') {
+                statusBadge.className = 'pill-pct pill-pct-red';
+            } else {
+                statusBadge.className = 'pill-pct pill-pct-amber';
+            }
+        }
+
+        updateStageTracker(d.current_stage || 'STAGE 1 — PATIENT CREATION', d.status);
+    }
+
+    function updateStageTracker(stageText, runStatus) {
+        let activeStageNum = 1;
+        if (stageText.includes('STAGE 2')) activeStageNum = 2;
+        else if (stageText.includes('STAGE 3')) activeStageNum = 3;
+        else if (stageText.includes('STAGE 4')) activeStageNum = 4;
+        else if (stageText.includes('STAGE 5')) activeStageNum = 5;
+
+        if (['Completed', 'Partially Completed'].includes(runStatus)) {
+            activeStageNum = 6;
+        }
+
+        const pipelineStatus = document.getElementById('pipeline_stage1_status');
+        if (pipelineStatus) {
+            if (['Completed', 'Partially Completed'].includes(runStatus)) {
+                pipelineStatus.textContent = 'Automation Completed';
+                pipelineStatus.style.background = '#d1fae5';
+                pipelineStatus.style.color = '#065f46';
+                pipelineStatus.style.border = '1px solid #34d399';
+            } else if (runStatus === 'Failed') {
+                pipelineStatus.textContent = 'Automation Failed';
+                pipelineStatus.style.background = '#fee2e2';
+                pipelineStatus.style.color = '#dc2626';
+                pipelineStatus.style.border = '1px solid #f87171';
+            } else {
+                pipelineStatus.textContent = `Stage ${activeStageNum} Active`;
+                pipelineStatus.style.background = '#eff6ff';
+                pipelineStatus.style.color = '#1d4ed8';
+                pipelineStatus.style.border = '1px solid #bfdbfe';
+            }
+        }
+
+        for (let i = 1; i <= 5; i++) {
+            const icon = document.getElementById(`stage${i}_icon`);
+            const text = document.getElementById(`stage${i}_text`);
+            if (!icon || !text) continue;
+
+            if (i < activeStageNum) {
+                icon.style.background = '#10b981';
+                icon.style.color = '#ffffff';
+                icon.innerHTML = '<i class="bi bi-check-lg"></i>';
+                if (icon.parentElement) {
+                    icon.parentElement.style.borderColor = '#10b981';
+                    icon.parentElement.style.background = '#f0fdf4';
+                }
+                text.style.color = '#10b981';
+                text.style.fontWeight = '700';
+                text.textContent = '✓ Completed';
+            } else if (i === activeStageNum && !['Completed', 'Failed', 'Partially Completed'].includes(runStatus)) {
+                icon.style.background = '#3b82f6';
+                icon.style.color = '#ffffff';
+                icon.innerHTML = `${i}`;
+                if (icon.parentElement) {
+                    icon.parentElement.style.borderColor = '#3b82f6';
+                    icon.parentElement.style.background = '#ffffff';
+                    icon.parentElement.style.boxShadow = '0 2px 4px rgba(59, 130, 246, 0.15)';
+                }
+                text.style.color = '#3b82f6';
+                text.style.fontWeight = '700';
+                text.textContent = '● Running';
+            } else {
+                icon.style.background = '#e2e8f0';
+                icon.style.color = '#64748b';
+                icon.innerHTML = `${i}`;
+                if (icon.parentElement) {
+                    icon.parentElement.style.borderColor = '#cbd5e1';
+                    icon.parentElement.style.background = '#f8fafc';
+                    icon.parentElement.style.boxShadow = 'none';
+                }
+                text.style.color = '#94a3b8';
+                text.style.fontWeight = '400';
+                text.textContent = '○ Pending';
+            }
+        }
+    }
+
+    function checkActiveRunOnLoad() {
+        fetch('/lab/api/auto-trigger/active-run/')
+        .then(r => r.json())
+        .then(res => {
+            if (res.success && res.has_active && res.data) {
+                updateLiveStatusDisplay(res.data);
+                startPollingProgress(res.data.history_id);
+            }
+        })
+        .catch(err => console.log('Active run check:', err));
     }
 
     function renderTimelineChart() {
         const start = document.getElementById('prof_lab_day_start').value || '04:00 AM';
-        const trigger = document.getElementById('prof_rush_start').value || '08:00 AM';
+        const trigger = document.getElementById('prof_rush_start').value || '10:00 AM';
         const rush = document.getElementById('prof_rush_end').value || '02:00 PM';
         const end = document.getElementById('prof_lab_day_end').value || '03:59 AM (Next Day)';
         
-        const rushPct = document.getElementById('prof_rush_percentage').value || 75;
-        const remPct = document.getElementById('prof_rem_percentage').value || 25;
+        let rushPct = parseInt(document.getElementById('prof_rush_percentage').value, 10);
+        if (isNaN(rushPct) || rushPct < 1) rushPct = 75;
+        if (rushPct > 99) rushPct = 99;
+        let remPct = 100 - rushPct;
         
-        const chartDiv = document.getElementById('prof_timeline_chart');
-        if (!chartDiv) return;
-        
-        let html = `
-${start}
-│
-│ Day Start
-│
-${trigger}
-│
-├──────────── Rush Period ────────────┤
-│             ${rushPct}%
-│
-${rush}
-│
-├──────────── Remaining Period ───────┤
-│             ${remPct}%
-│
-${end}
-│
-Day End`;
-        chartDiv.innerHTML = html.replace(/\n/g, '<br>');
+        const rushBar = document.getElementById('prof_chart_bar_rush');
+        const remBar = document.getElementById('prof_chart_bar_rem');
+        if (rushBar && remBar) {
+            rushBar.style.width = `${rushPct}%`;
+            remBar.style.width = `${remPct}%`;
+        }
+
+        const rushPctEl = document.getElementById('prof_preview_rush_pct');
+        const remPctEl = document.getElementById('prof_preview_rem_pct');
+        if (rushPctEl && remPctEl) {
+            rushPctEl.textContent = `${rushPct}%`;
+            remPctEl.textContent = `${remPct}%`;
+        }
+
+        const rushTimeEl = document.getElementById('prof_preview_rush_time');
+        const remTimeEl = document.getElementById('prof_preview_rem_time');
+        if (rushTimeEl && remTimeEl) {
+            rushTimeEl.textContent = `${trigger} \u2192 ${rush}`;
+            remTimeEl.textContent = `${rush} \u2192 ${end}`;
+        }
+
+        const intervalMins = getProcessingIntervalValue();
+        const intervalTxt = formatIntervalText(intervalMins);
+        const intervalRushEl = document.getElementById('prof_preview_rush_interval');
+        const intervalRemEl = document.getElementById('prof_preview_rem_interval');
+        if (intervalRushEl) intervalRushEl.textContent = intervalTxt;
+        if (intervalRemEl) intervalRemEl.textContent = intervalTxt;
     }
 
     function saveCustomProfile() {
         const name = document.getElementById('prof_name').value.trim();
         if (!name) {
             showToast('Profile name is required.', 'danger');
+            return;
+        }
+
+        const intervalValue = getProcessingIntervalValue();
+        if (isNaN(intervalValue) || intervalValue <= 0) {
+            showToast('Please enter a valid processing interval.', 'danger');
             return;
         }
 
@@ -2326,8 +2512,8 @@ Day End`;
             lab_day_end: parse24Hr(document.getElementById('prof_lab_day_end').value),
             rush_start: parse24Hr(document.getElementById('prof_rush_start').value),
             rush_end: parse24Hr(document.getElementById('prof_rush_end').value),
-            rush_percentage: parseInt(document.getElementById('prof_rush_percentage').value) || 75,
-            processing_interval: 1, // Fixed to 1 minute as requested
+            rush_percentage: parseInt(document.getElementById('prof_rush_percentage').value, 10) || 75,
+            processing_interval: intervalValue,
             is_active: document.getElementById('prof_is_active').value === 'true'
         };
 
@@ -2355,7 +2541,7 @@ Day End`;
         }
         
         if (re <= ts || re > de) {
-            showToast('Rush Period End Time must be after Trigger Start and before Day End.', 'danger');
+            showToast('Rush Period End Time must be after Rush Start and before Day End.', 'danger');
             return;
         }
         
@@ -2364,20 +2550,21 @@ Day End`;
         btn.textContent = 'Saving...';
         btn.disabled = true;
 
+        const csrfTokenEl = document.querySelector('[name=csrfmiddlewaretoken]');
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfTokenEl) headers['X-CSRFToken'] = csrfTokenEl.value;
+
         fetch('{% url "lab:api_save_time_setting" %}', {
             method: 'POST',
             body: JSON.stringify(data),
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            }
+            headers: headers
         })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
                 showToast(res.message || 'Custom Time Profile saved successfully!', 'success');
                 closeProfileModal();
-                fetchTimeSettings(res.data ? res.data.id : null);
+                fetchTimeSettings(res.id);
             } else {
                 showToast(res.error || res.message || 'Failed to save profile.', 'danger');
             }
@@ -2407,6 +2594,12 @@ Day End`;
         startLiveClockEngine();
         fetchTimeSettings();
         loadConfigs();
+        checkActiveRunOnLoad();
+        // Requirement 11: Auto refresh every 2 minutes (non-blocking, non-interrupting)
+        setInterval(function() {
+            loadConfigs(true);
+            checkActiveRunOnLoad();
+        }, 120000);
     };
 </script>
 {% endblock %}

@@ -29,12 +29,14 @@
         padding: 0.5rem 0;
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
+
     .at-page-title {
         font-size: 1.6rem;
         font-weight: 800;
         color: var(--text-primary);
         margin-bottom: 0.25rem;
     }
+
     .at-page-subtitle {
         color: var(--text-muted);
         font-size: 0.85rem;
@@ -46,11 +48,11 @@
         background: var(--card-bg);
         border: 1px solid var(--card-border);
         border-radius: var(--card-radius);
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         margin-bottom: 1.5rem;
         overflow: hidden;
     }
-    
+
     /* Filter Section */
     .filter-grid {
         display: grid;
@@ -59,6 +61,7 @@
         padding: 1.2rem 1.5rem;
         align-items: end;
     }
+
     .at-label {
         display: block;
         font-size: 0.75rem;
@@ -66,7 +69,9 @@
         color: var(--text-secondary);
         margin-bottom: 0.4rem;
     }
-    .at-input, .at-select {
+
+    .at-input,
+    .at-select {
         width: 100%;
         padding: 0.6rem 0.75rem;
         border: 1px solid #cbd5e1;
@@ -76,11 +81,13 @@
         outline: none;
         transition: border-color 0.2s;
     }
-    .at-input:focus, .at-select:focus {
+
+    .at-input:focus,
+    .at-select:focus {
         border-color: var(--accent-blue);
-        box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
-    
+
     .btn-search {
         background: var(--accent-blue);
         color: white;
@@ -93,8 +100,11 @@
         transition: background 0.2s;
         height: 38px;
     }
-    .btn-search:hover { background: #1d4ed8; }
-    
+
+    .btn-search:hover {
+        background: #1d4ed8;
+    }
+
     .btn-reset {
         background: #f1f5f9;
         color: var(--text-secondary);
@@ -107,7 +117,10 @@
         transition: background 0.2s;
         height: 38px;
     }
-    .btn-reset:hover { background: #e2e8f0; }
+
+    .btn-reset:hover {
+        background: #e2e8f0;
+    }
 
     /* Summary Cards */
     .summary-grid {
@@ -116,6 +129,7 @@
         gap: 1rem;
         margin-bottom: 1.5rem;
     }
+
     .summary-card {
         background: var(--card-bg);
         border: 1px solid var(--card-border);
@@ -124,8 +138,9 @@
         display: flex;
         align-items: flex-start;
         gap: 1rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
+
     .summary-icon {
         width: 48px;
         height: 48px;
@@ -136,9 +151,11 @@
         font-size: 1.5rem;
         flex-shrink: 0;
     }
+
     .summary-info {
         flex: 1;
     }
+
     .summary-title {
         font-size: 0.8rem;
         font-weight: 700;
@@ -146,6 +163,7 @@
         text-transform: uppercase;
         margin-bottom: 0.25rem;
     }
+
     .summary-value {
         font-size: 1.75rem;
         font-weight: 800;
@@ -153,21 +171,24 @@
         line-height: 1;
         margin-bottom: 0.25rem;
     }
+
     .summary-desc {
         font-size: 0.7rem;
         color: var(--text-muted);
     }
-    
+
     /* Table Styling */
     .at-table-container {
         width: 100%;
         overflow-x: auto;
     }
+
     .at-table {
         width: 100%;
         border-collapse: collapse;
         font-size: 0.82rem;
     }
+
     .at-table th {
         background: #f8fafc;
         color: var(--text-muted);
@@ -178,16 +199,18 @@
         text-align: left;
         border-bottom: 1px solid var(--card-border);
     }
+
     .at-table td {
         padding: 1rem;
         border-bottom: 1px solid #f1f5f9;
         color: var(--text-primary);
         vertical-align: middle;
     }
+
     .at-table tbody tr:hover {
         background: #f8fafc;
     }
-    
+
     /* Status Badges */
     .pill-pct {
         display: inline-block;
@@ -197,11 +220,36 @@
         font-weight: 700;
         text-transform: uppercase;
     }
-    .pill-pct-green { background: var(--accent-green-bg); color: var(--accent-green); border: 1px solid #bbf7d0; }
-    .pill-pct-blue { background: var(--accent-blue-bg); color: var(--accent-blue); border: 1px solid #bfdbfe; }
-    .pill-pct-amber { background: var(--accent-amber-bg); color: var(--accent-amber); border: 1px solid #fde68a; }
-    .pill-pct-red { background: var(--accent-red-bg); color: var(--accent-red); border: 1px solid #fecaca; }
-    .pill-pct-gray { background: #f1f5f9; color: var(--text-secondary); border: 1px solid #e2e8f0; }
+
+    .pill-pct-green {
+        background: var(--accent-green-bg);
+        color: var(--accent-green);
+        border: 1px solid #bbf7d0;
+    }
+
+    .pill-pct-blue {
+        background: var(--accent-blue-bg);
+        color: var(--accent-blue);
+        border: 1px solid #bfdbfe;
+    }
+
+    .pill-pct-amber {
+        background: var(--accent-amber-bg);
+        color: var(--accent-amber);
+        border: 1px solid #fde68a;
+    }
+
+    .pill-pct-red {
+        background: var(--accent-red-bg);
+        color: var(--accent-red);
+        border: 1px solid #fecaca;
+    }
+
+    .pill-pct-gray {
+        background: #f1f5f9;
+        color: var(--text-secondary);
+        border: 1px solid #e2e8f0;
+    }
 
     /* Progress Bar */
     .progress-bar-bg {
@@ -212,13 +260,14 @@
         overflow: hidden;
         margin-top: 0.25rem;
     }
+
     .progress-bar-fill {
         height: 100%;
         background: var(--accent-green);
         border-radius: 999px;
         transition: width 0.3s ease;
     }
-    
+
     .action-icon-btn {
         background: none;
         border: 1px solid #e2e8f0;
@@ -233,6 +282,7 @@
         transition: all 0.2s;
         margin-right: 0.25rem;
     }
+
     .action-icon-btn:hover {
         background: #f1f5f9;
         color: var(--accent-blue);
@@ -242,7 +292,10 @@
     /* Modals */
     .at-modal-overlay {
         position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         background: rgba(15, 23, 42, 0.6);
         z-index: 1050;
         display: none;
@@ -250,6 +303,7 @@
         justify-content: center;
         backdrop-filter: blur(2px);
     }
+
     .at-modal {
         background: var(--card-bg);
         border-radius: var(--card-radius);
@@ -261,6 +315,7 @@
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         overflow: hidden;
     }
+
     .at-modal-header {
         padding: 1.25rem 1.5rem;
         border-bottom: 1px solid var(--card-border);
@@ -268,17 +323,20 @@
         justify-content: space-between;
         align-items: center;
     }
+
     .at-modal-title {
         font-size: 1.1rem;
         font-weight: 700;
         color: var(--text-primary);
         margin: 0;
     }
+
     .at-modal-body {
         padding: 1.5rem;
         overflow-y: auto;
         flex: 1;
     }
+
     .at-modal-footer {
         padding: 1rem 1.5rem;
         border-top: 1px solid var(--card-border);
@@ -299,7 +357,9 @@
             <p class="at-page-subtitle">View automation runs and patients created through the Auto Trigger process.</p>
         </div>
         <div>
-            <button class="btn-reset" style="background:white; border-color:var(--card-border);"><i class="bi bi-download" style="margin-right:0.4rem;"></i> Export History <i class="bi bi-chevron-down" style="margin-left:0.4rem; font-size:0.7rem;"></i></button>
+            <button class="btn-reset" style="background:white; border-color:var(--card-border);"><i
+                    class="bi bi-download" style="margin-right:0.4rem;"></i> Export History <i
+                    class="bi bi-chevron-down" style="margin-left:0.4rem; font-size:0.7rem;"></i></button>
         </div>
     </div>
 
@@ -325,7 +385,7 @@
                 <select id="filter_dept" class="at-select">
                     <option value="">All Departments</option>
                     {% for dept in departments %}
-                        <option value="{{ dept.id }}">{{ dept.name }}</option>
+                    <option value="{{ dept.id }}">{{ dept.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -343,7 +403,8 @@
                 <label class="at-label">Search</label>
                 <div style="position:relative;">
                     <i class="bi bi-search" style="position:absolute; left:0.75rem; top:0.6rem; color:#94a3b8;"></i>
-                    <input type="text" id="filter_search" class="at-input" placeholder="Search by Run ID..." style="padding-left:2.2rem;">
+                    <input type="text" id="filter_search" class="at-input" placeholder="Search by Run ID..."
+                        style="padding-left:2.2rem;">
                 </div>
             </div>
             <div>
@@ -411,7 +472,8 @@
 
     <!-- Automation Run History Table -->
     <div class="at-card" id="runs_section">
-        <div class="at-card-header" style="padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--card-border); background:#ffffff;">
+        <div class="at-card-header"
+            style="padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--card-border); background:#ffffff;">
             <h3 class="at-modal-title" style="font-size:1.1rem; color:var(--accent-blue);">Automation Runs</h3>
         </div>
         <div class="at-table-container">
@@ -437,7 +499,15 @@
                     </tr>
                 </thead>
                 <tbody id="runs_tbody">
-                    <tr><td colspan="16" style="text-align:center; padding: 2rem;">Loading data...</td></tr>
+                    <tr>
+                        <td colspan="16" style="text-align:center; padding: 2rem;">
+                            <div style="display:inline-flex; align-items:center; gap:0.75rem; color:var(--text-muted);">
+                                <div style="width:18px;height:18px;border:2.5px solid #e2e8f0;border-top-color:var(--accent-blue);border-radius:50%;animation:spin360i 0.7s linear infinite;"></div>
+                                <span style="font-size:0.9rem;">Loading automation runs...</span>
+                            </div>
+                            <style>@keyframes spin360i{to{transform:rotate(360deg);}}</style>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -446,42 +516,79 @@
 
     <!-- Generated Patients Section (Initially Hidden) -->
     <div class="at-card" id="patients_section" style="display:none; border: 2px solid var(--accent-blue);">
-        <div class="at-card-header" style="padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--card-border); background:#f8fafc; display:flex; justify-content:space-between; align-items:center;">
+        <div class="at-card-header"
+            style="padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--card-border); background:#f8fafc; display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:1rem;">
-                <h3 class="at-modal-title" style="font-size:1.1rem; color:var(--accent-blue);">Generated Patients <span style="color:var(--text-primary);">- Run ID: <span id="pat_run_id"></span></span></h3>
+                <h3 class="at-modal-title" style="font-size:1.1rem; color:var(--accent-blue);">Generated Patients <span
+                        style="color:var(--text-primary);">- Run ID: <span id="pat_run_id"></span></span></h3>
                 <span id="pat_run_status" class="pill-pct pill-pct-amber">Partially Completed</span>
             </div>
             <div style="display:flex; gap:0.5rem;">
-                <button class="btn-reset" style="background:white; border-color:var(--card-border); height:32px; padding:0 0.8rem; font-size:0.75rem;"><i class="bi bi-download" style="margin-right:0.4rem;"></i> Export Patients <i class="bi bi-chevron-down"></i></button>
-                <button class="btn-reset" style="height:32px; padding:0 0.8rem; font-size:1rem;" onclick="closePatientsSection()"><i class="bi bi-x"></i></button>
+                <button class="btn-reset"
+                    style="background:white; border-color:var(--card-border); height:32px; padding:0 0.8rem; font-size:0.75rem;"><i
+                        class="bi bi-download" style="margin-right:0.4rem;"></i> Export Patients <i
+                        class="bi bi-chevron-down"></i></button>
+                <button class="btn-reset" style="height:32px; padding:0 0.8rem; font-size:1rem;"
+                    onclick="closePatientsSection()"><i class="bi bi-x"></i></button>
             </div>
         </div>
-        
+
         <!-- Run Info Bar -->
-        <div style="display:grid; grid-template-columns: repeat(6, 1fr); gap:1rem; padding: 1rem 1.5rem; background: #ffffff; border-bottom: 1px solid var(--card-border);">
+        <div
+            style="display:grid; grid-template-columns: repeat(6, 1fr); gap:1rem; padding: 1rem 1.5rem; background: #ffffff; border-bottom: 1px solid var(--card-border);">
             <div style="display:flex; align-items:center; gap:0.75rem;">
-                <div style="width:36px; height:36px; background:var(--accent-blue-bg); color:var(--accent-blue); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;"><i class="bi bi-building"></i></div>
-                <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Department</div><div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);" id="pat_dept"></div></div>
+                <div
+                    style="width:36px; height:36px; background:var(--accent-blue-bg); color:var(--accent-blue); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                    <i class="bi bi-building"></i></div>
+                <div>
+                    <div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Department</div>
+                    <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);" id="pat_dept"></div>
+                </div>
             </div>
             <div style="display:flex; align-items:center; gap:0.75rem;">
-                <div style="width:36px; height:36px; background:var(--accent-blue-bg); color:var(--accent-blue); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;"><i class="bi bi-calendar-event"></i></div>
-                <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Date Range</div><div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);" id="pat_dates"></div></div>
+                <div
+                    style="width:36px; height:36px; background:var(--accent-blue-bg); color:var(--accent-blue); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                    <i class="bi bi-calendar-event"></i></div>
+                <div>
+                    <div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Date Range</div>
+                    <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);" id="pat_dates"></div>
+                </div>
             </div>
             <div style="display:flex; align-items:center; gap:0.75rem;">
-                <div style="width:36px; height:36px; background:var(--accent-blue-bg); color:var(--accent-blue); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;"><i class="bi bi-clock"></i></div>
-                <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Time Profile</div><div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);" id="pat_profile"></div></div>
+                <div
+                    style="width:36px; height:36px; background:var(--accent-blue-bg); color:var(--accent-blue); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                    <i class="bi bi-clock"></i></div>
+                <div>
+                    <div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Time Profile</div>
+                    <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);" id="pat_profile"></div>
+                </div>
             </div>
             <div style="display:flex; align-items:center; gap:0.75rem;">
-                <div style="width:36px; height:36px; background:var(--accent-blue-bg); color:var(--accent-blue); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;"><i class="bi bi-clipboard-check"></i></div>
-                <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Target Entries</div><div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);" id="pat_target"></div></div>
+                <div
+                    style="width:36px; height:36px; background:var(--accent-blue-bg); color:var(--accent-blue); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                    <i class="bi bi-clipboard-check"></i></div>
+                <div>
+                    <div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Target Entries</div>
+                    <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);" id="pat_target"></div>
+                </div>
             </div>
             <div style="display:flex; align-items:center; gap:0.75rem;">
-                <div style="width:36px; height:36px; background:var(--accent-green-bg); color:var(--accent-green); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;"><i class="bi bi-person-plus"></i></div>
-                <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Created</div><div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);" id="pat_created"></div></div>
+                <div
+                    style="width:36px; height:36px; background:var(--accent-green-bg); color:var(--accent-green); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                    <i class="bi bi-person-plus"></i></div>
+                <div>
+                    <div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Created</div>
+                    <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);" id="pat_created"></div>
+                </div>
             </div>
             <div style="display:flex; align-items:center; gap:0.75rem;">
-                <div style="width:36px; height:36px; background:var(--accent-red-bg); color:var(--accent-red); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;"><i class="bi bi-person-x"></i></div>
-                <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Failed</div><div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);" id="pat_failed"></div></div>
+                <div
+                    style="width:36px; height:36px; background:var(--accent-red-bg); color:var(--accent-red); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                    <i class="bi bi-person-x"></i></div>
+                <div>
+                    <div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Failed</div>
+                    <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);" id="pat_failed"></div>
+                </div>
             </div>
         </div>
 
@@ -491,6 +598,7 @@
                     <tr>
                         <th style="width:40px;">SL NO</th>
                         <th>PATIENT ID</th>
+                        <th>OP NUMBER</th>
                         <th>PATIENT NAME</th>
                         <th>GENDER</th>
                         <th>DOB</th>
@@ -499,8 +607,11 @@
                         <th>GUARDIAN NAME</th>
                         <th>ADDRESS</th>
                         <th>PHONE</th>
+                        <th>DEPARTMENT</th>
                         <th>SOURCE PATIENT</th>
-                        <th>CREATED DATE / TIME</th>
+                        <th>SCHEDULED CREATED DATE / TIME</th>
+                        <th>ACTUAL CREATED DATE / TIME</th>
+                        <th>ENTRY TYPE</th>
                         <th>STAGE</th>
                         <th>STATUS</th>
                         <th style="text-align:right;">ACTION</th>
@@ -519,9 +630,12 @@
     <div class="at-modal" style="max-width: 800px;">
         <div class="at-modal-header">
             <h4 class="at-modal-title">
-                <i class="bi bi-person-badge" style="color: var(--accent-blue); margin-right:0.5rem;"></i> Patient Detail
+                <i class="bi bi-person-badge" style="color: var(--accent-blue); margin-right:0.5rem;"></i> Patient
+                Detail
             </h4>
-            <button type="button" style="border:none; background:none; font-size:1.4rem; cursor:pointer; color:var(--text-muted);" onclick="closePatientDetailModal()">&times;</button>
+            <button type="button"
+                style="border:none; background:none; font-size:1.4rem; cursor:pointer; color:var(--text-muted);"
+                onclick="closePatientDetailModal()">&times;</button>
         </div>
         <div class="at-modal-body" id="patient_modal_body" style="padding: 2rem;">
             <!-- Content injected via JS -->
@@ -540,9 +654,9 @@
     let activePollInterval = null;
     let currentlyViewingRunId = null;
 
-    function showToast(msg, type='danger') {
+    function showToast(msg, type = 'danger') {
         const t = document.createElement('div');
-        t.style = `background:${type==='danger'?'#ef4444':'#10b981'}; color:white; padding:1rem 1.5rem; border-radius:6px; margin-bottom:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1); font-weight:600; opacity:0; transition:opacity 0.3s;`;
+        t.style = `background:${type === 'danger' ? '#ef4444' : '#10b981'}; color:white; padding:1rem 1.5rem; border-radius:6px; margin-bottom:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1); font-weight:600; opacity:0; transition:opacity 0.3s;`;
         t.innerText = msg;
         document.getElementById('toast-container').appendChild(t);
         setTimeout(() => t.style.opacity = '1', 10);
@@ -553,11 +667,11 @@
     }
 
     function getStatusPill(status) {
-        if(status === 'Completed' || status === 'Success' || status === 'Created') return `<span class="pill-pct pill-pct-green">${status}</span>`;
-        if(status === 'Processing' || status === 'Running') return `<span class="pill-pct pill-pct-blue">${status}</span>`;
-        if(status === 'Failed') return `<span class="pill-pct pill-pct-red">${status}</span>`;
-        if(status === 'Partially Completed') return `<span class="pill-pct pill-pct-amber">${status}</span>`;
-        if(status === 'Skipped' || status === 'Duplicate Prevented') return `<span class="pill-pct pill-pct-gray" style="background:#f1f5f9; color:#475569;">${status}</span>`;
+        if (status === 'Completed' || status === 'Success' || status === 'Created') return `<span class="pill-pct pill-pct-green">${status}</span>`;
+        if (status === 'Processing' || status === 'Running') return `<span class="pill-pct pill-pct-blue">${status}</span>`;
+        if (status === 'Failed') return `<span class="pill-pct pill-pct-red">${status}</span>`;
+        if (status === 'Partially Completed') return `<span class="pill-pct pill-pct-amber">${status}</span>`;
+        if (status === 'Skipped' || status === 'Duplicate Prevented') return `<span class="pill-pct pill-pct-gray" style="background:#f1f5f9; color:#475569;">${status}</span>`;
         return `<span class="pill-pct pill-pct-gray">${status}</span>`;
     }
 
@@ -587,6 +701,7 @@
 
     function setLoading(isLoading) {
         const tbody = document.getElementById('runs_tbody');
+        if (!tbody) return;
         if (isLoading) {
             tbody.innerHTML = `
                 <tr><td colspan="16" style="text-align:center; padding:2.5rem;">
@@ -597,6 +712,12 @@
                 </td></tr>
                 <style>@keyframes spin360{to{transform:rotate(360deg);}}</style>
             `;
+        } else {
+            // Fallback: if renderRunsPage() was somehow skipped, clear the spinner
+            const spinnerRow = tbody.querySelector('div[style*="animation"]');
+            if (spinnerRow) {
+                tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:3rem;"><div style="color:var(--text-muted); font-size:0.9rem;"><i class="bi bi-inbox" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>No automation runs found.</div></td></tr>';
+            }
         }
     }
 
@@ -627,8 +748,8 @@
         page.forEach((h, i) => {
             const index = runsPg.startRecord - 1 + i;
             let progColor = 'var(--accent-blue)';
-            if(h.status === 'Completed') progColor = 'var(--accent-green)';
-            if(h.status === 'Failed') progColor = 'var(--accent-red)';
+            if (h.status === 'Completed') progColor = 'var(--accent-green)';
+            if (h.status === 'Failed') progColor = 'var(--accent-red)';
             const statusDisplay = (h.status === 'Queued') ? 'Queued' : h.status;
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -641,7 +762,7 @@
                 <td>${h.day_end_time}</td>
                 <td style="text-align:center;">${h.min_entries}</td>
                 <td style="text-align:center;">${h.max_entries}</td>
-                <td style="text-align:center; font-weight:700;">${h.max_entries}</td>
+                <td style="text-align:center; font-weight:700;">${h.processed_entries}</td>
                 <td style="text-align:center; font-weight:700; color:var(--accent-green);">${h.successful}</td>
                 <td style="text-align:center; font-weight:700; color:var(--accent-red);">${h.failed}</td>
                 <td>
@@ -653,7 +774,7 @@
                     </div>
                 </td>
                 <td>${getStatusPill(statusDisplay)}</td>
-                <td style="font-size:0.75rem;">${h.started_at}</td>
+                <td style="font-size:0.75rem;">${h.last_updated || h.started_at}</td>
                 <td style="text-align:right; white-space:nowrap;">
                     <button class="action-icon-btn" title="View Patients" onclick="viewRunPatients(${h.id})"><i class="bi bi-people"></i></button>
                     <button class="action-icon-btn" title="View Details" onclick="viewRunPatients(${h.id})"><i class="bi bi-eye"></i></button>
@@ -666,17 +787,33 @@
         runsPg.render();
     }
 
-    function loadHistory() {
+    function stopHistoryPolling() {
+        if (window._atHistoryPollTimer) {
+            clearInterval(window._atHistoryPollTimer);
+            window._atHistoryPollTimer = null;
+        }
+    }
+
+    function loadHistory(isBackground = false) {
         const fromDate = document.getElementById('filter_from_date').value;
         const toDate = document.getElementById('filter_to_date').value;
         const dept = document.getElementById('filter_dept').value;
         const status = document.getElementById('filter_status').value;
         const search = document.getElementById('filter_search').value;
 
-        setLoading(true);
-        
-        let url = `/lab/api/auto-trigger/history/?department_id=${encodeURIComponent(dept)}&status=${encodeURIComponent(status)}&from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}&search=${encodeURIComponent(search)}`;
-        
+        if (!isBackground) {
+            setLoading(true);
+        }
+
+        const params = new URLSearchParams({
+            department_id: dept,
+            status: status,
+            from_date: fromDate,
+            to_date: toDate,
+            search: search
+        });
+        const url = `/lab/api/auto-trigger/history/?${params.toString()}`;
+
         fetch(url)
             .then(r => {
                 if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
@@ -686,45 +823,39 @@
                 if (res.success) {
                     _allRunsData = res.data || [];
                     updateSummaryCards(_allRunsData);
-                    // KEY FIX: setTotal THEN call renderRunsPage explicitly
                     runsPg.setTotal(_allRunsData.length);
-                    runsPg.currentPage = 1;
-                    renderRunsPage();  // ← This was the missing call
-                    runsPg.render();   // ← Re-render pagination footer after table is populated
+                    renderRunsPage();
+                    runsPg.render();
 
-                    let isAnyRunning = _allRunsData.some(r => r.status === 'Processing' || r.status === 'Queued');
-                    if (isAnyRunning && !activePollInterval) {
-                        activePollInterval = setInterval(loadHistory, 5000);
-                    } else if (!isAnyRunning && activePollInterval && !currentlyViewingRunId) {
-                        clearInterval(activePollInterval);
-                        activePollInterval = null;
+                    const isAnyRunning = _allRunsData.some(r => r.status === 'Processing' || r.status === 'Queued');
+                    if (isAnyRunning && !window._atHistoryPollTimer) {
+                        window._atHistoryPollTimer = setInterval(() => loadHistory(true), 8000);
+                    } else if (!isAnyRunning) {
+                        stopHistoryPolling();
                     }
-                } else {
-                    // API returned success:false — show error
+                } else if (!isBackground) {
                     _allRunsData = [];
                     updateSummaryCards([]);
-                    document.getElementById('runs_tbody').innerHTML = `
+                    const tbody = document.getElementById('runs_tbody');
+                    if (tbody) tbody.innerHTML = `
                         <tr><td colspan="16" style="text-align:center;padding:2.5rem;color:var(--accent-red);">
                             <i class="bi bi-exclamation-triangle" style="font-size:1.5rem; display:block; margin-bottom:0.5rem;"></i>
-                            ${res.message || 'Unable to load automation history.'}
-                            <br><button class="btn-reset" onclick="loadHistory()" style="margin-top:0.75rem;">Retry</button>
-                        </td></tr>`;
-                    runsPg.setTotal(0);
-                    runsPg.render();
+                            ${res.message || 'Failed to load history.'}
+                        </td></tr>
+                    `;
                 }
             })
             .catch(err => {
-                console.error('[Auto Trigger History] Load error:', err);
-                _allRunsData = [];
-                updateSummaryCards([]);
-                document.getElementById('runs_tbody').innerHTML = `
-                    <tr><td colspan="16" style="text-align:center;padding:2.5rem;color:var(--accent-red);">
-                        <i class="bi bi-wifi-off" style="font-size:1.5rem; display:block; margin-bottom:0.5rem;"></i>
-                        Unable to load automation history. ${err.message || ''}
-                        <br><button class="btn-reset" onclick="loadHistory()" style="margin-top:0.75rem;">Retry</button>
-                    </td></tr>`;
-                runsPg.setTotal(0);
-                runsPg.render();
+                console.warn("History fetch error:", err);
+                if (!isBackground) {
+                    const tbody = document.getElementById('runs_tbody');
+                    if (tbody) tbody.innerHTML = `
+                        <tr><td colspan="16" style="text-align:center;padding:2.5rem;color:var(--accent-red);">
+                            <i class="bi bi-exclamation-triangle" style="font-size:1.5rem; display:block; margin-bottom:0.5rem;"></i>
+                            Failed to load history data. <button class="btn-reset" onclick="loadHistory()" style="margin-left:0.5rem;">Retry</button>
+                        </td></tr>
+                    `;
+                }
             });
     }
 
@@ -741,7 +872,7 @@
         const tbody = document.getElementById('patients_tbody');
         tbody.innerHTML = '';
         if (_allPatientLogs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:2rem;">No patients generated yet.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="19" style="text-align:center; padding:2rem;">No patients generated yet.</td></tr>';
             patPg.setTotal(0);
             patPg.render();
             return;
@@ -756,6 +887,7 @@
             tr.innerHTML = `
                 <td style="font-weight:600;">${l.entry_no}</td>
                 <td><strong style="color:var(--text-primary);">${l.new_patient_id}</strong></td>
+                <td><strong style="color:var(--accent-blue);">${l.op_number || '-'}</strong></td>
                 <td style="font-weight:600;">${l.new_patient_name}</td>
                 <td>${l.gender}</td>
                 <td>${l.dob}</td>
@@ -764,8 +896,11 @@
                 <td>${l.guardian_name}</td>
                 <td style="max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${l.address}">${l.address}</td>
                 <td>${l.phone}</td>
+                <td><strong style="color:var(--text-secondary);">${l.department || '-'}</strong></td>
                 <td><span style="font-size:0.75rem; color:var(--text-muted);">${l.source_patient_id}</span></td>
-                <td style="font-size:0.75rem;">${l.created_at}</td>
+                <td style="font-size:0.75rem; font-weight:700; color:var(--accent-purple);">${l.scheduled_at || l.created_at}</td>
+                <td style="font-size:0.75rem; color:var(--text-muted);">${l.created_at}</td>
+                <td><span class="pill-pct pill-pct-purple" style="background:#f3e8ff; color:#9333ea; border:1px solid #e9d5ff;">${l.created_source_display || 'D - Auto Trigger'}</span></td>
                 <td><span style="font-size:0.7rem; font-weight:700; color:var(--accent-blue);">${l.stage}</span></td>
                 <td>${getStatusPill(l.status === 'Success' ? 'Created' : l.status)}</td>
                 <td style="text-align:right;">${actionBtn}</td>
@@ -779,14 +914,14 @@
     function viewRunPatients(id) {
         currentlyViewingRunId = id;
         document.getElementById('patients_section').style.display = 'block';
-        window.scrollTo({top: document.getElementById('patients_section').offsetTop - 20, behavior: 'smooth'});
-        
+        window.scrollTo({ top: document.getElementById('patients_section').offsetTop - 20, behavior: 'smooth' });
+
         loadRunPatientsData(id);
-        
+
         // Start polling if not already
         if (!activePollInterval) {
             activePollInterval = setInterval(() => {
-                if(currentlyViewingRunId) {
+                if (currentlyViewingRunId) {
                     loadRunPatientsData(currentlyViewingRunId, true);
                     loadHistory(); // background update main table too
                 }
@@ -795,10 +930,10 @@
     }
 
     function loadRunPatientsData(id, isPoll = false) {
-        fetch(`/lab/api/auto-trigger/history/${id}/`).then(r=>r.json()).then(res=>{
-            if(res.success) {
+        fetch(`/lab/api/auto-trigger/history/${id}/`).then(r => r.json()).then(res => {
+            if (res.success) {
                 const d = res.details;
-                
+
                 // Stop polling if completed
                 if (['Completed', 'Failed', 'Partially Completed', 'Cancelled'].includes(d.status)) {
                     if (activePollInterval && currentlyViewingRunId === id) {
@@ -807,19 +942,19 @@
                         if (!isPoll) loadHistory(); // ensure one final update
                     }
                 }
-                
-                if(!isPoll) {
+
+                if (!isPoll) {
                     document.getElementById('pat_run_id').textContent = d.trigger_id;
                     document.getElementById('pat_dept').textContent = d.department;
                     document.getElementById('pat_dates').textContent = d.date_range;
                     document.getElementById('pat_profile').textContent = d.time_profile;
                     document.getElementById('pat_target').textContent = d.max_entries;
                 }
-                
+
                 document.getElementById('pat_run_status').outerHTML = getStatusPill(d.status).replace('<span', `<span id="pat_run_status"`);
                 document.getElementById('pat_created').textContent = d.successful;
                 document.getElementById('pat_failed').textContent = d.failed;
-                
+
                 window._currentLogs = res.logs || [];
                 window._currentRunDetails = d;
 
@@ -842,16 +977,16 @@
     function openPatientModal(runId, logIdx) {
         const l = window._currentLogs[logIdx];
         const d = window._currentRunDetails;
-        
+
         const b = document.getElementById('patient_modal_body');
         b.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
                 <div>
                     <h5 style="margin:0; font-size:1.2rem; font-weight:800; color:var(--text-primary);">${l.new_patient_name}</h5>
-                    <span style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">ID: <span style="color:var(--accent-blue);">${l.new_patient_id}</span></span>
+                    <span style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">ID: <span style="color:var(--accent-blue);">${l.new_patient_id}</span> &nbsp;|&nbsp; OP NO: <span style="color:var(--accent-purple); font-weight:700;">${l.op_number || '-'}</span></span>
                 </div>
                 <div>
-                    <span style="background:var(--accent-blue-bg); color:var(--accent-blue); padding:0.4rem 0.8rem; border-radius:6px; font-size:0.75rem; font-weight:700; border:1px solid #bfdbfe;"><i class="bi bi-robot"></i> Created by Auto Trigger - Stage 1</span>
+                    <span style="background:var(--accent-purple-bg); color:var(--accent-purple); padding:0.4rem 0.8rem; border-radius:6px; font-size:0.75rem; font-weight:700; border:1px solid #e9d5ff;"><i class="bi bi-robot"></i> D - Auto Trigger Entry</span>
                 </div>
             </div>
 
@@ -860,6 +995,7 @@
                 <div style="border:1px solid var(--card-border); border-radius:8px; overflow:hidden;">
                     <div style="background:#f8fafc; padding:0.75rem 1rem; border-bottom:1px solid var(--card-border); font-weight:700; color:var(--text-secondary); font-size:0.8rem;">Patient Information</div>
                     <div style="padding:1rem; display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem 1rem;">
+                        <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">OP Number</div><div style="font-size:0.85rem; font-weight:700; color:var(--accent-blue);">${l.op_number || '-'}</div></div>
                         <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Gender</div><div style="font-size:0.85rem; font-weight:600;">${l.gender}</div></div>
                         <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">DOB</div><div style="font-size:0.85rem; font-weight:600;">${l.dob}</div></div>
                         <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Age</div><div style="font-size:0.85rem; font-weight:600;">${l.age} Years</div></div>
@@ -893,15 +1029,17 @@
                     <div style="background:#f8fafc; padding:0.75rem 1rem; border-bottom:1px solid var(--card-border); font-weight:700; color:var(--text-secondary); font-size:0.8rem;">Automation Information</div>
                     <div style="padding:1rem; display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem;">
                         <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Automation Run ID</div><div style="font-size:0.85rem; font-weight:600; color:var(--accent-blue);">${d.trigger_id}</div></div>
-                        <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Department</div><div style="font-size:0.85rem; font-weight:600;">${d.department}</div></div>
+                        <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Department</div><div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);">${l.department || d.department}</div></div>
                         <div style="grid-column: 1 / span 2;"><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Source Patient</div><div style="font-size:0.85rem; font-weight:600;">${l.source_patient_id} - ${l.source_patient_name}</div></div>
                         <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Stage</div><div style="font-size:0.85rem; font-weight:600;">${l.stage}</div></div>
-                        <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Created Date/Time</div><div style="font-size:0.85rem; font-weight:600;">${l.created_at}</div></div>
+                        <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Entry Type</div><div style="font-size:0.85rem; font-weight:700; color:var(--accent-purple);">${l.created_source_display || 'D - Auto Trigger'}</div></div>
+                        <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Scheduled Created Date/Time</div><div style="font-size:0.85rem; font-weight:700; color:var(--accent-purple);">${l.scheduled_at}</div></div>
+                        <div><div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Actual Created Date/Time</div><div style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">${l.created_at}</div></div>
                     </div>
                 </div>
             </div>
         `;
-        
+
         document.getElementById('patientDetailModal').style.display = 'flex';
     }
 
@@ -912,7 +1050,7 @@
     function closePatientsSection() {
         document.getElementById('patients_section').style.display = 'none';
         currentlyViewingRunId = null;
-        if(activePollInterval) {
+        if (activePollInterval) {
             clearInterval(activePollInterval);
             activePollInterval = null;
             loadHistory(); // Resume main polling check if needed
@@ -920,18 +1058,18 @@
     }
 
     function retryFailed(id) {
-        if(!confirm('Are you sure you want to retry failed entries?')) return;
+        if (!confirm('Are you sure you want to retry failed entries?')) return;
         fetch(`/lab/api/auto-trigger/history/${id}/retry/`, {
             method: 'POST'
-        }).then(r=>r.json()).then(res=>{
-            if(res.success) {
+        }).then(r => r.json()).then(res => {
+            if (res.success) {
                 showToast(res.message, 'success');
                 loadHistory();
-                if(currentlyViewingRunId === id) {
+                if (currentlyViewingRunId === id) {
                     loadRunPatientsData(id);
                     if (!activePollInterval) {
                         activePollInterval = setInterval(() => {
-                            if(currentlyViewingRunId) {
+                            if (currentlyViewingRunId) {
                                 loadRunPatientsData(currentlyViewingRunId, true);
                                 loadHistory();
                             }
@@ -944,13 +1082,20 @@
         });
     }
 
-    // Init
-    window.onload = function() {
-        // Default From Date to today
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('filter_from_date').value = today;
-        document.getElementById('filter_to_date').value = today;
-        loadHistory();
-    };
+    // Init — load all records by default (no date pre-filter)
+    // Users can apply date filters manually
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            loadHistory();
+            // Requirement 11: Auto refresh every 2 minutes (non-blocking)
+            setInterval(function() {
+                loadHistory(true);
+            }, 120000);
+        } catch (initErr) {
+            console.error('[Auto Trigger History] Init error:', initErr);
+            const tbody = document.getElementById('runs_tbody');
+            if (tbody) tbody.innerHTML = `<tr><td colspan="16" style="text-align:center;padding:2.5rem;color:var(--accent-red);"><i class="bi bi-exclamation-triangle" style="font-size:1.5rem; display:block; margin-bottom:0.5rem;"></i>Page initialization failed. Please refresh.<br><button class="btn-reset" onclick="location.reload()" style="margin-top:0.75rem;">Refresh Page</button></td></tr>`;
+        }
+    });
 </script>
 {% endblock %}
