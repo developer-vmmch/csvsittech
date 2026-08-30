@@ -41,6 +41,12 @@ from .diagnosis_investigation_map_views import (
     api_diagnosis_investigation_map_list, api_diagnosis_investigation_map_detail,
     api_diagnosis_investigation_map_save, api_diagnosis_investigation_map_delete
 )
+from .diagnosis_department_mapping_views import (
+    diagnosis_department_mapping_view, api_diagnosis_department_map_list,
+    api_diagnosis_department_map_save, api_diagnosis_department_map_toggle,
+    api_diagnosis_department_map_unmapped_diagnoses, api_diagnosis_department_map_mapped_diagnoses,
+    api_diag_dept_map_download_template, api_diag_dept_map_preview, api_diag_dept_map_import
+)
 from .auto_trigger_views import (
     AutoTriggerConfigurationView, AutoTriggerHistoryView, AutoTriggerTimeSettingsView,
     api_save_auto_trigger_config, api_get_auto_trigger_configs,
@@ -141,6 +147,17 @@ urlpatterns = [
     path('api/diagnosis-investigation-map/import/template/', api_diag_inv_map_download_template, name='api_diag_inv_map_import_template'),
     path('api/diagnosis-investigation-map/import/preview/', api_diag_inv_map_preview, name='api_diag_inv_map_import_preview'),
     path('api/diagnosis-investigation-map/import/process/', api_diag_inv_map_import, name='api_diag_inv_map_import_process'),
+
+    # Diagnosis-Department Mapping
+    path('diagnosis-department-mapping/', diagnosis_department_mapping_view, name='diagnosis_department_mapping'),
+    path('api/diagnosis-department-mapping/list/', api_diagnosis_department_map_list, name='api_diagnosis_department_map_list'),
+    path('api/diagnosis-department-mapping/save/', api_diagnosis_department_map_save, name='api_diagnosis_department_map_save'),
+    path('api/diagnosis-department-mapping/toggle/', api_diagnosis_department_map_toggle, name='api_diagnosis_department_map_toggle'),
+    path('api/diagnosis-department-mapping/unmapped/', api_diagnosis_department_map_unmapped_diagnoses, name='api_diagnosis_department_map_unmapped_diagnoses'),
+    path('api/diagnosis-department-mapping/mapped/', api_diagnosis_department_map_mapped_diagnoses, name='api_diagnosis_department_map_mapped_diagnoses'),
+    path('api/diagnosis-department-mapping/import/template/', api_diag_dept_map_download_template, name='api_diag_dept_map_import_template'),
+    path('api/diagnosis-department-mapping/import/preview/', api_diag_dept_map_preview, name='api_diag_dept_map_preview'),
+    path('api/diagnosis-department-mapping/import/process/', api_diag_dept_map_import, name='api_diag_dept_map_import'),
 
 
 

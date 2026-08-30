@@ -439,6 +439,33 @@ def process_auto_trigger(history_id, is_retry=False):
                             break
 
                     if new_patient:
+                        from apps.lab.models import PatientVisitDiagnosis, DiagnosisDepartmentMapping
+                        import random
+                        
+                        assigned_diagnosis = None
+                        if history.department:
+                            valid_mappings = list(DiagnosisDepartmentMapping.objects.filter(
+                                department=history.department,
+                                status='Active'
+                            ).select_related('diagnosis'))
+                            
+                            if valid_mappings:
+                                selected = random.choice(valid_mappings)
+                                assigned_diagnosis = selected.diagnosis
+                                
+                                visit = PatientVisit.objects.filter(patient=new_patient).first()
+                                if visit:
+                                    PatientVisitDiagnosis.objects.create(
+                                        visit=visit,
+                                        diagnosis=assigned_diagnosis
+                                    )
+                                    visit.clinical_notes = f"Auto Trigger Generated Patient - Diagnosis: {assigned_diagnosis.name}"
+                                    visit.save()
+
+                        msg = f"Stage 1 & 2 Success: Created New Patient {new_patient.patient_id} ({new_patient.name}) [OP: {new_patient.op_number}] at {scheduled_dt.strftime('%H:%M')}"
+                        if assigned_diagnosis:
+                            msg += f" | Assigned Diagnosis: {assigned_diagnosis.name}"
+
                         AutoTriggerLog.objects.create(
                             history=history,
                             entry_no=history.processed_entries + 1,
@@ -449,7 +476,7 @@ def process_auto_trigger(history_id, is_retry=False):
                             source_patient=source_patient,
                             new_patient=new_patient,
                             status='Success',
-                            message=f"Stage 1 Success: Created New Patient {new_patient.patient_id} ({new_patient.name}) [OP: {new_patient.op_number}] at {scheduled_dt.strftime('%H:%M')}"
+                            message=msg
                         )
                         history.successful += 1
                     else:

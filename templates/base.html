@@ -192,6 +192,12 @@
                             <span>Diagnosis-Investigation Mapping</span>
                         </a>
                     </li>
+                    <li class="{% if request.resolver_match.url_name == 'diagnosis_department_mapping' %}active{% endif %}">
+                        <a href="{% url 'lab:diagnosis_department_mapping' %}">
+                            <i class="bi bi-diagram-2"></i>
+                            <span>Diagnosis-Department Mapping</span>
+                        </a>
+                    </li>
                 </ul>
             </li>
 

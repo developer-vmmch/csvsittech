@@ -519,26 +519,7 @@ document.getElementById('resetBtn').addEventListener('click', function() {
 });
 
 document.getElementById('exportBtn').addEventListener('click', function() {
-    const btn = this;
-    btn.innerHTML = '<i class="bi bi-hourglass"></i> Exporting...';
-    btn.disabled = true;
-    fetch(buildListUrl())
-        .then(r => r.json())
-        .then(res => {
-            btn.innerHTML = '<i class="bi bi-download"></i> Export';
-            btn.disabled = false;
-            if (!res.mappings || !res.mappings.length) { alert('No data to export.'); return; }
-            let csv = 'S.No,Diagnosis,Age Group,Age Range,Investigations,Count,Status\n';
-            res.mappings.forEach((r, i) => {
-                csv += `${i+1},"${r.diagnosis_name}","${r.age_group_name}","${r.age_range}","${r.investigation_names}",${r.investigation_count},${r.is_active ? 'Active' : 'Inactive'}\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'diagnosis_investigation_mapping.csv';
-            a.click();
-        })
-        .catch(() => { btn.innerHTML = '<i class="bi bi-download"></i> Export'; btn.disabled = false; alert('Export failed.'); });
+    window.location.href = '?export=excel';
 });
 
 // ─── Init ─────────────────────────────────────────────────────────────────────

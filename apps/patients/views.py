@@ -473,6 +473,18 @@ class DepartmentListView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
     def get_queryset(self):
         return Department.objects.filter(is_active=True)
 
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.headers.get('Accept') == 'application/json' or self.request.GET.get('format') == 'json':
+            departments = self.get_queryset()
+            results = [{
+                'id': d.id,
+                'name': d.name,
+                'code': d.code,
+                'status': 'Active' if d.is_active else 'Inactive'
+            } for d in departments]
+            return JsonResponse({'departments': results})
+        return super().render_to_response(context, **response_kwargs)
+
 
 class DepartmentCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, CreateView):
     menu_key = 'add_department'
