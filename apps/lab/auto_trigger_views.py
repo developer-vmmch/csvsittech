@@ -1,3 +1,23 @@
+
+from django.utils import timezone
+from datetime import timedelta
+
+def get_default_date_range(request, from_param='from_date', to_param='to_param'):
+    from_raw = request.GET.get(from_param)
+    to_raw = request.GET.get(to_param)
+    
+    if from_raw is None:
+        from_date = (timezone.localdate() - timedelta(days=6)).strftime('%Y-%m-%d')
+    else:
+        from_date = from_raw.strip()
+        
+    if to_raw is None:
+        to_date = timezone.localdate().strftime('%Y-%m-%d')
+    else:
+        to_date = to_raw.strip()
+        
+    return from_date, to_date
+
 import json
 import random
 import threading
@@ -23,6 +43,10 @@ class AutoTriggerTimeSettingsView(LoginRequiredMixin, GranularPermissionRequired
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['departments'] = Department.objects.filter(is_active=True).order_by('name')
+        from django.utils import timezone
+        from datetime import timedelta
+        context['default_from_date'] = (timezone.localdate() - timedelta(days=6)).strftime('%Y-%m-%d')
+        context['default_to_date'] = timezone.localdate().strftime('%Y-%m-%d')
         return context
 
 class AutoTriggerConfigurationView(LoginRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
@@ -32,6 +56,10 @@ class AutoTriggerConfigurationView(LoginRequiredMixin, GranularPermissionRequire
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['departments'] = Department.objects.filter(is_active=True).order_by('name')
+        from django.utils import timezone
+        from datetime import timedelta
+        context['default_from_date'] = (timezone.localdate() - timedelta(days=6)).strftime('%Y-%m-%d')
+        context['default_to_date'] = timezone.localdate().strftime('%Y-%m-%d')
         
         default_ts = AutoTriggerTimeSetting.objects.filter(is_active=True).first()
         if not default_ts or AutoTriggerTimeSetting.objects.count() < 4:
@@ -97,6 +125,10 @@ class AutoTriggerHistoryView(LoginRequiredMixin, GranularPermissionRequiredMixin
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['departments'] = Department.objects.filter(is_active=True).order_by('name')
+        from django.utils import timezone
+        from datetime import timedelta
+        context['default_from_date'] = (timezone.localdate() - timedelta(days=6)).strftime('%Y-%m-%d')
+        context['default_to_date'] = timezone.localdate().strftime('%Y-%m-%d')
         return context
 
 # Schedule Calculation Engine
@@ -824,8 +856,7 @@ def api_get_auto_trigger_history(request):
             db_statuses = status_map.get(status.lower(), [status])
             history_list = history_list.filter(status__in=db_statuses)
             
-        from_date = request.GET.get('from_date', '').strip()
-        to_date = request.GET.get('to_date', '').strip()
+        from_date, to_date = get_default_date_range(request, 'from_date', 'to_date')
         
         if from_date:
             try:

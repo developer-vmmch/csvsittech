@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="static/css/vmmc-select.css">
+    <style>body { font-family: sans-serif; }</style>
+</head>
+<body>
+    <div id="my-select"></div>
+    <script src="static/js/vmmc-select.js"></script>
+    <script>
+        const sel = new VMMCSearchSelect('#my-select', {
+            url: 'https://jsonplaceholder.typicode.com/users',
+            searchParam: 'username',
+            processResults: (data) => data,
+            renderMain: (item) => item.name,
+            onSelect: (item) => console.log('Selected:', item.name)
+        });
+    </script>
+</body>
+</html>

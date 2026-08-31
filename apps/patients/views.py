@@ -1,3 +1,23 @@
+
+from django.utils import timezone
+from datetime import timedelta
+
+def get_default_date_range(request, from_param='from_date', to_param='to_param'):
+    from_raw = request.GET.get(from_param)
+    to_raw = request.GET.get(to_param)
+    
+    if from_raw is None:
+        from_date = (timezone.localdate() - timedelta(days=6)).strftime('%Y-%m-%d')
+    else:
+        from_date = from_raw.strip()
+        
+    if to_raw is None:
+        to_date = timezone.localdate().strftime('%Y-%m-%d')
+    else:
+        to_date = to_raw.strip()
+        
+    return from_date, to_date
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.urls import reverse, reverse_lazy
@@ -88,8 +108,7 @@ class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermi
         wb.save(output)
         output.seek(0)
         
-        from_date = request.GET.get('from_date')
-        to_date = request.GET.get('to_date')
+        from_date, to_date = get_default_date_range(request, 'from_date', 'to_date')
         today = timezone.localdate().strftime('%Y-%m-%d')
         
         if from_date and to_date:
@@ -112,8 +131,7 @@ class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermi
 
     def get_queryset(self):
         q_search = self.request.GET.get('search', '').strip()
-        from_date = self.request.GET.get('from_date', '').strip()
-        to_date = self.request.GET.get('to_date', '').strip()
+        from_date, to_date = get_default_date_range(self.request, 'from_date', 'to_date')
         patient_type = self.request.GET.get('patient_type', 'A').strip().upper()
 
         queryset = Patient.objects.all().order_by('-id')
@@ -153,8 +171,7 @@ class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermi
         patient_type = self.request.GET.get('patient_type', 'A').strip().upper()
 
         context['search'] = self.request.GET.get('search', '')
-        context['from_date'] = self.request.GET.get('from_date', '')
-        context['to_date'] = self.request.GET.get('to_date', '')
+        context['from_date'], context['to_date'] = get_default_date_range(self.request, 'from_date', 'to_date')
         context['patient_type'] = patient_type
         context['today'] = timezone.localdate().strftime('%Y-%m-%d')
         context['total_patients'] = total_patients
@@ -201,8 +218,7 @@ class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
     def get_queryset(self):
         try:
             q_name = self.request.GET.get('q_name', '').strip()
-            q_from_date = self.request.GET.get('q_from_date', '').strip()
-            q_to_date = self.request.GET.get('q_to_date', '').strip()
+            q_from_date, q_to_date = get_default_date_range(self.request, 'q_from_date', 'q_to_date')
             q_mobile = self.request.GET.get('q_mobile', '').strip()
             q_aadhar = self.request.GET.get('q_aadhar', '').strip()
             q_abha = self.request.GET.get('q_abha', '').strip()
@@ -226,14 +242,14 @@ class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
             if q_from_date:
                 try:
                     from_dt = datetime.strptime(q_from_date, '%Y-%m-%d').date()
-                    queryset = queryset.filter(created_at__date__gte=from_dt)
+                    queryset = queryset.filter(registration_date__gte=from_dt)
                 except ValueError:
                     pass
 
             if q_to_date:
                 try:
                     to_dt = datetime.strptime(q_to_date, '%Y-%m-%d').date()
-                    queryset = queryset.filter(created_at__date__lte=to_dt)
+                    queryset = queryset.filter(registration_date__lte=to_dt)
                 except ValueError:
                     pass
 
@@ -266,8 +282,7 @@ class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
         context = super().get_context_data(**kwargs)
         User = get_user_model()
         context['q_name'] = self.request.GET.get('q_name', '')
-        context['q_from_date'] = self.request.GET.get('q_from_date', '')
-        context['q_to_date'] = self.request.GET.get('q_to_date', '')
+        context['q_from_date'], context['q_to_date'] = get_default_date_range(self.request, 'q_from_date', 'q_to_date')
         context['q_mobile'] = self.request.GET.get('q_mobile', '')
         context['q_aadhar'] = self.request.GET.get('q_aadhar', '')
         context['q_abha'] = self.request.GET.get('q_abha', '')
@@ -620,7 +635,7 @@ class OPCensusView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
         dept_id = self.request.GET.get('department', '').strip()
         category = self.request.GET.get('category', '').strip()
 
-        qs = Patient.objects.filter(created_at__date=census_date).order_by('-id')
+        qs = Patient.objects.filter(registration_date=census_date).order_by('-id')
 
         if dept_id:
             qs = qs.filter(Q(department_obj_id=dept_id) | Q(department__iexact=dept_id))
@@ -641,7 +656,7 @@ class OPCensusView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
         new_op_count = total_op  # Matches total OP registrations on census_date & sum of department table
 
         review_op_qs = PatientVisit.objects.filter(visit_date__date=census_date, visit_type='OP').exclude(visit_no=1)
-        ip_admissions_qs = PatientVisit.objects.filter(Q(visit_date__date=census_date, visit_type='IP') | Q(patient__created_at__date=census_date, patient__visit_through='IP')).distinct()
+        ip_admissions_qs = PatientVisit.objects.filter(Q(visit_date__date=census_date, visit_type='IP') | Q(patient__registration_date=census_date, patient__visit_through='IP')).distinct()
         discharged_qs = PatientVisit.objects.filter(discharge_date=census_date)
 
         if dept_id:
@@ -903,8 +918,7 @@ class PatientReviewReportView(LoginRequiredMixin, MenuAccessRequiredMixin, ListV
         queryset = PatientVisit.objects.select_related('patient', 'department_obj', 'unit_obj', 'created_by').order_by('-id')
 
         q_patient = self.request.GET.get('q_patient', '').strip()
-        q_from_date = self.request.GET.get('q_from_date', '').strip()
-        q_to_date = self.request.GET.get('q_to_date', '').strip()
+        q_from_date, q_to_date = get_default_date_range(self.request, 'q_from_date', 'q_to_date')
         q_department = self.request.GET.get('q_department', '').strip()
         q_visit_type = self.request.GET.get('q_visit_type', '').strip()
         q_centre = self.request.GET.get('q_centre', '').strip()
@@ -957,8 +971,7 @@ class PatientReviewReportView(LoginRequiredMixin, MenuAccessRequiredMixin, ListV
         qs = self.get_queryset()
 
         context['q_patient'] = self.request.GET.get('q_patient', '')
-        context['q_from_date'] = self.request.GET.get('q_from_date', '')
-        context['q_to_date'] = self.request.GET.get('q_to_date', '')
+        context['q_from_date'], context['q_to_date'] = get_default_date_range(self.request, 'q_from_date', 'q_to_date')
         context['q_department'] = self.request.GET.get('q_department', '')
         context['q_visit_type'] = self.request.GET.get('q_visit_type', '')
         context['q_centre'] = self.request.GET.get('q_centre', '')
