@@ -201,21 +201,27 @@ def process_auto_trigger(history_id, is_retry=False):
             history.save()
 
         # Step 1: Find eligible source patients based on Department and Date Range
-        eligible_patients = list(Patient.objects.filter(
+        start_date_patients = list(Patient.objects.filter(
             department_obj=history.department,
-            registration_date__gte=history.from_date,
-            registration_date__lte=history.to_date
+            registration_date=history.from_date
         ).order_by('id'))
-
-        if not eligible_patients:
-            # Fallback to all patients in department
-            eligible_patients = list(Patient.objects.filter(
-                department_obj=history.department
-            ).order_by('id'))
-
-        if not eligible_patients:
-            # Fallback to any active patient in system
-            eligible_patients = list(Patient.objects.all().order_by('id'))
+        
+        end_date_patients = list(Patient.objects.filter(
+            department_obj=history.department,
+            registration_date=history.to_date
+        ).order_by('id'))
+        
+        if not start_date_patients:
+            start_date_patients = list(Patient.objects.filter(registration_date=history.from_date).order_by('id'))
+        if not start_date_patients:
+            start_date_patients = list(Patient.objects.all().order_by('id'))
+            
+        if not end_date_patients:
+            end_date_patients = list(Patient.objects.filter(registration_date=history.to_date).order_by('id'))
+        if not end_date_patients:
+            end_date_patients = list(Patient.objects.all().order_by('id'))
+            
+        eligible_patients = start_date_patients # For loop bounds and general access
 
         if not eligible_patients:
             # Create a default seed patient if database has no patients
@@ -354,11 +360,8 @@ def process_auto_trigger(history_id, is_retry=False):
                         except ValueError:
                             t_start = datetime.strptime(t_start, '%H:%M').time()
 
-                    base_date = history.from_date
-                    if isinstance(base_date, str):
-                        base_date = datetime.strptime(base_date, '%Y-%m-%d').date()
-                    elif not base_date:
-                        base_date = timezone.now().date()
+                    # The newly created patient's Registration Date MUST be TODAY / TRIGGER DATE
+                    base_date = timezone.now().date()
 
                     calc_naive_dt = datetime.combine(base_date, t_start) + timedelta(minutes=entry_seq * interval_mins)
                     if timezone.is_naive(calc_naive_dt):
@@ -367,7 +370,31 @@ def process_auto_trigger(history_id, is_retry=False):
                         scheduled_dt = calc_naive_dt
 
                     for attempt in range(1, max_retries + 1):
-                        synth_data = SyntheticPatientGenerator.generate(source_patient)
+                        import random
+                        start_patient = random.choice(start_date_patients)
+                        end_patient = random.choice(end_date_patients)
+                        
+                        s_name_parts = start_patient.name.split() if start_patient.name else ['Unknown']
+                        e_name_parts = end_patient.name.split() if end_patient.name else ['Unknown']
+                        
+                        first_name = s_name_parts[0]
+                        last_name = e_name_parts[-1] if len(e_name_parts) > 1 else e_name_parts[0]
+                        new_name = f"{first_name} {last_name}".strip()
+                        
+                        synth_data = {
+                            'name': new_name,
+                            'title': start_patient.title or 'Mr',
+                            'guardian_title': start_patient.guardian_title or 'Mr',
+                            'guardian_name': start_patient.guardian_name or start_patient.name,
+                            'street': end_patient.street or 'Main Road',
+                            'village_area': end_patient.village_area or 'City Center',
+                            'city': end_patient.city or 'Local City',
+                            'state': end_patient.state or 'Local State',
+                            'pincode': end_patient.pincode or '123456',
+                        }
+                        
+                        # Use start_patient as the source_patient for the rest of the logic
+                        source_patient = start_patient
                         
                         norm_name = normalize_text(synth_data['name'])
                         norm_guardian = normalize_text(synth_data['guardian_name'])
@@ -396,15 +423,15 @@ def process_auto_trigger(history_id, is_retry=False):
                                     age_months=source_patient.age_months or 0,
                                     age_days=source_patient.age_days or 0,
                                     guardian_title=synth_data['guardian_title'],
-                                    guardian_relationship=source_patient.guardian_relationship if source_patient.guardian_relationship != '-' else 'S/O',
+                                    guardian_relationship='C/O',
                                     guardian_name=synth_data['guardian_name'],
-                                    guardian_phone=synth_data['guardian_phone'],
+                                    guardian_phone='',
                                     street=synth_data['street'],
                                     village_area=synth_data['village_area'],
                                     city=synth_data['city'],
                                     state=synth_data['state'],
                                     pincode=synth_data['pincode'],
-                                    mobile_no=synth_data['mobile_no'],
+                                    mobile_no='',
                                     department=history.department.name if history.department else "GENERAL MEDICINE",
                                     department_obj=history.department,
                                     patient_type='D',
@@ -418,8 +445,10 @@ def process_auto_trigger(history_id, is_retry=False):
                                 )
                                 new_patient.op_number = Patient.generate_next_op_number()
                                 new_patient.save()
+                                from apps.patients.models import Patient, PatientVisit
+                                Patient.objects.filter(pk=new_patient.pk).update(created_at=scheduled_dt)
                                 
-                                PatientVisit.objects.create(
+                                pv = PatientVisit.objects.create(
                                     patient=new_patient,
                                     visit_no=1,
                                     visit_date=scheduled_dt,
@@ -433,9 +462,11 @@ def process_auto_trigger(history_id, is_retry=False):
                                     clinical_notes="Auto Trigger Generated Patient",
                                     created_by=history.triggered_by
                                 )
+                                PatientVisit.objects.filter(pk=pv.pk).update(created_at=scheduled_dt)
                             break 
                         except Exception as e:
                             p_err = e
+                            new_patient = None
                             break
 
                     if new_patient:
@@ -443,28 +474,35 @@ def process_auto_trigger(history_id, is_retry=False):
                         import random
                         
                         assigned_diagnosis = None
+                        diagnosis_error = None
                         if history.department:
-                            valid_mappings = list(DiagnosisDepartmentMapping.objects.filter(
-                                department=history.department,
-                                status='Active'
-                            ).select_related('diagnosis'))
-                            
-                            if valid_mappings:
-                                selected = random.choice(valid_mappings)
-                                assigned_diagnosis = selected.diagnosis
+                            try:
+                                valid_mappings = list(DiagnosisDepartmentMapping.objects.filter(
+                                    department=history.department,
+                                    status='Active'
+                                ).select_related('diagnosis'))
                                 
-                                visit = PatientVisit.objects.filter(patient=new_patient).first()
-                                if visit:
-                                    PatientVisitDiagnosis.objects.create(
-                                        visit=visit,
-                                        diagnosis=assigned_diagnosis
-                                    )
-                                    visit.clinical_notes = f"Auto Trigger Generated Patient - Diagnosis: {assigned_diagnosis.name}"
-                                    visit.save()
+                                if valid_mappings:
+                                    selected = random.choice(valid_mappings)
+                                    assigned_diagnosis = selected.diagnosis
+                                    
+                                    visit = PatientVisit.objects.filter(patient=new_patient).first()
+                                    if visit:
+                                        PatientVisitDiagnosis.objects.create(
+                                            visit=visit,
+                                            diagnosis=assigned_diagnosis
+                                        )
+                                        visit.clinical_notes = f"Auto Trigger Generated Patient - Diagnosis: {assigned_diagnosis.name}"
+                                        visit.save()
+                            except Exception as d_err:
+                                diagnosis_error = str(d_err)
 
-                        msg = f"Stage 1 & 2 Success: Created New Patient {new_patient.patient_id} ({new_patient.name}) [OP: {new_patient.op_number}] at {scheduled_dt.strftime('%H:%M')}"
-                        if assigned_diagnosis:
-                            msg += f" | Assigned Diagnosis: {assigned_diagnosis.name}"
+                        msg = f"Source Patient: {source_patient.patient_id} | New Patient: {new_patient.patient_id} | Trigger Date: {timezone.now().strftime('%d-%b-%Y')}\n"
+                        msg += f"Patient Creation: SUCCESS\nVisit: SUCCESS\n"
+                        if diagnosis_error:
+                            msg += f"Diagnosis: FAILED ({diagnosis_error})"
+                        else:
+                            msg += "Diagnosis: SUCCESS"
 
                         AutoTriggerLog.objects.create(
                             history=history,
