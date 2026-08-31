@@ -167,14 +167,14 @@
         <div class="filter-group">
             <span class="filter-label">From Date</span>
             <div style="display: flex; gap: 0.25rem;">
-                <input type="date" id="f_from_date" class="filter-input" value="{% now 'Y-m-d' %}" onclick="if(this.showPicker) this.showPicker();" style="width: 130px;">
+                <input type="date" id="f_from_date" class="filter-input" value="{{ default_from_date }}" onclick="if(this.showPicker) this.showPicker();" style="width: 130px;">
                 <button type="button" class="btn-search" id="btn-clear-from-date" title="Clear From Date" style="padding: 0.25rem 0.5rem; background: #e2e8f0; color: #334155; border: none; border-radius: 4px;"><i class="bi bi-x-circle"></i></button>
             </div>
         </div>
         <div class="filter-group">
             <span class="filter-label">To Date</span>
             <div style="display: flex; gap: 0.25rem;">
-                <input type="date" id="f_to_date" class="filter-input" value="{% now 'Y-m-d' %}" onclick="if(this.showPicker) this.showPicker();" style="width: 130px;">
+                <input type="date" id="f_to_date" class="filter-input" value="{{ default_to_date }}" onclick="if(this.showPicker) this.showPicker();" style="width: 130px;">
                 <button type="button" class="btn-search" id="btn-clear-to-date" title="Clear To Date" style="padding: 0.25rem 0.5rem; background: #e2e8f0; color: #334155; border: none; border-radius: 4px;"><i class="bi bi-x-circle"></i></button>
             </div>
         </div>

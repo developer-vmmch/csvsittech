@@ -1,26 +1,16 @@
 import os
-import re
 
-search_dirs = ['templates', 'apps']
+def find_views(file_path):
+    with open(file_path, 'r') as f:
+        content = f.read()
+    
+    # We want to identify views that process date filters.
+    # We will just print them out for now to know exactly what to modify.
+    lines = content.split('\n')
+    for i, line in enumerate(lines):
+        if 'get(\'from_date' in line or 'get(\'q_from_date' in line or 'get("from_date' in line or 'get("q_from_date' in line:
+            print(f"{file_path}:{i+1} -> {line.strip()}")
 
-for root, _, files in os.walk('.'):
-    if not any(d in root for d in search_dirs):
-        continue
-    for file in files:
-        if file.endswith('.html'):
-            path = os.path.join(root, file)
-            with open(path, 'r') as f:
-                content = f.read()
-            
-            # Simple regex to add onclick to <input type="date"
-            if 'type="date"' in content and 'this.showPicker' not in content:
-                new_content = re.sub(
-                    r'(<input[^>]*type="date"[^>]*)>',
-                    r'\1 onclick="if(this.showPicker) this.showPicker();">',
-                    content
-                )
-                
-                if new_content != content:
-                    with open(path, 'w') as f:
-                        f.write(new_content)
-                    print(f"Updated {path}")
+find_views('apps/patients/views.py')
+find_views('apps/lab/views.py')
+find_views('apps/lab/auto_trigger_views.py')

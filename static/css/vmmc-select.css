@@ -71,7 +71,7 @@
     color: #ef4444;
 }
 
-.vmmc-search-select .vss-dropdown {
+.vss-dropdown {
     position: absolute;
     top: calc(100% + 4px);
     left: 0;
@@ -91,25 +91,25 @@
     transition: opacity 0.2s ease-out, transform 0.2s ease-out, visibility 0.2s ease-out;
 }
 
-.vmmc-search-select .vss-dropdown.dropup {
+.vss-dropdown.dropup {
     top: auto;
     bottom: calc(100% + 4px);
     transform: translateY(10px);
 }
 
-.vmmc-search-select .vss-dropdown.show {
+.vss-dropdown.show {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
 }
 
-.vmmc-search-select .vss-list {
+.vss-dropdown .vss-list {
     list-style: none;
     margin: 0;
     padding: 4px 0;
 }
 
-.vmmc-search-select .vss-item {
+.vss-dropdown .vss-item {
     padding: 10px 12px;
     cursor: pointer;
     font-size: 0.85rem;
@@ -119,25 +119,25 @@
     flex-direction: column;
 }
 
-.vmmc-search-select .vss-item:hover, 
-.vmmc-search-select .vss-item.highlighted {
+.vss-dropdown .vss-item:hover, 
+.vss-dropdown .vss-item.highlighted {
     background: #f1f5f9;
     border-left-color: var(--primary-blue, #2563eb);
 }
 
-.vmmc-search-select .vss-item-main {
+.vss-dropdown .vss-item-main {
     font-weight: 500;
     color: var(--text-main, #0f172a);
     font-size: 0.95rem;
 }
 
-.vmmc-search-select .vss-item-sub {
+.vss-dropdown .vss-item-sub {
     font-size: 0.75rem;
     color: #64748b;
     margin-top: 2px;
 }
 
-.vmmc-search-select .vss-message {
+.vss-dropdown .vss-message {
     padding: 12px;
     text-align: center;
     font-size: 0.85rem;

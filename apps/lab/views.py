@@ -1,3 +1,23 @@
+
+from django.utils import timezone
+from datetime import timedelta
+
+def get_default_date_range(request, from_param='from_date', to_param='to_param'):
+    from_raw = request.GET.get(from_param)
+    to_raw = request.GET.get(to_param)
+    
+    if from_raw is None:
+        from_date = (timezone.localdate() - timedelta(days=6)).strftime('%Y-%m-%d')
+    else:
+        from_date = from_raw.strip()
+        
+    if to_raw is None:
+        to_date = timezone.localdate().strftime('%Y-%m-%d')
+    else:
+        to_date = to_raw.strip()
+        
+    return from_date, to_date
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
@@ -1440,12 +1460,15 @@ class WorkOrdersView(LoginRequiredMixin, GranularPermissionRequiredMixin, Templa
         context['departments'] = Department.objects.filter(is_active=True).order_by('name')
         from apps.lab.models import ServiceRequestInvestigation
         context['statuses'] = ServiceRequestInvestigation.StatusChoices.choices
+        from django.utils import timezone
+        from datetime import timedelta
+        context['default_from_date'] = (timezone.localdate() - timedelta(days=6)).strftime('%Y-%m-%d')
+        context['default_to_date'] = timezone.localdate().strftime('%Y-%m-%d')
         return context
 
 @login_required
 def api_work_orders_list(request):
-    from_date = request.GET.get('from_date')
-    to_date = request.GET.get('to_date')
+    from_date, to_date = get_default_date_range(request, 'from_date', 'to_date')
     department_id = request.GET.get('department_id')
     visit_type = request.GET.get('visit_type')
     status = request.GET.get('status')
