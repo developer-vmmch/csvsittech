@@ -48,12 +48,14 @@ from .diagnosis_department_mapping_views import (
     api_diag_dept_map_download_template, api_diag_dept_map_preview, api_diag_dept_map_import
 )
 from .auto_trigger_views import (
-    AutoTriggerConfigurationView, AutoTriggerHistoryView, AutoTriggerTimeSettingsView,
+    AutoTriggerConfigurationView, AutoTriggerHistoryView, AutoTriggerMonthlyView, AutoTriggerMonthlyCreateView, AutoTriggerMonthlyCensusView, AutoTriggerTimeSettingsView,
     api_save_auto_trigger_config, api_get_auto_trigger_configs,
     api_execute_auto_trigger, api_get_auto_trigger_history,
     api_get_auto_trigger_history_detail, api_delete_auto_trigger_config,
     api_retry_failed_entries, api_save_time_setting, api_get_time_settings, api_delete_time_setting,
-    api_get_auto_trigger_status, api_get_active_auto_trigger_run
+    api_get_auto_trigger_status, api_get_active_auto_trigger_run,
+    api_get_monthly_trigger, api_save_monthly_trigger, api_stop_monthly_automation, api_stop_daily_target,
+    api_get_monthly_history, api_save_monthly_trigger_v2, api_get_daily_created_patients
 )
 
 app_name = 'lab'
@@ -204,6 +206,9 @@ urlpatterns = [
     path('auto-trigger/configuration/', AutoTriggerConfigurationView.as_view(), name='auto_trigger_configuration'),
     path('auto-trigger/time-settings/', AutoTriggerConfigurationView.as_view(), name='auto_trigger_time_settings'),
     path('auto-trigger/history/', AutoTriggerHistoryView.as_view(), name='auto_trigger_history'),
+    path('auto-trigger/monthly/', AutoTriggerMonthlyView.as_view(), name='auto_trigger_monthly'),
+    path('auto-trigger/monthly/create/', AutoTriggerMonthlyCreateView.as_view(), name='auto_trigger_monthly_create'),
+    path('auto-trigger/monthly/census/', AutoTriggerMonthlyCensusView.as_view(), name='auto_trigger_monthly_census'),
     
     path('api/auto-trigger/save/', api_save_auto_trigger_config, name='api_save_auto_trigger_config'),
     path('api/auto-trigger/list/', api_get_auto_trigger_configs, name='api_get_auto_trigger_configs'),
@@ -214,6 +219,14 @@ urlpatterns = [
     path('api/auto-trigger/history/<int:pk>/', api_get_auto_trigger_history_detail, name='api_get_auto_trigger_history_detail'),
     path('api/auto-trigger/config/<int:pk>/delete/', api_delete_auto_trigger_config, name='api_delete_auto_trigger_config'),
     path('api/auto-trigger/history/<int:pk>/retry/', api_retry_failed_entries, name='api_retry_failed_entries'),
+    
+    path('api/auto-trigger/monthly/get/', api_get_monthly_trigger, name='api_get_monthly_trigger'),
+    path('api/auto-trigger/monthly/save/', api_save_monthly_trigger, name='api_save_monthly_trigger'),
+    path('api/auto-trigger/monthly/save-v2/', api_save_monthly_trigger_v2, name='api_save_monthly_trigger_v2'),
+    path('api/auto-trigger/monthly/stop/', api_stop_monthly_automation, name='api_stop_monthly_automation'),
+    path('api/auto-trigger/monthly/stop-daily/', api_stop_daily_target, name='api_stop_daily_target'),
+    path('api/auto-trigger/monthly/history/', api_get_monthly_history, name='api_get_monthly_history'),
+    path('api/auto-trigger/monthly/created-patients/<int:target_id>/', api_get_daily_created_patients, name='api_get_daily_created_patients'),
     
     path('api/auto-trigger/time-setting/save/', api_save_time_setting, name='api_save_time_setting'),
     path('api/auto-trigger/time-setting/list/', api_get_time_settings, name='api_get_time_settings'),

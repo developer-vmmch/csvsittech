@@ -496,8 +496,14 @@ class DiagnosisDepartmentMappingImportHistory(TimeStampedModel):
     class Meta:
         ordering = ['-created_at']
 
-
-
+class MonthlyTriggerGeneratedPatient(TimeStampedModel):
+    target = models.ForeignKey('MonthlyTriggerDailyTarget', on_delete=models.CASCADE, related_name='generated_patients')
+    patient = models.ForeignKey('patients.Patient', on_delete=models.CASCADE, related_name='monthly_trigger_records')
+    is_duplicate = models.BooleanField(default=False)
+    status = models.CharField(max_length=50, default='Success') # Success, Duplicate, Failed
+    
+    class Meta:
+        ordering = ['-created_at']
 class AutoTriggerTimeSetting(TimeStampedModel):
     name = models.CharField(max_length=150, default="Default Schedule")
     department = models.ForeignKey('patients.Department', on_delete=models.SET_NULL, null=True, blank=True, help_text="Optional department specific setting")
@@ -586,4 +592,51 @@ class AutoTriggerLog(TimeStampedModel):
     visit = models.ForeignKey('patients.PatientVisit', on_delete=models.SET_NULL, null=True, blank=True)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES)
     message = models.TextField(blank=True, null=True)
+
+class MonthlyTriggerPlan(TimeStampedModel):
+    automation_start_date = models.DateField(null=True, blank=True)
+    automation_end_date = models.DateField(null=True, blank=True)
+    source_from_date = models.DateField()
+    source_to_date = models.DateField()
+    trigger_start_time = models.TimeField(default='08:00:00')
+    trigger_stop_time = models.TimeField(default='13:59:00')
+    interval_mins = models.FloatField(default=1.5)
+    description = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=50, default='Active')
+    is_saved = models.BooleanField(default=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+class MonthlyTriggerDailyTarget(TimeStampedModel):
+    plan = models.ForeignKey(MonthlyTriggerPlan, on_delete=models.CASCADE, related_name='daily_targets')
+    department = models.ForeignKey('patients.Department', on_delete=models.CASCADE)
+    target_date = models.DateField()
+    min_entries = models.PositiveIntegerField(default=100)
+    max_entries = models.PositiveIntegerField(default=200)
+    status = models.CharField(max_length=50, default='Not Started')  # Not Started, Running, Completed, Stopped, Failed
+    created_count = models.PositiveIntegerField(default=0)
+    duplicates_count = models.PositiveIntegerField(default=0)
+    failed_count = models.PositiveIntegerField(default=0)
+    stopped_at = models.DateTimeField(null=True, blank=True)
+    stopped_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        unique_together = ['plan', 'department', 'target_date']
+        ordering = ['target_date']
+
+class MonthlyTriggerExecutionLog(TimeStampedModel):
+    plan = models.ForeignKey(MonthlyTriggerPlan, on_delete=models.CASCADE, related_name='logs')
+    target_date = models.DateField(null=True, blank=True)
+    action = models.CharField(max_length=100)
+    status = models.CharField(max_length=50)
+    created_count = models.PositiveIntegerField(default=0)
+    duplicates_count = models.PositiveIntegerField(default=0)
+    failed_count = models.PositiveIntegerField(default=0)
+    stopped_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    reason = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-created_at']
 

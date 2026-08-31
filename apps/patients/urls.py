@@ -8,7 +8,7 @@ from .views import (
 )
 from .import_views import (
     PatientImportView, PatientImportHistoryView, api_patient_download_template,
-    api_patient_preview, api_patient_import
+    api_patient_preview, api_patient_import, api_patient_import_status
 )
 
 app_name = 'patients'
@@ -46,4 +46,5 @@ urlpatterns = [
     path('api/import/template/', api_patient_download_template, name='api_import_template'),
     path('api/import/preview/', api_patient_preview, name='api_import_preview'),
     path('api/import/process/', api_patient_import, name='api_import_process'),
+    path('api/import/status/', api_patient_import_status, name='api_import_status'),
 ]

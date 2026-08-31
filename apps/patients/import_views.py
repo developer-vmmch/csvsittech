@@ -276,24 +276,12 @@ def api_patient_preview(request):
         traceback.print_exc()
         return JsonResponse({'status': 'error', 'message': f'Error parsing file: {str(e)}'})
 
-def api_patient_import(request):
-    if request.method != 'POST':
-        return JsonResponse({'status': 'error', 'message': 'Invalid method'})
-        
+
+import threading
+
+def _process_import_job(history_id, user_id):
+    history = PatientImportHistory.objects.get(id=history_id)
     try:
-        data = json.loads(request.body)
-        import_id = data.get('import_id')
-        
-        if not import_id:
-            return JsonResponse({'status': 'error', 'message': 'Missing import_id'})
-            
-        history = PatientImportHistory.objects.get(id=import_id)
-        if history.status != 'Staged':
-            return JsonResponse({'status': 'error', 'message': 'This import is already processed.'})
-            
-        history.status = 'In Progress'
-        history.save()
-        
         file_path = history.upload_file.path
         if file_path.endswith('.csv'):
             df = pd.read_csv(file_path, dtype=str)
@@ -305,28 +293,42 @@ def api_patient_import(request):
         imported = 0
         failed = 0
         skipped = 0
-        batch_size = 250
+        batch_size = 500
         batch_patients = []
         
         file_patient_ids = set()
         file_op_numbers = set()
+        
+        # Preload to avoid row-by-row queries
         existing_patient_ids = set(Patient.objects.values_list('patient_id', flat=True))
         existing_op_numbers = set(Patient.objects.values_list('op_number', flat=True))
         
-        with transaction.atomic():
-            for index, row in df.iterrows():
-                parsed, status, errors = validate_patient_row(row, existing_patient_ids, existing_op_numbers, file_patient_ids, file_op_numbers)
-                
-                if status == 'Error':
-                    failed += 1
-                    continue
-                elif status == 'Duplicate':
-                    skipped += 1
-                    continue
-                    
+        history.status = 'Importing'
+        history.total_records = len(df)
+        history.save()
+        
+        def save_batch(batch):
+            nonlocal imported
+            if not batch: return
+            with transaction.atomic():
+                Patient.objects.bulk_create(batch)
+            imported += len(batch)
+            history.imported = imported
+            history.failed = failed
+            history.skipped = skipped
+            # Close db connection for this thread if necessary, but Django manages it mostly well if we don't leak it.
+            history.save()
+
+        for index, row in df.iterrows():
+            parsed, status, errors = validate_patient_row(row, existing_patient_ids, existing_op_numbers, file_patient_ids, file_op_numbers)
+            
+            if status == 'Error':
+                failed += 1
+            elif status == 'Duplicate':
+                skipped += 1
+            else:
                 reg_date_str = parsed.get('registration_date')
                 reg_date = pd.to_datetime(reg_date_str).date() if reg_date_str else None
-                
                 dob_str = parsed.get('dob')
                 dob = pd.to_datetime(dob_str).date() if dob_str else None
                 
@@ -359,35 +361,79 @@ def api_patient_import(request):
                     guardian_relationship=parsed.get('guardian_relation', '-'),
                     guardian_phone=parsed.get('guardian_phone', ''),
                     emergency_contact_phone=parsed.get('emergency_contact_phone', ''),
-                    created_by=request.user if request.user.is_authenticated else None
+                    created_by_id=user_id,
+                    patient_type='O',
+                    created_source='O'
                 )
-                
                 batch_patients.append(patient)
-                
-                if len(batch_patients) >= batch_size:
-                    Patient.objects.bulk_create(batch_patients)
-                    imported += len(batch_patients)
-                    batch_patients = []
             
-            if batch_patients:
-                Patient.objects.bulk_create(batch_patients)
-                imported += len(batch_patients)
+            # Periodically commit and update progress
+            if len(batch_patients) >= batch_size:
+                save_batch(batch_patients)
+                batch_patients = []
                 
-            history.imported = imported
-            history.failed = failed
-            history.skipped = skipped
-            history.status = 'Completed'
-            history.save()
+        # Final batch
+        if batch_patients:
+            save_batch(batch_patients)
             
+        # Final sync
+        history.imported = imported
+        history.failed = failed
+        history.skipped = skipped
+        history.status = 'Completed'
+        history.save()
+        
+    except Exception as e:
+        traceback.print_exc()
+        history.status = 'Failed'
+        history.save()
+    finally:
+        from django.db import connection
+        connection.close()
+
+
+def api_patient_import(request):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid method'})
+        
+    try:
+        data = json.loads(request.body)
+        import_id = data.get('import_id')
+        
+        if not import_id:
+            return JsonResponse({'status': 'error', 'message': 'Missing import_id'})
+            
+        history = PatientImportHistory.objects.get(id=import_id)
+        if history.status != 'Staged':
+            return JsonResponse({'status': 'error', 'message': 'This import is already processed.'})
+            
+        # Start async processing
+        t = threading.Thread(target=_process_import_job, args=(import_id, request.user.id if request.user.is_authenticated else None))
+        t.daemon = True
+        t.start()
+        
         return JsonResponse({
             'status': 'success',
-            'imported': imported,
-            'failed': failed,
-            'duplicates': skipped
+            'message': 'Import job started in background'
         })
     except Exception as e:
         traceback.print_exc()
-        if 'history' in locals():
-            history.status = 'Failed'
-            history.save()
+        return JsonResponse({'status': 'error', 'message': str(e)})
+
+
+def api_patient_import_status(request):
+    if request.method != 'GET':
+        return JsonResponse({'status': 'error', 'message': 'Invalid method'})
+    try:
+        import_id = request.GET.get('import_id')
+        history = PatientImportHistory.objects.get(id=import_id)
+        return JsonResponse({
+            'status': 'success',
+            'job_status': history.status,
+            'total_records': history.total_records,
+            'imported': history.imported,
+            'failed': history.failed,
+            'skipped': history.skipped
+        })
+    except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)})
