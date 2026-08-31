@@ -1,0 +1,523 @@
+{% extends "base.html" %}
+
+{% block title %}Monthly Trigger History{% endblock %}
+
+{% block extra_head %}
+<style>
+    .filter-card, .summary-card, .history-card {
+        background: #fff;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    .form-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.25rem;
+    }
+    .form-control {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+    .grid-filters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        align-items: end;
+    }
+    
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1.5rem;
+    }
+    .summary-item .lbl {
+        font-size: 0.8rem;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: bold;
+    }
+    .summary-item .val {
+        font-size: 1.05rem;
+        color: #0f172a;
+        font-weight: 600;
+    }
+    
+    .custom-table th {
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .custom-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+        font-size: 0.85rem;
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 99px;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+    .status-Completed { background: #dcfce7; color: #166534; }
+    .status-Running { background: #dbeafe; color: #1e40af; }
+    .status-Stopped { background: #fee2e2; color: #991b1b; }
+    .status-Failed { background: #fef2f2; color: #b91c1c; }
+    .status-Active, .status-Not.Started { background: #f1f5f9; color: #475569; }
+    
+    .emergency-section {
+        background: #fff5f5;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        margin-top: 3rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="px-4 py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+                    <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="#">Auto Trigger</a></li>
+                    <li class="breadcrumb-item active">Monthly Trigger History</li>
+                </ol>
+            </nav>
+            <h4 class="mb-0 fw-bold text-dark" style="font-size: 1.25rem;">MONTHLY TRIGGER HISTORY</h4>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="loadHistory()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-card">
+        <h6 class="mb-3" style="color: #0f172a; font-weight: 600;">FILTERS</h6>
+        <div class="grid-filters">
+            <div>
+                <label class="form-label">Department</label>
+                <select id="filter_dept" class="form-control">
+                    <option value="">All Departments ▼</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}">{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Plan</label>
+                <select id="filter_plan" class="form-control">
+                    <option value="">All Plans ▼</option>
+                    {% for plan in plans %}
+                    <option value="{{ plan.id }}">
+                        {% if plan.description %}
+                            {{ plan.description }}
+                        {% else %}
+                            Plan #{{ plan.id }}
+                        {% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">From Date</label>
+                <input type="date" id="filter_from" class="form-control">
+            </div>
+            <div>
+                <label class="form-label">To Date</label>
+                <input type="date" id="filter_to" class="form-control">
+            </div>
+            <div>
+                <label class="form-label">Status</label>
+                <select id="filter_status" class="form-control">
+                    <option value="">All Status ▼</option>
+                    <option value="Not Started">Not Started</option>
+                    <option value="Running">Running</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Stopped">Stopped</option>
+                    <option value="Failed">Failed</option>
+                </select>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-secondary w-100" onclick="clearFilters()">Clear</button>
+                <button class="btn btn-primary w-100" onclick="loadHistory()">Apply</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Plan Summary -->
+    <div class="summary-card" id="summary_section" style="display: none;">
+        <h6 class="mb-3" style="color: #0f172a; font-weight: 600;">PLAN SUMMARY</h6>
+        <div class="summary-grid" id="summary_content">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+    
+    <!-- Daily Trigger Execution -->
+    <div class="history-card table-responsive" style="max-height: 50vh; overflow-y: auto;">
+        <h6 class="mb-3" style="color: #0f172a; font-weight: 600;">DAILY TRIGGER EXECUTION</h6>
+        <table class="table custom-table mb-0">
+            <thead style="position: sticky; top: 0; z-index: 10;">
+                <tr>
+                    <th>Date</th>
+                    <th>Day</th>
+                    <th>Dept</th>
+                    <th>Min</th>
+                    <th>Max</th>
+                    <th>Created</th>
+                    <th>Duplicates</th>
+                    <th>Failed</th>
+                    <th>Remaining to Min</th>
+                    <th>Remaining to Max</th>
+                    <th>Progress</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="dailyTbody">
+                <tr><td colspan="13" class="text-center text-muted py-4">Loading data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Daily Execution History -->
+    <div class="history-card table-responsive" style="max-height: 40vh; overflow-y: auto;">
+        <h6 class="mb-3" style="color: #0f172a; font-weight: 600;">DAILY EXECUTION HISTORY</h6>
+        <table class="table custom-table mb-0">
+            <thead style="position: sticky; top: 0; z-index: 10;">
+                <tr>
+                    <th>Date</th>
+                    <th>Plan</th>
+                    <th>Department</th>
+                    <th>Start</th>
+                    <th>Stop</th>
+                    <th>Created</th>
+                    <th>Duplicate</th>
+                    <th>Failed</th>
+                    <th>Status</th>
+                    <th>View</th>
+                </tr>
+            </thead>
+            <tbody id="logsTbody">
+                <tr><td colspan="10" class="text-center text-muted py-4">Loading data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Execution Details Modal -->
+    <div class="modal fade" id="executionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Daily Execution Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="executionModalBody">
+                    <div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Developer Emergency Controls -->
+    {% if request.user.is_superuser or request.user.role == 'Developer' %}
+    <div class="emergency-section">
+        <h6 style="color: #991b1b; font-weight: bold; text-transform: uppercase; margin-bottom: 1rem;">Developer Emergency Controls</h6>
+        <p style="color: #7f1d1d; font-size: 0.9rem; margin-bottom: 1.5rem;">WARNING: Developer-only emergency control. This will immediately stop all currently running Monthly Trigger automations.</p>
+        <button class="btn btn-danger btn-lg" onclick="stopAllAutomation()" style="font-weight: bold; letter-spacing: 1px;">
+            <i class="bi bi-exclamation-triangle-fill"></i> STOP ALL AUTOMATION
+        </button>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function clearFilters() {
+        document.getElementById('filter_dept').value = '';
+        document.getElementById('filter_plan').value = '';
+        document.getElementById('filter_from').value = '';
+        document.getElementById('filter_to').value = '';
+        document.getElementById('filter_status').value = '';
+        loadHistory();
+    }
+
+    function loadHistory() {
+        const deptId = document.getElementById('filter_dept').value;
+        const planId = document.getElementById('filter_plan').value;
+        const fromDate = document.getElementById('filter_from').value;
+        const toDate = document.getElementById('filter_to').value;
+        const status = document.getElementById('filter_status').value;
+        
+        let url = `{% url "lab:api_get_monthly_history" %}?department_id=${deptId}&plan_id=${planId}&from_date=${fromDate}&to_date=${toDate}&status=${status}`;
+        
+        fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderSummary(data.summary);
+                renderDailyTargets(data.daily_targets);
+                renderLogs(data.logs);
+            }
+        })
+        .catch(err => console.error("Error loading history", err));
+    }
+
+    function renderSummary(summary) {
+        const section = document.getElementById('summary_section');
+        const content = document.getElementById('summary_content');
+        if (!summary) {
+            section.style.display = 'none';
+            return;
+        }
+        section.style.display = 'block';
+        content.innerHTML = `
+            <div class="summary-item"><div class="lbl">Department</div><div class="val">${summary.department}</div></div>
+            <div class="summary-item"><div class="lbl">Source From</div><div class="val">${summary.source_from}</div></div>
+            <div class="summary-item"><div class="lbl">Source To</div><div class="val">${summary.source_to}</div></div>
+            <div class="summary-item"><div class="lbl">Automation Start</div><div class="val">${summary.start_date}</div></div>
+            <div class="summary-item"><div class="lbl">Automation End</div><div class="val">${summary.end_date}</div></div>
+            <div class="summary-item"><div class="lbl">Day Start</div><div class="val">${summary.start_time}</div></div>
+            <div class="summary-item"><div class="lbl">Daily Stop</div><div class="val">${summary.stop_time}</div></div>
+            <div class="summary-item"><div class="lbl">Interval</div><div class="val">${summary.interval}</div></div>
+            <div class="summary-item"><div class="lbl">Status</div><div class="val"><span class="status-badge status-${summary.status}">${summary.status}</span></div></div>
+            <div class="summary-item"><div class="lbl">Total Created</div><div class="val" style="color:#166534;">${summary.total_created}</div></div>
+            <div class="summary-item"><div class="lbl">Total Duplicates</div><div class="val" style="color:#854d0e;">${summary.total_duplicates}</div></div>
+            <div class="summary-item"><div class="lbl">Total Failed</div><div class="val" style="color:#991b1b;">${summary.total_failed}</div></div>
+        `;
+    }
+
+    function renderDailyTargets(targets) {
+        const tbody = document.getElementById('dailyTbody');
+        tbody.innerHTML = '';
+        if (targets.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="13" class="text-center text-muted py-4">No records found.</td></tr>';
+            return;
+        }
+        
+        targets.forEach(t => {
+            const safeStatus = t.status.replace(' ', '');
+            let actionBtn = '—';
+            if (t.status === 'Running') {
+                actionBtn = `<button class="btn btn-sm btn-outline-danger" onclick="stopDay(${t.id}, '${t.date}')"><i class="bi bi-stop-fill"></i> Stop</button>`;
+            }
+            
+            let statusMarkup = `<span class="status-badge status-${safeStatus}">${t.status}</span>`;
+            if (t.status === 'Running') {
+                statusMarkup = `<span class="status-badge status-Running"><span class="spinner-grow spinner-grow-sm me-1" role="status" aria-hidden="true" style="width: 0.5rem; height: 0.5rem;"></span> Running</span>`;
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${t.date}</td>
+                <td>${t.day}</td>
+                <td>${t.department}</td>
+                <td>${t.min}</td>
+                <td>${t.max}</td>
+                <td style="font-weight:600;">${t.created}</td>
+                <td>${t.duplicates}</td>
+                <td>${t.failed}</td>
+                <td>${t.remaining_min}</td>
+                <td>${t.remaining_max}</td>
+                <td>
+                    <div style="font-weight:bold; font-size:0.75rem; color:#475569; margin-bottom:2px;">${t.progress}%</div>
+                    <div style="background:#e2e8f0; height:6px; border-radius:3px; width:100%; overflow:hidden;">
+                        <div style="background:var(--accent-blue); width:${t.progress}%; height:100%;"></div>
+                    </div>
+                </td>
+                <td>${statusMarkup}</td>
+                <td>${actionBtn}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderLogs(logs) {
+        const tbody = document.getElementById('logsTbody');
+        tbody.innerHTML = '';
+        if (logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4">No execution history found.</td></tr>';
+            return;
+        }
+        
+        logs.forEach(l => {
+            const safeStatus = l.status.replace(' ', '');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${l.date}</td>
+                <td>${l.plan}</td>
+                <td>${l.department}</td>
+                <td>${l.start_time}</td>
+                <td>${l.stop_time}</td>
+                <td style="font-weight:600;">${l.created}</td>
+                <td>${l.duplicates}</td>
+                <td>${l.failed}</td>
+                <td><span class="status-badge status-${safeStatus}">${l.status}</span></td>
+                <td><button class="btn btn-sm btn-light border" onclick="viewExecution(${l.target_id})"><i class="bi bi-eye"></i> View</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+    
+    function viewExecution(targetId) {
+        const modal = new bootstrap.Modal(document.getElementById('executionModal'));
+        modal.show();
+        
+        document.getElementById('executionModalBody').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>';
+        
+        fetch(`{% url "lab:api_get_daily_created_patients" target_id=0 %}`.replace('0', targetId))
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                let html = `
+                    <h6 class="mb-3 fw-bold text-primary">Total Created: ${data.patients.length}</h6>
+                    <div class="table-responsive" style="max-height: 60vh;">
+                    <table class="table custom-table table-sm table-bordered">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>OP Number</th>
+                                <th>Patient Name</th>
+                                <th>Title</th>
+                                <th>Gender</th>
+                                <th>Age</th>
+                                <th>Department</th>
+                                <th>Guardian</th>
+                                <th>Address</th>
+                                <th>Registration Date</th>
+                                <th>Created Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                if (data.patients.length === 0) {
+                    html += `<tr><td colspan="12" class="text-center text-muted">No patients created for this daily execution target yet.</td></tr>`;
+                } else {
+                    data.patients.forEach(p => {
+                        html += `
+                            <tr>
+                                <td>${p.patient_id || '-'}</td>
+                                <td>${p.op_number || '-'}</td>
+                                <td>${p.name}</td>
+                                <td>${p.title}</td>
+                                <td>${p.gender}</td>
+                                <td>${p.age}</td>
+                                <td>${p.department}</td>
+                                <td>${p.guardian}</td>
+                                <td>${p.address}</td>
+                                <td>${p.registration_date}</td>
+                                <td>${p.created_time}</td>
+                                <td><span class="status-badge status-Success" style="background:#dcfce7; color:#166534;">${p.status}</span></td>
+                            </tr>
+                        `;
+                    });
+                }
+                
+                html += `</tbody></table></div>`;
+                document.getElementById('executionModalBody').innerHTML = html;
+            } else {
+                document.getElementById('executionModalBody').innerHTML = `<div class="alert alert-danger">Error: ${data.message}</div>`;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('executionModalBody').innerHTML = `<div class="alert alert-danger">Failed to fetch patient data.</div>`;
+        });
+    }
+
+    function stopDay(targetId, dateStr) {
+        if (!confirm(`Stop automation for ${dateStr}?\n\nThis will stop automation for this day. Already-created patients will not be deleted or modified.`)) return;
+        
+        fetch('{% url "lab:api_stop_daily_target" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ target_id: targetId, target_date: dateStr })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                loadHistory();
+            } else {
+                alert(data.message || 'Error stopping day');
+            }
+        });
+    }
+
+    function stopAllAutomation() {
+        if (!confirm("Emergency Stop — All Monthly Trigger Automation\n\nThis action will stop ALL currently running Monthly Trigger automations.\n\nAlready-created patients will NOT be deleted.\nSource patients will NOT be modified.\nCompleted records will remain unchanged.")) return;
+
+        fetch('{% url "lab:api_stop_monthly_automation" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert("All monthly automations stopped successfully.");
+                loadHistory();
+            } else {
+                alert(data.message || 'Error stopping automations');
+            }
+        });
+    }
+
+    // Load data on page load
+    document.addEventListener("DOMContentLoaded", () => {
+        loadHistory();
+        
+        // Auto-refresh every 30 seconds if page is visible
+        setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                loadHistory();
+            }
+        }, 30000);
+    });
+</script>
+{% endblock %}

@@ -40,7 +40,8 @@ class SyntheticPatientGenerator:
         address = f"{house_num} {street}"
         
         # Phone generation
-        phone = f"9{random.randint(100000000, 999999999)}"
+        # Auto Trigger patients do not require phone number per requirements
+        phone = ""
         
         return {
             'name': name,

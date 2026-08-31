@@ -1231,3 +1231,370 @@ def api_get_active_auto_trigger_run(request):
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
+
+class AutoTriggerMonthlyCreateView(LoginRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
+    permission_required = 'auto_trigger.configuration.view'
+    template_name = 'lab/auto_trigger/monthly_trigger_create.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from apps.patients.models import Department
+        context['departments'] = Department.objects.filter(is_active=True).order_by('name')
+        return context
+
+class AutoTriggerMonthlyView(LoginRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
+    permission_required = 'auto_trigger.configuration.view'
+    template_name = 'lab/auto_trigger/monthly_trigger.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from apps.patients.models import Department
+        from apps.lab.models import MonthlyTriggerPlan
+        context['departments'] = Department.objects.filter(is_active=True).order_by('name')
+        context['plans'] = MonthlyTriggerPlan.objects.all().order_by('-id')
+        return context
+
+
+class AutoTriggerMonthlyCensusView(LoginRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
+    permission_required = 'auto_trigger.history.view'
+    template_name = 'lab/auto_trigger/monthly_census.html'
+
+import json
+import datetime
+from django.utils import timezone
+from apps.lab.models import MonthlyTriggerPlan, MonthlyTriggerDailyTarget
+
+def api_get_monthly_trigger(request):
+    dept_id = request.GET.get('department_id')
+    month = request.GET.get('month')
+    year = request.GET.get('year')
+    if not all([dept_id, month, year]):
+        return JsonResponse({'success': False, 'message': 'Missing parameters'})
+    
+    plan = MonthlyTriggerPlan.objects.filter(department_id=dept_id, month=month, year=year).first()
+    if not plan:
+        return JsonResponse({'success': True, 'exists': False})
+        
+    targets = MonthlyTriggerDailyTarget.objects.filter(plan=plan).order_by('target_date')
+    daily_targets = []
+    for t in targets:
+        daily_targets.append({
+            'date': t.target_date.strftime('%Y-%m-%d'),
+            'min': t.min_entries,
+            'max': t.max_entries,
+            'status': t.status
+        })
+        
+    data = {
+        'source_from_date': plan.source_from_date.strftime('%Y-%m-%d'),
+        'source_to_date': plan.source_to_date.strftime('%Y-%m-%d'),
+        'trigger_start_time': plan.trigger_start_time.strftime('%H:%M'),
+        'trigger_stop_time': plan.trigger_stop_time.strftime('%H:%M'),
+        'interval_mins': plan.interval_mins,
+        'status': plan.status,
+        'is_saved': plan.is_saved,
+        'daily_targets': daily_targets
+    }
+    return JsonResponse({'success': True, 'exists': True, 'data': data})
+
+def api_save_monthly_trigger(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid method'})
+    try:
+        data = json.loads(request.body)
+        dept_id = data.get('department_id')
+        month = data.get('month')
+        year = data.get('year')
+        
+        plan, created = MonthlyTriggerPlan.objects.update_or_create(
+            department_id=dept_id, month=month, year=year,
+            defaults={
+                'source_from_date': data.get('source_from_date'),
+                'source_to_date': data.get('source_to_date'),
+                'trigger_start_time': data.get('trigger_start_time'),
+                'trigger_stop_time': data.get('trigger_stop_time'),
+                'interval_mins': data.get('interval_mins'),
+                'status': data.get('status', 'Active'),
+                'is_saved': True,
+                'created_by': request.user if request.user.is_authenticated else None
+            }
+        )
+        
+        daily_targets = data.get('daily_targets', [])
+        for target in daily_targets:
+            MonthlyTriggerDailyTarget.objects.update_or_create(
+                plan=plan,
+                target_date=target.get('date'),
+                defaults={
+                    'min_entries': target.get('min'),
+                    'max_entries': target.get('max'),
+                    'status': target.get('status', 'Active')
+                }
+            )
+            
+        return JsonResponse({'success': True, 'message': 'Configuration saved successfully'})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': str(e)})
+
+def api_stop_monthly_automation(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid method'})
+    if not (request.user.is_superuser or (hasattr(request.user, 'role') and request.user.role == 'Developer')):
+        return JsonResponse({'success': False, 'message': 'Permission denied. Developer only.'})
+    try:
+        plans = MonthlyTriggerPlan.objects.filter(status='Active')
+        for plan in plans:
+            plan.status = 'Stopped'
+            plan.save()
+            
+        targets = MonthlyTriggerDailyTarget.objects.filter(status__in=['Active', 'Not Started', 'Running'])
+        for target in targets:
+            target.status = 'Stopped'
+            target.stopped_by = request.user
+            target.stopped_at = timezone.now()
+            target.save()
+            
+        from apps.lab.models import MonthlyTriggerExecutionLog
+        # Create a generic log or attach to plans
+        if plans.exists():
+            MonthlyTriggerExecutionLog.objects.create(
+                plan=plans.first(), # Attach to first plan just to satisfy FK
+                action='GLOBAL AUTOMATION STOP',
+                status='STOPPED',
+                stopped_by=request.user,
+                reason='Manual emergency stop'
+            )
+            
+        return JsonResponse({'success': True, 'message': 'Monthly automation stopped successfully.'})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': str(e)})
+
+def api_stop_daily_target(request):
+    if request.method != 'POST': return JsonResponse({'success': False})
+    if not (request.user.is_superuser or (hasattr(request.user, 'role') and request.user.role == 'Developer')):
+        return JsonResponse({'success': False, 'message': 'Developer only.'})
+    try:
+        import json
+        data = json.loads(request.body)
+        target_id = data.get('target_id')
+        if not target_id:
+            return JsonResponse({'success': False, 'message': 'Missing target ID'})
+            
+        target = MonthlyTriggerDailyTarget.objects.get(id=target_id)
+        target.status = 'Stopped'
+        target.stopped_by = request.user
+        target.stopped_at = timezone.now()
+        target.save()
+        
+        from apps.lab.models import MonthlyTriggerExecutionLog
+        MonthlyTriggerExecutionLog.objects.create(
+            plan=target.plan,
+            target_date=target.target_date,
+            action='AUTOMATION STOPPED',
+            status='Stopped',
+            created_count=target.created_count,
+            duplicates_count=target.duplicates_count,
+            failed_count=target.failed_count,
+            stopped_by=request.user,
+            reason='Manual stop for the day'
+        )
+        return JsonResponse({'success': True})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': str(e)})
+
+from apps.lab.models import MonthlyTriggerExecutionLog
+from django.db.models import Sum
+from datetime import datetime
+
+def api_get_monthly_history(request):
+    dept_id = request.GET.get('department_id')
+    plan_id = request.GET.get('plan_id')
+    from_date = request.GET.get('from_date')
+    to_date = request.GET.get('to_date')
+    status = request.GET.get('status')
+    
+    targets = MonthlyTriggerDailyTarget.objects.all().select_related('plan', 'department')
+    logs = MonthlyTriggerExecutionLog.objects.all().select_related('plan', 'stopped_by')
+    
+    if dept_id:
+        targets = targets.filter(department_id=dept_id)
+        # logs are per plan/date mostly, but we can filter targets
+        
+    if plan_id:
+        targets = targets.filter(plan_id=plan_id)
+        logs = logs.filter(plan_id=plan_id)
+        
+    if from_date:
+        targets = targets.filter(target_date__gte=from_date)
+        logs = logs.filter(target_date__gte=from_date)
+        
+    if to_date:
+        targets = targets.filter(target_date__lte=to_date)
+        logs = logs.filter(target_date__lte=to_date)
+        
+    if status and status != 'All':
+        targets = targets.filter(status=status)
+        logs = logs.filter(status=status)
+        
+    targets = targets.order_by('target_date', 'department__name')
+    logs = logs.order_by('-created_at')[:50] # Last 50 logs
+    
+    daily_targets_data = []
+    for t in targets:
+        progress = 0
+        if t.max_entries > 0:
+            progress = (t.created_count / t.max_entries) * 100
+            
+        rem_min = max(0, t.min_entries - t.created_count)
+        rem_max = max(0, t.max_entries - t.created_count)
+        
+        daily_targets_data.append({
+            'id': t.id,
+            'date': t.target_date.strftime('%d-%b-%Y'),
+            'day': t.target_date.strftime('%a'),
+            'department': t.department.name,
+            'min': t.min_entries,
+            'max': t.max_entries,
+            'created': t.created_count,
+            'duplicates': t.duplicates_count,
+            'failed': t.failed_count,
+            'remaining_min': rem_min,
+            'remaining_max': rem_max,
+            'progress': round(progress, 1),
+            'status': t.status
+        })
+        
+    logs_data = []
+    # For execution history, use targets descending
+    history_targets = targets.order_by('-target_date')[:100]
+    for ht in history_targets:
+        plan_desc = ht.plan.description if ht.plan.description else f"Plan #{ht.plan.id}"
+        logs_data.append({
+            'target_id': ht.id,
+            'date': ht.target_date.strftime('%d-%b-%Y'),
+            'plan': plan_desc,
+            'department': ht.department.name,
+            'start_time': ht.plan.trigger_start_time.strftime('%I:%M %p') if ht.plan.trigger_start_time else '-',
+            'stop_time': ht.plan.trigger_stop_time.strftime('%I:%M %p') if ht.plan.trigger_stop_time else '-',
+            'created': ht.created_count,
+            'duplicates': ht.duplicates_count,
+            'failed': ht.failed_count,
+            'status': ht.status
+        })
+    # Plan Summary (only if 1 plan is filtered, or aggregate)
+    summary = None
+    if plan_id:
+        plan = MonthlyTriggerPlan.objects.filter(id=plan_id).first()
+        if plan:
+            aggr = MonthlyTriggerDailyTarget.objects.filter(plan=plan).aggregate(
+                total_created=Sum('created_count'),
+                total_duplicates=Sum('duplicates_count'),
+                total_failed=Sum('failed_count')
+            )
+            summary = {
+                'department': 'Multiple Departments',
+                'source_from': plan.source_from_date.strftime('%d-%b-%Y') if plan.source_from_date else '—',
+                'source_to': plan.source_to_date.strftime('%d-%b-%Y') if plan.source_to_date else '—',
+                'start_date': plan.automation_start_date.strftime('%d-%b-%Y') if plan.automation_start_date else '—',
+                'end_date': plan.automation_end_date.strftime('%d-%b-%Y') if plan.automation_end_date else '—',
+                'start_time': plan.trigger_start_time.strftime('%I:%M %p') if plan.trigger_start_time else '—',
+                'stop_time': plan.trigger_stop_time.strftime('%I:%M %p') if plan.trigger_stop_time else '—',
+                'interval': f"{plan.interval_mins} mins",
+                'status': plan.status,
+                'total_days': MonthlyTriggerDailyTarget.objects.filter(plan=plan).values('target_date').distinct().count(),
+                'total_created': aggr['total_created'] or 0,
+                'total_duplicates': aggr['total_duplicates'] or 0,
+                'total_failed': aggr['total_failed'] or 0
+            }
+            
+    return JsonResponse({
+        'success': True, 
+        'daily_targets': daily_targets_data,
+        'logs': logs_data,
+        'summary': summary
+    })
+
+def api_save_monthly_trigger_v2(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid method'})
+    try:
+        import json
+        data = json.loads(request.body)
+        
+        plan = MonthlyTriggerPlan.objects.create(
+            automation_start_date=data.get('automation_start_date'),
+            automation_end_date=data.get('automation_end_date'),
+            source_from_date=data.get('source_from_date'),
+            source_to_date=data.get('source_to_date'),
+            trigger_start_time=data.get('trigger_start_time'),
+            trigger_stop_time=data.get('trigger_stop_time'),
+            interval_mins=data.get('interval_mins', 1.5),
+            description=data.get('description'),
+            status='Active',
+            is_saved=True,
+            created_by=request.user if request.user.is_authenticated else None
+        )
+        
+        daily_targets = data.get('daily_targets', [])
+        for target in daily_targets:
+            MonthlyTriggerDailyTarget.objects.create(
+                plan=plan,
+                department_id=target.get('department_id'),
+                target_date=target.get('date'),
+                min_entries=target.get('min'),
+                max_entries=target.get('max'),
+                status='Not Started'
+            )
+            
+        MonthlyTriggerExecutionLog.objects.create(
+            plan=plan,
+            action='PLAN SAVED',
+            status='Scheduled',
+            stopped_by=request.user if request.user.is_authenticated else None,
+            reason='Plan created and targets scheduled'
+        )
+            
+        return JsonResponse({'success': True})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': str(e)})
+
+def api_get_daily_created_patients(request, target_id):
+    from apps.lab.models import MonthlyTriggerGeneratedPatient
+    from django.utils import timezone
+    try:
+        generated = MonthlyTriggerGeneratedPatient.objects.filter(
+            target_id=target_id, status='Success'
+        ).select_related('patient')
+        
+        patients_data = []
+        for g in generated:
+            p = g.patient
+            patients_data.append({
+                'id': p.id,
+                'patient_id': p.patient_id,
+                'op_number': p.op_number,
+                'name': p.name,
+                'title': p.title,
+                'gender': p.gender,
+                'age': p.age_years,
+                'department': p.department,
+                'guardian': p.guardian_name,
+                'address': p.city,
+                'registration_date': p.registration_date.strftime('%d-%b-%Y') if p.registration_date else '',
+                'created_time': timezone.localtime(p.created_at).strftime('%I:%M %p'),
+                'status': 'Success'
+            })
+            
+        return JsonResponse({'success': True, 'patients': patients_data})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': str(e)})

@@ -273,6 +273,24 @@
                             <span>Auto Trigger History</span>
                         </a>
                     </li>
+                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_monthly_create' %}active{% endif %}">
+                        <a href="{% url 'lab:auto_trigger_monthly_create' %}">
+                            <i class="bi bi-calendar-plus"></i>
+                            <span>Monthly Trigger</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_monthly' %}active{% endif %}">
+                        <a href="{% url 'lab:auto_trigger_monthly' %}">
+                            <i class="bi bi-calendar-month"></i>
+                            <span>Monthly Trigger History</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_monthly_census' %}active{% endif %}">
+                        <a href="{% url 'lab:auto_trigger_monthly_census' %}">
+                            <i class="bi bi-bar-chart"></i>
+                            <span>Monthly Census</span>
+                        </a>
+                    </li>
                 </ul>
             </li>
 
