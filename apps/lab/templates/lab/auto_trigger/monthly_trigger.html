@@ -98,16 +98,11 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
-                    <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="#">Auto Trigger</a></li>
-                    <li class="breadcrumb-item active">Monthly Trigger History</li>
-                </ol>
-            </nav>
-            <h4 class="mb-0 fw-bold text-dark" style="font-size: 1.25rem;">MONTHLY TRIGGER HISTORY</h4>
+            <h4 class="mb-1 fw-bold">Monthly Trigger History</h4>
+            <p class="text-muted mb-0">Monitor execution logs and generated targets for monthly triggers</p>
         </div>
         <div>
+            <a href="{% url 'lab:auto_trigger_monthly_reviews' %}" class="btn btn-outline-secondary me-2"><i class="bi bi-clock-history"></i> Review History</a>
             <button class="btn btn-primary" onclick="loadHistory()">
                 <i class="bi bi-arrow-clockwise"></i> Refresh
             </button>
@@ -187,14 +182,15 @@
                     <th>Dept</th>
                     <th>Min</th>
                     <th>Max</th>
-                    <th>Created</th>
+                    <th>NEW OP</th>
+                    <th>REVIEW</th>
+                    <th>CREATED</th>
+                    <th>REVIEWED</th>
                     <th>Duplicates</th>
                     <th>Failed</th>
-                    <th>Remaining to Min</th>
-                    <th>Remaining to Max</th>
+                    <th>Remaining Min</th>
                     <th>Progress</th>
                     <th>Status</th>
-                    <th>Action</th>
                 </tr>
             </thead>
             <tbody id="dailyTbody">
@@ -214,7 +210,12 @@
                     <th>Department</th>
                     <th>Start</th>
                     <th>Stop</th>
-                    <th>Created</th>
+                    <th>MIN</th>
+                    <th>MAX</th>
+                    <th>NEW OP</th>
+                    <th>REVIEW</th>
+                    <th>CREATED</th>
+                    <th>REVIEWED</th>
                     <th>Duplicate</th>
                     <th>Failed</th>
                     <th>Status</th>
@@ -335,15 +336,12 @@
         }
         
         targets.forEach(t => {
-            const safeStatus = t.status.replace(' ', '');
+            const safeStatus = t.status.replace(/ /g, '');
             let actionBtn = '—';
-            if (t.status === 'Running') {
-                actionBtn = `<button class="btn btn-sm btn-outline-danger" onclick="stopDay(${t.id}, '${t.date}')"><i class="bi bi-stop-fill"></i> Stop</button>`;
-            }
             
             let statusMarkup = `<span class="status-badge status-${safeStatus}">${t.status}</span>`;
-            if (t.status === 'Running') {
-                statusMarkup = `<span class="status-badge status-Running"><span class="spinner-grow spinner-grow-sm me-1" role="status" aria-hidden="true" style="width: 0.5rem; height: 0.5rem;"></span> Running</span>`;
+            if (t.status === 'Active in Queue' || t.status === 'Running') {
+                statusMarkup = `<span class="status-badge status-Running"><span class="spinner-grow spinner-grow-sm me-1" role="status" aria-hidden="true" style="width: 0.5rem; height: 0.5rem;"></span> ${t.status}</span>`;
             }
 
             const tr = document.createElement('tr');
@@ -353,11 +351,13 @@
                 <td>${t.department}</td>
                 <td>${t.min}</td>
                 <td>${t.max}</td>
-                <td style="font-weight:600;">${t.created}</td>
+                <td style="font-weight:600; color:#3b82f6;">${t.new_op_target}</td>
+                <td style="font-weight:600; color:#8b5cf6;">${t.review_target}</td>
+                <td style="font-weight:700; color:#1e40af;">${t.new_op_created}</td>
+                <td style="font-weight:700; color:#5b21b6;">${t.review_created}</td>
                 <td>${t.duplicates}</td>
                 <td>${t.failed}</td>
                 <td>${t.remaining_min}</td>
-                <td>${t.remaining_max}</td>
                 <td>
                     <div style="font-weight:bold; font-size:0.75rem; color:#475569; margin-bottom:2px;">${t.progress}%</div>
                     <div style="background:#e2e8f0; height:6px; border-radius:3px; width:100%; overflow:hidden;">
@@ -365,7 +365,6 @@
                     </div>
                 </td>
                 <td>${statusMarkup}</td>
-                <td>${actionBtn}</td>
             `;
             tbody.appendChild(tr);
         });
@@ -380,7 +379,14 @@
         }
         
         logs.forEach(l => {
-            const safeStatus = l.status.replace(' ', '');
+            const safeStatus = l.status.replace(/ /g, '');
+            
+            let actionBtn = `<button class="btn btn-sm btn-light border" onclick="viewExecution(${l.plan_id}, '${l.date_raw}')"><i class="bi bi-eye"></i> View</button>`;
+            
+            if (l.status === 'Running') {
+                actionBtn += ` <button class="btn btn-sm btn-outline-danger ms-1" onclick="stopDay(${l.plan_id}, '${l.date_raw}')"><i class="bi bi-stop-fill"></i> Stop</button>`;
+            }
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${l.date}</td>
@@ -388,29 +394,85 @@
                 <td>${l.department}</td>
                 <td>${l.start_time}</td>
                 <td>${l.stop_time}</td>
-                <td style="font-weight:600;">${l.created}</td>
+                <td>${l.min}</td>
+                <td>${l.max}</td>
+                <td style="font-weight:600; color:#3b82f6;">${l.new_op_target}</td>
+                <td style="font-weight:600; color:#8b5cf6;">${l.review_target}</td>
+                <td style="font-weight:700; color:#1e40af;">${l.new_op_created}</td>
+                <td style="font-weight:700; color:#5b21b6;">${l.review_completed}</td>
                 <td>${l.duplicates}</td>
                 <td>${l.failed}</td>
                 <td><span class="status-badge status-${safeStatus}">${l.status}</span></td>
-                <td><button class="btn btn-sm btn-light border" onclick="viewExecution(${l.target_id})"><i class="bi bi-eye"></i> View</button></td>
+                <td>${actionBtn}</td>
             `;
             tbody.appendChild(tr);
         });
     }
     
-    function viewExecution(targetId) {
+    function viewExecution(planId, dateStr) {
         const modal = new bootstrap.Modal(document.getElementById('executionModal'));
         modal.show();
         
         document.getElementById('executionModalBody').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>';
         
-        fetch(`{% url "lab:api_get_daily_created_patients" target_id=0 %}`.replace('0', targetId))
+        fetch(`{% url "lab:api_get_daily_created_patients" %}?plan_id=${planId}&date=${dateStr}`)
         .then(res => res.json())
         .then(data => {
             if (data.success) {
                 let html = `
-                    <h6 class="mb-3 fw-bold text-primary">Total Created: ${data.patients.length}</h6>
-                    <div class="table-responsive" style="max-height: 60vh;">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Daily Execution Details</h6>
+                            <table class="table table-sm table-bordered">
+                                <tbody>
+                                    <tr><th>Date</th><td>${data.details.date}</td></tr>
+                                    <tr><th>Plan</th><td>${data.details.plan}</td></tr>
+                                    <tr><th>Status</th><td>${data.details.status}</td></tr>
+                                    <tr><th>Total Created</th><td>${data.details.total_created}</td></tr>
+                                    <tr><th>Total Duplicate</th><td>${data.details.total_duplicates}</td></tr>
+                                    <tr><th>Total Failed</th><td>${data.details.total_failed}</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-7">
+                            <h6 class="fw-bold">Department Statistics</h6>
+                            <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                <table class="table table-sm table-bordered custom-table">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Dept</th>
+                                            <th>Target (M-M)</th>
+                                            <th>New OP</th>
+                                            <th>Review</th>
+                                            <th>Created</th>
+                                            <th>Progress</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                `;
+                
+                data.departments.forEach(d => {
+                    html += `
+                        <tr>
+                            <td>${d.department}</td>
+                            <td>${d.min} - ${d.max}</td>
+                            <td class="text-primary fw-bold">${d.new_op_created || 0}</td>
+                            <td class="text-purple fw-bold">${d.review_created || 0}</td>
+                            <td class="fw-bold">${d.created}</td>
+                            <td>${d.progress}%</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6 class="mb-3 fw-bold text-primary">Created Patients: ${data.patients.length}</h6>
+                    <div class="table-responsive" style="max-height: 40vh;">
                     <table class="table custom-table table-sm table-bordered">
                         <thead class="table-light sticky-top">
                             <tr>
@@ -422,9 +484,10 @@
                                 <th>Age</th>
                                 <th>Department</th>
                                 <th>Guardian</th>
-                                <th>Address</th>
                                 <th>Registration Date</th>
                                 <th>Created Time</th>
+                                <th>Patient Type</th>
+                                <th>OP Type</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -432,9 +495,10 @@
                 `;
                 
                 if (data.patients.length === 0) {
-                    html += `<tr><td colspan="12" class="text-center text-muted">No patients created for this daily execution target yet.</td></tr>`;
+                    html += `<tr><td colspan="13" class="text-center text-muted">No patients created for this daily execution yet.</td></tr>`;
                 } else {
                     data.patients.forEach(p => {
+                        let opBadge = p.op_type === 'REVIEW' ? 'bg-purple' : 'bg-primary';
                         html += `
                             <tr>
                                 <td>${p.patient_id || '-'}</td>
@@ -445,9 +509,10 @@
                                 <td>${p.age}</td>
                                 <td>${p.department}</td>
                                 <td>${p.guardian}</td>
-                                <td>${p.address}</td>
                                 <td>${p.registration_date}</td>
                                 <td>${p.created_time}</td>
+                                <td><span class="badge ${p.patient_type === 'D' ? 'bg-secondary text-white' : 'bg-success text-white'}">${p.patient_type || '-'}</span></td>
+                                <td><span class="badge ${opBadge} text-white">${p.op_type || '-'}</span></td>
                                 <td><span class="status-badge status-Success" style="background:#dcfce7; color:#166534;">${p.status}</span></td>
                             </tr>
                         `;
@@ -466,16 +531,16 @@
         });
     }
 
-    function stopDay(targetId, dateStr) {
-        if (!confirm(`Stop automation for ${dateStr}?\n\nThis will stop automation for this day. Already-created patients will not be deleted or modified.`)) return;
+    function stopDay(planId, dateStr) {
+        if (!confirm(`Stop global execution for ${dateStr}?\n\nThis will stop automation for all departments on this day. Already-created patients will not be deleted.`)) return;
         
-        fetch('{% url "lab:api_stop_daily_target" %}', {
+        fetch('{% url "lab:api_stop_daily_execution" %}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken')
             },
-            body: JSON.stringify({ target_id: targetId, target_date: dateStr })
+            body: JSON.stringify({ plan_id: planId, target_date: dateStr })
         })
         .then(res => res.json())
         .then(data => {

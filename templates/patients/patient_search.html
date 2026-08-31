@@ -152,6 +152,7 @@
                         <th>Aadhar Card</th>
                         <th>ABHA ID</th>
                         <th>Department</th>
+                        <th>Patient Type</th>
                         <th>Doctor</th>
                         <th>Registered By</th>
                         <th>Registered On</th>
@@ -169,6 +170,13 @@
                         <td>{{ patient.aadhar_card|default:"--" }}</td>
                         <td><span class="badge badge-purple">{{ patient.abha_id|default:"--" }}</span></td>
                         <td><span class="badge badge-blue">{{ patient.department }}</span></td>
+                        <td>
+                            {% if patient.patient_type == 'D' or patient.created_source == 'D' %}
+                                <span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">D</span>
+                            {% else %}
+                                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">O</span>
+                            {% endif %}
+                        </td>
                         <td>{{ patient.unit_doctor }}</td>
                         <td>
                             {% if patient.created_by %}

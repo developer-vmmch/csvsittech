@@ -501,6 +501,7 @@ class MonthlyTriggerGeneratedPatient(TimeStampedModel):
     patient = models.ForeignKey('patients.Patient', on_delete=models.CASCADE, related_name='monthly_trigger_records')
     is_duplicate = models.BooleanField(default=False)
     status = models.CharField(max_length=50, default='Success') # Success, Duplicate, Failed
+    op_type = models.CharField(max_length=20, default='NEW OP') # NEW OP or REVIEW
     
     class Meta:
         ordering = ['-created_at']
@@ -598,6 +599,7 @@ class MonthlyTriggerPlan(TimeStampedModel):
     automation_end_date = models.DateField(null=True, blank=True)
     source_from_date = models.DateField()
     source_to_date = models.DateField()
+    review_source_month_year = models.CharField(max_length=7, null=True, blank=True) # Format: YYYY-MM
     trigger_start_time = models.TimeField(default='08:00:00')
     trigger_stop_time = models.TimeField(default='13:59:00')
     interval_mins = models.FloatField(default=1.5)
@@ -615,8 +617,12 @@ class MonthlyTriggerDailyTarget(TimeStampedModel):
     target_date = models.DateField()
     min_entries = models.PositiveIntegerField(default=100)
     max_entries = models.PositiveIntegerField(default=200)
+    new_op_target = models.PositiveIntegerField(default=80)
+    review_target = models.PositiveIntegerField(default=20)
     status = models.CharField(max_length=50, default='Not Started')  # Not Started, Running, Completed, Stopped, Failed
-    created_count = models.PositiveIntegerField(default=0)
+    created_count = models.PositiveIntegerField(default=0) # Legacy, keeping for compatibility
+    new_op_created = models.PositiveIntegerField(default=0)
+    review_created = models.PositiveIntegerField(default=0)
     duplicates_count = models.PositiveIntegerField(default=0)
     failed_count = models.PositiveIntegerField(default=0)
     stopped_at = models.DateTimeField(null=True, blank=True)
@@ -632,6 +638,8 @@ class MonthlyTriggerExecutionLog(TimeStampedModel):
     action = models.CharField(max_length=100)
     status = models.CharField(max_length=50)
     created_count = models.PositiveIntegerField(default=0)
+    new_op_created_count = models.PositiveIntegerField(default=0)
+    review_completed_count = models.PositiveIntegerField(default=0)
     duplicates_count = models.PositiveIntegerField(default=0)
     failed_count = models.PositiveIntegerField(default=0)
     stopped_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)

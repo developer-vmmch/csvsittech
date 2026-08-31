@@ -340,6 +340,12 @@
                 <input type="month" id="source_month" class="form-control" value="2024-01">
             </div>
 
+            <div class="form-group">
+                <label class="form-label required">Review Source Month</label>
+                <input type="month" id="review_source_month" class="form-control" value="2025-10" required>
+                <small class="text-muted" style="font-size: 0.75rem;">Only Patient Type "D" from this month will be used for review.</small>
+            </div>
+
             <!-- Automation Dates -->
             <div class="form-group">
                 <label class="form-label required">Automation Start Date</label>
@@ -368,8 +374,8 @@
             </div>
             <div class="form-group">
                 <label class="form-label required">Interval Per Patient</label>
-                <div class="input-group">
-                    <input type="text" id="interval" class="form-control" value="01:30" placeholder="MM:SS" required pattern="[0-5][0-9]:[0-5][0-9]">
+                <div class="time-input-group">
+                    <input type="text" id="interval" class="form-control" value="00:15" placeholder="MM:SS" required pattern="[0-5][0-9]:[0-5][0-9]">
                 </div>
                 <small class="text-muted" style="font-size: 0.75rem;">Format: MM:SS (e.g. 01:30 = 1m 30s)</small>
             </div>
@@ -837,6 +843,7 @@
         const payload = {
             source_from_date: source.fromDate,
             source_to_date: source.toDate,
+            review_source_month_year: document.getElementById('review_source_month').value,
             automation_start_date: document.getElementById('auto_start').value,
             automation_end_date: document.getElementById('auto_end').value,
             trigger_start_time: document.getElementById('start_time').value,

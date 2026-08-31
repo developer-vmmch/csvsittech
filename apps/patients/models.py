@@ -119,6 +119,7 @@ class Patient(TimeStampedModel):
     class VisitChoices(models.TextChoices):
         OP = 'OP', 'Out-Patient (OP)'
         IP = 'IP', 'In-Patient (IP)'
+        REVIEW = 'REVIEW', 'Review'
 
     class CategoryChoices(models.TextChoices):
         CONSULTATION = 'CONSULTATION', 'Consultation'
