@@ -39,6 +39,60 @@ class DiagnosisListView(LoginRequiredMixin, GranularPermissionRequiredMixin, Lis
     template_name = 'lab/master/diagnosis_list.html'
     context_object_name = 'diagnoses'
 
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('export') == 'excel':
+            if not request.user.has_perm_code('lab_master.diagnosis.export'):
+                from django.contrib import messages
+                from django.shortcuts import redirect
+                messages.error(request, "Access Denied: You do not have permission to export.")
+                return redirect('lab:diagnosis_list')
+            return self.export_excel(request)
+        return super().get(request, *args, **kwargs)
+
+    def export_excel(self, request):
+        from openpyxl import Workbook
+        from django.http import HttpResponse
+        import io
+
+        queryset = self.get_queryset()
+        
+        wb = Workbook(write_only=True)
+        ws = wb.create_sheet('Template')
+        ws.append(['icd_code', 'diagnosis_name', 'category', 'synonyms', 'active'])
+        
+        for obj in queryset.iterator(chunk_size=1000):
+            ws.append([
+                obj.code,
+                obj.name,
+                obj.chapter or '',
+                obj.synonyms or '',
+                'Yes' if obj.is_active else 'No'
+            ])
+            
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        response = HttpResponse(
+            output,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="diagnosis_export.xlsx"'
+        return response
+
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.headers.get('Accept') == 'application/json' or self.request.GET.get('format') == 'json':
+            qs = self.get_queryset()
+            # If no pagination applied to json, return all or paginate according to request
+            results = [{
+                'id': d.id,
+                'name': d.name,
+                'code': d.code,
+                'status': 'Active' if d.is_active else 'Inactive'
+            } for d in qs]
+            return JsonResponse({'diagnoses': results})
+        return super().render_to_response(context, **response_kwargs)
+
 class DiagnosisCreateView(LoginRequiredMixin, GranularPermissionRequiredMixin, CreateView):
     permission_required = 'lab_master.diagnosis.create'
     model = Diagnosis
@@ -66,6 +120,50 @@ class InvestigationListView(LoginRequiredMixin, GranularPermissionRequiredMixin,
     model = Investigation
     template_name = 'lab/master/investigation_list.html'
     context_object_name = 'investigations'
+
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('export') == 'excel':
+            if not request.user.has_perm_code('lab_master.investigation.export'):
+                from django.contrib import messages
+                from django.shortcuts import redirect
+                messages.error(request, "Access Denied: You do not have permission to export.")
+                return redirect('lab:investigation_list')
+            return self.export_excel(request)
+        return super().get(request, *args, **kwargs)
+
+    def export_excel(self, request):
+        from openpyxl import Workbook
+        from django.http import HttpResponse
+        import io
+
+        queryset = self.get_queryset()
+        
+        wb = Workbook(write_only=True)
+        ws = wb.create_sheet('Template')
+        ws.append(['investigation_code', 'investigation_name', 'category', 'specimen_or_sample', 'parameters', 'active'])
+        
+        for obj in queryset.iterator(chunk_size=1000):
+            params = obj.parameters.filter(is_active=True).values_list('name', flat=True)
+            params_str = "; ".join([p for p in params if p])
+            ws.append([
+                obj.code,
+                obj.name,
+                obj.department.name if obj.department else '',
+                obj.sample_type.name if obj.sample_type else '',
+                params_str,
+                'Yes' if obj.is_active else 'No'
+            ])
+            
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        response = HttpResponse(
+            output,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="investigation_export.xlsx"'
+        return response
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related('parameters', 'department', 'sample_type')
@@ -105,6 +203,51 @@ class ParameterListView(LoginRequiredMixin, GranularPermissionRequiredMixin, Lis
     template_name = 'lab/master/parameter_list.html'
     context_object_name = 'parameters'
 
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('export') == 'excel':
+            if not request.user.has_perm_code('lab_master.parameter.export'):
+                from django.contrib import messages
+                from django.shortcuts import redirect
+                messages.error(request, "Access Denied: You do not have permission to export.")
+                return redirect('lab:parameter_list')
+            return self.export_excel(request)
+        return super().get(request, *args, **kwargs)
+
+    def export_excel(self, request):
+        from openpyxl import Workbook
+        from django.http import HttpResponse
+        import io
+
+        queryset = self.get_queryset()
+        
+        wb = Workbook(write_only=True)
+        ws = wb.create_sheet('Template')
+        ws.append(['parameter_code', 'investigation_code', 'parameter_name', 'short_name', 'result_type', 'unit', 'decimal_precision', 'display_order', 'active'])
+        
+        for obj in queryset.select_related('investigation').iterator(chunk_size=1000):
+            ws.append([
+                obj.code or '',
+                obj.investigation.code if obj.investigation else '',
+                obj.name or '',
+                obj.short_name or '',
+                obj.result_type or '',
+                obj.unit or '',
+                obj.decimal_precision if obj.decimal_precision is not None else '',
+                obj.display_order if obj.display_order is not None else '',
+                'Yes' if obj.is_active else 'No'
+            ])
+            
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        response = HttpResponse(
+            output,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="parameter_export.xlsx"'
+        return response
+
 class ParameterCreateView(LoginRequiredMixin, GranularPermissionRequiredMixin, CreateView):
     permission_required = 'lab_master.parameter.create'
     model = InvestigationParameter
@@ -138,6 +281,51 @@ class AgeGroupListView(LoginRequiredMixin, GranularPermissionRequiredMixin, List
     template_name = 'lab/master/agegroup_list.html'
     context_object_name = 'age_groups'
 
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('export') == 'excel':
+            if not request.user.has_perm_code('lab_master.age_group.export'):
+                from django.contrib import messages
+                from django.shortcuts import redirect
+                messages.error(request, "Access Denied: You do not have permission to export.")
+                return redirect('lab:agegroup_list')
+            return self.export_excel(request)
+        return super().get(request, *args, **kwargs)
+
+    def export_excel(self, request):
+        from openpyxl import Workbook
+        from django.http import HttpResponse
+        import io
+
+        queryset = self.get_queryset()
+        
+        wb = Workbook(write_only=True)
+        ws = wb.create_sheet('Template')
+        ws.append(['age_group_code', 'age_group_name', 'minimum_age', 'maximum_age', 'age_unit', 'gender', 'pregnancy_applicable', 'display_order', 'active'])
+        
+        for obj in queryset.iterator(chunk_size=1000):
+            ws.append([
+                obj.code or '',
+                obj.label or '',
+                obj.min_age_value if obj.min_age_value is not None else '',
+                obj.max_age_value if obj.max_age_value is not None else '',
+                obj.min_age_unit or 'Years',
+                obj.gender or 'All',
+                'Yes' if obj.pregnancy_applicable else 'No',
+                obj.sort_order if obj.sort_order is not None else '',
+                'Yes' if obj.is_active else 'No'
+            ])
+            
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        response = HttpResponse(
+            output,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="agegroup_export.xlsx"'
+        return response
+
 class AgeGroupCreateView(LoginRequiredMixin, GranularPermissionRequiredMixin, CreateView):
     permission_required = 'lab_master.age_group.create'
     model = AgeGroup
@@ -166,6 +354,55 @@ class ReferenceRangeGridView(LoginRequiredMixin, GranularPermissionRequiredMixin
     permission_required = 'lab_master.reference_range.view'
     template_name = 'lab/master/reference_range_grid.html'
 
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('export') == 'excel':
+            if not request.user.has_perm_code('lab_master.reference_range.export'):
+                from django.contrib import messages
+                from django.shortcuts import redirect
+                messages.error(request, "Access Denied: You do not have permission to export.")
+                return redirect('lab:reference_range_grid')
+            return self.export_excel(request)
+        return super().get(request, *args, **kwargs)
+
+    def export_excel(self, request):
+        from openpyxl import Workbook
+        from django.http import HttpResponse
+        import io
+        from .models import ParameterReferenceRange
+
+        queryset = ParameterReferenceRange.objects.all().select_related('investigation_parameter__investigation', 'age_group')
+        
+        wb = Workbook(write_only=True)
+        ws = wb.create_sheet('Template')
+        ws.append(['parameter_code', 'age_group_code', 'gender', 'pregnancy', 'range_type', 'min_value', 'max_value', 'reference_text', 'unit', 'method', 'remarks', 'active'])
+        
+        for obj in queryset.iterator(chunk_size=1000):
+            ws.append([
+                obj.investigation_parameter.code if obj.investigation_parameter else '',
+                obj.age_group.code if obj.age_group else '',
+                obj.gender or 'All',
+                'Yes' if obj.pregnancy else 'No',
+                obj.range_type or 'Numeric',
+                obj.min_value if obj.min_value is not None else '',
+                obj.max_value if obj.max_value is not None else '',
+                obj.reference_text or '',
+                obj.unit or '',
+                obj.method or '',
+                obj.remarks or '',
+                'Yes' if obj.is_active else 'No'
+            ])
+            
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        response = HttpResponse(
+            output,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="reference_range_export.xlsx"'
+        return response
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['investigations'] = Investigation.objects.filter(is_active=True)
@@ -176,6 +413,48 @@ class ReferenceRangeGridView(LoginRequiredMixin, GranularPermissionRequiredMixin
 class InvestigationParameterMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
     permission_required = 'lab_master.mapping.view'
     template_name = 'lab/master/investigation_parameter_mapping.html'
+
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('export') == 'excel':
+            if not request.user.has_perm_code('lab_master.mapping.export'):
+                from django.contrib import messages
+                from django.shortcuts import redirect
+                messages.error(request, "Access Denied: You do not have permission to export.")
+                return redirect('lab:investigation_parameter_mapping')
+            return self.export_excel(request)
+        return super().get(request, *args, **kwargs)
+
+    def export_excel(self, request):
+        from openpyxl import Workbook
+        from django.http import HttpResponse
+        import io
+
+        wb = Workbook(write_only=True)
+        ws = wb.create_sheet('Template')
+        ws.append(['investigation_code', 'investigation_name', 'parameter_names', 'parameter_count', 'active'])
+        
+        investigations_with_params = Investigation.objects.filter(parameters__is_active=True).distinct()
+        for inv in investigations_with_params:
+            params = inv.parameters.filter(is_active=True)
+            param_names = ", ".join([p.name for p in params if p.name])
+            ws.append([
+                inv.code or '',
+                inv.name or '',
+                param_names,
+                params.count(),
+                'Yes' if inv.is_active else 'No'
+            ])
+            
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        response = HttpResponse(
+            output,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="investigation_parameter_mapping_export.xlsx"'
+        return response
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -1,0 +1,1253 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Diagnosis-Department Mapping - VMMC ERP{% endblock %}
+{% block page_heading %}Diagnosis-Department Mapping{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Styling according to mockup */
+    .mapping-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .mapping-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.25rem;
+    }
+    
+    .mapping-title p {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+    
+    .top-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+    
+    .card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        padding: 1rem;
+        margin-bottom: 0 !important;
+    }
+    
+    .config-section {
+        display: grid;
+        grid-template-columns: 250px 1fr 300px;
+        gap: 1rem;
+    }
+    
+    @media (max-width: 991px) {
+        .config-section {
+            grid-template-columns: 1fr;
+        }
+        .config-step[style] {
+            border: none !important;
+            padding: 0 !important;
+        }
+    }
+    
+    .config-step {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .step-title {
+        font-weight: 600;
+        color: #3b82f6;
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+    }
+    
+    .info-box {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 6px;
+        padding: 0.75rem;
+        color: #1d4ed8;
+        font-size: 0.85rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+    
+    .diagnosis-search-box {
+        position: relative;
+    }
+    .diagnosis-search-box input {
+        width: 100%;
+        padding: 0.5rem 0.5rem 0.5rem 2rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+    }
+    .diagnosis-search-box i {
+        position: absolute;
+        left: 0.75rem;
+        top: 0.6rem;
+        color: #94a3b8;
+    }
+    
+    .selection-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .diagnosis-list {
+        max-height: 200px;
+        overflow-y: auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
+    .diagnosis-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .selection-summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8fafc;
+        padding: 0.75rem;
+        border-radius: 6px;
+        margin-top: 1rem;
+    }
+    
+    .selected-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .chip {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+        border-radius: 4px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .chip button {
+        background: none;
+        border: none;
+        color: #1d4ed8;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .chip button:hover {
+        color: #ef4444;
+    }
+    
+    .table-controls {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
+    
+    .filters {
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-active {
+        background: #dcfce7;
+        color: #166534;
+    }
+    
+    .status-inactive {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+        border-radius: inherit;
+    }
+    
+    /* Modern toggle switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 20px;
+    }
+    .switch input { 
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 20px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+    
+    /* Import Modal Styles */
+    .upload-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 3rem;
+        text-align: center;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .upload-area:hover, .upload-area.dragover {
+        border-color: var(--accent-blue, #3b82f6);
+        background: #eff6ff;
+    }
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 99px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+    .status-Valid { background: #dcfce7; color: #166534; }
+    .status-Error { background: #fee2e2; color: #991b1b; }
+    .status-Duplicate { background: #fef9c3; color: #854d0e; }
+    
+    .hidden { display: none !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mapping-container">
+
+    <div class="mapping-header">
+        <div class="mapping-title">
+            <p>Map one or multiple diagnoses to a department.</p>
+        </div>
+        <div class="top-actions">
+            <button class="btn btn-outline" id="importBtn">
+                <i class="bi bi-upload"></i> Import
+            </button>
+            <button class="btn btn-primary" id="exportBtn">
+                <i class="bi bi-download"></i> Export
+            </button>
+        </div>
+    </div>
+
+    <!-- MAPPING CONFIGURATION CARD -->
+    <div class="card" style="position: relative;" id="configCard">
+        <div class="loading-overlay" id="configLoading" style="display: none;">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+        
+        <div class="config-section">
+            
+            <!-- Step 1: Department -->
+            <div class="config-step">
+                <div class="step-title">1. Select Department</div>
+                <div class="form-group">
+                    <label>Department <span class="text-danger">*</span></label>
+                    <select id="departmentSelect" class="form-select" disabled>
+                        <option value="">Loading departments...</option>
+                    </select>
+                </div>
+                <div class="info-box">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Only unmapped diagnoses for the selected department are shown.</span>
+                </div>
+            </div>
+            
+            <!-- Step 2: Diagnoses -->
+            <div class="config-step" style="border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; padding: 0 1.5rem;">
+                <div class="step-title">2. Select One or Multiple Diagnoses</div>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                    <div class="diagnosis-search-box" style="flex: 1;">
+                        <i class="bi bi-search"></i>
+                        <input type="text" id="diagnosisSearch" placeholder="Search diagnosis..." disabled>
+                    </div>
+                    <button class="btn-link text-primary" id="selectAllCheckbox" style="font-size: 0.85rem; font-weight: 500; border:none; background:none; padding: 0;" disabled>Select All (<span id="totalAvailable">0</span>)</button>
+                    <button class="btn-link text-primary" id="clearAllBtn" style="font-size: 0.85rem; font-weight: 500; border:none; background:none; padding: 0;" disabled>Clear All</button>
+                </div>
+                
+                <div class="diagnosis-list" id="diagnosisList">
+                    <div class="text-muted" style="grid-column: 1 / -1; text-align: center; padding: 2rem 0;">
+                        Please select a department first
+                    </div>
+                </div>
+                
+                <div class="selection-summary">
+                    <span style="color: #1d4ed8; font-weight: 500; background: #eff6ff; padding: 0.25rem 0.75rem; border-radius: 16px;" id="bottomSelectedCount">0 diagnoses selected</span>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-link text-danger" id="clearSelectionBtn" style="text-decoration: none; font-size: 0.9rem;" disabled>
+                            <i class="bi bi-trash"></i> Clear Selection
+                        </button>
+                        <button class="btn btn-primary" id="mapSelectedBtn" disabled>
+                            Map Selected Diagnoses <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Selected Chips -->
+            <div class="config-step">
+                <div class="step-title" style="display: flex; justify-content: space-between; margin-bottom: 0;">
+                    <span style="color: #334155; font-size: 0.95rem; font-weight: 600;">Selected Diagnoses (<span id="chipCount">0</span>)</span>
+                    <button class="btn-link text-primary" id="chipClearAllBtn" style="font-size: 0.85rem; font-weight: 500; border:none; background:none; padding: 0;">Clear All</button>
+                </div>
+                <div class="selected-chips" id="selectedChipsContainer" style="background: #f8fafc; padding: 0.75rem; border-radius: 6px; min-height: 50px; border: 1px solid #e2e8f0; align-content: flex-start;">
+                    <div class="text-muted" style="font-size: 0.85rem;" id="noChipsText">No diagnoses selected</div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- MAPPED DETAILS CARD -->
+    <div class="card" style="position: relative;">
+        <h5 style="margin-top:0; margin-bottom: 1rem; font-weight: 600;">Mapped Diagnosis Details</h5>
+        
+        <div class="table-controls">
+            <div class="filters">
+                <div class="diagnosis-search-box" style="width: 250px;">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="gridSearch" placeholder="Search mapped diagnosis...">
+                </div>
+                <select id="gridDeptFilter" class="form-select" style="width: 200px;" disabled>
+                    <option value="">Loading departments...</option>
+                </select>
+                <select id="gridStatusFilter" class="form-select" style="width: 150px;">
+                    <option value="All">All Status ▼</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="text-muted" style="font-size: 0.9rem;">Rows per page</span>
+                <select id="perPageSelect" class="form-select" style="width: 80px;">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th width="5%">#</th>
+                        <th>Department</th>
+                        <th>Diagnosis</th>
+                        <th>Status</th>
+                        <th>Mapped Date</th>
+                        <th>Mapped By</th>
+                        <th width="10%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="mappingGridBody">
+                    <tr><td colspan="6" class="text-center">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+            <div class="text-muted" style="font-size: 0.9rem;" id="paginationInfo">Showing 0 to 0 of 0 entries</div>
+            <div id="paginationControls" style="display: flex; gap: 0.25rem;"></div>
+        </div>
+        
+        <div class="loading-overlay" id="gridLoading" style="display: none;">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal" id="importModal" tabindex="-1" style="display: none; background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1050; align-items: center; justify-content: center;">
+    <div class="modal-dialog" style="max-width: 800px; width: 100%; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+            <h5 class="modal-title" style="margin: 0; font-weight: 600;">Import Diagnosis-Department Mapping</h5>
+            <button type="button" class="btn-close" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;" id="closeImportModal">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 1.5rem; max-height: 70vh; overflow-y: auto;">
+            
+            <!-- Step 1: Upload -->
+            <div id="step-upload">
+                <div style="text-align: right; margin-bottom: 1rem;">
+                    <a href="{% url 'lab:api_diag_dept_map_import_template' %}" class="btn btn-outline" style="font-size: 0.85rem;">
+                        <i class="bi bi-download"></i> Download Template
+                    </a>
+                </div>
+                <div class="upload-area" id="drop-zone">
+                    <div id="drop-zone-content">
+                        <i class="bi bi-cloud-arrow-up" style="font-size: 3rem; color: var(--accent-blue, #3b82f6);"></i>
+                        <h3 style="margin-top: 1rem;">Drag and drop file here</h3>
+                        <p style="color: #64748b;">or click to browse (.xlsx)</p>
+                    </div>
+                </div>
+                <input type="file" id="importFileInput" style="display: none;" accept=".xlsx,.xls">
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button class="btn btn-primary" onclick="document.getElementById('importFileInput').click()">
+                        <i class="bi bi-file-earmark-excel"></i> Choose Excel File
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Step 2: Preview -->
+            <div id="step-preview" class="hidden">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; background: #f8fafc; padding: 1rem; border-radius: 8px;">
+                    <div>
+                        <h6 style="margin: 0; font-weight: 600;">Validation Preview</h6>
+                        <p style="margin: 0; font-size: 0.9rem; color: #64748b;" id="preview-filename"></p>
+                    </div>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <label style="font-size: 0.9rem; font-weight: 500;">Filter:</label>
+                        <select id="preview-filter" class="form-select" onchange="filterPreview()" style="width: 120px;">
+                            <option value="All">All</option>
+                            <option value="Valid">Valid</option>
+                            <option value="Error">Errors</option>
+                            <option value="Duplicate">Duplicates</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                    <div style="flex:1; padding: 1rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; text-align: center;">
+                        <div style="font-size: 2rem; font-weight: bold; color: var(--accent-blue, #3b82f6);" id="count-total">0</div>
+                        <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Total Rows</div>
+                    </div>
+                    <div style="flex:1; padding: 1rem; background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 6px; text-align: center;">
+                        <div style="font-size: 2rem; font-weight: bold; color: #166534;" id="count-valid">0</div>
+                        <div style="font-size: 0.75rem; color: #166534; text-transform: uppercase;">Valid</div>
+                    </div>
+                    <div style="flex:1; padding: 1rem; background: #fee2e2; border: 1px solid #fecaca; border-radius: 6px; text-align: center;">
+                        <div style="font-size: 2rem; font-weight: bold; color: #991b1b;" id="count-error">0</div>
+                        <div style="font-size: 0.75rem; color: #991b1b; text-transform: uppercase;">Errors</div>
+                    </div>
+                    <div style="flex:1; padding: 1rem; background: #fef9c3; border: 1px solid #fef08a; border-radius: 6px; text-align: center;">
+                        <div style="font-size: 2rem; font-weight: bold; color: #854d0e;" id="count-duplicate">0</div>
+                        <div style="font-size: 0.75rem; color: #854d0e; text-transform: uppercase;">Duplicates</div>
+                    </div>
+                </div>
+
+                <div class="table-responsive" style="max-height: 300px; overflow-y: auto; margin-bottom: 1.5rem;">
+                    <table class="table table-bordered table-sm" style="font-size: 0.85rem;" id="preview-table">
+                        <thead style="position: sticky; top: 0; background: white; z-index: 1;">
+                            <tr>
+                                <th>Row</th>
+                                <th>Department</th>
+                                <th>Diagnosis</th>
+                                <th>Status</th>
+                                <th>Message</th>
+                            </tr>
+                        </thead>
+                        <tbody id="preview-tbody"></tbody>
+                    </table>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+                    <div>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: bold; cursor: pointer; font-size: 0.9rem;">
+                            <input type="checkbox" id="update-duplicates" style="width: 16px; height: 16px;">
+                            Update existing mappings
+                        </label>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-outline" onclick="resetUpload()">Cancel</button>
+                        <button class="btn btn-primary" id="confirmImportBtn" onclick="confirmImport()" disabled>
+                            <i class="bi bi-upload"></i> Import Valid Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 3: Summary -->
+            <div id="step-summary" class="hidden">
+                <div style="text-align: center; padding: 2rem;">
+                    <i class="bi bi-check-circle-fill" style="font-size: 4rem; color: #166534; margin-bottom: 1rem; display: block;"></i>
+                    <h4 style="margin-bottom: 0.5rem;">Import Completed Successfully</h4>
+                    <div style="font-size: 1rem; color: #475569; margin-bottom: 1.5rem;">
+                        Total Records in File: <strong id="sum-file-total">0</strong> | 
+                        Valid Records: <strong id="sum-file-valid">0</strong>
+                    </div>
+                    
+                    <div style="display: inline-block; text-align: left; background: #f8fafc; padding: 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0; min-width: 250px; font-size: 0.95rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>Total Processed:</span> <strong id="sum-total">0</strong></div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>Successfully Imported/Updated:</span> <strong id="sum-imported" style="color: #166534;">0</strong></div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>Skipped (Duplicates):</span> <strong id="sum-skipped" style="color: #854d0e;">0</strong></div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>Failed (Errors):</span> <strong id="sum-failed" style="color: #991b1b;">0</strong></div>
+                    </div>
+                    
+                    <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 1rem;">
+                        <button class="btn btn-primary" onclick="finishImport()">Close & Refresh</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let allDiagnoses = [];
+        let globalDiagnoses = [];
+        let selectedDiagnosisIds = new Set();
+        let currentDepartmentId = null;
+        
+        let gridCurrentPage = 1;
+        let gridTotalPages = 1;
+        let gridSearchTimeout = null;
+        
+        // Initialize
+        loadDepartments();
+        loadGlobalDiagnoses();
+        loadGridData();
+        
+        let departmentData = [];
+        function loadDepartments() {
+            const deptSelect = document.getElementById('departmentSelect');
+            const gridFilter = document.getElementById('gridDeptFilter');
+            
+            deptSelect.innerHTML = '<option value="">Loading departments...</option>';
+            gridFilter.innerHTML = '<option value="">Loading departments...</option>';
+            deptSelect.disabled = true;
+            gridFilter.disabled = true;
+            
+            fetch('/patients/departments/?format=json', {
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                departmentData = data.departments || [];
+                
+                deptSelect.innerHTML = '';
+                gridFilter.innerHTML = '';
+                
+                if (departmentData.length === 0) {
+                    deptSelect.add(new Option('No departments available', ''));
+                    gridFilter.add(new Option('No departments available', ''));
+                    return;
+                }
+                
+                deptSelect.add(new Option('Select Department ▼', ''));
+                gridFilter.add(new Option('All Departments ▼', ''));
+                
+                departmentData.forEach(d => {
+                    if (d.status === 'Active') {
+                        deptSelect.add(new Option(d.name, d.id));
+                        gridFilter.add(new Option(d.name, d.id));
+                    }
+                });
+                
+                deptSelect.disabled = false;
+                gridFilter.disabled = false;
+            })
+            .catch(err => {
+                deptSelect.innerHTML = '<option value="">Error loading departments</option>';
+                gridFilter.innerHTML = '<option value="">Error loading departments</option>';
+                showToast('error', 'Unable to load departments. Please try again.');
+            });
+        }
+        
+        function loadGlobalDiagnoses() {
+            fetch('/lab/diagnosis/?format=json', {
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                globalDiagnoses = (data.diagnoses || []).filter(d => d.status === 'Active');
+            })
+            .catch(err => {
+                showToast('error', 'Unable to load diagnoses. Please try again.');
+            });
+        }
+        
+        // Event Listeners
+        document.getElementById('departmentSelect').addEventListener('change', function(e) {
+            currentDepartmentId = e.target.value;
+            selectedDiagnosisIds.clear();
+            updateSelectionUI();
+            
+            if (currentDepartmentId) {
+                loadUnmappedDiagnoses(currentDepartmentId);
+                document.getElementById('diagnosisSearch').disabled = false;
+                document.getElementById('selectAllCheckbox').disabled = false;
+                document.getElementById('clearAllBtn').disabled = false;
+                document.getElementById('clearSelectionBtn').disabled = false;
+            } else {
+                allDiagnoses = [];
+                renderDiagnosisList();
+                document.getElementById('diagnosisSearch').disabled = true;
+                document.getElementById('selectAllCheckbox').disabled = true;
+                document.getElementById('clearAllBtn').disabled = true;
+                document.getElementById('clearSelectionBtn').disabled = true;
+            }
+        });
+        
+        document.getElementById('diagnosisSearch').addEventListener('input', function() {
+            renderDiagnosisList();
+        });
+        
+        document.getElementById('selectAllCheckbox').addEventListener('click', function(e) {
+            e.preventDefault();
+            const searchTerms = document.getElementById('diagnosisSearch').value.toLowerCase();
+            
+            allDiagnoses.forEach(diag => {
+                if (!searchTerms || diag.name.toLowerCase().includes(searchTerms)) {
+                    selectedDiagnosisIds.add(diag.id);
+                }
+            });
+            renderDiagnosisList();
+            updateSelectionUI();
+        });
+        
+        document.getElementById('clearAllBtn').addEventListener('click', clearSelection);
+        document.getElementById('clearSelectionBtn').addEventListener('click', clearSelection);
+        document.getElementById('chipClearAllBtn').addEventListener('click', clearSelection);
+        
+        function clearSelection() {
+            selectedDiagnosisIds.clear();
+            renderDiagnosisList();
+            updateSelectionUI();
+        }
+        
+        document.getElementById('mapSelectedBtn').addEventListener('click', function() {
+            if (!currentDepartmentId || selectedDiagnosisIds.size === 0) return;
+            
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Mapping...';
+            btn.disabled = true;
+            document.getElementById('configLoading').style.display = 'flex';
+            
+            fetch('{% url "lab:api_diagnosis_department_map_save" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    department_id: currentDepartmentId,
+                    diagnoses_ids: Array.from(selectedDiagnosisIds)
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast('success', data.message);
+                    selectedDiagnosisIds.clear();
+                    loadUnmappedDiagnoses(currentDepartmentId);
+                    loadGridData();
+                } else {
+                    showToast('error', data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showToast('error', 'An error occurred during mapping.');
+            })
+            .finally(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = selectedDiagnosisIds.size === 0;
+                document.getElementById('configLoading').style.display = 'none';
+            });
+        });
+        
+        // Grid Event Listeners
+        document.getElementById('gridSearch').addEventListener('input', function() {
+            clearTimeout(gridSearchTimeout);
+            gridSearchTimeout = setTimeout(() => {
+                gridCurrentPage = 1;
+                loadGridData();
+            }, 500);
+        });
+        
+        document.getElementById('gridDeptFilter').addEventListener('change', function() {
+            gridCurrentPage = 1;
+            loadGridData();
+        });
+        
+        document.getElementById('perPageSelect').addEventListener('change', function() {
+            gridCurrentPage = 1;
+            loadGridData();
+        });
+        
+        document.getElementById('exportBtn').addEventListener('click', function() {
+            const dept_id = document.getElementById('gridDeptFilter').value;
+            window.location.href = `{% url "lab:diagnosis_department_mapping" %}?export=excel&department_id=${dept_id}`;
+        });
+        
+        // Functions
+        function loadUnmappedDiagnoses(dept_id) {
+            document.getElementById('configLoading').style.display = 'flex';
+            
+            // We use the mappings API to get mapped ones, then filter globalDiagnoses locally.
+            fetch(`{% url "lab:api_diagnosis_department_map_list" %}?department_id=${dept_id}&per_page=9999`)
+            .then(res => res.json())
+            .then(data => {
+                const mappedIds = new Set((data.mappings || []).map(m => m.diagnosis_id));
+                allDiagnoses = globalDiagnoses.filter(d => !mappedIds.has(d.id));
+                
+                document.getElementById('totalAvailable').textContent = allDiagnoses.length;
+                renderDiagnosisList();
+                updateSelectionUI();
+            })
+            .catch(err => {
+                showToast('error', 'Unable to load mapped diagnosis details.');
+            })
+            .finally(() => {
+                document.getElementById('configLoading').style.display = 'none';
+            });
+        }
+        
+        function renderDiagnosisList() {
+            const list = document.getElementById('diagnosisList');
+            list.innerHTML = '';
+            
+            if (!currentDepartmentId) {
+                list.innerHTML = '<div class="text-muted" style="grid-column: 1 / -1; text-align: center; padding: 2rem 0;">Please select a department first</div>';
+                return;
+            }
+            
+            if (allDiagnoses.length === 0) {
+                list.innerHTML = '<div class="text-muted" style="grid-column: 1 / -1; text-align: center; padding: 2rem 0;">No unmapped diagnoses available for this department</div>';
+                return;
+            }
+            
+            const searchTerms = document.getElementById('diagnosisSearch').value.toLowerCase();
+            let visibleCount = 0;
+            let allVisibleSelected = true;
+            
+            allDiagnoses.forEach(diag => {
+                if (searchTerms && !diag.name.toLowerCase().includes(searchTerms)) return;
+                visibleCount++;
+                
+                const isSelected = selectedDiagnosisIds.has(diag.id);
+                if (!isSelected) allVisibleSelected = false;
+                
+                const div = document.createElement('label');
+                div.className = 'diagnosis-item';
+                div.innerHTML = `
+                    <input type="checkbox" class="form-check-input" value="${diag.id}" ${isSelected ? 'checked' : ''}>
+                    <span style="font-size: 0.85rem; line-height: 1.2;">${diag.name} <small class="text-muted">(${diag.code})</small></span>
+                `;
+                
+                div.querySelector('input').addEventListener('change', function(e) {
+                    if (e.target.checked) {
+                        selectedDiagnosisIds.add(diag.id);
+                    } else {
+                        selectedDiagnosisIds.delete(diag.id);
+                    }
+                    updateSelectionUI();
+                    
+                    // Select all logic removed since it's a button now
+                });
+                
+                list.appendChild(div);
+            });
+            
+            // Remove .checked update for selectAllCheckbox
+            
+            if (visibleCount === 0) {
+                list.innerHTML = '<div class="text-muted" style="grid-column: 1 / -1; text-align: center; padding: 2rem 0;">No diagnoses match your search</div>';
+            }
+        }
+        
+        function updateSelectionUI() {
+            const count = selectedDiagnosisIds.size;
+            document.getElementById('selectedCountText').textContent = `${count} selected`;
+            document.getElementById('bottomSelectedCount').textContent = `${count} diagnoses selected`;
+            document.getElementById('chipCount').textContent = count;
+            
+            document.getElementById('mapSelectedBtn').disabled = count === 0;
+            
+            const chipsContainer = document.getElementById('selectedChipsContainer');
+            chipsContainer.innerHTML = '';
+            
+            if (count === 0) {
+                chipsContainer.innerHTML = '<div class="text-muted" style="font-size: 0.85rem;" id="noChipsText">No diagnoses selected</div>';
+            } else {
+                allDiagnoses.forEach(diag => {
+                    if (selectedDiagnosisIds.has(diag.id)) {
+                        const chip = document.createElement('div');
+                        chip.className = 'chip';
+                        chip.innerHTML = `
+                            ${diag.name}
+                            <button type="button" data-id="${diag.id}"><i class="bi bi-x"></i></button>
+                        `;
+                        chip.querySelector('button').addEventListener('click', function() {
+                            selectedDiagnosisIds.delete(diag.id);
+                            
+                            // Uncheck in list if visible
+                            const cb = document.querySelector(`.diagnosis-list input[value="${diag.id}"]`);
+                            if (cb) cb.checked = false;
+                            
+                            updateSelectionUI();
+                            
+                            // Update selection UI handled by updateSelectionUI();
+                        });
+                        chipsContainer.appendChild(chip);
+                    }
+                });
+            }
+        }
+        
+        function loadGridData() {
+            const dept_id = document.getElementById('gridDeptFilter').value;
+            const status = document.getElementById('gridStatusFilter').value;
+            const q = document.getElementById('gridSearch').value;
+            const per_page = document.getElementById('perPageSelect').value;
+            
+            document.getElementById('gridLoading').style.display = 'flex';
+            
+            fetch(`{% url "lab:api_diagnosis_department_map_list" %}?department_id=${dept_id}&status=${status}&q=${encodeURIComponent(q)}&page=${gridCurrentPage}&per_page=${per_page}`)
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById('mappingGridBody');
+                tbody.innerHTML = '';
+                
+                if (data.mappings.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No mapped diagnoses found.</td></tr>';
+                } else {
+                    let startIndex = (gridCurrentPage - 1) * per_page + 1;
+                    data.mappings.forEach((row, i) => {
+                        const isChecked = row.status === 'Active' ? 'checked' : '';
+                        const statusBadge = row.status === 'Active' ? 'status-active' : 'status-inactive';
+                        
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${startIndex + i}</td>
+                            <td>${row.department_name}</td>
+                            <td>${row.diagnosis_name}</td>
+                            <td><span class="status-badge ${statusBadge}" id="status-badge-${row.id}">${row.status}</span></td>
+                            <td>${row.mapped_date}</td>
+                            <td>${row.mapped_by}</td>
+                            <td>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editMapping(${row.id})" title="Edit" style="border: 1px solid #bfdbfe; color: #1d4ed8; padding: 0.2rem 0.4rem; background: transparent; border-radius: 4px; font-size: 0.85rem;">
+                                        <i class="bi bi-pencil-square"></i> Edit
+                                    </button>
+                                    <label class="switch">
+                                      <input type="checkbox" ${isChecked} onchange="toggleStatus(${row.id}, this.checked)">
+                                      <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+                
+                // Update pagination info
+                const total = data.total;
+                const start = total === 0 ? 0 : (gridCurrentPage - 1) * per_page + 1;
+                const end = Math.min(gridCurrentPage * per_page, total);
+                document.getElementById('paginationInfo').textContent = `Showing ${start} to ${end} of ${total} entries`;
+                
+                gridTotalPages = data.pages;
+                renderPagination();
+            })
+            .finally(() => {
+                document.getElementById('gridLoading').style.display = 'none';
+            });
+        }
+        
+        window.toggleStatus = function(mapping_id, isActive) {
+            const newStatus = isActive ? 'Active' : 'Inactive';
+            const badge = document.getElementById(`status-badge-${mapping_id}`);
+            if (badge) {
+                badge.textContent = newStatus;
+                badge.className = `status-badge ${isActive ? 'status-active' : 'status-inactive'}`;
+            }
+            
+            fetch('{% url "lab:api_diagnosis_department_map_toggle" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    mapping_id: mapping_id,
+                    status: newStatus
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status !== 'success') {
+                    showToast('error', data.message);
+                    // Revert visually if failed
+                    if (badge) {
+                        badge.textContent = isActive ? 'Inactive' : 'Active';
+                        badge.className = `status-badge ${!isActive ? 'status-active' : 'status-inactive'}`;
+                        document.querySelector(`input[onchange="toggleStatus(${mapping_id}, this.checked)"]`).checked = !isActive;
+                    }
+                }
+            });
+        };
+        
+        window.editMapping = function(mapping_id) {
+            // Edit functionality placeholder (as requested per standard UI)
+            showToast('success', 'Edit mapping ' + mapping_id + ' functionality will be implemented here.');
+        };
+        
+        function renderPagination() {
+            const container = document.getElementById('paginationControls');
+            container.innerHTML = '';
+            
+            if (gridTotalPages <= 1) return;
+            
+            // Prev button
+            const prev = document.createElement('button');
+            prev.className = 'btn btn-sm btn-outline';
+            prev.innerHTML = '<i class="bi bi-chevron-left"></i>';
+            prev.disabled = gridCurrentPage === 1;
+            prev.onclick = () => { gridCurrentPage--; loadGridData(); };
+            container.appendChild(prev);
+            
+            // Page buttons (simplified for brevity, showing surrounding pages)
+            let startP = Math.max(1, gridCurrentPage - 2);
+            let endP = Math.min(gridTotalPages, gridCurrentPage + 2);
+            
+            for (let i = startP; i <= endP; i++) {
+                const btn = document.createElement('button');
+                btn.className = `btn btn-sm ${i === gridCurrentPage ? 'btn-primary' : 'btn-outline'}`;
+                btn.textContent = i;
+                btn.onclick = () => { gridCurrentPage = i; loadGridData(); };
+                container.appendChild(btn);
+            }
+            
+            // Next button
+            const next = document.createElement('button');
+            next.className = 'btn btn-sm btn-outline';
+            next.innerHTML = '<i class="bi bi-chevron-right"></i>';
+            next.disabled = gridCurrentPage === gridTotalPages;
+            next.onclick = () => { gridCurrentPage++; loadGridData(); };
+            container.appendChild(next);
+        }
+        
+        // Import Logic
+        let currentData = [];
+        let currentFilename = '';
+        
+        document.getElementById('importBtn').addEventListener('click', function() {
+            resetUpload();
+            document.getElementById('importModal').style.display = 'flex';
+        });
+        
+        document.getElementById('closeImportModal').addEventListener('click', closeImport);
+        
+        function closeImport() {
+            document.getElementById('importModal').style.display = 'none';
+        }
+        
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('importFileInput');
+        
+        if (dropZone) {
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                if (e.dataTransfer.files.length) {
+                    handleFile(e.dataTransfer.files[0]);
+                }
+            });
+        }
+        
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+        }
+        
+        function handleFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const dropContent = document.getElementById('drop-zone-content');
+            if (dropContent) {
+                dropContent.innerHTML = '<div class="spinner-border text-primary" role="status"></div><p style="margin-top: 1rem;">Validating file...</p>';
+            }
+            
+            fetch('{% url "lab:api_diag_dept_map_preview" %}', {
+                method: 'POST',
+                headers: {'X-CSRFToken': getCookie('csrftoken')},
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Normalize the preview structure to match the standard importer
+                    currentData = (data.preview || []).map(row => {
+                        let rowStatus = 'Valid';
+                        if (!row.is_valid) {
+                            if (row.errors && row.errors.join('').includes('already exists')) {
+                                rowStatus = 'Duplicate';
+                            } else {
+                                rowStatus = 'Error';
+                            }
+                        }
+                        
+                        return {
+                            row_num: row.row,
+                            department: row.department,
+                            diagnosis: row.diagnosis,
+                            status_field: row.status, // rename to avoid collision with rowStatus
+                            status: rowStatus,
+                            error: row.errors ? row.errors.join(', ') : ''
+                        };
+                    });
+                    currentFilename = data.file_name || file.name;
+                    showPreview();
+                } else {
+                    showToast('error', data.message || 'Validation Error');
+                    resetUpload();
+                }
+            })
+            .catch(err => {
+                showToast('error', 'Server error occurred during file parsing.');
+                resetUpload();
+            });
+        }
+        
+        function showPreview() {
+            document.getElementById('step-upload').classList.add('hidden');
+            document.getElementById('step-preview').classList.remove('hidden');
+            document.getElementById('step-summary').classList.add('hidden');
+            
+            document.getElementById('preview-filename').textContent = currentFilename;
+            
+            let valid = 0, error = 0, dup = 0;
+            currentData.forEach(r => {
+                if (r.status === 'Valid') valid++;
+                else if (r.status === 'Error') error++;
+                else if (r.status === 'Duplicate') dup++;
+            });
+            
+            document.getElementById('count-total').textContent = currentData.length;
+            document.getElementById('count-valid').textContent = valid;
+            document.getElementById('count-error').textContent = error;
+            document.getElementById('count-duplicate').textContent = dup;
+            
+            if (valid === 0 && dup === 0) {
+                document.getElementById('confirmImportBtn').disabled = true;
+            } else {
+                document.getElementById('confirmImportBtn').disabled = false;
+            }
+            
+            renderTable(currentData);
+        }
+        
+        window.filterPreview = function() {
+            const filter = document.getElementById('preview-filter').value;
+            if (filter === 'All') {
+                renderTable(currentData);
+            } else {
+                renderTable(currentData.filter(r => r.status === filter));
+            }
+        };
+        
+        function renderTable(data) {
+            const tbody = document.getElementById('preview-tbody');
+            let html = '';
+            data.forEach(r => {
+                html += `<tr>
+                    <td>${r.row_num}</td>
+                    <td>${r.department}</td>
+                    <td>${r.diagnosis}</td>
+                    <td><span class="status-badge status-${r.status}">${r.status}</span></td>
+                    <td style="color: ${r.status==='Valid' ? 'green' : 'red'}">${r.error}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+        
+        window.confirmImport = function() {
+            if (!confirm('Are you sure you want to proceed with importing the valid records?')) return;
+            
+            const updateDups = document.getElementById('update-duplicates').checked;
+            const btn = document.getElementById('confirmImportBtn');
+            btn.disabled = true;
+            btn.innerHTML = 'Importing...';
+            
+            fetch("{% url 'lab:api_diag_dept_map_import' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    filename: currentFilename,
+                    rows: currentData,
+                    update_duplicates: updateDups
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast('success', 'Diagnosis-Department mapping imported successfully.');
+                    showSummary(data.summary);
+                } else {
+                    showToast('error', 'Import Error: ' + data.message);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-upload"></i> Import Valid Data';
+                }
+            });
+        };
+        
+        function showSummary(summary) {
+            document.getElementById('step-preview').classList.add('hidden');
+            document.getElementById('step-summary').classList.remove('hidden');
+            
+            let valid = 0;
+            currentData.forEach(r => { if(r.status === 'Valid') valid++; });
+            
+            document.getElementById('sum-file-total').textContent = currentData.length;
+            document.getElementById('sum-file-valid').textContent = valid;
+            
+            document.getElementById('sum-total').textContent = summary.total;
+            document.getElementById('sum-imported').textContent = summary.imported;
+            document.getElementById('sum-skipped').textContent = summary.duplicates - (document.getElementById('update-duplicates').checked ? summary.updated : 0);
+            document.getElementById('sum-failed').textContent = summary.failed;
+        }
+        
+        window.resetUpload = function() {
+            document.getElementById('step-upload').classList.remove('hidden');
+            document.getElementById('step-preview').classList.add('hidden');
+            document.getElementById('step-summary').classList.add('hidden');
+            
+            const dropContent = document.getElementById('drop-zone-content');
+            if (dropContent) {
+                dropContent.innerHTML = `
+                    <i class="bi bi-cloud-arrow-up" style="font-size: 3rem; color: var(--accent-blue, #3b82f6);"></i>
+                    <h3 style="margin-top: 1rem;">Drag and drop file here</h3>
+                    <p style="color: #64748b;">or click to browse (.xlsx)</p>
+                `;
+            }
+            if (document.getElementById('importFileInput')) {
+                document.getElementById('importFileInput').value = '';
+            }
+            currentData = [];
+            
+            // reset button state
+            const btn = document.getElementById('confirmImportBtn');
+            if(btn) {
+                btn.innerHTML = '<i class="bi bi-upload"></i> Import Valid Data';
+                btn.disabled = false;
+            }
+        };
+        
+        window.finishImport = function() {
+            document.getElementById('importModal').style.display = 'none';
+            gridCurrentPage = 1;
+            loadGridData();
+            
+            // if a department is selected, refresh its unmapped list
+            if (currentDepartmentId) {
+                loadUnmappedDiagnoses(currentDepartmentId);
+            }
+        };
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        function showToast(type, message) {
+            // Very simple toast implementation
+            const t = document.createElement('div');
+            t.style.position = 'fixed';
+            t.style.bottom = '20px';
+            t.style.right = '20px';
+            t.style.padding = '1rem';
+            t.style.background = type === 'success' ? '#22c55e' : '#ef4444';
+            t.style.color = 'white';
+            t.style.borderRadius = '4px';
+            t.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+            t.style.zIndex = '9999';
+            t.textContent = message;
+            document.body.appendChild(t);
+            setTimeout(() => {
+                t.remove();
+            }, 3000);
+        }
+    });
+</script>
+{% endblock %}

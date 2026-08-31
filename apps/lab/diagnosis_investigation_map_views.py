@@ -8,6 +8,59 @@ from .models import DiagnosisInvestigationMap, Diagnosis, Investigation, AgeGrou
 
 @granular_permission_required('lab_master.diagnosis_investigation_map.view')
 def diagnosis_investigation_mapping_view(request):
+    if request.GET.get('export') == 'excel':
+        if not request.user.has_perm_code('lab_master.diagnosis_investigation_map.export'):
+            from django.contrib import messages
+            from django.shortcuts import redirect
+            messages.error(request, "Access Denied: You do not have permission to export.")
+            return redirect('lab:diagnosis_investigation_mapping')
+            
+        from openpyxl import Workbook
+        from django.http import HttpResponse
+        import io
+        
+        wb = Workbook(write_only=True)
+        ws = wb.create_sheet('Template')
+        ws.append(['diagnosis_code', 'diagnosis_name', 'age_group_code', 'age_group_name', 'investigations', 'active'])
+        
+        qs = DiagnosisInvestigationMap.objects.select_related('diagnosis', 'investigation', 'age_group')
+        groups = {}
+        for r in qs:
+            key = (r.diagnosis_id, r.age_group_id)
+            if key not in groups:
+                groups[key] = {
+                    'diag_code': r.diagnosis.code if r.diagnosis else '',
+                    'diag_name': r.diagnosis.name if r.diagnosis else '',
+                    'age_code': r.age_group.code if r.age_group else '',
+                    'age_name': r.age_group.label if r.age_group else '',
+                    'investigations': [],
+                    'is_active': False
+                }
+            groups[key]['investigations'].append(r.investigation.name if r.investigation else '')
+            if r.is_active:
+                groups[key]['is_active'] = True
+                
+        for g in groups.values():
+            ws.append([
+                g['diag_code'],
+                g['diag_name'],
+                g['age_code'],
+                g['age_name'],
+                ", ".join(g['investigations']),
+                'Yes' if g['is_active'] else 'No'
+            ])
+            
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        response = HttpResponse(
+            output,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="diagnosis_investigation_mapping_export.xlsx"'
+        return response
+
     return render(request, 'lab/master/diagnosis_investigation_mapping.html')
 
 @granular_permission_required('lab_master.diagnosis_investigation_map.view')

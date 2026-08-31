@@ -25,6 +25,9 @@
                 <option value="Inactive">Inactive</option>
             </select>
             <input type="text" id="searchInput" placeholder="Search diagnosis..." class="form-control" style="width: 200px;">
+            <a href="?export=excel" class="btn btn-secondary" style="background: #16a34a; border-color: #16a34a; color: white;">
+                <i class="bi bi-download"></i> Export
+            </a>
             <a href="{% url 'lab:diagnosis_import' %}" class="btn btn-secondary">
                 <i class="bi bi-cloud-arrow-up"></i> Import
             </a>

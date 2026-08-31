@@ -467,6 +467,37 @@ class DiagnosisInvestigationMap(TimeStampedModel):
         return f"{self.diagnosis.name} -> {self.investigation.name}"
 
 
+class DiagnosisDepartmentMapping(TimeStampedModel):
+    department = models.ForeignKey('patients.Department', on_delete=models.CASCADE, related_name='diagnosis_mappings')
+    diagnosis = models.ForeignKey(Diagnosis, on_delete=models.CASCADE, related_name='department_mappings')
+    status = models.CharField(max_length=20, choices=(('Active', 'Active'), ('Inactive', 'Inactive')), default='Active')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['department', 'diagnosis'], name='unique_department_diagnosis_mapping')
+        ]
+        ordering = ['department__name', 'diagnosis__name']
+
+    def __str__(self):
+        return f"{self.department.name} - {self.diagnosis.name}"
+
+
+class DiagnosisDepartmentMappingImportHistory(TimeStampedModel):
+    file_name = models.CharField(max_length=255)
+    upload_file = models.FileField(upload_to='mapping_imports/', null=True, blank=True)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    total_records = models.IntegerField(default=0)
+    imported = models.IntegerField(default=0)
+    updated = models.IntegerField(default=0)
+    skipped = models.IntegerField(default=0)
+    failed = models.IntegerField(default=0)
+    status = models.CharField(max_length=50, default='Completed')
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+
 class AutoTriggerTimeSetting(TimeStampedModel):
     name = models.CharField(max_length=150, default="Default Schedule")
     department = models.ForeignKey('patients.Department', on_delete=models.SET_NULL, null=True, blank=True, help_text="Optional department specific setting")
