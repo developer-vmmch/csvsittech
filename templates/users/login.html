@@ -7,7 +7,9 @@
     <title>Sign In | Vinayaka Missions Medical College & Hospital ERP</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         * {
@@ -56,8 +58,13 @@
         }
 
         @keyframes pulseOrb {
-            0% { transform: scale(1) translate(0, 0); }
-            100% { transform: scale(1.15) translate(30px, -20px); }
+            0% {
+                transform: scale(1) translate(0, 0);
+            }
+
+            100% {
+                transform: scale(1.15) translate(30px, -20px);
+            }
         }
 
         /* Main Container */
@@ -80,8 +87,15 @@
         }
 
         @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Left Hero Panel */
@@ -100,9 +114,12 @@
         .hero-panel::before {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             background: radial-gradient(circle at 20% 20%, rgba(20, 184, 166, 0.15), transparent 50%),
-                        radial-gradient(circle at 80% 80%, rgba(56, 189, 248, 0.12), transparent 50%);
+                radial-gradient(circle at 80% 80%, rgba(56, 189, 248, 0.12), transparent 50%);
             pointer-events: none;
         }
 
@@ -275,7 +292,7 @@
             box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.25);
         }
 
-        .custom-input:focus + .input-icon,
+        .custom-input:focus+.input-icon,
         .input-wrapper:focus-within .input-icon {
             color: #2dd4bf;
         }
@@ -349,9 +366,17 @@
         }
 
         @media (max-width: 900px) {
-            .hero-panel { display: none; }
-            .login-wrapper { max-width: 460px; }
-            .form-panel { padding: 2.5rem 2rem; }
+            .hero-panel {
+                display: none;
+            }
+
+            .login-wrapper {
+                max-width: 460px;
+            }
+
+            .form-panel {
+                padding: 2.5rem 2rem;
+            }
         }
     </style>
 </head>
@@ -378,14 +403,21 @@
                 </div>
 
                 <!-- Inspiration & Project Mission Quote Card -->
-                <div style="margin-top: 1.5rem; padding: 1.1rem 1.25rem; background: rgba(13, 148, 136, 0.14); border: 1px solid rgba(45, 212, 191, 0.28); border-radius: 16px; position: relative;">
-                    <i class="bi bi-quote" style="font-size: 2.2rem; color: #2dd4bf; opacity: 0.35; position: absolute; top: 4px; right: 12px; pointer-events: none;"></i>
-                    <p style="font-size: 0.88rem; font-style: italic; color: #e2e8f0; line-height: 1.5; margin-bottom: 0.6rem; position: relative; z-index: 1;">
-                        "Wherever the art of Medicine is loved, there is also a love of Humanity. Transforming clinical care through intelligent digital health systems."
+                <div
+                    style="margin-top: 1.5rem; padding: 1.1rem 1.25rem; background: rgba(13, 148, 136, 0.14); border: 1px solid rgba(45, 212, 191, 0.28); border-radius: 16px; position: relative;">
+                    <i class="bi bi-quote"
+                        style="font-size: 2.2rem; color: #2dd4bf; opacity: 0.35; position: absolute; top: 4px; right: 12px; pointer-events: none;"></i>
+                    <p
+                        style="font-size: 0.88rem; font-style: italic; color: #e2e8f0; line-height: 1.5; margin-bottom: 0.6rem; position: relative; z-index: 1;">
+                        "Wherever the art of Medicine is loved, there is also a love of Humanity. Transforming clinical
+                        care through intelligent digital health systems."
                     </p>
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
-                        <span style="font-weight: 700; color: #2dd4bf; font-style: normal;"><i class="bi bi-award-fill" style="color: #2dd4bf;"></i> VMMC Healthcare Motto</span>
-                        <span style="color: #94a3b8; font-style: normal;"><i class="bi bi-heart-pulse-fill" style="color: #ef4444;"></i> Patient First</span>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+                        <span style="font-weight: 700; color: #2dd4bf; font-style: normal;"><i class="bi bi-award-fill"
+                                style="color: #2dd4bf;"></i> VMMC Healthcare Motto</span>
+                        <span style="color: #94a3b8; font-style: normal;"><i class="bi bi-heart-pulse-fill"
+                                style="color: #ef4444;"></i> Patient First</span>
                     </div>
                 </div>
             </div>
@@ -424,7 +456,9 @@
                     <label for="id_username" class="input-label">Username</label>
                     <div class="input-wrapper">
                         <i class="bi bi-person-fill input-icon"></i>
-                        <input type="text" name="username" id="id_username" class="custom-input" placeholder="Enter staff username" required autofocus value="{{ form.username.value|default:'' }}">
+                        <input type="text" name="username" id="id_username" class="custom-input"
+                            placeholder="Enter staff username" required autofocus
+                            value="{{ form.username.value|default:'' }}">
                     </div>
                 </div>
 
@@ -432,8 +466,10 @@
                     <label for="id_password" class="input-label">Password</label>
                     <div class="input-wrapper">
                         <i class="bi bi-shield-lock-fill input-icon"></i>
-                        <input type="password" name="password" id="id_password" class="custom-input" placeholder="Enter account password" required style="padding-right: 2.75rem;">
-                        <button type="button" class="password-toggle-btn" onclick="togglePass('id_password', this)" title="Show/Hide Password">
+                        <input type="password" name="password" id="id_password" class="custom-input"
+                            placeholder="Enter account password" required style="padding-right: 2.75rem;">
+                        <button type="button" class="password-toggle-btn" onclick="togglePass('id_password', this)"
+                            title="Show/Hide Password">
                             <i class="bi bi-eye-fill"></i>
                         </button>
                     </div>
