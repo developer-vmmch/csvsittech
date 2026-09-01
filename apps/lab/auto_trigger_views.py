@@ -1487,9 +1487,15 @@ def api_get_monthly_history(request):
         
         # Display status logic
         display_status = t.status
-        if t.plan.status == 'Running' and t.status in ['Not Started', 'Running']:
-            display_status = 'Active in Queue'
+        from django.utils import timezone
+        today = timezone.localtime().date()
         
+        if t.target_date == today:
+            if t.plan.status == 'Running' and t.status in ['Not Started', 'Running']:
+                display_status = 'Active in Queue' if t.status == 'Not Started' else 'Running'
+        elif t.target_date > today and display_status not in ['Completed', 'Stopped']:
+            display_status = 'Not Started'
+            
         daily_targets_data.append({
             'id': t.id,
             'date': t.target_date.strftime('%d-%b-%Y'),
@@ -1698,6 +1704,8 @@ def api_get_daily_created_patients(request):
             'plan': plan.description if plan.description else f"Plan #{plan.id}",
             'status': day_status,
             'total_created': total_created,
+            'total_new_op': sum(t.new_op_created for t in targets),
+            'total_review': sum(t.review_created for t in targets),
             'total_duplicates': total_dup,
             'total_failed': total_fail
         }
@@ -1719,7 +1727,7 @@ def api_get_daily_created_patients(request):
         # 3. Created Patients
         generated = MonthlyTriggerGeneratedPatient.objects.filter(
             target__in=targets, status='Success'
-        ).select_related('patient', 'target__department').order_by('-created_at')
+        ).select_related('patient', 'target__department').order_by('created_at')
         
         patients_data = []
         for g in generated:
@@ -1732,6 +1740,8 @@ def api_get_daily_created_patients(request):
                 'title': p.title,
                 'gender': p.gender,
                 'age': p.age_years,
+                'age_group': getattr(g, 'age_group_snapshot', None) or '-',
+                'diagnosis': getattr(g, 'diagnosis_snapshot', None) or '-',
                 'department': p.department,
                 'guardian': p.guardian_name,
                 'registration_date': p.registration_date.strftime('%d-%b-%Y') if p.registration_date else '',
@@ -1812,3 +1822,15 @@ def api_get_monthly_reviews(request):
         })
         
     return JsonResponse({'success': True, 'data': data})
+
+class AutoTriggerMonthlyExecutionView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
+    menu_key = 'auto_trigger'
+    template_name = 'lab/auto_trigger/monthly_trigger_execution.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        plan_id = self.kwargs.get('plan_id')
+        date_str = self.kwargs.get('date_str')
+        context['plan_id'] = plan_id
+        context['date_str'] = date_str
+        return context

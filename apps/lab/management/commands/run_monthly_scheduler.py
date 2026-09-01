@@ -229,11 +229,13 @@ class Command(BaseCommand):
                     return
                 
                 # Assign a review diagnosis visit
-                self.assign_diagnosis(source_patient, target.department, today, 'REVIEW')
+                age_group, diagnosis, err = self.assign_diagnosis(source_patient, target.department, today, 'REVIEW')
                 
                 # Log success
                 MonthlyTriggerGeneratedPatient.objects.create(
-                    target=target, patient=source_patient, status='Success', op_type='REVIEW'
+                    target=target, patient=source_patient, status='Success', op_type='REVIEW',
+                    age_group_snapshot=age_group.label if age_group else None,
+                    diagnosis_snapshot=diagnosis.name if diagnosis else None
                 )
                 target.review_created += 1
                 target.created_count += 1
@@ -241,9 +243,14 @@ class Command(BaseCommand):
                 
                 MonthlyTriggerExecutionLog.objects.create(
                     plan=plan, target_date=today, action='PATIENT CREATED', status='Success',
-                    reason=f"Department: {target.department.name} - REVIEW Patient ID: {source_patient.patient_id}",
+                    reason=f"Department: {target.department.name} - REVIEW Patient ID: {source_patient.patient_id}" + (f" (Diag: {diagnosis.name})" if diagnosis else " (No Diag)"),
                     review_completed_count=1
                 )
+                if err:
+                    MonthlyTriggerExecutionLog.objects.create(
+                        plan=plan, target_date=today, action='DIAGNOSIS WARNING', status='Warning',
+                        reason=f"Patient {source_patient.patient_id}: {err}"
+                    )
             return
 
         # NEW OP LOGIC
@@ -321,80 +328,121 @@ class Command(BaseCommand):
             new_patient.patient_id = Patient.generate_next_patient_id()
             new_patient.save()
             
+            # Assign Diagnosis
+            age_group, diagnosis, err = self.assign_diagnosis(new_patient, target.department, today, 'NEW OP')
+
             # Link to Target
             MonthlyTriggerGeneratedPatient.objects.create(
-                target=target, patient=new_patient, status='Success', op_type='NEW OP'
+                target=target, patient=new_patient, status='Success', op_type='NEW OP',
+                age_group_snapshot=age_group.label if age_group else None,
+                diagnosis_snapshot=diagnosis.name if diagnosis else None
             )
             
             target.new_op_created += 1
             target.created_count += 1
             target.save(update_fields=['new_op_created', 'created_count'])
             
-            # Assign Diagnosis
-            self.assign_diagnosis(new_patient, target.department, today, 'NEW OP')
-            
             MonthlyTriggerExecutionLog.objects.create(
                 plan=plan, target_date=today, action='PATIENT CREATED', status='Success',
-                reason=f"Department: {target.department.name} - Patient ID: {new_patient.patient_id}",
+                reason=f"Department: {target.department.name} - Patient ID: {new_patient.patient_id}" + (f" (Diag: {diagnosis.name})" if diagnosis else " (No Diag)"),
                 new_op_created_count=1
             )
+            if err:
+                MonthlyTriggerExecutionLog.objects.create(
+                    plan=plan, target_date=today, action='DIAGNOSIS WARNING', status='Warning',
+                    reason=f"Patient {new_patient.patient_id}: {err}"
+                )
             
     def assign_diagnosis(self, patient, department, target_date, op_type='NEW OP'):
-        from apps.lab.models import DiagnosisDepartmentMapping, PatientVisitDiagnosis
+        from apps.lab.models import DiagnosisDepartmentMapping, PatientVisitDiagnosis, AgeGroup
         from apps.patients.models import PatientVisit
         from django.utils import timezone
         
-        mappings = DiagnosisDepartmentMapping.objects.filter(department=department)
-        if mappings.exists():
-            mapping = random.choice(list(mappings))
+        # 1. Determine Patient Age Group
+        patient_age_days = (patient.age_years or 0) * 365
+        matched_age_group = None
+        
+        for ag in AgeGroup.objects.filter(is_active=True).order_by('sort_order'):
+            min_days = 0
+            if ag.min_age_value:
+                if ag.min_age_unit == 'Years': min_days = ag.min_age_value * 365
+                elif ag.min_age_unit == 'Months': min_days = ag.min_age_value * 30
+                else: min_days = ag.min_age_value
+                
+            max_days = float('inf')
+            if ag.max_age_value:
+                if ag.max_age_unit == 'Years': max_days = ag.max_age_value * 365 + 364
+                elif ag.max_age_unit == 'Months': max_days = ag.max_age_value * 30 + 29
+                else: max_days = ag.max_age_value
+                
+            if min_days <= patient_age_days <= max_days:
+                if ag.gender == 'All' or ag.gender == patient.gender:
+                    matched_age_group = ag
+                    break
+        
+        # 2. Find Diagnosis Mapping
+        mappings = DiagnosisDepartmentMapping.objects.filter(department=department, status='Active')
+        
+        selected_mapping = None
+        if matched_age_group:
+            exact_mappings = mappings.filter(age_group=matched_age_group)
+            if exact_mappings.exists():
+                selected_mapping = random.choice(list(exact_mappings))
+                
+        if not selected_mapping:
+            # Fallback to department-level mapping
+            dept_mappings = mappings.filter(age_group__isnull=True)
+            if dept_mappings.exists():
+                selected_mapping = random.choice(list(dept_mappings))
+                
+        if not selected_mapping:
+            return matched_age_group, None, "Diagnosis mapping not found"
             
-            if op_type == 'REVIEW':
-                # Create a new review visit
-                latest_visit = PatientVisit.objects.filter(patient=patient).order_by('-visit_no').first()
+        # 3. Create or find visit
+        if op_type == 'REVIEW':
+            latest_visit = PatientVisit.objects.filter(patient=patient).order_by('-visit_no').first()
+            if not latest_visit:
+                latest_visit = PatientVisit.objects.create(
+                    patient=patient,
+                    visit_no=1,
+                    department=patient.department,
+                    department_obj=patient.department_obj,
+                    visit_date=patient.registration_date or timezone.now(),
+                    visit_type='OP',
+                    clinical_notes='Historical OP Registration'
+                )
                 
-                # Fallback: if historical patient doesn't have an explicit visit record, create one first
-                if not latest_visit:
-                    latest_visit = PatientVisit.objects.create(
-                        patient=patient,
-                        visit_no=1,
-                        department=patient.department,
-                        department_obj=patient.department_obj,
-                        visit_date=patient.registration_date or timezone.now(),
-                        visit_type='OP',
-                        clinical_notes='Historical OP Registration'
-                    )
-                    
-                next_visit_no = latest_visit.visit_no + 1
-                
-                # Use current local time for time, but combine with target_date
+            next_visit_no = latest_visit.visit_no + 1
+            now = timezone.localtime()
+            visit_datetime = timezone.make_aware(datetime.combine(target_date, now.time()))
+            
+            visit = PatientVisit.objects.create(
+                patient=patient,
+                visit_no=next_visit_no,
+                department=department.name,
+                department_obj=department,
+                visit_date=visit_datetime,
+                visit_type='REVIEW',
+                clinical_notes='Automated Monthly Trigger Review'
+            )
+        else:
+            visit = PatientVisit.objects.filter(patient=patient).first()
+            if not visit:
                 now = timezone.localtime()
                 visit_datetime = timezone.make_aware(datetime.combine(target_date, now.time()))
-                
                 visit = PatientVisit.objects.create(
                     patient=patient,
-                    visit_no=next_visit_no,
+                    visit_no=1,
                     department=department.name,
                     department_obj=department,
                     visit_date=visit_datetime,
-                    visit_type='REVIEW',
-                    clinical_notes='Automated Monthly Trigger Review'
+                    visit_type='OP'
                 )
-            else:
-                # Ensure a visit exists (for NEW OP)
-                visit = PatientVisit.objects.filter(patient=patient).first()
-                if not visit:
-                    now = timezone.localtime()
-                    visit_datetime = timezone.make_aware(datetime.combine(target_date, now.time()))
-                    visit = PatientVisit.objects.create(
-                        patient=patient,
-                        visit_no=1,
-                        department=department.name,
-                        department_obj=department,
-                        visit_date=visit_datetime,
-                        visit_type='OP'
-                    )
-                
-            PatientVisitDiagnosis.objects.create(
-                visit=visit,
-                diagnosis=mapping.diagnosis
-            )
+            
+        # 4. Save Diagnosis against the visit
+        PatientVisitDiagnosis.objects.create(
+            visit=visit,
+            diagnosis=selected_mapping.diagnosis
+        )
+        
+        return matched_age_group, selected_mapping.diagnosis, None

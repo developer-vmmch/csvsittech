@@ -469,12 +469,13 @@ class DiagnosisInvestigationMap(TimeStampedModel):
 
 class DiagnosisDepartmentMapping(TimeStampedModel):
     department = models.ForeignKey('patients.Department', on_delete=models.CASCADE, related_name='diagnosis_mappings')
+    age_group = models.ForeignKey(AgeGroup, on_delete=models.CASCADE, null=True, blank=True, related_name='department_diagnosis_mappings')
     diagnosis = models.ForeignKey(Diagnosis, on_delete=models.CASCADE, related_name='department_mappings')
     status = models.CharField(max_length=20, choices=(('Active', 'Active'), ('Inactive', 'Inactive')), default='Active')
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['department', 'diagnosis'], name='unique_department_diagnosis_mapping')
+            models.UniqueConstraint(fields=['department', 'diagnosis', 'age_group'], name='unique_department_diagnosis_mapping')
         ]
         ordering = ['department__name', 'diagnosis__name']
 
@@ -502,6 +503,8 @@ class MonthlyTriggerGeneratedPatient(TimeStampedModel):
     is_duplicate = models.BooleanField(default=False)
     status = models.CharField(max_length=50, default='Success') # Success, Duplicate, Failed
     op_type = models.CharField(max_length=20, default='NEW OP') # NEW OP or REVIEW
+    age_group_snapshot = models.CharField(max_length=100, blank=True, null=True)
+    diagnosis_snapshot = models.CharField(max_length=255, blank=True, null=True)
     
     class Meta:
         ordering = ['-created_at']

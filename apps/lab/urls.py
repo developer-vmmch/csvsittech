@@ -56,7 +56,8 @@ from .auto_trigger_views import (
     api_get_auto_trigger_status, api_get_active_auto_trigger_run,
     api_get_monthly_trigger, api_save_monthly_trigger, api_stop_monthly_automation, api_stop_daily_execution,
     api_get_monthly_history, api_save_monthly_trigger_v2, api_get_daily_created_patients,
-    AutoTriggerMonthlyReviewsView, api_get_monthly_reviews
+    AutoTriggerMonthlyReviewsView, api_get_monthly_reviews,
+    AutoTriggerMonthlyExecutionView
 )
 
 app_name = 'lab'
@@ -211,6 +212,7 @@ urlpatterns = [
     path('auto-trigger/monthly/create/', AutoTriggerMonthlyCreateView.as_view(), name='auto_trigger_monthly_create'),
     path('auto-trigger/monthly/census/', AutoTriggerMonthlyCensusView.as_view(), name='auto_trigger_monthly_census'),
     path('auto-trigger/monthly/reviews/', AutoTriggerMonthlyReviewsView.as_view(), name='auto_trigger_monthly_reviews'),
+    path('auto-trigger/monthly/execution/<int:plan_id>/<str:date_str>/', AutoTriggerMonthlyExecutionView.as_view(), name='auto_trigger_monthly_execution'),
     
     path('api/auto-trigger/save/', api_save_auto_trigger_config, name='api_save_auto_trigger_config'),
     path('api/auto-trigger/list/', api_get_auto_trigger_configs, name='api_get_auto_trigger_configs'),
