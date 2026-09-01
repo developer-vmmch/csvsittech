@@ -121,6 +121,7 @@ class User(AbstractUser):
                 'users_roles': True,
                 'inventory': True,
                 'settings': True,
+                'auto_trigger': True,
             }
 
         db_perms = RoleMenuPermission.get_permissions_for_role(self.role)
@@ -143,6 +144,7 @@ class User(AbstractUser):
                 'users_roles': False,
                 'inventory': True,
                 'settings': False,
+                'auto_trigger': True,
             },
             self.Roles.STAFF: {
                 'dashboard': True,
@@ -161,6 +163,7 @@ class User(AbstractUser):
                 'users_roles': False,
                 'inventory': False,
                 'settings': False,
+                'auto_trigger': False,
             },
             self.Roles.AUDITOR: {
                 'dashboard': True,
@@ -179,6 +182,7 @@ class User(AbstractUser):
                 'users_roles': False,
                 'inventory': False,
                 'settings': False,
+                'auto_trigger': False,
             },
         }
 
@@ -197,6 +201,7 @@ class User(AbstractUser):
             'users_roles': False,
             'inventory': False,
             'settings': False,
+            'auto_trigger': False,
         })
 
         if db_perms:

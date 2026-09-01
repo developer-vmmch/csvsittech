@@ -57,7 +57,8 @@ from .auto_trigger_views import (
     api_get_monthly_trigger, api_save_monthly_trigger, api_stop_monthly_automation, api_stop_daily_execution,
     api_get_monthly_history, api_save_monthly_trigger_v2, api_get_daily_created_patients,
     AutoTriggerMonthlyReviewsView, api_get_monthly_reviews,
-    AutoTriggerMonthlyExecutionView
+    AutoTriggerMonthlyExecutionView, AutoTriggerAutomateTestView, AutoTriggerResultView,
+    api_get_investigation_parameters, api_save_dummy_result, api_get_dummy_results
 )
 
 app_name = 'lab'
@@ -236,4 +237,10 @@ urlpatterns = [
     path('api/auto-trigger/time-setting/save/', api_save_time_setting, name='api_save_time_setting'),
     path('api/auto-trigger/time-setting/list/', api_get_time_settings, name='api_get_time_settings'),
     path('api/auto-trigger/time-setting/<int:pk>/delete/', api_delete_time_setting, name='api_delete_time_setting'),
+    
+    path('auto-trigger/automate-test/', AutoTriggerAutomateTestView.as_view(), name='auto_trigger_automate_test'),
+    path('auto-trigger/result-view/', AutoTriggerResultView.as_view(), name='auto_trigger_result_view'),
+    path('api/auto-trigger/automate-test/parameters/', api_get_investigation_parameters, name='api_get_investigation_parameters'),
+    path('api/auto-trigger/automate-test/save/', api_save_dummy_result, name='api_save_dummy_result'),
+    path('api/auto-trigger/result-view/list/', api_get_dummy_results, name='api_get_dummy_results'),
 ]

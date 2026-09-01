@@ -18,9 +18,9 @@ class MenuAccessRequiredMixin(AccessMixin):
             return self.handle_no_permission()
 
         if self.menu_key and not request.user.can_access_menu(self.menu_key):
+            from django.core.exceptions import PermissionDenied
             menu_title = self.get_menu_label()
-            messages.error(request, f"Permission Denied: Your assigned user role ({request.user.get_role_display()}) does not have access to '{menu_title}'.")
-            return redirect('patients:list')
+            raise PermissionDenied(f"Permission Denied: Your assigned user role ({request.user.get_role_display()}) does not have access to '{menu_title}'.")
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -60,8 +60,8 @@ class GranularPermissionRequiredMixin(AccessMixin):
                 has_perm = request.user.has_perm_code(self.permission_required)
                 
             if not has_perm:
-                messages.error(request, f"Access Denied: You do not have the required permission ({self.permission_required}) to perform this action.")
-                return redirect('patients:list')
+                from django.core.exceptions import PermissionDenied
+                raise PermissionDenied(f"Access Denied: You do not have the required permission ({self.permission_required}) to perform this action.")
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -77,8 +77,8 @@ def granular_permission_required(perm_code):
             if not request.user.has_perm_code(perm_code):
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json':
                     return JsonResponse({'status': 'error', 'message': f'Access Denied: Required permission {perm_code}.'}, status=403)
-                messages.error(request, f"Access Denied: You do not have the required permission ({perm_code}).")
-                return redirect('patients:list')
+                from django.core.exceptions import PermissionDenied
+                raise PermissionDenied(f"Access Denied: You do not have the required permission ({perm_code}).")
                 
             return view_func(request, *args, **kwargs)
         return _wrapped_view

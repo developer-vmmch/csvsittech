@@ -291,6 +291,18 @@
                             <span>Monthly Census</span>
                         </a>
                     </li>
+                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_automate_test' %}active{% endif %}">
+                        <a href="{% url 'lab:auto_trigger_automate_test' %}">
+                            <i class="bi bi-robot"></i>
+                            <span>Automate Test</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_result_view' %}active{% endif %}">
+                        <a href="{% url 'lab:auto_trigger_result_view' %}">
+                            <i class="bi bi-journal-check"></i>
+                            <span>Result View</span>
+                        </a>
+                    </li>
                 </ul>
             </li>
 

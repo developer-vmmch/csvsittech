@@ -1,0 +1,422 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Automate Test - Create Dummy Result | VMMC ERP{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Aggressive UI Override */
+    .automate-test-container .page-title {
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        color: #0f172a !important;
+        margin: 0 !important;
+    }
+    .automate-test-container .page-subtitle {
+        font-size: 13px !important;
+        color: #64748b !important;
+        margin-top: 2px !important;
+        margin-bottom: 0 !important;
+    }
+    .automate-test-container .automation-badge {
+        background-color: #fffaf0 !important;
+        color: #ea580c !important;
+        border: 1px solid #fed7aa !important;
+        padding: 6px 12px !important;
+        border-radius: 6px !important;
+        font-weight: 600 !important;
+        font-size: 12px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
+    .automate-test-container .custom-card {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
+        padding: 24px !important;
+        margin-bottom: 16px !important;
+    }
+    .automate-test-container .section-heading {
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        color: #1e3a8a !important;
+        margin-bottom: 20px !important;
+        text-transform: uppercase !important;
+    }
+    .automate-test-container .custom-label {
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: #334155 !important;
+        margin-bottom: 8px !important;
+        display: block !important;
+    }
+    .automate-test-container .custom-input {
+        width: 100% !important;
+        border-radius: 6px !important;
+        border: 1px solid #d5deea !important;
+        padding: 8px 12px !important;
+        height: 38px !important;
+        font-size: 14px !important;
+        color: #172033 !important;
+        background-color: #ffffff !important;
+        box-sizing: border-box !important;
+        transition: border-color 150ms ease, box-shadow 150ms ease !important;
+    }
+    .automate-test-container .custom-input:focus {
+        border-color: #0d9488 !important;
+        box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2) !important;
+        outline: none !important;
+    }
+    .automate-test-container .param-result-input {
+        width: 100% !important;
+        max-width: 270px !important;
+        height: 38px !important;
+        padding: 8px 12px !important;
+        border: 1px solid #d5deea !important;
+        border-radius: 6px !important;
+        background: #ffffff !important;
+        font-size: 14px !important;
+        color: #172033 !important;
+        box-sizing: border-box !important;
+        transition: border-color 150ms ease, box-shadow 150ms ease !important;
+    }
+    .automate-test-container .param-result-input:focus {
+        border-color: #0d9488 !important;
+        box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2) !important;
+        outline: none !important;
+    }
+    .automate-test-container .custom-textarea {
+        width: 100% !important;
+        height: 80px !important;
+        border-radius: 6px !important;
+        border: 1px solid #d5deea !important;
+        padding: 8px 12px !important;
+        font-size: 14px !important;
+        color: #172033 !important;
+        background-color: #ffffff !important;
+        box-sizing: border-box !important;
+        resize: vertical !important;
+        transition: border-color 150ms ease, box-shadow 150ms ease !important;
+    }
+    .automate-test-container .custom-textarea:focus {
+        border-color: #0d9488 !important;
+        box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2) !important;
+        outline: none !important;
+    }
+    .automate-test-container .btn-teal {
+        background-color: #0d9488 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 6px !important;
+        height: 38px !important;
+        padding: 0 18px !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        transition: all 150ms ease !important;
+        text-decoration: none !important;
+        cursor: pointer !important;
+    }
+    .automate-test-container .btn-teal:hover {
+        background-color: #0f766e !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+    }
+    .automate-test-container .btn-teal:active {
+        transform: translateY(0) !important;
+        box-shadow: none !important;
+    }
+    .automate-test-container .btn-clear {
+        background-color: #ffffff !important;
+        color: #172033 !important;
+        border: 1px solid #d5deea !important;
+        border-radius: 6px !important;
+        height: 38px !important;
+        padding: 0 18px !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        transition: all 150ms ease !important;
+        text-decoration: none !important;
+        cursor: pointer !important;
+    }
+    .automate-test-container .btn-clear:hover {
+        background-color: #f8fafc !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important;
+    }
+    .automate-test-container .btn-clear:active {
+        transform: translateY(0) !important;
+        box-shadow: none !important;
+    }
+    .automate-test-container .custom-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-bottom: 24px !important;
+    }
+    .automate-test-container .custom-table th {
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: #475569 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        padding: 12px 8px !important;
+        text-align: left !important;
+    }
+    .automate-test-container .custom-table td {
+        font-size: 14px !important;
+        color: #172033 !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        padding: 12px 8px !important;
+        vertical-align: middle !important;
+        text-align: left !important;
+    }
+    .automate-test-container .flex-input-row {
+        display: flex !important;
+        gap: 12px !important;
+        align-items: flex-end !important;
+    }
+    .automate-test-container .select-wrapper {
+        flex: 0 0 75% !important;
+        max-width: 75% !important;
+    }
+    .automate-test-container .btn-wrapper {
+        flex: 0 0 auto !important;
+    }
+    @media (max-width: 768px) {
+        .automate-test-container .flex-input-row {
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+        .automate-test-container .select-wrapper {
+            flex: 1 1 auto !important;
+            max-width: 100% !important;
+        }
+        .automate-test-container .btn-wrapper {
+            margin-top: 12px !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block page_heading %}
+<span style="display: flex; flex-direction: column; line-height: 1.2; margin: 0; padding: 0;">
+    <span style="font-size: 1.1rem; font-weight: 600; color: #1e293b;">Automate Test - Create Dummy Result</span>
+    <span style="font-size: 0.75rem; color: #64748b; font-weight: 400; text-transform: none; letter-spacing: 0; margin-top: 2px;">Create and save dummy investigation results for automation testing</span>
+</span>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 automate-test-container">
+    <div class="d-flex justify-content-end mb-3">
+        <span class="automation-badge"><i class="bi bi-flask"></i> AUTOMATION TEST MODE</span>
+    </div>
+
+    <!-- Section 1: Select Investigation -->
+    <div class="custom-card">
+        <h5 class="section-heading">1. SELECT INVESTIGATION</h5>
+        <div class="row">
+            <div class="col-12 col-lg-8">
+                <div class="flex-input-row">
+                    <div class="select-wrapper">
+                        <label class="custom-label">Investigation Name <span class="text-danger">*</span></label>
+                        <select id="investigationSelect" class="custom-input">
+                            <option value="">Select Investigation...</option>
+                            {% for inv in investigations %}
+                                <option value="{{ inv.id }}">{% if inv.short_name and inv.short_name != inv.name %}{{ inv.short_name }} - {% endif %}{{ inv.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="btn-wrapper">
+                        <button class="btn-teal" onclick="loadParameters()"><i class="bi bi-plus-lg"></i> Add</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Result Entry (Dynamically loaded) -->
+    <div id="resultEntrySection" style="display: none;">
+        <div class="custom-card">
+            <h5 class="section-heading" id="resultHeader">2. </h5>
+            
+            <div class="table-responsive">
+                <table class="custom-table" id="parametersTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 28%;">Parameter</th>
+                            <th style="width: 28%;">Result <span class="text-danger">*</span></th>
+                            <th style="width: 20%;">Unit</th>
+                            <th style="width: 24%;">Reference Range</th>
+                        </tr>
+                    </thead>
+                    <tbody id="parametersTbody">
+                        <!-- Dynamically populated -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mb-4">
+                <label class="custom-label">Remarks (Optional)</label>
+                <textarea id="remarksInput" class="custom-textarea" placeholder="Enter remarks here..."></textarea>
+            </div>
+
+            <div class="d-flex justify-content-end" style="gap: 12px;">
+                <button class="btn-clear" onclick="clearForm()"><i class="bi bi-arrow-clockwise"></i> Clear</button>
+                <button class="btn-teal" onclick="saveResult()"><i class="bi bi-file-earmark-check"></i> Save Result</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentInvestigationId = null;
+    let currentParameters = [];
+
+    function loadParameters() {
+        const invSelect = document.getElementById('investigationSelect');
+        const invId = invSelect.value;
+        const invName = invSelect.options[invSelect.selectedIndex].text;
+        
+        if (!invId) {
+            alert('Please select an investigation.');
+            return;
+        }
+
+        fetch(`{% url "lab:api_get_investigation_parameters" %}?investigation_id=${invId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                currentInvestigationId = invId;
+                currentParameters = data.data;
+                
+                document.getElementById('resultHeader').innerText = `2. ${invName.toUpperCase()}`;
+                
+                const tbody = document.getElementById('parametersTbody');
+                tbody.innerHTML = '';
+                
+                if (currentParameters.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No parameters found for this investigation.</td></tr>`;
+                } else {
+                    currentParameters.forEach((p, i) => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td style="font-weight: 600;">${p.name}</td>
+                                <td>
+                                    <input type="text" class="param-result-input" data-index="${i}">
+                                </td>
+                                <td>${p.unit || '-'}</td>
+                                <td>${p.reference_range || '-'}</td>
+                            </tr>
+                        `;
+                    });
+                }
+                
+                document.getElementById('resultEntrySection').style.display = 'block';
+                document.getElementById('remarksInput').value = '';
+            } else {
+                alert('Error loading parameters: ' + data.message);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Failed to fetch parameters.');
+        });
+    }
+
+    function clearForm() {
+        if (confirm("Are you sure you want to clear the form?")) {
+            document.querySelectorAll('.param-result-input').forEach(input => input.value = '');
+            document.getElementById('remarksInput').value = '';
+        }
+    }
+
+    function saveResult() {
+        if (!currentInvestigationId) return;
+        
+        const inputs = document.querySelectorAll('.param-result-input');
+        const parametersData = [];
+        let hasError = false;
+        
+        inputs.forEach(input => {
+            const index = input.getAttribute('data-index');
+            const p = currentParameters[index];
+            const val = input.value.trim();
+            
+            if (!val) {
+                hasError = true;
+                input.classList.add('is-invalid');
+            } else {
+                input.classList.remove('is-invalid');
+            }
+            
+            parametersData.push({
+                parameter_id: p.id,
+                parameter_name: p.name,
+                result_value: val,
+                unit: p.unit,
+                reference_range: p.reference_range
+            });
+        });
+        
+        if (hasError) {
+            alert('Please enter results for all parameters.');
+            return;
+        }
+        
+        const payload = {
+            investigation_id: currentInvestigationId,
+            remarks: document.getElementById('remarksInput').value,
+            parameters: parametersData
+        };
+        
+        fetch('{% url "lab:api_save_dummy_result" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Dummy result saved successfully!\nResult ID: ${data.result_id}`);
+                // Clear the inputs to allow adding another one quickly
+                document.querySelectorAll('.param-result-input').forEach(input => input.value = '');
+                document.getElementById('remarksInput').value = '';
+            } else {
+                alert('Error saving result: ' + data.message);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Failed to save result.');
+        });
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}
