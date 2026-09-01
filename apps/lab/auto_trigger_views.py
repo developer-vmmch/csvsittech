@@ -27,7 +27,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from apps.core.mixins import GranularPermissionRequiredMixin
+from apps.core.mixins import GranularPermissionRequiredMixin, MenuAccessRequiredMixin
 from apps.patients.models import Department, PatientVisit
 from .models import (
     AutoTriggerConfig, AutoTriggerHistory, AutoTriggerLog, AutoTriggerTimeSetting,
@@ -1373,32 +1373,44 @@ def api_stop_monthly_automation(request):
         traceback.print_exc()
         return JsonResponse({'success': False, 'message': str(e)})
 
-def api_stop_daily_target(request):
+def api_stop_daily_execution(request):
     if request.method != 'POST': return JsonResponse({'success': False})
     if not (request.user.is_superuser or (hasattr(request.user, 'role') and request.user.role == 'Developer')):
         return JsonResponse({'success': False, 'message': 'Developer only.'})
     try:
         import json
         data = json.loads(request.body)
-        target_id = data.get('target_id')
-        if not target_id:
-            return JsonResponse({'success': False, 'message': 'Missing target ID'})
+        plan_id = data.get('plan_id')
+        target_date = data.get('target_date')
+        if not plan_id or not target_date:
+            return JsonResponse({'success': False, 'message': 'Missing plan ID or target date'})
             
-        target = MonthlyTriggerDailyTarget.objects.get(id=target_id)
-        target.status = 'Stopped'
-        target.stopped_by = request.user
-        target.stopped_at = timezone.now()
-        target.save()
+        targets = MonthlyTriggerDailyTarget.objects.filter(plan_id=plan_id, target_date=target_date)
+        if not targets.exists():
+            return JsonResponse({'success': False, 'message': 'No targets found for this date'})
+            
+        plan = targets.first().plan
+        
+        # Mark targets as stopped if they are running or not started
+        targets.filter(status__in=['Not Started', 'Running']).update(
+            status='Stopped',
+            stopped_by=request.user,
+            stopped_at=timezone.now()
+        )
+        
+        total_created = sum(t.created_count for t in targets)
+        total_dup = sum(t.duplicates_count for t in targets)
+        total_fail = sum(t.failed_count for t in targets)
         
         from apps.lab.models import MonthlyTriggerExecutionLog
         MonthlyTriggerExecutionLog.objects.create(
-            plan=target.plan,
-            target_date=target.target_date,
+            plan=plan,
+            target_date=target_date,
             action='AUTOMATION STOPPED',
             status='Stopped',
-            created_count=target.created_count,
-            duplicates_count=target.duplicates_count,
-            failed_count=target.failed_count,
+            created_count=total_created,
+            duplicates_count=total_dup,
+            failed_count=total_fail,
             stopped_by=request.user,
             reason='Manual stop for the day'
         )
@@ -1429,6 +1441,24 @@ def api_get_monthly_history(request):
     if plan_id:
         targets = targets.filter(plan_id=plan_id)
         logs = logs.filter(plan_id=plan_id)
+    else:
+        # Default to the most recent running/active/scheduled plan to avoid duplicate rows
+        from django.utils import timezone
+        today = timezone.localtime().date()
+        date_filter = today
+        if from_date:
+            date_filter = datetime.strptime(from_date, '%Y-%m-%d').date()
+            
+        latest_plan = MonthlyTriggerPlan.objects.filter(
+            is_saved=True,
+            automation_start_date__lte=date_filter,
+            automation_end_date__gte=date_filter
+        ).order_by('-id').first()
+        
+        if latest_plan:
+            targets = targets.filter(plan_id=latest_plan.id)
+        else:
+            targets = targets.none()
         
     if from_date:
         targets = targets.filter(target_date__gte=from_date)
@@ -1445,6 +1475,7 @@ def api_get_monthly_history(request):
     targets = targets.order_by('target_date', 'department__name')
     logs = logs.order_by('-created_at')[:50] # Last 50 logs
     
+    # 1. Daily Targets (for the "Daily Trigger Execution" table)
     daily_targets_data = []
     for t in targets:
         progress = 0
@@ -1454,6 +1485,17 @@ def api_get_monthly_history(request):
         rem_min = max(0, t.min_entries - t.created_count)
         rem_max = max(0, t.max_entries - t.created_count)
         
+        # Display status logic
+        display_status = t.status
+        from django.utils import timezone
+        today = timezone.localtime().date()
+        
+        if t.target_date == today:
+            if t.plan.status == 'Running' and t.status in ['Not Started', 'Running']:
+                display_status = 'Active in Queue' if t.status == 'Not Started' else 'Running'
+        elif t.target_date > today and display_status not in ['Completed', 'Stopped']:
+            display_status = 'Not Started'
+            
         daily_targets_data.append({
             'id': t.id,
             'date': t.target_date.strftime('%d-%b-%Y'),
@@ -1461,31 +1503,82 @@ def api_get_monthly_history(request):
             'department': t.department.name,
             'min': t.min_entries,
             'max': t.max_entries,
+            'new_op_target': t.new_op_target,
+            'review_target': t.review_target,
+            'new_op_created': t.new_op_created,
+            'review_created': t.review_created,
             'created': t.created_count,
             'duplicates': t.duplicates_count,
             'failed': t.failed_count,
             'remaining_min': rem_min,
             'remaining_max': rem_max,
             'progress': round(progress, 1),
-            'status': t.status
+            'status': display_status
         })
         
+    # 2. Daily Execution History (Grouped by Plan and Date)
+    # Get unique (plan_id, target_date) combinations from targets
     logs_data = []
-    # For execution history, use targets descending
-    history_targets = targets.order_by('-target_date')[:100]
-    for ht in history_targets:
-        plan_desc = ht.plan.description if ht.plan.description else f"Plan #{ht.plan.id}"
+    history_grouped = targets.values('plan_id', 'target_date').distinct().order_by('-target_date')[:100]
+    
+    for group in history_grouped:
+        p_id = group['plan_id']
+        t_date = group['target_date']
+        
+        # Get all targets for this plan and date to aggregate stats
+        day_targets = targets.filter(plan_id=p_id, target_date=t_date)
+        if not day_targets.exists():
+            continue
+            
+        plan = day_targets.first().plan
+        plan_desc = plan.description if plan.description else f"Plan #{plan.id}"
+        
+        total_min = sum(dt.min_entries for dt in day_targets)
+        total_max = sum(dt.max_entries for dt in day_targets)
+        total_new_op_target = sum(dt.new_op_target for dt in day_targets)
+        total_review_target = sum(dt.review_target for dt in day_targets)
+        total_new_op_created = sum(dt.new_op_created for dt in day_targets)
+        total_review_completed = sum(dt.review_created for dt in day_targets)
+        total_created = sum(dt.created_count for dt in day_targets)
+        total_dup = sum(dt.duplicates_count for dt in day_targets)
+        total_failed = sum(dt.failed_count for dt in day_targets)
+        
+        # Determine overall status for the day based on targets or plan
+        # If plan is running and date is today, it's running. Otherwise determine from targets.
+        from django.utils import timezone
+        today = timezone.localtime().date()
+        
+        if plan.status == 'Running' and t_date == today:
+            day_status = 'Running'
+        else:
+            # Check targets
+            if all(dt.status == 'Completed' for dt in day_targets):
+                day_status = 'Completed'
+            elif any(dt.status == 'Stopped' for dt in day_targets):
+                day_status = 'Stopped'
+            elif any(dt.status == 'Failed' for dt in day_targets):
+                day_status = 'Failed'
+            else:
+                day_status = 'Completed' if t_date < today else 'Scheduled'
+                
         logs_data.append({
-            'target_id': ht.id,
-            'date': ht.target_date.strftime('%d-%b-%Y'),
+            'plan_id': p_id,
+            'date_raw': t_date.strftime('%Y-%m-%d'),
+            'date': t_date.strftime('%d-%b-%Y'),
             'plan': plan_desc,
-            'department': ht.department.name,
-            'start_time': ht.plan.trigger_start_time.strftime('%I:%M %p') if ht.plan.trigger_start_time else '-',
-            'stop_time': ht.plan.trigger_stop_time.strftime('%I:%M %p') if ht.plan.trigger_stop_time else '-',
-            'created': ht.created_count,
-            'duplicates': ht.duplicates_count,
-            'failed': ht.failed_count,
-            'status': ht.status
+            'department': 'Global Daily Execution',
+            'start_time': plan.trigger_start_time.strftime('%I:%M %p') if plan.trigger_start_time else '-',
+            'stop_time': plan.trigger_stop_time.strftime('%I:%M %p') if plan.trigger_stop_time else '-',
+            'min': total_min,
+            'max': total_max,
+            'new_op_target': total_new_op_target,
+            'review_target': total_review_target,
+            'new_op_created': total_new_op_created,
+            'review_completed': total_review_completed,
+            'created': total_created,
+            'duplicates': total_dup,
+            'failed': total_failed,
+            'status': day_status
         })
     # Plan Summary (only if 1 plan is filtered, or aggregate)
     summary = None
@@ -1532,23 +1625,29 @@ def api_save_monthly_trigger_v2(request):
             automation_end_date=data.get('automation_end_date'),
             source_from_date=data.get('source_from_date'),
             source_to_date=data.get('source_to_date'),
+            review_source_month_year=data.get('review_source_month_year'),
             trigger_start_time=data.get('trigger_start_time'),
             trigger_stop_time=data.get('trigger_stop_time'),
             interval_mins=data.get('interval_mins', 1.5),
             description=data.get('description'),
-            status='Active',
+            status='Scheduled',
             is_saved=True,
             created_by=request.user if request.user.is_authenticated else None
         )
         
         daily_targets = data.get('daily_targets', [])
         for target in daily_targets:
+            min_entries = int(target.get('min', 0))
+            new_op_target = int(min_entries * 0.8)
+            review_target = min_entries - new_op_target
             MonthlyTriggerDailyTarget.objects.create(
                 plan=plan,
                 department_id=target.get('department_id'),
                 target_date=target.get('date'),
-                min_entries=target.get('min'),
-                max_entries=target.get('max'),
+                min_entries=min_entries,
+                max_entries=int(target.get('max', 0)),
+                new_op_target=new_op_target,
+                review_target=review_target,
                 status='Not Started'
             )
             
@@ -1566,13 +1665,69 @@ def api_save_monthly_trigger_v2(request):
         traceback.print_exc()
         return JsonResponse({'success': False, 'message': str(e)})
 
-def api_get_daily_created_patients(request, target_id):
-    from apps.lab.models import MonthlyTriggerGeneratedPatient
+def api_get_daily_created_patients(request):
+    from apps.lab.models import MonthlyTriggerGeneratedPatient, MonthlyTriggerDailyTarget
     from django.utils import timezone
+    from datetime import datetime
     try:
+        plan_id = request.GET.get('plan_id')
+        date_str = request.GET.get('date')
+        
+        if not plan_id or not date_str:
+            return JsonResponse({'success': False, 'message': 'Missing plan or date'})
+            
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+        
+        targets = MonthlyTriggerDailyTarget.objects.filter(plan_id=plan_id, target_date=date_obj).select_related('department', 'plan')
+        if not targets.exists():
+            return JsonResponse({'success': False, 'message': 'No data found for this execution'})
+            
+        plan = targets.first().plan
+        
+        # 1. Global Details
+        total_created = sum(t.created_count for t in targets)
+        total_dup = sum(t.duplicates_count for t in targets)
+        total_fail = sum(t.failed_count for t in targets)
+        
+        # Determine status
+        today = timezone.localtime().date()
+        if plan.status == 'Running' and date_obj == today:
+            day_status = 'Running'
+        else:
+            if all(t.status == 'Completed' for t in targets): day_status = 'Completed'
+            elif any(t.status == 'Stopped' for t in targets): day_status = 'Stopped'
+            elif any(t.status == 'Failed' for t in targets): day_status = 'Failed'
+            else: day_status = 'Completed' if date_obj < today else 'Scheduled'
+            
+        details = {
+            'date': date_obj.strftime('%d-%b-%Y'),
+            'plan': plan.description if plan.description else f"Plan #{plan.id}",
+            'status': day_status,
+            'total_created': total_created,
+            'total_new_op': sum(t.new_op_created for t in targets),
+            'total_review': sum(t.review_created for t in targets),
+            'total_duplicates': total_dup,
+            'total_failed': total_fail
+        }
+        
+        # 2. Department Statistics
+        dept_stats = []
+        for t in targets:
+            progress = (t.created_count / t.max_entries * 100) if t.max_entries > 0 else 0
+            dept_stats.append({
+                'department': t.department.name,
+                'created': t.created_count,
+                'new_op_created': t.new_op_created,
+                'review_created': t.review_created,
+                'min': t.min_entries,
+                'max': t.max_entries,
+                'progress': round(progress, 1)
+            })
+            
+        # 3. Created Patients
         generated = MonthlyTriggerGeneratedPatient.objects.filter(
-            target_id=target_id, status='Success'
-        ).select_related('patient')
+            target__in=targets, status='Success'
+        ).select_related('patient', 'target__department').order_by('created_at')
         
         patients_data = []
         for g in generated:
@@ -1585,16 +1740,97 @@ def api_get_daily_created_patients(request, target_id):
                 'title': p.title,
                 'gender': p.gender,
                 'age': p.age_years,
+                'age_group': getattr(g, 'age_group_snapshot', None) or '-',
+                'diagnosis': getattr(g, 'diagnosis_snapshot', None) or '-',
                 'department': p.department,
                 'guardian': p.guardian_name,
-                'address': p.city,
                 'registration_date': p.registration_date.strftime('%d-%b-%Y') if p.registration_date else '',
                 'created_time': timezone.localtime(p.created_at).strftime('%I:%M %p'),
+                'patient_type': p.patient_type,
+                'op_type': getattr(g, 'op_type', 'NEW OP'),
                 'status': 'Success'
             })
             
-        return JsonResponse({'success': True, 'patients': patients_data})
+        return JsonResponse({
+            'success': True, 
+            'details': details,
+            'departments': dept_stats,
+            'patients': patients_data
+        })
     except Exception as e:
         import traceback
         traceback.print_exc()
         return JsonResponse({'success': False, 'message': str(e)})
+
+class AutoTriggerMonthlyReviewsView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
+    menu_key = 'auto_trigger'
+    template_name = 'lab/auto_trigger/monthly_trigger_reviews.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from apps.lab.models import Department, MonthlyTriggerPlan
+        context['departments'] = Department.objects.all().order_by('name')
+        context['plans'] = MonthlyTriggerPlan.objects.filter(is_saved=True).order_by('-id')[:20]
+        return context
+
+def api_get_monthly_reviews(request):
+    from apps.lab.models import MonthlyTriggerGeneratedPatient
+    
+    dept_id = request.GET.get('department_id')
+    from_date = request.GET.get('from_date')
+    to_date = request.GET.get('to_date')
+    status = request.GET.get('status')
+    
+    reviews = MonthlyTriggerGeneratedPatient.objects.filter(op_type='REVIEW').select_related(
+        'patient', 'target__plan', 'target__department'
+    ).order_by('-created_at')
+    
+    if dept_id:
+        reviews = reviews.filter(target__department_id=dept_id)
+        
+    if from_date:
+        reviews = reviews.filter(target__target_date__gte=from_date)
+        
+    if to_date:
+        reviews = reviews.filter(target__target_date__lte=to_date)
+        
+    if status and status != 'All':
+        reviews = reviews.filter(status=status)
+        
+    reviews = reviews[:100] # Limit for performance
+    
+    data = []
+    for r in reviews:
+        p = r.patient
+        plan = r.target.plan
+        source_month = plan.review_source_month_year if plan else '-'
+        
+        data.append({
+            'review_date': r.target.target_date.strftime('%d-%b-%Y'),
+            'review_time': timezone.localtime(r.created_at).strftime('%I:%M %p'),
+            'patient_id': p.patient_id,
+            'op_number': p.op_number,
+            'name': p.name,
+            'age_gender': f"{p.age_years} / {p.gender}",
+            'department': r.target.department.name,
+            'original_op_date': p.registration_date.strftime('%d-%b-%Y') if p.registration_date else '-',
+            'source_month': source_month,
+            'patient_type': p.patient_type,
+            'review_type': 'MONTHLY REVIEW',
+            'status': r.status,
+            'automation_source': 'MONTHLY_TRIGGER'
+        })
+        
+    return JsonResponse({'success': True, 'data': data})
+
+class AutoTriggerMonthlyExecutionView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
+    menu_key = 'auto_trigger'
+    template_name = 'lab/auto_trigger/monthly_trigger_execution.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        plan_id = self.kwargs.get('plan_id')
+        date_str = self.kwargs.get('date_str')
+        context['plan_id'] = plan_id
+        context['date_str'] = date_str
+        return context

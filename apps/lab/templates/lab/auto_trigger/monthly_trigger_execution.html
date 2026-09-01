@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Monthly Trigger Execution Details | VMMC ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'lab:auto_trigger_monthly' %}" class="btn btn-sm btn-outline-secondary mb-2">
+                <i class="bi bi-arrow-left"></i> Back to Monthly Trigger History
+            </a>
+            <h4 class="fw-bold mb-1" style="color: #0f172a;">MONTHLY TRIGGER EXECUTION DETAILS</h4>
+            <p class="text-muted mb-0">View all patients automatically generated during this run.</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="loadExecution()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+        </div>
+    </div>
+
+    <div id="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+    
+    <div id="executionContent" style="display: none;">
+        <div class="row mb-3 text-muted" style="font-size: 0.95rem;">
+            <div class="col-md-3"><strong>Execution ID:</strong> <span id="lblExecId" class="text-dark">#{{ plan_id }}_{{ date_str }}</span></div>
+            <div class="col-md-3"><strong>Date:</strong> <span id="lblDate" class="text-dark"></span></div>
+            <div class="col-md-3"><strong>Plan:</strong> <span id="lblPlan" class="text-dark"></span></div>
+            <div class="col-md-3"><strong>Status:</strong> <span id="lblStatus" class="fw-bold text-primary"></span></div>
+        </div>
+
+        <div class="row mb-4 g-3">
+            <div class="col-md-3">
+                <div class="card border border-secondary-subtle shadow-sm h-100">
+                    <div class="card-body text-center p-3">
+                        <h6 class="text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.75rem;">Total Created</h6>
+                        <h4 class="mb-0 fw-bold text-dark" id="valCreated">-</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border border-secondary-subtle shadow-sm h-100">
+                    <div class="card-body text-center p-3">
+                        <h6 class="text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.75rem;">New OP</h6>
+                        <h4 class="mb-0 fw-bold text-primary" id="valNewOp">-</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border border-secondary-subtle shadow-sm h-100">
+                    <div class="card-body text-center p-3">
+                        <h6 class="text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.75rem;">Review</h6>
+                        <h4 class="mb-0 fw-bold" style="color: #8b5cf6;" id="valReview">-</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border border-secondary-subtle shadow-sm h-100">
+                    <div class="card-body text-center p-3">
+                        <h6 class="text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.75rem;">Failed</h6>
+                        <h4 class="mb-0 fw-bold text-danger" id="valFailed">-</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <h5 class="fw-bold mb-3" style="color: #0f172a;">CREATED PATIENTS</h5>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 60vh;">
+                    <table class="table custom-table table-hover mb-0">
+                        <thead class="table-light sticky-top" style="z-index: 1;">
+                            <tr>
+                                <th width="50" class="text-center">#</th>
+                                <th>Patient ID</th>
+                                <th>Patient Name</th>
+                                <th>Age / Gender</th>
+                                <th>Age Group</th>
+                                <th>Department</th>
+                                <th>Diagnosis</th>
+                                <th>Type</th>
+                                <th>Registration Date & Time</th>
+                                <th>Source</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patientsTbody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const planId = '{{ plan_id }}';
+    const dateStr = '{{ date_str }}';
+    
+    function loadExecution() {
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('executionContent').style.display = 'none';
+        
+        fetch(`{% url "lab:api_get_daily_created_patients" %}?plan_id=${planId}&date=${dateStr}`)
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('loading').style.display = 'none';
+            if (data.success) {
+                document.getElementById('executionContent').style.display = 'block';
+                
+                // Details
+                document.getElementById('lblDate').innerText = data.details.date;
+                document.getElementById('lblPlan').innerText = data.details.plan;
+                document.getElementById('lblStatus').innerText = data.details.status;
+                
+                // Summary Cards
+                document.getElementById('valCreated').innerText = data.details.total_created;
+                document.getElementById('valNewOp').innerText = data.details.total_new_op;
+                document.getElementById('valReview').innerText = data.details.total_review;
+                document.getElementById('valFailed').innerText = data.details.total_failed;
+                
+                // Patients Table
+                const tbody = document.getElementById('patientsTbody');
+                tbody.innerHTML = '';
+                
+                if (data.patients.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">No patients created for this execution yet.</td></tr>`;
+                    return;
+                }
+                
+                data.patients.forEach((p, index) => {
+                    let displayType = p.op_type === 'REVIEW' ? 'REVIEW' : 'D';
+                    let typeBadge = p.op_type === 'REVIEW' ? 'background-color: #8b5cf6; color: white;' : 'background-color: #64748b; color: white;';
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="text-center text-muted">${index + 1}</td>
+                        <td class="fw-bold">${p.patient_id || '-'}</td>
+                        <td><a href="/patients/${p.id}/edit/" class="text-decoration-none fw-bold text-primary" target="_blank">${p.name}</a></td>
+                        <td>${p.age} Y / ${p.gender}</td>
+                        <td><span class="badge bg-secondary">${p.age_group}</span></td>
+                        <td>${p.department}</td>
+                        <td class="text-truncate" style="max-width: 150px;" title="${p.diagnosis}">${p.diagnosis}</td>
+                        <td><span class="badge" style="${typeBadge}">${displayType}</span></td>
+                        <td>${p.registration_date} ${p.created_time}</td>
+                        <td class="text-muted">Monthly Trigger</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                alert("Error: " + data.message);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('loading').innerHTML = `<div class="alert alert-danger m-3">Failed to fetch patient data.</div>`;
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadExecution);
+</script>
+{% endblock %}

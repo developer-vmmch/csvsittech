@@ -100,7 +100,16 @@ class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermi
                 elif col == 'Guardian Phone': row.append(p.guardian_phone or '')
                 elif col == 'Emergency Contact': row.append('')
                 elif col == 'Emergency Phone': row.append(p.emergency_contact_phone or '')
-                elif col == 'Registration Date': row.append(p.registration_date.strftime('%Y-%m-%d') if p.registration_date else '')
+                elif col == 'Registration Date': 
+                    if p.registration_date:
+                        date_str = p.registration_date.strftime('%Y-%m-%d')
+                        if p.created_at:
+                            time_str = timezone.localtime(p.created_at).strftime('%I:%M %p')
+                            row.append(f"{date_str} ({time_str})")
+                        else:
+                            row.append(date_str)
+                    else:
+                        row.append('')
                 else: row.append('')
             ws.append(row)
             
@@ -145,6 +154,10 @@ class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermi
                 Q(name__icontains=q_search) |
                 Q(op_number__icontains=q_search)
             )
+            
+        q_department = self.request.GET.get('department', '').strip()
+        if q_department:
+            queryset = queryset.filter(Q(department__iexact=q_department) | Q(department_obj__name__iexact=q_department))
 
         if from_date:
             try:
@@ -173,10 +186,12 @@ class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermi
         context['search'] = self.request.GET.get('search', '')
         context['from_date'], context['to_date'] = get_default_date_range(self.request, 'from_date', 'to_date')
         context['patient_type'] = patient_type
+        context['department'] = self.request.GET.get('department', '').strip()
+        context['departments'] = Department.objects.filter(is_active=True).order_by('name')
         context['today'] = timezone.localdate().strftime('%Y-%m-%d')
         context['total_patients'] = total_patients
         context['filtered_patients'] = filtered_patients
-        context['has_filter'] = bool(context['search'] or context['from_date'] or context['to_date'] or (patient_type and patient_type != 'A'))
+        context['has_filter'] = bool(context['search'] or context['from_date'] or context['to_date'] or (patient_type and patient_type != 'A') or context['department'])
         
         return context
 
@@ -895,8 +910,9 @@ class PatientMedicalHistoryPrintView(LoginRequiredMixin, MenuAccessRequiredMixin
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['visits'] = self.object.visits.all().order_by('-visit_no')
-        context['last_visit'] = context['visits'].first()
+        # Sort history by actual visit date/time ascending: oldest visit -> newest visit
+        context['visits'] = self.object.visits.all().order_by('visit_date', 'visit_no')
+        context['last_visit'] = context['visits'].last()
         context['now'] = timezone.now()
         return context
 
@@ -915,12 +931,13 @@ class PatientReviewReportView(LoginRequiredMixin, MenuAccessRequiredMixin, ListV
         return super().get_paginate_by(queryset)
 
     def get_queryset(self):
-        queryset = PatientVisit.objects.select_related('patient', 'department_obj', 'unit_obj', 'created_by').order_by('-id')
+        # Force visit_type='REVIEW' for the Review Report
+        queryset = PatientVisit.objects.filter(visit_type='REVIEW').select_related('patient', 'department_obj', 'unit_obj', 'created_by').order_by('-id')
 
         q_patient = self.request.GET.get('q_patient', '').strip()
         q_from_date, q_to_date = get_default_date_range(self.request, 'q_from_date', 'q_to_date')
         q_department = self.request.GET.get('q_department', '').strip()
-        q_visit_type = self.request.GET.get('q_visit_type', '').strip()
+        q_patient_type = self.request.GET.get('q_patient_type', '').strip()
         q_centre = self.request.GET.get('q_centre', '').strip()
         q_user = self.request.GET.get('q_user', '').strip()
 
@@ -951,8 +968,8 @@ class PatientReviewReportView(LoginRequiredMixin, MenuAccessRequiredMixin, ListV
             else:
                 queryset = queryset.filter(department__icontains=q_department)
 
-        if q_visit_type:
-            queryset = queryset.filter(visit_type=q_visit_type)
+        if q_patient_type:
+            queryset = queryset.filter(patient__patient_type=q_patient_type)
 
         if q_centre:
             queryset = queryset.filter(Q(centre=q_centre) | Q(patient__centre=q_centre))
@@ -973,14 +990,14 @@ class PatientReviewReportView(LoginRequiredMixin, MenuAccessRequiredMixin, ListV
         context['q_patient'] = self.request.GET.get('q_patient', '')
         context['q_from_date'], context['q_to_date'] = get_default_date_range(self.request, 'q_from_date', 'q_to_date')
         context['q_department'] = self.request.GET.get('q_department', '')
-        context['q_visit_type'] = self.request.GET.get('q_visit_type', '')
+        context['q_patient_type'] = self.request.GET.get('q_patient_type', '')
         context['q_centre'] = self.request.GET.get('q_centre', '')
         context['q_user'] = self.request.GET.get('q_user', '')
 
         # KPI Metrics
         context['total_visits'] = qs.count()
-        context['op_visits_count'] = qs.filter(visit_type='OP').count()
-        context['ip_visits_count'] = qs.filter(visit_type='IP').count()
+        context['d_type_count'] = qs.filter(patient__patient_type='D').count()
+        context['o_type_count'] = qs.filter(patient__patient_type='O').count()
         context['unique_patients_count'] = qs.values('patient').distinct().count()
 
         Department.seed_defaults()
@@ -990,6 +1007,6 @@ class PatientReviewReportView(LoginRequiredMixin, MenuAccessRequiredMixin, ListV
 
         context['has_filters'] = any([
             context['q_patient'], context['q_from_date'], context['q_to_date'],
-            context['q_department'], context['q_visit_type'], context['q_centre'], context['q_user']
+            context['q_department'], context['q_patient_type'], context['q_centre'], context['q_user']
         ])
         return context

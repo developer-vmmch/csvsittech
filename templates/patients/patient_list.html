@@ -41,6 +41,15 @@
                     <option value="D" {% if patient_type == 'D' %}selected{% endif %}>D</option>
                 </select>
             </div>
+            <div style="flex: 1; min-width: 150px;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.25rem;">Department</label>
+                <select name="department" class="form-input" style="width: 100%; font-size: 0.85rem; height: 38px;">
+                    <option value="">[ All Departments ▼ ]</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.name }}" {% if department == dept.name %}selected{% endif %}>{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
             <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
                 <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1rem;"><i class="bi bi-funnel"></i> Apply Filter</button>
                 <a href="{% url 'patients:list' %}" class="btn btn-secondary" style="padding: 0.5rem 1rem;"><i class="bi bi-x-circle"></i> Clear</a>
@@ -76,7 +85,7 @@
 
     {% if has_filter %}
     <div style="margin-bottom: 1rem; color: #475569; font-size: 0.95rem;">
-        Showing patients {% if from_date %}from <strong>{{ from_date }}</strong>{% endif %} {% if to_date %}to <strong>{{ to_date }}</strong>{% endif %} {% if search %}matching "<strong>{{ search }}</strong>"{% endif %} {% if patient_type and patient_type != 'A' %}(Type: <strong>{{ patient_type }}</strong>){% endif %}
+        Showing patients {% if from_date %}from <strong>{{ from_date }}</strong>{% endif %} {% if to_date %}to <strong>{{ to_date }}</strong>{% endif %} {% if search %}matching "<strong>{{ search }}</strong>"{% endif %} {% if patient_type and patient_type != 'A' %}(Type: <strong>{{ patient_type }}</strong>){% endif %} {% if department %}(Dept: <strong>{{ department }}</strong>){% endif %}
         <br>Total matching patients: <strong>{{ filtered_patients }}</strong>
     </div>
     {% endif %}
@@ -123,7 +132,7 @@
                     data-guardian-phone="{{ patient.guardian_phone|default:'' }}"
                     data-emergency-contact=""
                     data-emergency-phone="{{ patient.emergency_contact_phone|default:'' }}"
-                    data-registration-date="{{ patient.registration_date|date:'Y-m-d' }}"
+                    data-registration-date="{{ patient.registration_date|date:'Y-m-d' }}<br><span style='font-size:0.8em;color:#64748b;'>({{ patient.created_at|date:'h:i A' }})</span>"
                     data-patient-pk="{{ patient.id }}">
                 </tr>
                 {% endfor %}
@@ -191,12 +200,12 @@
         "Gender", "Date of Birth", "Age", "Age Display", "Gender / Age", "Department", "Mobile Number", "Alternate Phone", 
         "Email", "Address", "City", "State", "City / State", "Country", "Pincode", "Blood Group", "Marital Status", 
         "Guardian Title", "Guardian Name", "Guardian Relation", "Guardian", "Guardian Phone", 
-        "Emergency Contact", "Emergency Phone", "Registration Date", "Actions"
+        "Emergency Contact", "Emergency Phone", "Registration Date", "Patient Type", "Actions"
     ];
 
     const defaultColumns = [
         "Patient ID", "OP Number", "Patient Name", "Gender / Age", "Department",
-        "Mobile Number", "City / State", "Guardian", "Registration Date", "Actions"
+        "Mobile Number", "City / State", "Guardian", "Registration Date", "Patient Type", "Actions"
     ];
 
     let activeColumns = [...defaultColumns];
@@ -205,7 +214,7 @@
         const saved = localStorage.getItem('vmmc_patient_cols');
         if (saved) {
             try {
-                activeColumns = JSON.parse(saved).filter(c => c !== 'Patient Type' && c !== 'Entry Type');
+                activeColumns = JSON.parse(saved);
             } catch(e){}
         }
         renderCheckboxes();
@@ -296,7 +305,13 @@
                     } else {
                         // Data formatting
                         const val = row.getAttribute('data-' + col.toLowerCase().replace(/ \/ /g, '-').replace(/ /g, '-'));
-                        if (col === 'Patient ID' || col === 'Registration Date') {
+                        if (col === 'Patient Type') {
+                            if (val === 'D') {
+                                td.innerHTML = `<span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; padding: 2px 8px; border-radius: 12px; font-weight: 600; font-size: 0.75rem;">D</span>`;
+                            } else {
+                                td.innerHTML = `<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 2px 8px; border-radius: 12px; font-weight: 600; font-size: 0.75rem;">O</span>`;
+                            }
+                        } else if (col === 'Patient ID' || col === 'Registration Date') {
                             td.innerHTML = `<strong>${val}</strong>`;
                         } else {
                             td.textContent = val || '-';
