@@ -277,11 +277,34 @@ class Patient(TimeStampedModel):
 
     @classmethod
     def generate_next_patient_id(cls):
-        """Generates sequential numeric patient ID starting from 26148626"""
-        last_patient = cls.objects.order_by('-id').first()
-        if last_patient and last_patient.patient_id and last_patient.patient_id.isdigit():
-            return str(int(last_patient.patient_id) + 1)
-        return "26148626"
+        """
+        Generate the next unique numeric patient ID.
+        """
+
+        from django.db.models import Max
+        from django.db.models.functions import Cast
+        from django.db.models import BigIntegerField
+
+        max_patient_id = (
+            cls.objects
+            .filter(patient_id__isnull=False)
+            .exclude(patient_id='')
+            .filter(patient_id__regex=r'^[0-9]+$')
+            .annotate(
+                numeric_patient_id=Cast(
+                    'patient_id',
+                    BigIntegerField()
+                )
+            )
+            .aggregate(
+                max_id=Max('numeric_patient_id')
+            )['max_id']
+        )
+
+        if max_patient_id is None:
+            return "26148626"
+
+        return str(max_patient_id + 1)
 
     @classmethod
     def generate_next_ipno(cls):
@@ -305,22 +328,33 @@ class Patient(TimeStampedModel):
 
     @classmethod
     def generate_next_op_number(cls):
-        """Generates sequential numeric OP number starting from OP-2026-000001 (or numeric 26100000 based on old data)"""
-        last_patient = cls.objects.exclude(op_number__isnull=True).exclude(op_number='').order_by('-id').first()
-        if last_patient and last_patient.op_number:
-            op = last_patient.op_number
-            if op.startswith("OP-2026-"):
-                try:
-                    seq = int(op.split("-")[-1])
-                    return f"OP-2026-{seq + 1:06d}"
-                except ValueError:
-                    pass
-            elif op.isdigit():
-                return str(int(op) + 1)
-        
-        # If no previous valid OP number found, start fresh for Auto Trigger generated ones, 
-        # or just continue from a base number. The test dataset had 26100000.
-        return "OP-2026-000001"
+        """Generate the next unique numeric OP number."""
+
+        from django.db.models import Max
+        from django.db.models.functions import Cast
+        from django.db.models import BigIntegerField
+
+        max_op_number = (
+            cls.objects
+            .filter(op_number__isnull=False)
+            .exclude(op_number='')
+            .filter(op_number__regex=r'^[0-9]+$')
+            .annotate(
+                numeric_op_number=Cast(
+                    'op_number',
+                    BigIntegerField()
+                )
+            )
+            .aggregate(
+                max_number=Max('numeric_op_number')
+            )['max_number']
+        )
+
+        if max_op_number is None:
+            return "26100000"
+
+        return str(max_op_number + 1)
+
 
 
 class PatientVisit(TimeStampedModel):

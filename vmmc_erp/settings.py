@@ -80,39 +80,24 @@ TEMPLATES = [
 WSGI_APPLICATION = 'vmmc_erp.wsgi.application'
 ASGI_APPLICATION = 'vmmc_erp.asgi.application'
 
-# Database
-DATABASE_URL = os.getenv('postgresql://postgres:KcqqaqugSFUlyslFIpXwdITxuCjNQwlR@postgres.railway.internal:5432/railway')
-if DATABASE_URL:
-    try:
-        import dj_database_url
-        DATABASES = {
-            'default': dj_database_url.config(
-                default=DATABASE_URL,
-                conn_max_age=600,
-                conn_health_checks=True,
-            )
-        }
-    except ImportError:
-        # Fallback if dj-database-url is not yet installed in the current environment
-        from urllib.parse import urlparse
-        db_url = urlparse(DATABASE_URL)
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': db_url.path[1:],
-                'USER': db_url.username,
-                'PASSWORD': db_url.password,
-                'HOST': db_url.hostname,
-                'PORT': db_url.port or 5432,
-            }
-        }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+# ============================================================
+# Database - PostgreSQL
+# ============================================================
+
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is required")
+
+import dj_database_url
+
+DATABASES = {
+    'default': dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+}
 
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'

@@ -322,10 +322,7 @@ class Command(BaseCommand):
                 auto_trigger_stage='MONTHLY TRIGGER'
             )
             
-            # Generate IDs
             new_patient.op_number = Patient.generate_next_op_number()
-            # patient_id is automatically generated in Patient.save() if missing, but we can set it explicitly
-            new_patient.patient_id = Patient.generate_next_patient_id()
             new_patient.save()
             
             # Assign Diagnosis
@@ -407,7 +404,7 @@ class Command(BaseCommand):
                     visit_no=1,
                     department=patient.department,
                     department_obj=patient.department_obj,
-                    visit_date=patient.registration_date or timezone.now(),
+                    visit_date=timezone.make_aware(datetime.combine(patient.registration_date, datetime.min.time())),
                     visit_type='OP',
                     clinical_notes='Historical OP Registration'
                 )

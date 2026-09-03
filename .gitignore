@@ -221,3 +221,61 @@ __marimo__/
 media/
 uploads/
 *.xlsx
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Django
+*.log
+staticfiles/
+media/
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# SQLite databases
+*.sqlite3
+db.sqlite3
+
+# PostgreSQL live database
+/var/lib/pgsql/
+/postgres_data/
+
+# PostgreSQL SQL backup - too large
+project3db_backup.sql
+
+# Temporary files
+*.tmp
+*.bak
+
+# Python
+__pycache__/
+*.pyc
+
+# SQLite databases and backups
+db.sqlite3
+db.sqlite3.backup
+db.sqlite3.before_postgres_*
+db.sqlite3.pre_postgresql_migration
+
+# Local settings / backup files
+*.save
+*.save.1
+settings.py.postgresql
+
+# Environment / secrets
+.env
+.env.*
+
+# PostgreSQL internal files
+pgdata/
+postgres_data/
+project3db_backup.dump
