@@ -16,19 +16,20 @@ def diagnosis_department_mapping_view(request):
         from openpyxl import Workbook
         wb = Workbook(write_only=True)
         ws = wb.create_sheet('Mapping')
-        ws.append(['Department', 'Diagnosis', 'Status', 'Mapped Date'])
+        ws.append(['#', 'DIAGNOSIS', 'ICD CODE', 'DEPARTMENT', 'STATUS'])
         
         qs = DiagnosisDepartmentMapping.objects.select_related('department', 'diagnosis')
         dept_filter = request.GET.get('department_id')
         if dept_filter:
             qs = qs.filter(department_id=dept_filter)
             
-        for r in qs:
+        for idx, r in enumerate(qs, start=1):
             ws.append([
-                r.department.name,
+                idx,
                 r.diagnosis.name,
-                r.status,
-                r.created_at.strftime('%d-%m-%Y %I:%M %p') if r.created_at else ''
+                getattr(r.diagnosis, 'code', '-'),
+                r.department.name,
+                r.status
             ])
             
         output = io.BytesIO()
@@ -39,11 +40,25 @@ def diagnosis_department_mapping_view(request):
             output,
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = 'attachment; filename="diagnosis_department_mapping_export.xlsx"'
+        response['Content-Disposition'] = 'attachment; filename="Diagnosis_Department_Mapping.xlsx"'
         return response
 
+    qs = DiagnosisDepartmentMapping.objects.select_related('department', 'diagnosis').order_by('-id')
+    search = request.GET.get('search', '').strip()
+    if search:
+        qs = qs.filter(diagnosis__name__icontains=search)
+        
+    per_page = int(request.GET.get('per_page', 20))
+    paginator = Paginator(qs, per_page)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     context = {
-        'departments': Department.objects.filter(is_active=True).order_by('name')
+        'departments': Department.objects.filter(is_active=True).order_by('name'),
+        'diagnoses': Diagnosis.objects.filter(is_active=True).order_by('name'),
+        'records': page_obj.object_list,
+        'page_obj': page_obj,
+        'is_paginated': True
     }
     return render(request, 'lab/master/diagnosis_department_mapping.html', context)
 
@@ -92,42 +107,51 @@ def api_diagnosis_department_map_save(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
+            mapping_id = data.get('id')
             department_id = data.get('department_id')
-            diagnoses_ids = data.get('diagnoses_ids', [])
+            diagnosis_id = data.get('diagnosis_id')
+            status = data.get('status', 'Active')
             
-            if not department_id or not diagnoses_ids:
-                return JsonResponse({'status': 'error', 'message': 'Missing department_id or diagnoses_ids'})
+            if not department_id or not diagnosis_id:
+                return JsonResponse({'status': 'error', 'message': 'Missing required fields'})
                 
-            department = Department.objects.get(id=department_id)
+            duplicate = DiagnosisDepartmentMapping.objects.filter(
+                department_id=department_id,
+                diagnosis_id=diagnosis_id
+            )
+            if mapping_id:
+                duplicate = duplicate.exclude(id=mapping_id)
+            if duplicate.exists():
+                return JsonResponse({'status': 'error', 'message': 'This diagnosis is already mapped to the selected department.'})
+                
+            if mapping_id:
+                obj = DiagnosisDepartmentMapping.objects.get(id=mapping_id)
+                obj.department_id = department_id
+                obj.diagnosis_id = diagnosis_id
+                obj.status = status
+                obj.save()
+            else:
+                obj = DiagnosisDepartmentMapping.objects.create(
+                    department_id=department_id,
+                    diagnosis_id=diagnosis_id,
+                    status=status
+                )
             
-            created_count = 0
-            with transaction.atomic():
-                for diag_id in diagnoses_ids:
-                    obj, created = DiagnosisDepartmentMapping.objects.get_or_create(
-                        department_id=department_id,
-                        diagnosis_id=diag_id,
-                        defaults={'status': 'Active'}
-                    )
-                    if created:
-                        created_count += 1
-            
-            return JsonResponse({'status': 'success', 'message': f'Successfully mapped {created_count} diagnoses.'})
+            return JsonResponse({'status': 'success', 'message': 'Mapping saved successfully.'})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
     return JsonResponse({'status': 'error', 'message': 'Invalid method.'})
 
 @csrf_exempt
-def api_diagnosis_department_map_toggle(request):
+def api_diagnosis_department_map_delete(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            mapping_id = data.get('mapping_id')
-            status = data.get('status')
-            if mapping_id and status:
-                mapping = DiagnosisDepartmentMapping.objects.get(id=mapping_id)
-                mapping.status = status
-                mapping.save()
-                return JsonResponse({'status': 'success', 'message': 'Status updated.'})
+            mapping_id = data.get('id')
+            if mapping_id:
+                DiagnosisDepartmentMapping.objects.filter(id=mapping_id).delete()
+                return JsonResponse({'status': 'success', 'message': 'Deleted successfully.'})
+            return JsonResponse({'status': 'error', 'message': 'Missing ID.'})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
     return JsonResponse({'status': 'error', 'message': 'Invalid method.'})
@@ -163,7 +187,7 @@ def api_diag_dept_map_download_template(request):
     ws = wb.active
     ws.title = "Diagnosis-Department Mapping"
     
-    headers = ["Department", "Diagnosis", "Status"]
+    headers = ["DIAGNOSIS", "ICD CODE", "DEPARTMENT", "STATUS"]
     ws.append(headers)
     
     header_font = Font(bold=True, color="FFFFFF")
@@ -178,7 +202,7 @@ def api_diag_dept_map_download_template(request):
         
     dv = DataValidation(type="list", formula1='"Active,Inactive"', allow_blank=True)
     ws.add_data_validation(dv)
-    dv.add(f"C2:C1000")
+    dv.add(f"D2:D1000")
     
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename="diagnosis_department_mapping_template.xlsx"'
@@ -211,6 +235,7 @@ def api_diag_dept_map_preview(request):
             preview_data = []
             valid_count = 0
             invalid_count = 0
+            duplicate_count = 0
             
             dept_cache = {d.name.lower(): d for d in Department.objects.all()}
             diag_cache = {d.name.lower(): d for d in Diagnosis.objects.all()}
@@ -227,6 +252,7 @@ def api_diag_dept_map_preview(request):
                     status = 'Active'
                     
                 is_valid = True
+                is_duplicate = False
                 errors = []
                 
                 dept_obj = dept_cache.get(dept_name.lower())
@@ -246,10 +272,16 @@ def api_diag_dept_map_preview(request):
                 if is_valid and dept_obj and diag_obj:
                     if (dept_obj.id, diag_obj.id) in existing_maps:
                         is_valid = False
-                        errors.append("Mapping already exists")
+                        is_duplicate = True
+                        errors.append("Duplicate")
+                    else:
+                        # Add to existing_maps to catch duplicates inside the file itself
+                        existing_maps.add((dept_obj.id, diag_obj.id))
                         
                 if is_valid:
                     valid_count += 1
+                elif is_duplicate:
+                    duplicate_count += 1
                 else:
                     invalid_count += 1
                     
@@ -259,6 +291,7 @@ def api_diag_dept_map_preview(request):
                     'diagnosis': diag_name,
                     'status': status,
                     'is_valid': is_valid,
+                    'is_duplicate': is_duplicate,
                     'errors': errors
                 })
                 
@@ -266,9 +299,10 @@ def api_diag_dept_map_preview(request):
                 'status': 'success',
                 'preview': preview_data,
                 'summary': {
-                    'total': len(preview_data),
+                    'total': valid_count + invalid_count + duplicate_count,
                     'valid': valid_count,
-                    'invalid': invalid_count
+                    'invalid': invalid_count,
+                    'duplicates': duplicate_count
                 },
                 'file_name': file.name
             })
@@ -297,6 +331,9 @@ def api_diag_dept_map_import(request):
         
         with transaction.atomic():
             for row in rows:
+                if row.get('is_duplicate', False):
+                    skipped += 1
+                    continue
                 if row.get('status') == 'Error' or not row.get('is_valid', True):
                     failed += 1
                     continue

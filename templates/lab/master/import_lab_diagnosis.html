@@ -40,10 +40,10 @@
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Upload standard ICD-11 or other diagnosis datasets.</p>
         </div>
         <div>
-            <a href="{% url 'lab:api_diagnosis_import_template' %}" class="btn btn-secondary">
+            <a href="{% url 'lab:api_lab_diagnosis_import_template' %}" class="btn btn-secondary">
                 <i class="bi bi-download"></i> Download Template
             </a>
-            <a href="{% url 'lab:diagnosis_import_history' %}" class="btn btn-secondary">
+            <a href="{% url 'lab:lab_diagnosis_import_history' %}" class="btn btn-secondary">
                 <i class="bi bi-clock-history"></i> Import History
             </a>
         </div>
@@ -162,8 +162,8 @@
             </div>
             
             <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 1rem;">
-                <a href="{% url 'lab:diagnosis_list' %}" class="btn btn-primary">Go to Diagnosis Master</a>
-                <a href="{% url 'lab:diagnosis_import_history' %}" class="btn btn-secondary">View History</a>
+                <a href="{% url 'lab:lab_diagnosis_list' %}" class="btn btn-primary">Go to Diagnosis Master</a>
+                <a href="{% url 'lab:lab_diagnosis_import_history' %}" class="btn btn-secondary">View History</a>
                 <button class="btn btn-secondary" id="btn-download-errors" style="display:none;" onclick="downloadErrors()">
                     <i class="bi bi-download"></i> Download Error Report
                 </button>
@@ -230,7 +230,7 @@
             dropContent.innerHTML = '<div class="spinner-border text-primary" role="status"></div><p class="mt-2">Processing file...</p>';
         }
         
-        fetch("{% url 'lab:api_diagnosis_import_preview' %}", {
+        fetch("{% url 'lab:api_lab_diagnosis_import_preview' %}", {
             method: 'POST',
             headers: {'X-CSRFToken': getCookie('csrftoken')},
             body: formData
@@ -327,7 +327,7 @@
             formData.append('import_all_class_kind', importAllCheckbox.checked);
         }
         
-        fetch("{% url 'lab:api_diagnosis_import_process' %}", {
+        fetch("{% url 'lab:api_lab_diagnosis_import_process' %}", {
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCookie('csrftoken')

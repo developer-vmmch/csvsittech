@@ -60,8 +60,13 @@ def diagnosis_investigation_mapping_view(request):
         )
         response['Content-Disposition'] = 'attachment; filename="diagnosis_investigation_mapping_export.xlsx"'
         return response
-
-    return render(request, 'lab/master/diagnosis_investigation_mapping.html')
+    context = {
+        'diagnoses': Diagnosis.objects.filter(is_active=True).order_by('name'),
+        'investigations': Investigation.objects.filter(is_active=True).order_by('name'),
+        'age_groups': AgeGroup.objects.filter(is_active=True).order_by('label'),
+        'records': DiagnosisInvestigationMap.objects.select_related('diagnosis', 'investigation', 'age_group').order_by('-id')
+    }
+    return render(request, 'lab/master/diagnosis_investigation_mapping.html', context)
 
 @granular_permission_required('lab_master.diagnosis_investigation_map.view')
 def api_diagnosis_investigation_map_list(request):
@@ -148,37 +153,41 @@ def api_diagnosis_investigation_map_save(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
+            mapping_id = data.get('id')
             diagnosis_id = data.get('diagnosis_id')
             age_group_id = data.get('age_group_id')
-            investigations = data.get('investigations', [])
+            investigation_id = data.get('investigation_id')
+            is_active = data.get('is_active', True)
             
-            if not diagnosis_id or not age_group_id:
-                return JsonResponse({'status': 'error', 'message': 'Missing diagnosis_id or age_group_id'})
+            if not diagnosis_id or not age_group_id or not investigation_id:
+                return JsonResponse({'status': 'error', 'message': 'Missing required fields'})
                 
-            # Keep track of updated/created
-            existing_inv_ids = set()
-            for inv in investigations:
-                inv_id = inv.get('investigation_id')
-                if not inv_id:
-                    continue
-                existing_inv_ids.add(inv_id)
+            duplicate = DiagnosisInvestigationMap.objects.filter(
+                diagnosis_id=diagnosis_id,
+                age_group_id=age_group_id,
+                investigation_id=investigation_id
+            )
+            if mapping_id:
+                duplicate = duplicate.exclude(id=mapping_id)
+            if duplicate.exists():
+                return JsonResponse({'status': 'error', 'message': 'Mapping already exists.'})
                 
-                obj, created = DiagnosisInvestigationMap.objects.get_or_create(
+            if mapping_id:
+                obj = DiagnosisInvestigationMap.objects.get(id=mapping_id)
+                obj.diagnosis_id = diagnosis_id
+                obj.age_group_id = age_group_id
+                obj.investigation_id = investigation_id
+                obj.is_active = is_active
+                obj.save()
+            else:
+                obj = DiagnosisInvestigationMap.objects.create(
                     diagnosis_id=diagnosis_id,
                     age_group_id=age_group_id,
-                    investigation_id=inv_id
+                    investigation_id=investigation_id,
+                    is_active=is_active
                 )
-                obj.is_default = inv.get('is_default', False)
-                obj.is_active = inv.get('is_active', True)
-                obj.save()
-                
-            # Remove omitted mappings
-            DiagnosisInvestigationMap.objects.filter(
-                diagnosis_id=diagnosis_id,
-                age_group_id=age_group_id
-            ).exclude(investigation_id__in=existing_inv_ids).delete()
             
-            return JsonResponse({'status': 'success', 'message': 'Mapping saved successfully.'})
+            return JsonResponse({'status': 'success', 'message': 'Mapping saved successfully.', 'data': {'id': obj.id}})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
     return JsonResponse({'status': 'error', 'message': 'Invalid method.'})
@@ -189,11 +198,11 @@ def api_diagnosis_investigation_map_delete(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            diagnosis_id = data.get('diagnosis_id')
-            age_group_id = data.get('age_group_id')
-            if diagnosis_id and age_group_id:
-                DiagnosisInvestigationMap.objects.filter(diagnosis_id=diagnosis_id, age_group_id=age_group_id).delete()
+            mapping_id = data.get('id')
+            if mapping_id:
+                DiagnosisInvestigationMap.objects.filter(id=mapping_id).delete()
                 return JsonResponse({'status': 'success', 'message': 'Deleted successfully.'})
+            return JsonResponse({'status': 'error', 'message': 'Missing ID.'})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
     return JsonResponse({'status': 'error', 'message': 'Invalid method.'})

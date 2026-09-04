@@ -4,76 +4,351 @@
 {% block page_heading %}Age Group Master{% endblock %}
 
 {% block content %}
-<div class="panel">
-    <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+<!-- Page Header Area -->
+<div style="margin-bottom: 1.5rem;">
+    <!-- Breadcrumb -->
+    <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+        Home <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 0.25rem;"></i> Lab Master <i class="bi bi-chevron-right" style="font-size: 0.7rem; margin: 0 0.25rem;"></i> <span style="color: #0f172a; font-weight: 600;">Age Group</span>
+    </div>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="background-color: #0d6efd; color: white; width: 50px; height: 50px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 1.5rem;">
+                <i class="bi bi-people"></i>
+            </div>
+            <div>
+                <h1 style="margin: 0; font-size: 1.5rem; font-weight: 700; color: #0f172a;">Age Group Setup</h1>
+                <p style="margin: 0; font-size: 0.9rem; color: #475569;">Manage age groups for reference ranges</p>
+            </div>
+        </div>
         <div>
-            <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">Age Groups</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Manage age groupings used for reference ranges.</p>
-        </div>
-        <div style="display: flex; gap: 0.75rem; align-items: center;">
-            <a href="?export=excel" class="btn btn-secondary" style="background: #16a34a; border-color: #16a34a; color: white;">
-                <i class="bi bi-download"></i> Export
-            </a>
-            <a href="{% url 'lab:agegroup_import' %}" class="btn btn-secondary">
-                <i class="bi bi-file-earmark-spreadsheet"></i> Import
-            </a>
-            <a href="{% url 'lab:agegroup_add' %}" class="btn btn-primary">
-                <i class="bi bi-person-lines-fill"></i> + Add Age Group
-            </a>
+            <button class="btn" style="background-color: #dcfce7; color: #166534; font-weight: 600; border: none; padding: 0.5rem 1rem; border-radius: 6px;">
+                <i class="bi bi-grid-3x3-gap-fill" style="margin-right: 0.25rem;"></i> Lab Master
+            </button>
         </div>
     </div>
-
-    {% if age_groups %}
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th>Code</th>
-                    <th>Name</th>
-                    <th>Age Range</th>
-                    <th>Gender</th>
-                    <th>Pregnancy</th>
-                    <th>Sort Order</th>
-                    <th>Active</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ag in age_groups %}
-                <tr>
-                    <td><strong style="color: var(--accent-blue);">{{ ag.code }}</strong></td>
-                    <td>{{ ag.label }}</td>
-                    <td>{{ ag.min_age_value }} {{ ag.get_min_age_unit_display }} - {{ ag.max_age_value }} {{ ag.get_max_age_unit_display }}</td>
-                    <td>{{ ag.get_gender_display }}</td>
-                    <td>{% if ag.pregnancy_applicable %}Yes{% else %}No{% endif %}</td>
-                    <td>{{ ag.sort_order }}</td>
-                    <td>
-                        {% if ag.is_active %}
-                            <span class="badge" style="background: #dcfce7; color: #166534; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">Active</span>
-                        {% else %}
-                            <span class="badge" style="background: #fee2e2; color: #991b1b; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">Inactive</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <a href="{% url 'lab:agegroup_edit' ag.id %}" class="btn-icon" title="Edit Age Group">
-                                <i class="bi bi-pencil-square" style="color: var(--accent-blue);"></i> Edit
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
-        <i class="bi bi-person-lines-fill" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
-        <p style="font-size: 1.1rem;">No age groups configured.</p>
-        <a href="{% url 'lab:agegroup_add' %}" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">
-            <i class="bi bi-person-lines-fill"></i> Add First Age Group
-        </a>
-    </div>
-    {% endif %}
 </div>
+
+<!-- Alert Notifications -->
+<div id="notificationArea" style="display: none; padding: 1rem; margin-bottom: 1.5rem; border-radius: 6px;"></div>
+
+<!-- Add / Edit Card -->
+<div class="card" style="margin-bottom: 1rem; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); background: white;">
+    <div class="card-header" style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 0.75rem 1.25rem; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0;">
+        <h5 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #1e40af; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="bi bi-plus-circle-fill"></i> Add / Edit Age Group
+        </h5>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="color: #ef4444; font-size: 0.85rem;">* Required fields</span>
+            <div style="display: flex; gap: 0.5rem;">
+                <a href="{% url 'lab:agegroup_import' %}" class="btn btn-sm" style="background-color: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; font-weight: 600; border-radius: 6px; padding: 0.35rem 0.75rem; text-decoration: none;">
+                    <i class="bi bi-arrow-up"></i> Import
+                </a>
+                <a href="?export=excel" class="btn btn-sm" style="background-color: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; font-weight: 600; border-radius: 6px; padding: 0.35rem 0.75rem; text-decoration: none;">
+                    <i class="bi bi-arrow-down"></i> Export
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card-body" style="padding: 1rem;">
+        <form id="mainForm" onsubmit="saveRecord(event)">
+            <input type="hidden" id="recordId" value="">
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="f_name">Age Group Name <span style="color: var(--accent-red);">*</span></label>
+                    <input type="text" id="f_name" class="form-input" placeholder="Enter age group name" required>
+                </div>
+                <div class="form-group">
+                    <label for="f_gender">Gender <span style="color: var(--accent-red);">*</span></label>
+                    <select id="f_gender" class="form-select" required>
+                        <option value="All" selected>All</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="f_min">Minimum Age <span style="color: var(--accent-red);">*</span></label>
+                    <input type="number" step="1" id="f_min" class="form-input" placeholder="Enter min age" required>
+                </div>
+                <div class="form-group">
+                    <label for="f_max">Maximum Age <span style="color: var(--accent-red);">*</span></label>
+                    <input type="number" step="1" id="f_max" class="form-input" placeholder="Enter max age" required>
+                </div>
+                <div class="form-group">
+                    <label for="f_unit">Age Unit <span style="color: var(--accent-red);">*</span></label>
+                    <select id="f_unit" class="form-select" required>
+                        <option value="Days">Days</option>
+                        <option value="Months">Months</option>
+                        <option value="Years" selected>Years</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                <button type="submit" id="btnSave" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Save
+                </button>
+                <button type="button" id="btnClear" class="btn btn-secondary" onclick="resetForm()">
+                    <i class="bi bi-arrow-repeat"></i> Clear
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- List Card -->
+<div class="card" style="border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); background: white;">
+    <div class="card-header" style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 0.75rem 1.25rem; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0;">
+        <h5 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #1e40af; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="bi bi-list-ul"></i> Age Group List
+        </h5>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="font-size: 0.9rem; color: #475569; font-weight: 600;" id="total-count-badge">Total Records: {{ page_obj.paginator.count|default:0 }}</span>
+            <select class="form-select form-select-sm" style="width: auto; border-color: #cbd5e1;">
+                <option>10 per page</option>
+                <option>25 per page</option>
+                <option>50 per page</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="card-body" style="padding: 1rem;">
+        
+        <form method="get" action="" style="display: flex; gap: 0.75rem; margin-bottom: 1rem; align-items: center; width: 100%;">
+            <div style="position: relative; width: 100%; max-width: 360px;">
+                <i class="bi bi-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                <input type="text" name="search" value="{{ request.GET.search }}" class="form-input" placeholder="Search age group..." style="padding-left: 2.5rem;">
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i> Search
+            </button>
+            <a href="?" class="btn btn-secondary">
+                <i class="bi bi-arrow-repeat"></i> Reset
+            </a>
+        </form>
+        
+        <div class="table-responsive">
+            <table id="dataTable" class="table" style="border: 1px solid #e2e8f0; margin-bottom: 1rem; width: 100%; text-align: left; border-collapse: collapse;">
+                <thead>
+                    <tr style="background-color: #f8fafc;">
+                        <th style="color: #1e293b; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding: 0.4rem 0.75rem; width: 5%;">#</th>
+                        <th style="color: #1e293b; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding: 0.4rem 0.75rem; width: 25%;">Age Group Name</th>
+                        <th style="color: #1e293b; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding: 0.4rem 0.75rem; width: 15%;">Range</th>
+                        <th style="color: #1e293b; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding: 0.4rem 0.75rem; width: 15%;">Unit</th>
+                        <th style="color: #1e293b; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding: 0.4rem 0.75rem; width: 20%;">Gender</th>
+                        <th style="color: #1e293b; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding: 0.4rem 0.75rem; width: 20%;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in age_groups %}
+                    <tr id="row-{{ rec.id }}" data-search="{{ rec.name|lower }} {{ rec.gender|lower }}" style="border-bottom: 1px solid #e2e8f0;">
+                        <td class="row-index" style="padding: 0.4rem 0.75rem; color: #334155;">{{ forloop.counter }}</td>
+                        <td class="col-name" style="padding: 0.4rem 0.75rem; color: #334155;">{{ rec.name }}</td>
+                        <td class="col-range" style="padding: 0.4rem 0.75rem; color: #334155;">{{ rec.min_age }} - {{ rec.max_age }}</td>
+                        <td class="col-unit" style="padding: 0.4rem 0.75rem; color: #334155;">{{ rec.age_unit }}</td>
+                        <td class="col-gender" style="padding: 0.4rem 0.75rem; color: #334155;">{{ rec.gender }}</td>
+                        <td style="padding: 0.4rem 0.75rem;">
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button type="button" class="btn btn-sm btn-primary" style="background-color: #0d6efd; border-radius: 4px; padding: 0.25rem 0.75rem; font-size: 0.85rem;" onclick="editRecord('{{ rec.id }}', '{{ rec.name|escapejs }}', {{ rec.min_age }}, {{ rec.max_age }}, '{{ rec.age_unit|escapejs }}', '{{ rec.gender|escapejs }}')">
+                                    <i class="bi bi-pencil-fill"></i> Edit
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" style="background-color: #ef4444; border-radius: 4px; padding: 0.25rem 0.75rem; font-size: 0.85rem;" onclick="deleteRecord('{{ rec.id }}')">
+                                    <i class="bi bi-trash-fill"></i> Delete
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr id="emptyRow">
+                        <td colspan="6" style="text-align: center; padding: 2rem; color: #64748b;">
+                            No records configured yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        
+        <!-- Pagination -->
+        {% if is_paginated or page_obj %}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; flex-wrap: wrap; gap: 0.75rem;">
+            <div style="color: #64748b; font-size: 0.85rem; font-weight: 500;">
+                Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} entries
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                <div style="display: flex; gap: 0.2rem;">
+                    {% if page_obj.has_previous %}
+                    <a href="?page=1&search={{ request.GET.search }}" class="btn btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.8rem; border-radius:5px;" title="First">&laquo;</a>
+                    <a href="?page={{ page_obj.previous_page_number }}&search={{ request.GET.search }}" class="btn btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.8rem; border-radius:5px;" title="Previous">&lsaquo;</a>
+                    {% else %}
+                    <span class="btn btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.8rem; border-radius:5px; opacity:0.4; cursor:not-allowed;">&laquo;</span>
+                    <span class="btn btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.8rem; border-radius:5px; opacity:0.4; cursor:not-allowed;">&lsaquo;</span>
+                    {% endif %}
+
+                    <span class="btn btn-primary" style="padding:0.25rem 0.6rem; font-size:0.8rem; border-radius:5px; background:var(--accent-blue); color:#fff; border-color:var(--accent-blue); font-weight:700; pointer-events:none;">
+                        {{ page_obj.number }}
+                    </span>
+                    <span style="padding:0.25rem 0.2rem; font-size:0.8rem; color:#64748b;">of {{ page_obj.paginator.num_pages }}</span>
+
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}&search={{ request.GET.search }}" class="btn btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.8rem; border-radius:5px;" title="Next">&rsaquo;</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}&search={{ request.GET.search }}" class="btn btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.8rem; border-radius:5px;" title="Last">&raquo;</a>
+                    {% else %}
+                    <span class="btn btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.8rem; border-radius:5px; opacity:0.4; cursor:not-allowed;">&rsaquo;</span>
+                    <span class="btn btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.8rem; border-radius:5px; opacity:0.4; cursor:not-allowed;">&raquo;</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentRowCount = {{ age_groups|length }};
+    
+    document.addEventListener("DOMContentLoaded", function() {
+        updateCounts();
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') filterTable();
+        });
+    });
+
+    function showNotification(message, type) {
+        const area = document.getElementById('notificationArea');
+        area.style.display = 'block';
+        if (type === 'success') {
+            area.style.backgroundColor = '#dcfce7'; area.style.color = '#166534'; area.style.border = '1px solid #bbf7d0';
+        } else {
+            area.style.backgroundColor = '#fee2e2'; area.style.color = '#991b1b'; area.style.border = '1px solid #fecaca';
+        }
+        area.innerHTML = `<strong>${type === 'success' ? 'Success!' : 'Error!'}</strong> ${message}`;
+        setTimeout(() => { area.style.display = 'none'; }, 5000);
+    }
+
+    function resetForm() {
+        document.getElementById('recordId').value = '';
+        document.getElementById('f_name').value = '';
+        document.getElementById('f_gender').value = 'All';
+        document.getElementById('f_min').value = '';
+        document.getElementById('f_max').value = '';
+        document.getElementById('f_unit').value = 'Years';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function editRecord(id, name, min, max, unit, gender) {
+        document.getElementById('recordId').value = id;
+        document.getElementById('f_name').value = name;
+        document.getElementById('f_min').value = min;
+        document.getElementById('f_max').value = max;
+        document.getElementById('f_unit').value = unit;
+        document.getElementById('f_gender').value = gender;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+        
+    function deleteRecord(id) {
+        if(confirm('Are you sure you want to delete this record?')) {
+            fetch(`/lab/api/age-group/${id}/delete/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showNotification(data.message, 'success');
+                    const row = document.getElementById('row-' + id);
+                    if (row) row.remove();
+                    currentRowCount--;
+                    updateCounts();
+                } else { showNotification(data.message, 'error'); }
+            }).catch(err => { showNotification('Error deleting', 'error'); console.error(err); });
+        }
+    }
+
+    function saveRecord(e) {
+        e.preventDefault();
+        const id = document.getElementById('recordId').value;
+        const name = document.getElementById('f_name').value;
+        const min_age = document.getElementById('f_min').value;
+        const max_age = document.getElementById('f_max').value;
+        const age_unit = document.getElementById('f_unit').value;
+        const gender = document.getElementById('f_gender').value;
+        
+        const payload = { id, name, min_age, max_age, age_unit, gender };
+
+        const btnSave = document.getElementById('btnSave');
+        const originalBtnHtml = btnSave.innerHTML;
+        btnSave.innerHTML = '<i class="spinner-border spinner-border-sm" style="margin-right: 4px;"></i> Saving...';
+        btnSave.disabled = true;
+
+        fetch("{% url 'lab:api_agegroup_save' %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            btnSave.innerHTML = originalBtnHtml; btnSave.disabled = false;
+            if (data.status === 'success') {
+                showNotification(data.message, 'success');
+                updateOrAddRow(data.data);
+                resetForm();
+            } else { showNotification(data.message, 'error'); }
+        }).catch(err => {
+            btnSave.innerHTML = originalBtnHtml; btnSave.disabled = false;
+            showNotification('Error saving', 'error'); console.error(err);
+        });
+    }
+
+    function escapeHtml(unsafe) {
+        return (unsafe || '').toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function updateOrAddRow(data) {
+        const tbody = document.querySelector('#dataTable tbody');
+        const emptyRow = document.getElementById('emptyRow');
+        if(emptyRow) emptyRow.remove();
+            
+        const searchString = `${data.name.toLowerCase()} ${data.gender.toLowerCase()}`;
+        const editFn = `editRecord('${data.id}', '${escapeHtml(data.name).replace(/'/g, "\\'")}', ${data.min_age}, ${data.max_age}, '${escapeHtml(data.age_unit).replace(/'/g, "\\'")}', '${escapeHtml(data.gender).replace(/'/g, "\\'")}')`;
+        const deleteFn = `deleteRecord('${data.id}')`;
+        
+        let existingRow = document.getElementById('row-' + data.id);
+        if (existingRow) {
+            existingRow.setAttribute('data-search', searchString);
+            existingRow.querySelector('.col-name').textContent = data.name;
+            existingRow.querySelector('.col-range').textContent = `${data.min_age} - ${data.max_age}`;
+            existingRow.querySelector('.col-unit').textContent = data.age_unit;
+            existingRow.querySelector('.col-gender').textContent = data.gender;
+            const editBtn = existingRow.querySelector('button.btn-primary');
+            if (editBtn) editBtn.setAttribute('onclick', editFn);
+        } else {
+            currentRowCount++;
+            const tr = document.createElement('tr');
+            tr.id = 'row-' + data.id; tr.setAttribute('data-search', searchString); tr.style.borderBottom = '1px solid #e2e8f0';
+            tr.innerHTML = `
+                <td class="row-index" style="padding: 0.4rem 0.75rem; color: #334155;">${currentRowCount}</td>
+                <td class="col-name" style="padding: 0.4rem 0.75rem; color: #334155;">${escapeHtml(data.name)}</td>
+                <td class="col-range" style="padding: 0.4rem 0.75rem; color: #334155;">${data.min_age} - ${data.max_age}</td>
+                <td class="col-unit" style="padding: 0.4rem 0.75rem; color: #334155;">${escapeHtml(data.age_unit)}</td>
+                <td class="col-gender" style="padding: 0.4rem 0.75rem; color: #334155;">${escapeHtml(data.gender)}</td>
+                <td style="padding: 0.4rem 0.75rem;">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="button" class="btn btn-sm btn-primary" style="background-color: #0d6efd; border-radius: 4px; padding: 0.25rem 0.75rem; font-size: 0.85rem;" onclick="${editFn}"><i class="bi bi-pencil-fill"></i> Edit</button>
+                        <button type="button" class="btn btn-sm btn-danger" style="background-color: #ef4444; border-radius: 4px; padding: 0.25rem 0.75rem; font-size: 0.85rem;" onclick="${deleteFn}"><i class="bi bi-trash-fill"></i> Delete</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            updateCounts();
+        }
+    }
+</script>
 {% endblock %}

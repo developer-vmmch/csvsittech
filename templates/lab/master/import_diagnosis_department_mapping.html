@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+{% block title %}Import Diagnosis-Department Mapping | VMMCerp{% endblock %}
+{% block page_heading %}Import Diagnosis-Department Mapping{% endblock %}
+
+{% block extra_head %}
+<style>
+.upload-area { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 3rem; text-align: center; background: #f8fafc; cursor: pointer; transition: all 0.3s; }
+.upload-area:hover, .upload-area.dragover { border-color: #3b82f6; background: #eff6ff; }
+.status-badge { padding: 0.25rem 0.6rem; border-radius: 99px; font-size: 0.82rem; font-weight: 700; }
+.status-Valid     { background: #dcfce7; color: #166534; }
+.status-Duplicate { background: #fef9c3; color: #854d0e; }
+.status-Error     { background: #fee2e2; color: #991b1b; }
+.create-badge { background: #dbeafe; color: #1e40af; font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 99px; margin-left: 4px; }
+.hidden { display: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:1.5rem;">
+    <div style="font-size:0.85rem;color:#64748b;margin-bottom:1rem;">
+        Home <i class="bi bi-chevron-right" style="font-size:0.7rem;margin:0 0.25rem;"></i>
+        Lab Master <i class="bi bi-chevron-right" style="font-size:0.7rem;margin:0 0.25rem;"></i>
+        <a href="{% url 'lab:diagnosis_department_mapping' %}" style="color:#3b82f6;text-decoration:none;">Diagnosis-Department Mapping</a>
+        <i class="bi bi-chevron-right" style="font-size:0.7rem;margin:0 0.25rem;"></i>
+        <span style="color:#0f172a;font-weight:600;">Import</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;align-items:center;gap:1rem;">
+            <div style="background-color:#0d6efd;color:white;width:50px;height:50px;border-radius:8px;display:flex;justify-content:center;align-items:center;font-size:1.5rem;">
+                <i class="bi bi-upload"></i>
+            </div>
+            <div>
+                <h1 style="margin:0;font-size:1.4rem;font-weight:700;color:#0f172a;">Import Diagnosis-Department Mapping</h1>
+                <p style="margin:0;font-size:0.9rem;color:#475569;">Auto-creates missing Diagnoses and Departments. Duplicate mappings are skipped.</p>
+            </div>
+        </div>
+        <div style="display:flex;gap:0.75rem;">
+            <a href="{% url 'lab:api_diag_dept_smart_template' %}" class="btn btn-secondary">
+                <i class="bi bi-download"></i> Download Template
+            </a>
+            <a href="{% url 'lab:diagnosis_department_mapping' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Step 1 -->
+<div id="step-upload" class="card" style="padding:1.5rem;">
+    <div class="upload-area" id="drop-zone">
+        <div id="drop-zone-content">
+            <i class="bi bi-cloud-arrow-up" style="font-size:3rem;color:#3b82f6;"></i>
+            <h3 style="margin-top:1rem;">Drag and drop Excel file here</h3>
+            <p style="color:#64748b;">or click to browse (.xlsx, .csv)</p>
+        </div>
+    </div>
+    <input type="file" id="file-input" style="display:none;" accept=".xlsx,.csv">
+    <div style="text-align:center;margin-top:1rem;">
+        <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+            <i class="bi bi-file-earmark-excel"></i> Select File
+        </button>
+    </div>
+    <div style="margin-top:1.5rem;padding:1rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+        <h4 style="margin:0 0 0.5rem 0;font-size:0.95rem;color:#334155;">Required Columns</h4>
+        <ul style="margin:0;padding-left:1.25rem;color:#475569;font-size:0.9rem;line-height:1.8;">
+            <li><strong>diagnosis</strong> — Name of the Diagnosis</li>
+            <li><strong>department</strong> — Name of the Department</li>
+            <li><strong>status</strong> — Active/Inactive (optional, default: Active)</li>
+        </ul>
+        <p style="margin:0.75rem 0 0;font-size:0.85rem;color:#1e40af;"><i class="bi bi-info-circle"></i>
+            <strong>Smart Import:</strong> Missing Diagnoses and Departments will be auto-created.</p>
+    </div>
+</div>
+
+<!-- Step 2 -->
+<div id="step-preview" class="card hidden" style="padding:1.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;background:#f8fafc;padding:1rem;border-radius:8px;">
+        <div>
+            <h3 style="margin:0;">Validation Preview</h3>
+            <p style="margin:0;font-size:0.9rem;color:#64748b;" id="preview-filename"></p>
+        </div>
+        <select id="preview-filter" class="form-select" style="width:auto;" onchange="filterPreview()">
+            <option value="All">All</option>
+            <option value="Valid">Valid</option>
+            <option value="Duplicate">Duplicates</option>
+            <option value="Error">Errors</option>
+        </select>
+    </div>
+
+    <div style="display:flex;gap:1rem;margin-bottom:1rem;">
+        <div style="flex:1;padding:1rem;background:#fff;border:1px solid #e2e8f0;border-radius:6px;text-align:center;">
+            <div style="font-size:2rem;font-weight:bold;color:#3b82f6;" id="count-total">0</div>
+            <div style="font-size:0.85rem;color:#64748b;">Total Rows</div>
+        </div>
+        <div style="flex:1;padding:1rem;background:#dcfce7;border:1px solid #bbf7d0;border-radius:6px;text-align:center;">
+            <div style="font-size:2rem;font-weight:bold;color:#166534;" id="count-valid">0</div>
+            <div style="font-size:0.85rem;color:#166534;">Valid to Import</div>
+        </div>
+        <div style="flex:1;padding:1rem;background:#fef9c3;border:1px solid #fef08a;border-radius:6px;text-align:center;">
+            <div style="font-size:2rem;font-weight:bold;color:#854d0e;" id="count-dup">0</div>
+            <div style="font-size:0.85rem;color:#854d0e;">Duplicates</div>
+        </div>
+        <div style="flex:1;padding:1rem;background:#fee2e2;border:1px solid #fecaca;border-radius:6px;text-align:center;">
+            <div style="font-size:2rem;font-weight:bold;color:#991b1b;" id="count-error">0</div>
+            <div style="font-size:0.85rem;color:#991b1b;">Errors</div>
+        </div>
+    </div>
+
+    <div class="table-responsive" style="max-height:400px;overflow-y:auto;margin-bottom:1.5rem;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+            <thead style="background:#f8fafc;position:sticky;top:0;">
+                <tr>
+                    <th style="padding:0.6rem;border:1px solid #e2e8f0;">Row</th>
+                    <th style="padding:0.6rem;border:1px solid #e2e8f0;">Diagnosis</th>
+                    <th style="padding:0.6rem;border:1px solid #e2e8f0;">Department</th>
+                    <th style="padding:0.6rem;border:1px solid #e2e8f0;text-align:center;">Status</th>
+                    <th style="padding:0.6rem;border:1px solid #e2e8f0;text-align:center;">Result</th>
+                    <th style="padding:0.6rem;border:1px solid #e2e8f0;">Notes</th>
+                </tr>
+            </thead>
+            <tbody id="preview-tbody"></tbody>
+        </table>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:1rem;border-top:1px solid #e2e8f0;padding-top:1rem;">
+        <button class="btn btn-secondary" onclick="resetUpload()">Cancel</button>
+        <button class="btn btn-primary" id="btn-import" onclick="confirmImport()">
+            <i class="bi bi-upload"></i> Import Valid Data
+        </button>
+    </div>
+</div>
+
+<!-- Step 3 -->
+<div id="step-summary" class="card hidden" style="padding:2rem;text-align:center;">
+    <i class="bi bi-check-circle-fill" style="font-size:4rem;color:#166534;display:block;margin-bottom:1rem;"></i>
+    <h2>Import Completed</h2>
+    <div style="display:flex;justify-content:center;margin:1.5rem 0;">
+        <div style="text-align:left;background:#f8fafc;padding:2rem;border-radius:8px;border:1px solid #e2e8f0;min-width:280px;">
+            <h4 style="margin-top:0;border-bottom:1px solid #cbd5e1;padding-bottom:0.5rem;">Summary</h4>
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;"><span>Total Rows:</span><strong id="sum-total">0</strong></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;"><span>Imported:</span><strong id="sum-imported" style="color:#166534;">0</strong></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;"><span>Skipped:</span><strong id="sum-skipped" style="color:#854d0e;">0</strong></div>
+            <div style="display:flex;justify-content:space-between;border-top:1px solid #cbd5e1;padding-top:0.5rem;"><span>Failed:</span><strong id="sum-failed" style="color:#991b1b;">0</strong></div>
+        </div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:1rem;">
+        <a href="{% url 'lab:diagnosis_department_mapping' %}" class="btn btn-primary">Go to Mapping List</a>
+        <button class="btn btn-secondary" onclick="resetUpload()">Import Another File</button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentData = [], currentFilename = '';
+
+function getCsrf() {
+    return document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('csrftoken='))?.split('=')[1] || '';
+}
+
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
+
+function handleFile(file) {
+    const fd = new FormData();
+    fd.append('file', file);
+    document.getElementById('drop-zone-content').innerHTML = '<i class="bi bi-hourglass-split" style="font-size:2.5rem;color:#3b82f6;"></i><p>Processing...</p>';
+
+    fetch("{% url 'lab:api_diag_dept_smart_preview' %}", {
+        method: 'POST', headers: {'X-CSRFToken': getCsrf()}, body: fd
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) { alert(data.message || 'Preview failed'); resetUpload(); return; }
+        currentData = data.preview || [];
+        currentFilename = data.filename || 'Unknown';
+        renderPreview();
+    })
+    .catch(() => { alert('Server error.'); resetUpload(); });
+}
+
+function renderPreview() {
+    document.getElementById('step-upload').classList.add('hidden');
+    document.getElementById('step-preview').classList.remove('hidden');
+    document.getElementById('preview-filename').textContent = 'File: ' + currentFilename;
+    let valid = 0, dup = 0, err = 0;
+    currentData.forEach(r => { if (r.status === 'Valid') valid++; else if (r.status === 'Duplicate') dup++; else err++; });
+    document.getElementById('count-total').textContent = currentData.length;
+    document.getElementById('count-valid').textContent = valid;
+    document.getElementById('count-dup').textContent = dup;
+    document.getElementById('count-error').textContent = err;
+    document.getElementById('btn-import').disabled = valid === 0;
+    renderTable(currentData);
+}
+
+function filterPreview() {
+    const f = document.getElementById('preview-filter').value;
+    renderTable(f === 'All' ? currentData : currentData.filter(r => r.status === f));
+}
+
+function renderTable(data) {
+    document.getElementById('preview-tbody').innerHTML = data.map(r => {
+        let diagCell = r.diagnosis + (r.will_create_diagnosis ? ' <span class="create-badge">Will Create</span>' : '');
+        let deptCell = r.department + (r.will_create_department ? ' <span class="create-badge">Will Create</span>' : '');
+        let notes = r.errors && r.errors.length ? r.errors.join('; ') : (r.status === 'Duplicate' ? 'Mapping already exists' : '');
+        return `<tr>
+            <td style="padding:0.5rem;border:1px solid #e2e8f0;">${r.row}</td>
+            <td style="padding:0.5rem;border:1px solid #e2e8f0;">${diagCell}</td>
+            <td style="padding:0.5rem;border:1px solid #e2e8f0;">${deptCell}</td>
+            <td style="padding:0.5rem;border:1px solid #e2e8f0;text-align:center;">${r.map_status || 'Active'}</td>
+            <td style="padding:0.5rem;border:1px solid #e2e8f0;text-align:center;"><span class="status-badge status-${r.status}">${r.status}</span></td>
+            <td style="padding:0.5rem;border:1px solid #e2e8f0;font-size:0.85rem;color:#64748b;">${notes}</td>
+        </tr>`;
+    }).join('');
+}
+
+function confirmImport() {
+    if (!confirm('Proceed? Missing masters will be automatically created.')) return;
+    const btn = document.getElementById('btn-import');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Importing...';
+
+    fetch("{% url 'lab:api_diag_dept_smart_import' %}", {
+        method: 'POST',
+        headers: {'X-CSRFToken': getCsrf(), 'Content-Type': 'application/json'},
+        body: JSON.stringify({ filename: currentFilename, rows: currentData })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const s = data.summary;
+            ['step-preview'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            document.getElementById('step-summary').classList.remove('hidden');
+            document.getElementById('sum-total').textContent = s.total;
+            document.getElementById('sum-imported').textContent = s.imported;
+            document.getElementById('sum-skipped').textContent = s.skipped;
+            document.getElementById('sum-failed').textContent = s.failed;
+        } else {
+            alert('Import Error: ' + (data.message || 'Unknown error'));
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-upload"></i> Import Valid Data';
+        }
+    });
+}
+
+function resetUpload() {
+    ['step-preview','step-summary'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    document.getElementById('step-upload').classList.remove('hidden');
+    document.getElementById('drop-zone-content').innerHTML = '<i class="bi bi-cloud-arrow-up" style="font-size:3rem;color:#3b82f6;"></i><h3 style="margin-top:1rem;">Drag and drop file here</h3><p style="color:#64748b;">or click to browse</p>';
+    document.getElementById('file-input').value = '';
+    currentData = [];
+}
+</script>
+{% endblock %}

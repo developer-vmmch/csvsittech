@@ -1,12 +1,16 @@
 from django.urls import path
 from .views import (
-    DiagnosisListView, DiagnosisCreateView, DiagnosisUpdateView,
-    InvestigationListView, InvestigationCreateView, InvestigationUpdateView, InvestigationDetailView,
-    ParameterListView, ParameterCreateView, ParameterUpdateView,
+    api_lab_diagnosis_save, api_lab_diagnosis_delete, api_investigation_delete, api_parameter_delete, api_agegroup_save, api_agegroup_delete,
+    api_diagnosis_delete,
+    DiagnosisListView, DiagnosisCreateView, DiagnosisUpdateView, api_diagnosis_save,
+    LabDiagnosisListView, LabDiagnosisCreateView, LabDiagnosisUpdateView,
+    InvestigationListView, InvestigationCreateView, InvestigationUpdateView, InvestigationDetailView, api_investigation_save,
+    ParameterListView, ParameterCreateView, ParameterUpdateView, api_parameter_save,
     AgeGroupListView, AgeGroupCreateView, AgeGroupUpdateView,
     ReferenceRangeGridView, get_investigation_parameters, get_reference_ranges, get_reference_ranges_bulk, get_reference_ranges_all, save_reference_range, save_multiple_reference_ranges, delete_reference_range,
     InvestigationParameterMappingView, get_all_parameters, save_investigation_parameters, api_add_parameter,
-    api_add_department, api_add_sample_type,
+    api_add_department, api_add_sample_type, api_referencerange_save, api_referencerange_delete,
+    api_investigation_parameter_mapping_save, api_investigation_parameter_mapping_delete,
     OrderEntryView, ResultEntryListView, ResultEntryDetailView,
     LegacyMappingView, process_legacy_mapping,
     ServiceRequestListView, ServiceRequestCreateView,
@@ -17,7 +21,10 @@ from .views import (
 )
 from .import_views import (
     DiagnosisImportView, DiagnosisImportHistoryView,
+    LabDiagnosisImportView, LabDiagnosisImportHistoryView,
     api_diagnosis_download_template, api_diagnosis_preview, api_diagnosis_import,
+    LabDiagnosisImportView, LabDiagnosisImportHistoryView,
+    api_lab_diagnosis_download_template, api_lab_diagnosis_preview, api_lab_diagnosis_import,
     InvestigationImportView, InvestigationImportHistoryView,
     api_investigation_download_template, api_investigation_preview, api_investigation_import,
     ParameterImportView, ParameterImportHistoryView,
@@ -43,9 +50,16 @@ from .diagnosis_investigation_map_views import (
 )
 from .diagnosis_department_mapping_views import (
     diagnosis_department_mapping_view, api_diagnosis_department_map_list,
-    api_diagnosis_department_map_save, api_diagnosis_department_map_toggle,
+    api_diagnosis_department_map_save, api_diagnosis_department_map_delete,
     api_diagnosis_department_map_unmapped_diagnoses, api_diagnosis_department_map_mapped_diagnoses,
     api_diag_dept_map_download_template, api_diag_dept_map_preview, api_diag_dept_map_import
+)
+from .mapping_import_views import (
+    InvestigationParameterMappingImportView,
+    api_inv_param_map_download_template, api_inv_param_map_preview, api_inv_param_map_import,
+    DiagnosisDeptMappingImportView,
+    api_diag_dept_smart_download_template, api_diag_dept_smart_preview, api_diag_dept_smart_import,
+    api_diag_inv_smart_preview, api_diag_inv_smart_import,
 )
 from .auto_trigger_views import (
     AutoTriggerConfigurationView, AutoTriggerHistoryView, AutoTriggerMonthlyView, AutoTriggerMonthlyCreateView, AutoTriggerMonthlyCensusView, AutoTriggerTimeSettingsView,
@@ -64,6 +78,10 @@ from .auto_trigger_views import (
 app_name = 'lab'
 
 urlpatterns = [
+    path('api/reference-range/save/', api_referencerange_save, name='api_referencerange_save'),
+    path('api/reference-range/<int:pk>/delete/', api_referencerange_delete, name='api_referencerange_delete'),
+    path('api/investigation-parameter-mapping/save/', api_investigation_parameter_mapping_save, name='api_investigation_parameter_mapping_save'),
+    path('api/investigation-parameter-mapping/<int:pk>/delete/', api_investigation_parameter_mapping_delete, name='api_investigation_parameter_mapping_delete'),
     # Diagnosis Master
     path('diagnosis/', DiagnosisListView.as_view(), name='diagnosis_list'),
     path('diagnosis/add/', DiagnosisCreateView.as_view(), name='diagnosis_add'),
@@ -72,9 +90,29 @@ urlpatterns = [
     path('diagnosis/import/history/', DiagnosisImportHistoryView.as_view(), name='diagnosis_import_history'),
     
     # Diagnosis Import APIs
+    path('api/diagnosis/save/', api_diagnosis_save, name='api_diagnosis_save'),
+    path('api/lab-diagnosis/save/', api_lab_diagnosis_save, name='api_lab_diagnosis_save'),
+    path('api/lab-diagnosis/<int:pk>/delete/', api_lab_diagnosis_delete, name='api_lab_diagnosis_delete'),
+    path('api/investigation/<int:pk>/delete/', api_investigation_delete, name='api_investigation_delete'),
+    path('api/parameter/<int:pk>/delete/', api_parameter_delete, name='api_parameter_delete'),
+    path('api/age-group/save/', api_agegroup_save, name='api_agegroup_save'),
+    path('api/age-group/<int:pk>/delete/', api_agegroup_delete, name='api_agegroup_delete'),
+    path('api/diagnosis/<int:pk>/delete/', api_diagnosis_delete, name='api_diagnosis_delete'),
     path('api/diagnosis/import/template/', api_diagnosis_download_template, name='api_diagnosis_import_template'),
     path('api/diagnosis/import/preview/', api_diagnosis_preview, name='api_diagnosis_import_preview'),
     path('api/diagnosis/import/process/', api_diagnosis_import, name='api_diagnosis_import_process'),
+    
+    # Lab Diagnosis
+    path('lab-diagnosis/', LabDiagnosisListView.as_view(), name='lab_diagnosis_list'),
+    path('lab-diagnosis/add/', LabDiagnosisCreateView.as_view(), name='lab_diagnosis_add'),
+    path('lab-diagnosis/<int:pk>/edit/', LabDiagnosisUpdateView.as_view(), name='lab_diagnosis_edit'),
+
+    path('lab-diagnosis/import/', LabDiagnosisImportView.as_view(), name='lab_diagnosis_import'),
+    path('lab-diagnosis/import/history/', LabDiagnosisImportHistoryView.as_view(), name='lab_diagnosis_import_history'),
+    path('api/lab-diagnosis/import/template/', api_lab_diagnosis_download_template, name='api_lab_diagnosis_import_template'),
+    path('api/lab-diagnosis/import/preview/', api_lab_diagnosis_preview, name='api_lab_diagnosis_import_preview'),
+    path('api/lab-diagnosis/import/process/', api_lab_diagnosis_import, name='api_lab_diagnosis_import_process'),
+
     
     # Investigation
     path('investigation/', InvestigationListView.as_view(), name='investigation_list'),
@@ -85,6 +123,7 @@ urlpatterns = [
     path('investigation/import/history/', InvestigationImportHistoryView.as_view(), name='investigation_import_history'),
     
     # Investigation Import APIs
+    path('api/investigation/save/', api_investigation_save, name='api_investigation_save'),
     path('api/investigation/import/template/', api_investigation_download_template, name='api_investigation_import_template'),
     path('api/investigation/import/preview/', api_investigation_preview, name='api_investigation_import_preview'),
     path('api/investigation/import/process/', api_investigation_import, name='api_investigation_import_process'),
@@ -97,6 +136,7 @@ urlpatterns = [
     path('parameter/import/history/', ParameterImportHistoryView.as_view(), name='parameter_import_history'),
     
     # Parameter Import APIs
+    path('api/parameter/save/', api_parameter_save, name='api_parameter_save'),
     path('api/parameter/import/template/', api_parameter_download_template, name='api_parameter_import_template'),
     path('api/parameter/import/preview/', api_parameter_preview, name='api_parameter_import_preview'),
     path('api/parameter/import/process/', api_parameter_import, name='api_parameter_import_process'),
@@ -147,32 +187,46 @@ urlpatterns = [
     path('api/reference-range/import/preview/', api_referencerange_preview, name='api_referencerange_preview'),
     path('api/reference-range/import/save/', api_referencerange_import, name='api_referencerange_import'),
 
-    # Diagnosis–Investigation Map Import
+    # Diagnosis–Investigation Map Import (smart, name-based)
     path('diagnosis-investigation-age-mapping/import/', DiagnosisInvestigationMapImportView.as_view(), name='diagnosis_investigation_map_import'),
     path('api/diagnosis-investigation-map/import/template/', api_diag_inv_map_download_template, name='api_diag_inv_map_import_template'),
     path('api/diagnosis-investigation-map/import/preview/', api_diag_inv_map_preview, name='api_diag_inv_map_import_preview'),
     path('api/diagnosis-investigation-map/import/process/', api_diag_inv_map_import, name='api_diag_inv_map_import_process'),
+    # Smart (name-based) variants
+    path('api/diagnosis-investigation-map/smart-preview/', api_diag_inv_smart_preview, name='api_diag_inv_smart_preview'),
+    path('api/diagnosis-investigation-map/smart-import/', api_diag_inv_smart_import, name='api_diag_inv_smart_import'),
 
     # Diagnosis-Department Mapping
     path('diagnosis-department-mapping/', diagnosis_department_mapping_view, name='diagnosis_department_mapping'),
     path('api/diagnosis-department-mapping/list/', api_diagnosis_department_map_list, name='api_diagnosis_department_map_list'),
     path('api/diagnosis-department-mapping/save/', api_diagnosis_department_map_save, name='api_diagnosis_department_map_save'),
-    path('api/diagnosis-department-mapping/toggle/', api_diagnosis_department_map_toggle, name='api_diagnosis_department_map_toggle'),
+    path('api/diagnosis-department-mapping/delete/', api_diagnosis_department_map_delete, name='api_diagnosis_department_map_delete'),
     path('api/diagnosis-department-mapping/unmapped/', api_diagnosis_department_map_unmapped_diagnoses, name='api_diagnosis_department_map_unmapped_diagnoses'),
     path('api/diagnosis-department-mapping/mapped/', api_diagnosis_department_map_mapped_diagnoses, name='api_diagnosis_department_map_mapped_diagnoses'),
+    # Old import endpoints (kept for backward compat)
     path('api/diagnosis-department-mapping/import/template/', api_diag_dept_map_download_template, name='api_diag_dept_map_import_template'),
     path('api/diagnosis-department-mapping/import/preview/', api_diag_dept_map_preview, name='api_diag_dept_map_preview'),
     path('api/diagnosis-department-mapping/import/process/', api_diag_dept_map_import, name='api_diag_dept_map_import'),
+    # Smart import page + APIs
+    path('diagnosis-department-mapping/import/', DiagnosisDeptMappingImportView.as_view(), name='diagnosis_department_mapping_import'),
+    path('api/diagnosis-department-mapping/smart-template/', api_diag_dept_smart_download_template, name='api_diag_dept_smart_template'),
+    path('api/diagnosis-department-mapping/smart-preview/', api_diag_dept_smart_preview, name='api_diag_dept_smart_preview'),
+    path('api/diagnosis-department-mapping/smart-import/', api_diag_dept_smart_import, name='api_diag_dept_smart_import'),
 
+    # Investigation-Parameter Mapping Import
+    path('investigation-parameter-mapping/import/', InvestigationParameterMappingImportView.as_view(), name='investigation_parameter_mapping_import'),
+    path('api/investigation-parameter-mapping/import/template/', api_inv_param_map_download_template, name='api_inv_param_map_import_template'),
+    path('api/investigation-parameter-mapping/import/preview/', api_inv_param_map_preview, name='api_inv_param_map_import_preview'),
+    path('api/investigation-parameter-mapping/import/process/', api_inv_param_map_import, name='api_inv_param_map_import_process'),
 
 
     path('api/departments/add/', api_add_department, name='api_department_add'),
     path('api/sample-types/add/', api_add_sample_type, name='api_sample_type_add'),
-    
-    # Legacy Mapping
+
     path('legacy-mapping/', LegacyMappingView.as_view(), name='legacy_mapping'),
     path('api/legacy-mapping/process/', process_legacy_mapping, name='api_legacy_mapping_process'),
     
+
     # Transactions
     path('order/add/', OrderEntryView.as_view(), name='order_entry'),
     path('result/', ResultEntryListView.as_view(), name='result_entry_list'),

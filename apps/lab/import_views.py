@@ -3,11 +3,25 @@ from django.views.generic import TemplateView, ListView
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.core.mixins import MenuAccessRequiredMixin
-from .models import Diagnosis, DiagnosisImportHistory, InvestigationImportHistory, ParameterImportHistory, AgeGroupImportHistory, ReferenceRangeImportHistory
+from .models import Diagnosis, LabDiagnosis, DiagnosisImportHistory, InvestigationImportHistory, ParameterImportHistory, AgeGroupImportHistory, ReferenceRangeImportHistory
 import pandas as pd
 import io
 import csv
 import json
+import os
+import uuid
+from django.core.files.storage import FileSystemStorage
+
+
+class LabDiagnosisImportView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
+    template_name = 'lab/master/import_lab_diagnosis.html'
+    menu_key = 'administration'
+
+class LabDiagnosisImportHistoryView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
+    model = DiagnosisImportHistory
+    template_name = 'lab/master/import_history.html'
+    context_object_name = 'histories'
+    menu_key = 'administration'
 
 class DiagnosisImportView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
     template_name = 'lab/master/import_diagnosis.html'
@@ -18,6 +32,7 @@ class DiagnosisImportHistoryView(LoginRequiredMixin, MenuAccessRequiredMixin, Li
     template_name = 'lab/master/import_history.html'
     context_object_name = 'histories'
     menu_key = 'administration'
+
 
 def api_diagnosis_download_template(request):
     import pandas as pd
@@ -38,10 +53,42 @@ def api_diagnosis_download_template(request):
     response['Content-Disposition'] = 'attachment; filename="diagnosis_import_template.xlsx"'
     return response
 
-def api_diagnosis_preview(request):
+def api_lab_diagnosis_download_template(request):
+    import pandas as pd
+    from io import BytesIO
+    df = pd.DataFrame({
+        'icd_code': ['BA00', 'BA01'],
+        'diagnosis_name': ['Essential hypertension', 'Secondary hypertension'],
+        'category': ['Cardiovascular', 'Cardiovascular'],
+        'synonyms': ['High BP, HTN', ''],
+        'class_kind': ['', ''],
+        'active': ['Yes', 'Yes']
+    })
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Template')
+    output.seek(0)
+    
+    response = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="lab_diagnosis_import_template.xlsx"'
+    return response
+
+def get_diagnosis_rows(f, filename):
+    import pandas as pd
+    if filename.endswith('.csv'):
+        df = pd.read_csv(f, dtype=str)
+    else:
+        df = pd.read_excel(f, dtype=str)
+    
+    df_columns = [str(c).lower().strip() for c in df.columns]
+    df.columns = df_columns
+    
+    for index, row in df.iterrows():
+        yield index + 2, row
+
+def process_preview(request, is_lab_diagnosis=False):
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Invalid method'})
-    
     if 'file' not in request.FILES:
         return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
         
@@ -49,157 +96,217 @@ def api_diagnosis_preview(request):
     filename = file.name
     
     try:
-        if filename.endswith('.csv'):
-            df = pd.read_csv(file, dtype=str)
-        elif filename.endswith('.xlsx'):
-            df = pd.read_excel(file, dtype=str)
-        else:
+        from django.conf import settings
+        fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, 'temp_imports'))
+        file_ext = os.path.splitext(filename)[1]
+        if file_ext.lower() not in ['.csv', '.xlsx', '.xls']:
             return JsonResponse({'status': 'error', 'message': 'Unsupported file format. Please upload .csv or .xlsx'})
             
-        required_columns = ['icd_code', 'diagnosis_name', 'category', 'synonyms', 'active']
-        
-        # Check if empty
-        if df.empty:
-            return JsonResponse({'status': 'error', 'message': 'Uploaded file is empty.'})
-            
-        # Check columns
-        df_columns = [c.lower().strip() for c in df.columns]
-        for req in required_columns:
-            if req not in df_columns:
-                return JsonResponse({'status': 'error', 'message': f'Missing required column: {req}'})
-                
-        # Rename columns to standard
-        df.columns = df_columns
+        upload_id = str(uuid.uuid4())
+        saved_name = fs.save(f"{upload_id}{file_ext}", file)
+        file_path = fs.path(saved_name)
         
         preview_data = []
         file_codes = set()
+        file_names = set()
         
-        # Fetch existing codes for faster checking
-        existing_codes = set(Diagnosis.objects.values_list('code', flat=True))
+        ModelClass = LabDiagnosis if is_lab_diagnosis else Diagnosis
+        existing_codes = set(ModelClass.objects.exclude(code__isnull=True).exclude(code='').values_list('code', flat=True))
+        existing_names = set(ModelClass.objects.values_list('name', flat=True))
         
-        for index, row in df.iterrows():
-            row_num = index + 2 # Excel row number (header is 1, data starts at 2)
-            
-            icd_code = str(row.get('icd_code', '')).strip()
-            if icd_code == 'nan' or not icd_code:
-                icd_code = ''
-            
-            diag_name = str(row.get('diagnosis_name', '')).strip()
-            if diag_name == 'nan':
-                diag_name = ''
+        with open(file_path, 'rb') as f:
+            for row_num, row in get_diagnosis_rows(f, filename):
+                icd_code = str(row.get('icd_code', '')).strip()
+                if icd_code == 'nan': icd_code = ''
                 
-            category = str(row.get('category', '')).strip()
-            if category == 'nan':
-                category = ''
+                diag_name = str(row.get('diagnosis_name', '')).strip()
+                if diag_name == 'nan': diag_name = ''
                 
-            synonyms = str(row.get('synonyms', '')).strip()
-            if synonyms == 'nan':
-                synonyms = ''
+                category = str(row.get('category', '')).strip() or 'Hospital Legacy'
+                if category == 'nan': category = 'Hospital Legacy'
                 
-            active_str = str(row.get('active', '')).strip().lower()
-            is_active = True if active_str in ['yes', 'y', 'true', '1'] else False
-            
-            status = 'Valid'
-            error_msg = ''
-            
-            if not icd_code:
-                status = 'Error'
-                error_msg = 'ICD Code is required'
-            elif not diag_name:
-                status = 'Error'
-                error_msg = 'Diagnosis Name is required'
-            elif len(icd_code) > 50:
-                status = 'Error'
-                error_msg = 'ICD Code is too long'
-            elif icd_code in file_codes:
-                status = 'Error'
-                error_msg = 'Duplicate ICD Code in file'
-            elif icd_code in existing_codes:
-                status = 'Duplicate'
-                error_msg = 'ICD Code already exists in database'
-            
-            if icd_code:
-                file_codes.add(icd_code)
+                synonyms = str(row.get('synonyms', '')).strip()
+                if synonyms == 'nan': synonyms = ''
                 
-            preview_data.append({
-                'row_num': row_num,
-                'icd_code': icd_code,
-                'diagnosis_name': diag_name,
-                'category': category,
-                'synonyms': synonyms,
-                'active': is_active,
-                'status': status,
-                'error': error_msg
-            })
-            
+                class_kind = str(row.get('class_kind', '')).strip()
+                if class_kind == 'nan': class_kind = ''
+                
+                active_str = str(row.get('status', row.get('active', 'Yes'))).strip().lower()
+                is_active = True if active_str in ['yes', 'y', 'true', '1', 'active'] else False
+                
+                status = 'Valid'
+                error_msg = ''
+                
+                if not diag_name:
+                    status = 'Error'
+                    error_msg = 'Diagnosis Name is required'
+                elif icd_code and len(icd_code) > 50:
+                    status = 'Error'
+                    error_msg = 'ICD Code is too long'
+                elif icd_code and icd_code in file_codes:
+                    status = 'Error'
+                    error_msg = 'Duplicate ICD Code in file'
+                elif not icd_code and diag_name in file_names:
+                    status = 'Error'
+                    error_msg = 'Duplicate Diagnosis Name in file'
+                elif icd_code and icd_code in existing_codes:
+                    status = 'Duplicate'
+                    error_msg = 'ICD Code already exists in database'
+                elif not icd_code and diag_name in existing_names:
+                    status = 'Duplicate'
+                    error_msg = 'Diagnosis Name already exists in database'
+                
+                if icd_code: file_codes.add(icd_code)
+                if diag_name: file_names.add(diag_name)
+                
+                preview_data.append({
+                    'row_num': row_num,
+                    'icd_code': icd_code,
+                    'diagnosis_name': diag_name,
+                    'category': category,
+                    'class_kind': class_kind,
+                    'synonyms': synonyms,
+                    'active': is_active,
+                    'status': status,
+                    'error': error_msg
+                })
+                
         return JsonResponse({
-            'status': 'success', 
+            'status': 'success',
             'filename': filename,
+            'upload_id': upload_id,
             'data': preview_data
         })
-        
     except Exception as e:
         import traceback
         traceback.print_exc()
         return JsonResponse({'status': 'error', 'message': f'Error parsing file: {str(e)}'})
 
-def api_diagnosis_import(request):
+def process_import(request, is_lab_diagnosis=False):
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Invalid method'})
         
+    upload_id = request.POST.get('upload_id')
+    filename = request.POST.get('filename')
+    update_duplicates = request.POST.get('update_duplicates') == 'true'
+    
+    if not upload_id or not filename:
+        return JsonResponse({'status': 'error', 'message': 'File missing. Please start again.'})
+        
+    from django.conf import settings
+    fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, 'temp_imports'))
+    file_ext = os.path.splitext(filename)[1]
+    saved_name = f"{upload_id}{file_ext}"
+    
+    if not fs.exists(saved_name):
+        return JsonResponse({'status': 'error', 'message': 'File missing. Please start again.'})
+        
+    file_path = fs.path(saved_name)
+    
+    ModelClass = LabDiagnosis if is_lab_diagnosis else Diagnosis
+    
+    imported = 0
+    updated = 0
+    duplicates = 0
+    failed = 0
+    
+    from django.db import transaction
     try:
-        data = json.loads(request.body)
-        filename = data.get('filename', 'Unknown')
-        rows = data.get('rows', [])
-        update_duplicates = data.get('update_duplicates', False)
+        existing_objs = ModelClass.objects.all()
+        existing_by_code = {obj.code: obj for obj in existing_objs if obj.code}
+        existing_by_name = {obj.name: obj for obj in existing_objs if obj.name}
         
-        imported = 0
-        updated = 0
-        duplicates = 0
-        failed = 0
+        creates = []
+        updates = []
         
-        from django.db import transaction
+        file_codes = set()
+        file_names = set()
         
-        with transaction.atomic():
-            for row in rows:
-                if row['status'] == 'Error':
+        with open(file_path, 'rb') as f:
+            for row_num, row in get_diagnosis_rows(f, filename):
+                icd_code = str(row.get('icd_code', '')).strip()
+                if icd_code == 'nan': icd_code = ''
+                
+                diag_name = str(row.get('diagnosis_name', '')).strip()
+                if diag_name == 'nan': diag_name = ''
+                
+                category = str(row.get('category', '')).strip() or 'Hospital Legacy'
+                if category == 'nan': category = 'Hospital Legacy'
+                
+                synonyms = str(row.get('synonyms', '')).strip()
+                if synonyms == 'nan': synonyms = ''
+                
+                class_kind = str(row.get('class_kind', '')).strip()
+                if class_kind == 'nan': class_kind = ''
+                
+                active_str = str(row.get('status', row.get('active', 'Yes'))).strip().lower()
+                is_active = True if active_str in ['yes', 'y', 'true', '1', 'active'] else False
+                
+                if not diag_name or (icd_code and len(icd_code) > 50):
                     failed += 1
                     continue
                     
-                code = row['icd_code']
-                
-                try:
-                    obj = Diagnosis.objects.filter(code=code).first()
+                is_file_dup = False
+                if icd_code:
+                    if icd_code in file_codes: is_file_dup = True
+                    file_codes.add(icd_code)
+                else:
+                    if diag_name in file_names: is_file_dup = True
+                    file_names.add(diag_name)
                     
-                    if obj:
-                        if update_duplicates:
-                            obj.name = row['diagnosis_name']
-                            obj.chapter = row['category']
-                            obj.synonyms = row['synonyms']
-                            obj.is_active = row['active']
-                            obj.source = 'Import'
-                            obj.save()
-                            updated += 1
-                        else:
-                            duplicates += 1
-                    else:
-                        Diagnosis.objects.create(
-                            code=code,
-                            name=row['diagnosis_name'],
-                            chapter=row['category'],
-                            synonyms=row['synonyms'],
-                            is_active=row['active'],
-                            source='Import'
-                        )
-                        imported += 1
-                except Exception as e:
-                    print(f"Error importing row {row['row_num']}: {str(e)}")
+                if is_file_dup:
                     failed += 1
+                    continue
                     
+                obj = None
+                if icd_code and icd_code in existing_by_code:
+                    obj = existing_by_code[icd_code]
+                elif not icd_code and diag_name in existing_by_name:
+                    obj = existing_by_name[diag_name]
+                    
+                if obj:
+                    if update_duplicates:
+                        obj.name = diag_name
+                        if not obj.chapter and category: obj.chapter = category
+                        if not obj.synonyms and synonyms: obj.synonyms = synonyms
+                        if not getattr(obj, 'class_kind', None) and class_kind:
+                            if hasattr(obj, 'class_kind'): obj.class_kind = class_kind
+                        if is_active: obj.is_active = True
+                        updates.append(obj)
+                    else:
+                        duplicates += 1
+                else:
+                    save_code = icd_code
+                    if not save_code:
+                        slug = "".join(c for c in diag_name.upper().replace(" ", "_") if c.isalnum() or c == "_")[:20]
+                        save_code = f"DX-{slug}-{uuid.uuid4().hex[:4].upper()}"
+                        
+                    creates.append(ModelClass(
+                        code=save_code,
+                        name=diag_name,
+                        chapter=category,
+                        synonyms=synonyms,
+                        is_active=is_active,
+                        source='Import',
+                        **({'class_kind': class_kind} if hasattr(ModelClass, 'class_kind') else {})
+                    ))
+        
+        with transaction.atomic():
+            if updates:
+                update_fields = ['name', 'chapter', 'synonyms', 'is_active']
+                if hasattr(ModelClass, 'class_kind'):
+                    update_fields.append('class_kind')
+                ModelClass.objects.bulk_update(updates, update_fields, batch_size=1000)
+                updated = len(updates)
+            
+            if creates:
+                ModelClass.objects.bulk_create(creates, batch_size=1000)
+                imported = len(creates)
+                
             history = DiagnosisImportHistory.objects.create(
                 file_name=filename,
                 uploaded_by=request.user if request.user.is_authenticated else None,
-                total_rows=len(rows),
+                total_rows=imported + updated + duplicates + failed,
                 imported=imported,
                 updated=updated,
                 duplicates=duplicates,
@@ -210,7 +317,7 @@ def api_diagnosis_import(request):
         return JsonResponse({
             'status': 'success',
             'summary': {
-                'total': len(rows),
+                'total': imported + updated + duplicates + failed,
                 'imported': imported,
                 'updated': updated,
                 'duplicates': duplicates,
@@ -223,7 +330,18 @@ def api_diagnosis_import(request):
         traceback.print_exc()
         return JsonResponse({'status': 'error', 'message': str(e)})
 
-# --- Investigation Import ---
+def api_diagnosis_preview(request):
+    return process_preview(request, is_lab_diagnosis=False)
+
+def api_diagnosis_import(request):
+    return process_import(request, is_lab_diagnosis=False)
+
+def api_lab_diagnosis_preview(request):
+    return process_preview(request, is_lab_diagnosis=True)
+
+def api_lab_diagnosis_import(request):
+    return process_import(request, is_lab_diagnosis=True)
+
 
 class InvestigationImportView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
     template_name = 'lab/master/import_investigation.html'
@@ -1563,7 +1681,7 @@ class DiagnosisInvestigationMapImportView(LoginRequiredMixin, MenuAccessRequired
     menu_key = 'administration'
 
 def api_diag_inv_map_download_template(request):
-    from .models import Diagnosis, AgeGroup, Investigation
+    from .models import Diagnosis, LabDiagnosis, AgeGroup, Investigation
     
     d1 = Diagnosis.objects.filter(is_active=True).first()
     ag1 = AgeGroup.objects.filter(is_active=True).first()

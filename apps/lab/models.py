@@ -6,10 +6,11 @@ from django.utils import timezone
 
 class Diagnosis(TimeStampedModel):
     name = models.CharField(max_length=200, verbose_name="Diagnosis Name")
-    code = models.CharField(max_length=50, unique=True, verbose_name="ICD-11 Code")
+    code = models.CharField(max_length=50, unique=True, blank=True, null=True, verbose_name="ICD-11 Code")
     icd11_title = models.CharField(max_length=255, blank=True, null=True, verbose_name="ICD-11 Title")
     chapter = models.CharField(max_length=100, blank=True, null=True, verbose_name="Chapter")
     synonyms = models.TextField(blank=True, null=True, verbose_name="Synonyms")
+    class_kind = models.CharField(max_length=100, blank=True, null=True, verbose_name="Class Kind")
     legacy_code = models.CharField(max_length=50, blank=True, null=True, verbose_name="Legacy Code")
     source = models.CharField(max_length=100, blank=True, null=True, verbose_name="Source (e.g. WHO, Import)")
     icd_version = models.CharField(max_length=50, blank=True, null=True, verbose_name="ICD Version")
@@ -18,6 +19,27 @@ class Diagnosis(TimeStampedModel):
 
     class Meta:
         ordering = ['name']
+        verbose_name_plural = "Diagnoses"
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+class LabDiagnosis(TimeStampedModel):
+    name = models.CharField(max_length=200, verbose_name="Diagnosis Name")
+    code = models.CharField(max_length=50, unique=True, blank=True, null=True, verbose_name="ICD-11 Code")
+    icd11_title = models.CharField(max_length=255, blank=True, null=True, verbose_name="ICD-11 Title")
+    chapter = models.CharField(max_length=100, blank=True, null=True, verbose_name="Chapter")
+    synonyms = models.TextField(blank=True, null=True, verbose_name="Synonyms")
+    class_kind = models.CharField(max_length=100, blank=True, null=True, verbose_name="Class Kind")
+    legacy_code = models.CharField(max_length=50, blank=True, null=True, verbose_name="Legacy Code")
+    source = models.CharField(max_length=100, blank=True, null=True, verbose_name="Source (e.g. WHO, Import)")
+    icd_version = models.CharField(max_length=50, blank=True, null=True, verbose_name="ICD Version")
+    who_uri = models.URLField(blank=True, null=True, verbose_name="WHO URI")
+    is_active = models.BooleanField(default=True, verbose_name="Active Status")
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = "Diagnosis"
         verbose_name_plural = "Diagnoses"
 
     def __str__(self):

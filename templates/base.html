@@ -146,6 +146,12 @@
                     <li class="{% if request.resolver_match.url_name == 'diagnosis_list' %}active{% endif %}">
                         <a href="{% url 'lab:diagnosis_list' %}">
                             <i class="bi bi-heart-pulse"></i>
+                            <span>Primary Diagnosis</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'lab_diagnosis_list' %}active{% endif %}">
+                        <a href="{% url 'lab:lab_diagnosis_list' %}">
+                            <i class="bi bi-heart"></i>
                             <span>Diagnosis</span>
                         </a>
                     </li>
@@ -167,23 +173,16 @@
                             <span>Age Group</span>
                         </a>
                     </li>
-                    <li class="{% if request.resolver_match.url_name == 'investigation_parameter_mapping' %}active{% endif %}">
-                        <a href="{% url 'lab:investigation_parameter_mapping' %}">
-                            <i class="bi bi-diagram-3"></i>
-                            <span>Investigation Parameter Mapping</span>
-                        </a>
-                    </li>
                     <li class="{% if request.resolver_match.url_name == 'reference_range_grid' %}active{% endif %}">
                         <a href="{% url 'lab:reference_range_grid' %}">
                             <i class="bi bi-grid-3x3-gap"></i>
-                            <span>Reference Range Grid</span>
+                            <span>Reference Range</span>
                         </a>
                     </li>
-
-                    <li class="{% if request.resolver_match.url_name == 'legacy_mapping' %}active{% endif %}">
-                        <a href="{% url 'lab:legacy_mapping' %}">
-                            <i class="bi bi-arrow-left-right"></i>
-                            <span>Legacy Mapping</span>
+                    <li class="{% if request.resolver_match.url_name == 'investigation_parameter_mapping' %}active{% endif %}">
+                        <a href="{% url 'lab:investigation_parameter_mapping' %}">
+                            <i class="bi bi-diagram-3"></i>
+                            <span>Investigation Parameter Mapping Setup</span>
                         </a>
                     </li>
                     <li class="{% if request.resolver_match.url_name == 'diagnosis_investigation_age_mapping' %}active{% endif %}">
@@ -196,6 +195,12 @@
                         <a href="{% url 'lab:diagnosis_department_mapping' %}">
                             <i class="bi bi-diagram-2"></i>
                             <span>Diagnosis-Department Mapping</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'legacy_mapping' %}active{% endif %}">
+                        <a href="{% url 'lab:legacy_mapping' %}">
+                            <i class="bi bi-arrow-left-right"></i>
+                            <span>Legacy Mapping Setup</span>
                         </a>
                     </li>
                 </ul>

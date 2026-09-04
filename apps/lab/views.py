@@ -34,7 +34,7 @@ from apps.patients.models import Patient, PatientVisit
 from django.utils import timezone
 
 from .models import (
-    Diagnosis, Investigation, Parameter, AgeGroup,
+    Diagnosis, LabDiagnosis, Investigation, Parameter, AgeGroup,
     InvestigationParameter,
     ParameterReferenceRange, PatientInvestigationOrder, PatientInvestigationResult,
     LabDepartment, SampleType,
@@ -43,7 +43,7 @@ from .models import (
     PatientVisitDiagnosis
 )
 from .forms import (
-    DiagnosisForm, InvestigationForm, ParameterForm, AgeGroupForm,
+    DiagnosisForm, LabDiagnosisForm, InvestigationForm, ParameterForm, AgeGroupForm,
     InvestigationParameterForm, ServiceRequestForm
 )
 from apps.patients.models import Patient
@@ -58,6 +58,27 @@ class DiagnosisListView(LoginRequiredMixin, GranularPermissionRequiredMixin, Lis
     model = Diagnosis
     template_name = 'lab/master/diagnosis_list.html'
     context_object_name = 'diagnoses'
+    paginate_by = 20
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        search = self.request.GET.get('search', '').strip()
+        if search:
+            qs = qs.filter(models.Q(name__icontains=search) | models.Q(code__icontains=search) | models.Q(chapter__icontains=search))
+        return qs
+    paginate_by = 20
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        search = self.request.GET.get('search', '').strip()
+        if search:
+            qs = qs.filter(
+                models.Q(name__icontains=search) | 
+                models.Q(code__icontains=search) | 
+                models.Q(chapter__icontains=search)
+            )
+        return qs
+
 
     def get(self, request, *args, **kwargs):
         if request.GET.get('export') == 'excel':
@@ -78,7 +99,7 @@ class DiagnosisListView(LoginRequiredMixin, GranularPermissionRequiredMixin, Lis
         
         wb = Workbook(write_only=True)
         ws = wb.create_sheet('Template')
-        ws.append(['icd_code', 'diagnosis_name', 'category', 'synonyms', 'active'])
+        ws.append(['icd_code', 'diagnosis_name', 'category', 'synonyms', 'class_kind', 'active'])
         
         for obj in queryset.iterator(chunk_size=1000):
             ws.append([
@@ -86,6 +107,7 @@ class DiagnosisListView(LoginRequiredMixin, GranularPermissionRequiredMixin, Lis
                 obj.name,
                 obj.chapter or '',
                 obj.synonyms or '',
+                obj.class_kind or '',
                 'Yes' if obj.is_active else 'No'
             ])
             
@@ -113,6 +135,82 @@ class DiagnosisListView(LoginRequiredMixin, GranularPermissionRequiredMixin, Lis
             return JsonResponse({'diagnoses': results})
         return super().render_to_response(context, **response_kwargs)
 
+@csrf_exempt
+@login_required
+def api_diagnosis_save(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            diag_id = data.get('id')
+            name = data.get('name', '').strip()
+            code = data.get('code', '').strip()
+            chapter = data.get('chapter', '').strip()
+            is_active = data.get('is_active', True)
+            
+            if not name:
+                return JsonResponse({'status': 'error', 'message': 'Diagnosis Name is required.'})
+                
+            if code == '': code = None
+                
+            # Duplicate check
+            duplicate_code = Diagnosis.objects.filter(code__iexact=code) if code else Diagnosis.objects.none()
+            duplicate_name = Diagnosis.objects.filter(name__iexact=name)
+            if diag_id:
+                duplicate_code = duplicate_code.exclude(id=diag_id)
+                duplicate_name = duplicate_name.exclude(id=diag_id)
+                
+            if duplicate_name.exists():
+                return JsonResponse({'status': 'error', 'message': f'A Diagnosis with Name "{name}" already exists.'})
+                
+            if duplicate_code.exists():
+                return JsonResponse({'status': 'error', 'message': f'A Diagnosis with ICD Code {code} already exists.'})
+                
+            if diag_id:
+                diag = Diagnosis.objects.get(id=diag_id)
+                diag.name = name
+                diag.code = code
+                diag.chapter = chapter
+                diag.is_active = is_active
+                diag.save()
+                msg = "Primary Diagnosis updated successfully."
+            else:
+                diag = Diagnosis.objects.create(
+                    name=name,
+                    code=code,
+                    chapter=chapter,
+                    is_active=is_active
+                )
+                msg = "Primary Diagnosis saved successfully."
+                
+            return JsonResponse({
+                'status': 'success',
+                'message': msg,
+                'data': {
+                    'id': diag.id,
+                    'name': diag.name,
+                    'code': diag.code,
+                    'chapter': diag.chapter or '-',
+                    'is_active': diag.is_active
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid method'})
+
+@csrf_exempt
+@login_required
+def api_diagnosis_delete(request, pk):
+    if request.method == 'POST':
+        try:
+            diag = Diagnosis.objects.get(id=pk)
+            diag.delete()
+            return JsonResponse({'status': 'success', 'message': 'Primary Diagnosis deleted successfully.'})
+        except Diagnosis.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Primary Diagnosis not found.'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid method'})
+
 class DiagnosisCreateView(LoginRequiredMixin, GranularPermissionRequiredMixin, CreateView):
     permission_required = 'lab_master.diagnosis.create'
     model = Diagnosis
@@ -135,11 +233,116 @@ class DiagnosisUpdateView(LoginRequiredMixin, GranularPermissionRequiredMixin, U
         messages.success(self.request, "Diagnosis updated successfully!")
         return super().form_valid(form)
 
+class LabDiagnosisListView(LoginRequiredMixin, GranularPermissionRequiredMixin, ListView):
+    permission_required = 'lab_master.diagnosis.view'
+    model = LabDiagnosis
+    template_name = 'lab/master/lab_diagnosis_list.html'
+    context_object_name = 'diagnoses'
+    paginate_by = 20
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        search = self.request.GET.get('search', '').strip()
+        if search:
+            qs = qs.filter(models.Q(name__icontains=search) | models.Q(code__icontains=search))
+        return qs
+
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('export') == 'excel':
+            if not request.user.has_perm_code('lab_master.diagnosis.export'):
+                from django.contrib import messages
+                from django.shortcuts import redirect
+                messages.error(request, "Access Denied: You do not have permission to export.")
+                return redirect('lab:lab_diagnosis_list')
+            return self.export_excel(request)
+        return super().get(request, *args, **kwargs)
+
+    def export_excel(self, request):
+        from openpyxl import Workbook
+        from django.http import HttpResponse
+        import io
+
+        queryset = self.get_queryset()
+        
+        wb = Workbook(write_only=True)
+        ws = wb.create_sheet('Template')
+        ws.append(['icd_code', 'diagnosis_name', 'category', 'synonyms', 'class_kind', 'active'])
+        
+        for obj in queryset.iterator(chunk_size=1000):
+            ws.append([
+                obj.code,
+                obj.name,
+                obj.chapter or '',
+                obj.synonyms or '',
+                obj.class_kind or '',
+                'Yes' if obj.is_active else 'No'
+            ])
+            
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        response = HttpResponse(
+            output,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="diagnosis_export.xlsx"'
+        return response
+
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.headers.get('Accept') == 'application/json' or self.request.GET.get('format') == 'json':
+            qs = self.get_queryset()
+            results = [{
+                'id': d.id,
+                'name': d.name,
+                'code': d.code,
+                'status': 'Active' if d.is_active else 'Inactive'
+            } for d in qs]
+            return JsonResponse({'diagnoses': results})
+        return super().render_to_response(context, **response_kwargs)
+
+class LabDiagnosisCreateView(LoginRequiredMixin, GranularPermissionRequiredMixin, CreateView):
+    permission_required = 'lab_master.diagnosis.create'
+    model = LabDiagnosis
+    form_class = LabDiagnosisForm
+    template_name = 'lab/master/lab_diagnosis_form.html'
+    success_url = reverse_lazy('lab:lab_diagnosis_list')
+    
+    def form_valid(self, form):
+        messages.success(self.request, "Diagnosis created successfully!")
+        return super().form_valid(form)
+
+class LabDiagnosisUpdateView(LoginRequiredMixin, GranularPermissionRequiredMixin, UpdateView):
+    permission_required = 'lab_master.diagnosis.update'
+    model = LabDiagnosis
+    form_class = LabDiagnosisForm
+    template_name = 'lab/master/lab_diagnosis_form.html'
+    success_url = reverse_lazy('lab:lab_diagnosis_list')
+    
+    def form_valid(self, form):
+        messages.success(self.request, "Diagnosis updated successfully!")
+        return super().form_valid(form)
+
 class InvestigationListView(LoginRequiredMixin, GranularPermissionRequiredMixin, ListView):
     permission_required = 'lab_master.investigation.view'
     model = Investigation
     template_name = 'lab/master/investigation_list.html'
     context_object_name = 'investigations'
+    paginate_by = 20
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        search = self.request.GET.get('search', '').strip()
+        if search:
+            qs = qs.filter(models.Q(name__icontains=search) | models.Q(code__icontains=search))
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from .models import LabDepartment, SampleType
+        context['departments'] = LabDepartment.objects.all()
+        context['sample_types'] = SampleType.objects.all()
+        return context
 
     def get(self, request, *args, **kwargs):
         if request.GET.get('export') == 'excel':
@@ -188,6 +391,75 @@ class InvestigationListView(LoginRequiredMixin, GranularPermissionRequiredMixin,
     def get_queryset(self):
         return super().get_queryset().prefetch_related('parameters', 'department', 'sample_type')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['departments'] = LabDepartment.objects.filter(is_active=True).order_by('name')
+        context['sample_types'] = SampleType.objects.filter(is_active=True).order_by('name')
+        return context
+
+@csrf_exempt
+@login_required
+def api_investigation_save(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            inv_id = data.get('id')
+            name = data.get('name', '').strip()
+            code = data.get('code', '').strip()
+            department_id = data.get('department_id')
+            sample_type_id = data.get('sample_type_id')
+            is_active = data.get('is_active', True)
+            
+            if not name or not code:
+                return JsonResponse({'status': 'error', 'message': 'Name and Code are required.'})
+                
+            duplicate = Investigation.objects.filter(code__iexact=code)
+            if inv_id:
+                duplicate = duplicate.exclude(id=inv_id)
+            if duplicate.exists():
+                return JsonResponse({'status': 'error', 'message': f'Investigation with code {code} already exists.'})
+                
+            department = LabDepartment.objects.filter(id=department_id).first() if department_id else None
+            sample_type = SampleType.objects.filter(id=sample_type_id).first() if sample_type_id else None
+
+            if inv_id:
+                inv = Investigation.objects.get(id=inv_id)
+                inv.name = name
+                inv.code = code
+                inv.department = department
+                inv.sample_type = sample_type
+                inv.is_active = is_active
+                inv.save()
+                msg = "Investigation updated successfully."
+            else:
+                inv = Investigation.objects.create(
+                    name=name,
+                    code=code,
+                    department=department,
+                    sample_type=sample_type,
+                    is_active=is_active
+                )
+                msg = "Investigation saved successfully."
+                
+            return JsonResponse({
+                'status': 'success',
+                'message': msg,
+                'data': {
+                    'id': inv.id,
+                    'name': inv.name,
+                    'code': inv.code,
+                    'department_id': inv.department_id,
+                    'department_name': inv.department.name if inv.department else '-',
+                    'sample_type_id': inv.sample_type_id,
+                    'sample_type_name': inv.sample_type.name if inv.sample_type else '-',
+                    'param_count': inv.parameters.count(),
+                    'is_active': inv.is_active
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid method'})
+
 from django.views.generic import DetailView
 class InvestigationDetailView(LoginRequiredMixin, GranularPermissionRequiredMixin, DetailView):
     permission_required = 'lab_master.investigation.view'
@@ -219,9 +491,17 @@ class InvestigationUpdateView(LoginRequiredMixin, GranularPermissionRequiredMixi
 
 class ParameterListView(LoginRequiredMixin, GranularPermissionRequiredMixin, ListView):
     permission_required = 'lab_master.parameter.view'
-    model = InvestigationParameter
+    model = Parameter
     template_name = 'lab/master/parameter_list.html'
     context_object_name = 'parameters'
+    paginate_by = 20
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        search = self.request.GET.get('search', '').strip()
+        if search:
+            qs = qs.filter(models.Q(name__icontains=search) | models.Q(code__icontains=search))
+        return qs
 
     def get(self, request, *args, **kwargs):
         if request.GET.get('export') == 'excel':
@@ -268,6 +548,69 @@ class ParameterListView(LoginRequiredMixin, GranularPermissionRequiredMixin, Lis
         response['Content-Disposition'] = 'attachment; filename="parameter_export.xlsx"'
         return response
 
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['investigations'] = Investigation.objects.filter(is_active=True).order_by('name')
+        return context
+
+@csrf_exempt
+@login_required
+def api_parameter_save(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            param_id = data.get('id')
+            name = data.get('name', '').strip()
+            code = data.get('code', '').strip()
+            unit = data.get('unit', '').strip()
+            data_type = data.get('data_type', 'Numeric').strip()
+            is_active = data.get('is_active', True)
+            
+            if not name or not code:
+                return JsonResponse({'status': 'error', 'message': 'Name and Code are required.'})
+                
+            duplicate = Parameter.objects.filter(code__iexact=code)
+            if param_id:
+                duplicate = duplicate.exclude(id=param_id)
+            if duplicate.exists():
+                return JsonResponse({'status': 'error', 'message': f'Parameter with code {code} already exists.'})
+
+            if param_id:
+                param = Parameter.objects.get(id=param_id)
+                param.name = name
+                param.code = code
+                param.default_unit = unit
+                param.data_type = data_type
+                param.is_active = is_active
+                param.save()
+                msg = "Parameter updated successfully."
+            else:
+                param = Parameter.objects.create(
+                    name=name,
+                    code=code,
+                    default_unit=unit,
+                    data_type=data_type,
+                    is_active=is_active
+                )
+                msg = "Parameter saved successfully."
+                
+            return JsonResponse({
+                'status': 'success',
+                'message': msg,
+                'data': {
+                    'id': param.id,
+                    'name': param.name,
+                    'code': param.code,
+                    'unit': param.default_unit,
+                    'data_type': param.data_type,
+                    'is_active': param.is_active
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid method'})
+
 class ParameterCreateView(LoginRequiredMixin, GranularPermissionRequiredMixin, CreateView):
     permission_required = 'lab_master.parameter.create'
     model = InvestigationParameter
@@ -300,6 +643,14 @@ class AgeGroupListView(LoginRequiredMixin, GranularPermissionRequiredMixin, List
     model = AgeGroup
     template_name = 'lab/master/agegroup_list.html'
     context_object_name = 'age_groups'
+    paginate_by = 20
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        search = self.request.GET.get('search', '').strip()
+        if search:
+            qs = qs.filter(models.Q(name__icontains=search))
+        return qs
 
     def get(self, request, *args, **kwargs):
         if request.GET.get('export') == 'excel':
@@ -374,6 +725,13 @@ class ReferenceRangeGridView(LoginRequiredMixin, GranularPermissionRequiredMixin
     permission_required = 'lab_master.reference_range.view'
     template_name = 'lab/master/reference_range_grid.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['reference_ranges'] = ParameterReferenceRange.objects.select_related('investigation_parameter', 'investigation_parameter__investigation', 'age_group').order_by('-id')
+        context['parameters'] = InvestigationParameter.objects.select_related('investigation').filter(is_active=True).order_by('name')
+        context['age_groups'] = AgeGroup.objects.filter(is_active=True).order_by('sort_order', 'label')
+        return context
+
     def get(self, request, *args, **kwargs):
         if request.GET.get('export') == 'excel':
             if not request.user.has_perm_code('lab_master.reference_range.export'):
@@ -430,9 +788,19 @@ class ReferenceRangeGridView(LoginRequiredMixin, GranularPermissionRequiredMixin
         context['diagnoses'] = Diagnosis.objects.filter(is_active=True)
         return context
 
-class InvestigationParameterMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
+class InvestigationParameterMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, ListView):
     permission_required = 'lab_master.mapping.view'
     template_name = 'lab/master/investigation_parameter_mapping.html'
+    model = InvestigationParameter
+    context_object_name = 'mappings'
+    paginate_by = 20
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        search = self.request.GET.get('search', '').strip()
+        if search:
+            qs = qs.filter(models.Q(investigation__name__icontains=search) | models.Q(parameter__name__icontains=search))
+        return qs
 
     def get(self, request, *args, **kwargs):
         if request.GET.get('export') == 'excel':
@@ -451,18 +819,15 @@ class InvestigationParameterMappingView(LoginRequiredMixin, GranularPermissionRe
 
         wb = Workbook(write_only=True)
         ws = wb.create_sheet('Template')
-        ws.append(['investigation_code', 'investigation_name', 'parameter_names', 'parameter_count', 'active'])
+        ws.append(['investigation', 'parameter', 'active'])
         
-        investigations_with_params = Investigation.objects.filter(parameters__is_active=True).distinct()
-        for inv in investigations_with_params:
-            params = inv.parameters.filter(is_active=True)
-            param_names = ", ".join([p.name for p in params if p.name])
+        for mapping in self.get_queryset().select_related('investigation', 'parameter').iterator(chunk_size=1000):
+            inv_name = mapping.investigation.name if mapping.investigation else ''
+            param_name = mapping.parameter.name if mapping.parameter else ''
             ws.append([
-                inv.code or '',
-                inv.name or '',
-                param_names,
-                params.count(),
-                'Yes' if inv.is_active else 'No'
+                inv_name,
+                param_name,
+                'Yes' if mapping.is_active else 'No'
             ])
             
         output = io.BytesIO()
@@ -476,25 +841,13 @@ class InvestigationParameterMappingView(LoginRequiredMixin, GranularPermissionRe
         response['Content-Disposition'] = 'attachment; filename="investigation_parameter_mapping_export.xlsx"'
         return response
     
+    def get_queryset(self):
+        return super().get_queryset().select_related('investigation', 'parameter')
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['investigations'] = Investigation.objects.filter(is_active=True)
-        
-        # Build mapping summary for the table
-        investigations_with_params = Investigation.objects.filter(parameters__is_active=True).distinct()
-        mapping_data = []
-        for inv in investigations_with_params:
-            params = inv.parameters.filter(is_active=True)
-            mapping_data.append({
-                'id': inv.id,
-                'name': inv.name,
-                'code': inv.code,
-                'status': inv.is_active,
-                'param_count': params.count(),
-                'param_names': ", ".join([p.name or p.parameter.name for p in params if p.name or (p.parameter and p.parameter.name)])
-            })
-        context['mappings'] = mapping_data
-        
+        context['investigations'] = Investigation.objects.filter(is_active=True).order_by('name')
+        context['parameters'] = Parameter.objects.filter(is_active=True).order_by('name')
         return context
 
 from apps.core.mixins import granular_permission_required
@@ -865,6 +1218,34 @@ class LegacyMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, Tem
     permission_required = 'lab_master.legacy_mapping.view'
     template_name = 'lab/master/legacy_mapping.html'
 
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('export') == 'excel':
+            return self._export_excel(request)
+        return super().get(request, *args, **kwargs)
+
+    def _export_excel(self, request):
+        from openpyxl import Workbook
+        from django.http import HttpResponse
+        import io as _io
+
+        wb = Workbook(write_only=True)
+        ws = wb.create_sheet('Legacy Diagnosis')
+        ws.append(['legacy_id', 'legacy_text', 'migrated', 'migrated_to_type'])
+        for s in StagingDiagnosis.objects.all().iterator(chunk_size=1000):
+            ws.append([s.legacy_id or '', s.legacy_text or '', 'Yes' if s.migrated else 'No', s.migrated_to_type or ''])
+
+        ws2 = wb.create_sheet('Legacy Investigation')
+        ws2.append(['legacy_id', 'legacy_text', 'migrated', 'migrated_to_type'])
+        for s in StagingInvestigation.objects.all().iterator(chunk_size=1000):
+            ws2.append([s.legacy_id or '', s.legacy_text or '', 'Yes' if s.migrated else 'No', s.migrated_to_type or ''])
+
+        output = _io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        response = HttpResponse(output, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="legacy_mapping_export.xlsx"'
+        return response
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
@@ -886,6 +1267,7 @@ class LegacyMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, Tem
         context['hospital_service_categories'] = HospitalService.CategoryChoices.choices
         
         return context
+
 
 @granular_permission_required('lab_master.legacy_mapping.update')
 def process_legacy_mapping(request):
@@ -1098,7 +1480,7 @@ def api_diagnosis_count(request):
     })
 
 # --- Service Request (Doctor Window) ---
-from django.db import transaction
+from django.db import transaction, models
 from django.db.models import Q
 from apps.users.models import User
 
@@ -1758,3 +2140,263 @@ def api_work_order_save_result(request, pk):
         return JsonResponse({'status': 'success', 'order_id': wo.service_request.id})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)})
+
+
+@csrf_exempt
+@login_required
+def api_lab_diagnosis_save(request):
+    if request.method == 'POST':
+        try:
+            import json
+            from .models import LabDiagnosis
+            data = json.loads(request.body)
+            diag_id = data.get('id')
+            name = data.get('name', '').strip()
+            code = data.get('code', '').strip()
+            if not name or not code:
+                return JsonResponse({'status': 'error', 'message': 'Name and Code required'})
+            
+            duplicate_code = LabDiagnosis.objects.filter(code__iexact=code)
+            duplicate_name = LabDiagnosis.objects.filter(name__iexact=name)
+            if diag_id:
+                duplicate_code = duplicate_code.exclude(id=diag_id)
+                duplicate_name = duplicate_name.exclude(id=diag_id)
+                
+            if duplicate_name.exists(): return JsonResponse({'status': 'error', 'message': f'This record already exists (Name "{name}").'})
+            if duplicate_code.exists(): return JsonResponse({'status': 'error', 'message': f'This record already exists (Code "{code}").'})
+
+            
+            if diag_id:
+                d = LabDiagnosis.objects.get(id=diag_id)
+                d.name = name; d.code = code; d.chapter = data.get('chapter', ''); d.synonyms = data.get('synonyms', ''); d.legacy_code = data.get('legacy_code', ''); d.is_active = data.get('is_active', True)
+                d.save()
+            else:
+                d = LabDiagnosis.objects.create(name=name, code=code, chapter=data.get('chapter', ''), synonyms=data.get('synonyms', ''), legacy_code=data.get('legacy_code', ''), is_active=data.get('is_active', True))
+                
+            return JsonResponse({'status': 'success', 'message': 'Saved', 'data': {'id': d.id, 'name': d.name, 'code': d.code, 'chapter': d.chapter, 'synonyms': d.synonyms, 'legacy_code': d.legacy_code, 'is_active': d.is_active}})
+        except Exception as e: return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid'})
+
+@csrf_exempt
+@login_required
+def api_lab_diagnosis_delete(request, pk):
+    if request.method == 'POST':
+        try:
+            from .models import LabDiagnosis
+            LabDiagnosis.objects.get(id=pk).delete()
+            return JsonResponse({'status': 'success', 'message': 'Deleted'})
+        except Exception as e: return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid'})
+
+@csrf_exempt
+@login_required
+def api_investigation_delete(request, pk):
+    if request.method == 'POST':
+        try:
+            from .models import Investigation
+            Investigation.objects.get(id=pk).delete()
+            return JsonResponse({'status': 'success', 'message': 'Deleted'})
+        except Exception as e: return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid'})
+
+@csrf_exempt
+@login_required
+def api_parameter_delete(request, pk):
+    if request.method == 'POST':
+        try:
+            from .models import Parameter
+            Parameter.objects.get(id=pk).delete()
+            return JsonResponse({'status': 'success', 'message': 'Deleted'})
+        except Exception as e: return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid'})
+
+@csrf_exempt
+@login_required
+def api_agegroup_save(request):
+    if request.method == 'POST':
+        try:
+            import json
+            from .models import AgeGroup
+            data = json.loads(request.body)
+            ag_id = data.get('id')
+            name = data.get('name', '').strip()
+            if not name: return JsonResponse({'status': 'error', 'message': 'Name required'})
+            
+            duplicate_name = AgeGroup.objects.filter(name__iexact=name)
+            if ag_id: duplicate_name = duplicate_name.exclude(id=ag_id)
+            if duplicate_name.exists(): return JsonResponse({'status': 'error', 'message': f'Name {name} exists.'})
+            
+            if ag_id:
+                d = AgeGroup.objects.get(id=ag_id)
+                d.name = name; d.min_age = data.get('min_age', 0); d.max_age = data.get('max_age', 0); d.age_unit = data.get('age_unit', 'Years'); d.gender = data.get('gender', 'All')
+                d.save()
+            else:
+                d = AgeGroup.objects.create(name=name, min_age=data.get('min_age', 0), max_age=data.get('max_age', 0), age_unit=data.get('age_unit', 'Years'), gender=data.get('gender', 'All'))
+                
+            return JsonResponse({'status': 'success', 'message': 'Saved', 'data': {'id': d.id, 'name': d.name, 'min_age': d.min_age, 'max_age': d.max_age, 'age_unit': d.age_unit, 'gender': d.gender}})
+        except Exception as e: return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid'})
+
+@csrf_exempt
+@login_required
+def api_agegroup_delete(request, pk):
+    if request.method == 'POST':
+        try:
+            from .models import AgeGroup
+            AgeGroup.objects.get(id=pk).delete()
+            return JsonResponse({'status': 'success', 'message': 'Deleted'})
+        except Exception as e: return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid'})
+
+
+
+@csrf_exempt
+@login_required
+def api_investigation_parameter_mapping_save(request):
+    if request.method == 'POST':
+        try:
+            import json
+            data = json.loads(request.body)
+            mapping_id = data.get('id')
+            investigation_id = data.get('investigation_id')
+            parameter_id = data.get('parameter_id')
+            is_active = data.get('is_active', True)
+            
+            if not investigation_id or not parameter_id:
+                return JsonResponse({'status': 'error', 'message': 'Investigation and Parameter are required.'})
+                
+            from .models import InvestigationParameter
+            duplicate = InvestigationParameter.objects.filter(investigation_id=investigation_id, parameter_id=parameter_id)
+            if mapping_id:
+                duplicate = duplicate.exclude(id=mapping_id)
+            if duplicate.exists():
+                return JsonResponse({'status': 'error', 'message': 'This mapping already exists.'})
+                
+            if mapping_id:
+                mapping = InvestigationParameter.objects.get(id=mapping_id)
+                mapping.investigation_id = investigation_id
+                mapping.parameter_id = parameter_id
+                mapping.is_active = is_active
+                mapping.save()
+                msg = 'Mapping updated successfully.'
+            else:
+                mapping = InvestigationParameter.objects.create(
+                    investigation_id=investigation_id,
+                    parameter_id=parameter_id,
+                    is_active=is_active
+                )
+                msg = 'Mapping created successfully.'
+                
+            return JsonResponse({
+                'status': 'success',
+                'message': msg,
+                'data': {
+                    'id': mapping.id,
+                    'investigation_id': mapping.investigation_id,
+                    'parameter_id': mapping.parameter_id,
+                    'is_active': mapping.is_active
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
+
+@csrf_exempt
+@login_required
+def api_investigation_parameter_mapping_delete(request, pk):
+    if request.method == 'POST':
+        try:
+            from .models import InvestigationParameter
+            mapping = InvestigationParameter.objects.get(id=pk)
+            mapping.delete()
+            return JsonResponse({'status': 'success', 'message': 'Mapping deleted successfully.'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
+
+@csrf_exempt
+@login_required
+def api_referencerange_save(request):
+    if request.method == 'POST':
+        try:
+            import json
+            data = json.loads(request.body)
+            rr_id = data.get('id')
+            investigation_parameter_id = data.get('investigation_parameter_id')
+            age_group_id = data.get('age_group_id')
+            min_val = data.get('min_value')
+            max_val = data.get('max_value')
+            normal_val = data.get('normal_value')
+            unit = data.get('unit')
+            remarks = data.get('remarks')
+            is_active = data.get('is_active', True)
+            
+            if not investigation_parameter_id or not age_group_id:
+                return JsonResponse({'status': 'error', 'message': 'Parameter and Age Group are required.'})
+                
+            from .models import ParameterReferenceRange
+            duplicate = ParameterReferenceRange.objects.filter(investigation_parameter_id=investigation_parameter_id, age_group_id=age_group_id)
+            if rr_id:
+                duplicate = duplicate.exclude(id=rr_id)
+            if duplicate.exists():
+                return JsonResponse({'status': 'error', 'message': 'Reference Range for this Parameter and Age Group already exists.'})
+                
+            if rr_id:
+                rr = ParameterReferenceRange.objects.get(id=rr_id)
+                rr.investigation_parameter_id = investigation_parameter_id
+                rr.age_group_id = age_group_id
+                rr.min_value = min_val if min_val else None
+                rr.max_value = max_val if max_val else None
+                rr.reference_text = normal_val
+                rr.unit = unit
+                rr.remarks = remarks
+                rr.is_active = is_active
+                rr.save()
+                msg = 'Reference Range updated successfully.'
+            else:
+                rr = ParameterReferenceRange.objects.create(
+                    investigation_parameter_id=investigation_parameter_id,
+                    age_group_id=age_group_id,
+                    min_value=min_val if min_val else None,
+                    max_value=max_val if max_val else None,
+                    reference_text=normal_val,
+                    unit=unit,
+                    remarks=remarks,
+                    is_active=is_active
+                )
+                msg = 'Reference Range created successfully.'
+                
+            return JsonResponse({
+                'status': 'success',
+                'message': msg,
+                'data': {
+                    'id': rr.id,
+                    'investigation_parameter_id': rr.investigation_parameter_id,
+                    'age_group_id': rr.age_group_id,
+                    'min_value': rr.min_value,
+                    'max_value': rr.max_value,
+                    'normal_value': rr.reference_text,
+                    'unit': rr.unit,
+                    'remarks': rr.remarks,
+                    'is_active': rr.is_active
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
+
+@csrf_exempt
+@login_required
+def api_referencerange_delete(request, pk):
+    if request.method == 'POST':
+        try:
+            from .models import ParameterReferenceRange
+            rr = ParameterReferenceRange.objects.get(id=pk)
+            rr.delete()
+            return JsonResponse({'status': 'success', 'message': 'Reference Range deleted successfully.'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})

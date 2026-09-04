@@ -3,12 +3,28 @@ from .models import (
     Diagnosis, Investigation, Parameter, AgeGroup,
     InvestigationParameter,
     ParameterReferenceRange, PatientInvestigationOrder, PatientInvestigationResult,
-    ServiceRequest
+    ServiceRequest, LabDiagnosis
 )
 
 class DiagnosisForm(forms.ModelForm):
     class Meta:
         model = Diagnosis
+        fields = ['name', 'code', 'icd11_title', 'chapter', 'synonyms', 'source', 'icd_version', 'who_uri', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'code': forms.TextInput(attrs={'class': 'form-control'}),
+            'icd11_title': forms.TextInput(attrs={'class': 'form-control'}),
+            'chapter': forms.TextInput(attrs={'class': 'form-control'}),
+            'synonyms': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'source': forms.TextInput(attrs={'class': 'form-control'}),
+            'icd_version': forms.TextInput(attrs={'class': 'form-control'}),
+            'who_uri': forms.URLInput(attrs={'class': 'form-control'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+class LabDiagnosisForm(forms.ModelForm):
+    class Meta:
+        model = LabDiagnosis
         fields = ['name', 'code', 'icd11_title', 'chapter', 'synonyms', 'source', 'icd_version', 'who_uri', 'is_active']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),

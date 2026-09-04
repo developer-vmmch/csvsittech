@@ -84,19 +84,13 @@ ASGI_APPLICATION = 'vmmc_erp.asgi.application'
 # Database - PostgreSQL
 # ============================================================
 
-DATABASE_URL = os.getenv('DATABASE_URL')
-
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL is required")
-
-import dj_database_url
+import os
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=DATABASE_URL,
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 # Custom User Model
