@@ -22,6 +22,10 @@ def api_reference_ranges_grid_list(request):
         qs = qs.filter(investigation_parameter__investigation_id=inv_id)
     if ag_id:
         qs = qs.filter(age_group_id=ag_id)
+    else:
+        # Also include ranges with no age group if no filter is applied, or maybe don't filter at all if not provided.
+        pass
+
     if diagnosis_id:
         if diagnosis_id == 'generic':
             qs = qs.filter(diagnosis__isnull=True)
@@ -43,8 +47,8 @@ def api_reference_ranges_grid_list(request):
                 'diagnosis_id': r.diagnosis_id,
                 'diagnosis_name': r.diagnosis.name if r.diagnosis else 'Generic (No Diagnosis)',
                 'age_group_id': r.age_group_id,
-                'age_group_label': r.age_group.label,
-                'age_range': f"{r.age_group.min_age_value} {r.age_group.min_age_unit} - {r.age_group.max_age_value} {r.age_group.max_age_unit}",
+                'age_group_label': r.age_group.label if r.age_group else 'No Age Group',
+                'age_range': f"{r.age_group.min_age_value} {r.age_group.min_age_unit} - {r.age_group.max_age_value} {r.age_group.max_age_unit}" if r.age_group else 'N/A',
                 'investigation_id': r.investigation_parameter.investigation_id,
                 'investigation_name': r.investigation_parameter.investigation.name,
                 'gender': r.gender,
@@ -74,9 +78,12 @@ def api_reference_ranges_grid_detail(request):
     
     qs = ParameterReferenceRange.objects.filter(
         investigation_parameter__investigation_id=inv_id,
-        age_group_id=ag_id,
         gender=gender
     )
+    if ag_id and ag_id != 'null':
+        qs = qs.filter(age_group_id=ag_id)
+    else:
+        qs = qs.filter(age_group__isnull=True)
     if diagnosis_id and diagnosis_id != 'null':
         qs = qs.filter(diagnosis_id=diagnosis_id)
     else:
@@ -107,7 +114,7 @@ def api_reference_ranges_grid_save(request):
             gender = data.get('gender', 'All')
             parameters = data.get('parameters', [])
             
-            if not age_group_id or not investigation_id or not parameters:
+            if not investigation_id or not parameters:
                 return JsonResponse({'status': 'error', 'message': 'Missing required fields.'})
             
             # Save or Update each parameter
@@ -118,7 +125,7 @@ def api_reference_ranges_grid_save(request):
                     
                 obj, created = ParameterReferenceRange.objects.get_or_create(
                     investigation_parameter_id=ip_id,
-                    age_group_id=age_group_id,
+                    age_group_id=age_group_id if age_group_id else None,
                     diagnosis_id=diagnosis_id if diagnosis_id else None,
                     gender=gender,
                     defaults={'range_type': 'Numeric'}
@@ -161,9 +168,12 @@ def api_reference_ranges_grid_delete(request):
             
             qs = ParameterReferenceRange.objects.filter(
                 investigation_parameter__investigation_id=investigation_id,
-                age_group_id=age_group_id,
                 gender=gender
             )
+            if age_group_id and age_group_id != 'null':
+                qs = qs.filter(age_group_id=age_group_id)
+            else:
+                qs = qs.filter(age_group__isnull=True)
             if diagnosis_id and diagnosis_id != 'null':
                 qs = qs.filter(diagnosis_id=diagnosis_id)
             else:

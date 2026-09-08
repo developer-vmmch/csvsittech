@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import (
+    api_diagnosis_investigations,
     api_lab_diagnosis_save, api_lab_diagnosis_delete, api_investigation_delete, api_parameter_delete, api_agegroup_save, api_agegroup_delete,
     api_diagnosis_delete,
     DiagnosisListView, DiagnosisCreateView, DiagnosisUpdateView, api_diagnosis_save,
@@ -98,6 +99,7 @@ urlpatterns = [
     path('api/age-group/save/', api_agegroup_save, name='api_agegroup_save'),
     path('api/age-group/<int:pk>/delete/', api_agegroup_delete, name='api_agegroup_delete'),
     path('api/diagnosis/<int:pk>/delete/', api_diagnosis_delete, name='api_diagnosis_delete'),
+    path('api/diagnosis-investigations/', api_diagnosis_investigations, name='api_diagnosis_investigations'),
     path('api/diagnosis/import/template/', api_diagnosis_download_template, name='api_diagnosis_import_template'),
     path('api/diagnosis/import/preview/', api_diagnosis_preview, name='api_diagnosis_import_preview'),
     path('api/diagnosis/import/process/', api_diagnosis_import, name='api_diagnosis_import_process'),

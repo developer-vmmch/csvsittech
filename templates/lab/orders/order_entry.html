@@ -98,24 +98,33 @@
         
         const mapData = JSON.parse(document.getElementById('diagMap').textContent);
         
-        $('#diagnosisSelect').on('change', function() {
+        
+$('#diagnosisSelect').on('change', function() {
             const diagId = $(this).val();
-            const suggestions = mapData[diagId] || [];
+            const patientId = $('#patientId').val() || '';
             
             // Clear current selection
             $('.inv-checkbox').prop('checked', false);
             $('#suggestedInvestigations').hide();
             $('#suggestedChecks').empty();
             
-            if (suggestions.length > 0) {
-                let html = '';
-                suggestions.forEach(s => {
-                    $(`input[value="${s.id}"]`).prop('checked', true);
-                    html += `<span class="badge badge-green">${s.name}</span>`;
-                });
-                $('#suggestedChecks').html(html);
-                $('#suggestedInvestigations').show();
+            if (diagId) {
+                fetch(`/lab/api/diagnosis-investigations/?diag_id=${diagId}&patient_id=${patientId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success' && data.investigations.length > 0) {
+                            let html = '';
+                            data.investigations.forEach(s => {
+                                $(`input[value="${s.id}"]`).prop('checked', true);
+                                html += `<span class="badge badge-green" style="background:#86efac; color:#14532d; padding:0.2rem 0.5rem; border-radius:4px; font-size:0.85rem;">${s.name}</span>`;
+                            });
+                            $('#suggestedChecks').html(html);
+                            $('#suggestedInvestigations').show();
+                        }
+                    })
+                    .catch(error => console.error('Error fetching investigations:', error));
             }
+
         });
     });
 </script>

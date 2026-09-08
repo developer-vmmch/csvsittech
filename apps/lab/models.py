@@ -268,7 +268,7 @@ class ParameterReferenceRange(TimeStampedModel):
         NONE = 'None', 'No Reference Range'
 
     investigation_parameter = models.ForeignKey(InvestigationParameter, on_delete=models.CASCADE, related_name='reference_ranges')
-    age_group = models.ForeignKey(AgeGroup, on_delete=models.CASCADE, related_name='reference_ranges')
+    age_group = models.ForeignKey(AgeGroup, on_delete=models.CASCADE, null=True, blank=True, related_name='reference_ranges')
     diagnosis = models.ForeignKey(Diagnosis, on_delete=models.CASCADE, null=True, blank=True, related_name='reference_ranges', help_text="Null means generic range for this age group")
     gender = models.CharField(max_length=10, choices=GenderChoices.choices, default=GenderChoices.ALL)
     pregnancy = models.CharField(max_length=10, choices=PregnancyChoices.choices, default=PregnancyChoices.NO, verbose_name="Pregnancy")
@@ -476,7 +476,7 @@ class PatientVisitDiagnosis(TimeStampedModel):
 
 class DiagnosisInvestigationMap(TimeStampedModel):
     diagnosis = models.ForeignKey(Diagnosis, on_delete=models.CASCADE, related_name='investigation_mappings')
-    age_group = models.ForeignKey(AgeGroup, on_delete=models.CASCADE, related_name='investigation_mappings')
+    age_group = models.ForeignKey(AgeGroup, on_delete=models.CASCADE, related_name='investigation_mappings', null=True, blank=True)
     investigation = models.ForeignKey(Investigation, on_delete=models.CASCADE)
     is_default = models.BooleanField(default=False, verbose_name="Default Investigation")
     is_active = models.BooleanField(default=True, verbose_name="Active Status")
@@ -683,6 +683,11 @@ class AutomationDummyResult(TimeStampedModel):
     status = models.CharField(max_length=20, default='Saved')
     remarks = models.TextField(blank=True, null=True)
     is_automation_test = models.BooleanField(default=True)
+    # Synthetic patient context (stored directly, avoids polluting real Patient master)
+    patient_name = models.CharField(max_length=150, blank=True, null=True)
+    patient_dob = models.DateField(null=True, blank=True)
+    patient_gender = models.CharField(max_length=10, blank=True, null=True)
+    patient_age_display = models.CharField(max_length=50, blank=True, null=True)  # e.g. "3 days", "5 years"
 
     class Meta:
         ordering = ['-created_at']

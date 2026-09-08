@@ -721,15 +721,32 @@ class AgeGroupUpdateView(LoginRequiredMixin, GranularPermissionRequiredMixin, Up
 
 
 # --- Reference Range Grid ---
-class ReferenceRangeGridView(LoginRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
+class ReferenceRangeGridView(LoginRequiredMixin, GranularPermissionRequiredMixin, ListView):
     permission_required = 'lab_master.reference_range.view'
     template_name = 'lab/master/reference_range_grid.html'
+    model = ParameterReferenceRange
+    context_object_name = 'reference_ranges'
+    paginate_by = 20
+
+    def get_queryset(self):
+        qs = super().get_queryset().select_related('investigation_parameter', 'investigation_parameter__investigation', 'age_group').order_by('-id')
+        search = self.request.GET.get('search', '').strip()
+        if search:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(investigation_parameter__name__icontains=search) | 
+                Q(investigation_parameter__code__icontains=search) |
+                Q(reference_text__icontains=search) |
+                Q(age_group__label__icontains=search)
+            )
+        return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['reference_ranges'] = ParameterReferenceRange.objects.select_related('investigation_parameter', 'investigation_parameter__investigation', 'age_group').order_by('-id')
         context['parameters'] = InvestigationParameter.objects.select_related('investigation').filter(is_active=True).order_by('name')
+        context['investigations'] = Investigation.objects.filter(is_active=True)
         context['age_groups'] = AgeGroup.objects.filter(is_active=True).order_by('sort_order', 'label')
+        context['diagnoses'] = Diagnosis.objects.filter(is_active=True)
         return context
 
     def get(self, request, *args, **kwargs):
@@ -748,7 +765,7 @@ class ReferenceRangeGridView(LoginRequiredMixin, GranularPermissionRequiredMixin
         import io
         from .models import ParameterReferenceRange
 
-        queryset = ParameterReferenceRange.objects.all().select_related('investigation_parameter__investigation', 'age_group')
+        queryset = self.get_queryset()
         
         wb = Workbook(write_only=True)
         ws = wb.create_sheet('Template')
@@ -780,13 +797,6 @@ class ReferenceRangeGridView(LoginRequiredMixin, GranularPermissionRequiredMixin
         )
         response['Content-Disposition'] = 'attachment; filename="reference_range_export.xlsx"'
         return response
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['investigations'] = Investigation.objects.filter(is_active=True)
-        context['age_groups'] = AgeGroup.objects.filter(is_active=True).order_by('sort_order')
-        context['diagnoses'] = Diagnosis.objects.filter(is_active=True)
-        return context
 
 class InvestigationParameterMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, ListView):
     permission_required = 'lab_master.mapping.view'
@@ -1431,7 +1441,63 @@ class ResultEntryDetailView(LoginRequiredMixin, GranularPermissionRequiredMixin,
         context = super().get_context_data(**kwargs)
         order = get_object_or_404(PatientInvestigationOrder, id=kwargs.get('pk'))
         context['order'] = order
-        context['parameters'] = InvestigationParameter.objects.filter(investigation=order.investigation, is_active=True).select_related('parameter')
+        
+        patient = order.patient
+        patient_gender = patient.gender or 'All'
+        patient_age_days = (patient.age_years or 0) * 365 + (patient.age_months or 0) * 30 + (patient.age_days or 0)
+        
+        parameters = InvestigationParameter.objects.filter(investigation=order.investigation, is_active=True).select_related('parameter')
+        from .models import ParameterReferenceRange
+        
+        # Fetch reference range for display dynamically
+        for p in parameters:
+            ranges = list(ParameterReferenceRange.objects.filter(investigation_parameter=p, is_active=True).select_related('age_group'))
+            matched_ref = None
+            
+            # Try to find a precise match
+            for ref in ranges:
+                if ref.gender != 'All' and ref.gender != patient_gender:
+                    continue
+                
+                if ref.age_group:
+                    ag = ref.age_group
+                    min_days, max_days = 0, 999999
+                    
+                    if ag.min_age_unit == 'Years': min_days = (ag.min_age_value or 0) * 365
+                    elif ag.min_age_unit == 'Months': min_days = (ag.min_age_value or 0) * 30
+                    elif ag.min_age_unit == 'Weeks': min_days = (ag.min_age_value or 0) * 7
+                    elif ag.min_age_unit == 'Days': min_days = (ag.min_age_value or 0)
+                    
+                    if ag.max_age_unit == 'Years': max_days = (ag.max_age_value or 0) * 365
+                    elif ag.max_age_unit == 'Months': max_days = (ag.max_age_value or 0) * 30
+                    elif ag.max_age_unit == 'Weeks': max_days = (ag.max_age_value or 0) * 7
+                    elif ag.max_age_unit == 'Days': max_days = (ag.max_age_value or 0)
+                    
+                    if not (min_days <= patient_age_days <= max_days):
+                        continue
+                
+                # Special case for pregnancy (if the patient has it or if we don't know, we might just match the first we see)
+                matched_ref = ref
+                break
+                
+            if not matched_ref:
+                # Fallback to general range (age_group=None) if exact match fails
+                for ref in ranges:
+                    if not ref.age_group and (ref.gender == 'All' or ref.gender == patient_gender):
+                        matched_ref = ref
+                        break
+                
+            if matched_ref:
+                if matched_ref.reference_text:
+                    p.display_ref_range = matched_ref.reference_text
+                else:
+                    p.display_ref_range = f"{matched_ref.min_value} - {matched_ref.max_value}"
+                    if matched_ref.unit:
+                        p.display_ref_range += f" {matched_ref.unit}"
+            else:
+                p.display_ref_range = ''
+                
+        context['parameters'] = parameters
         return context
 
     def post(self, request, *args, **kwargs):
@@ -1629,8 +1695,65 @@ def api_search_diagnosis(request):
 @login_required
 @csrf_exempt
 def api_suggest_investigations(request):
-    # Mapping has been removed, so we return empty suggestions.
-    return JsonResponse({'status': 'success', 'investigations': [], 'message': 'No investigations mapped'})
+    if request.method == 'POST':
+        try:
+            import json
+            data = json.loads(request.body)
+            diagnosis_ids = data.get('diagnosis_ids', [])
+            patient_id = data.get('patient_id')
+            
+            if not diagnosis_ids:
+                return JsonResponse({'status': 'success', 'investigations': []})
+                
+            from apps.lab.models import DiagnosisInvestigationMap
+            mappings = DiagnosisInvestigationMap.objects.filter(diagnosis_id__in=diagnosis_ids, is_active=True).select_related('investigation', 'age_group')
+            
+            patient_age_days = 0
+            patient_gender = 'All'
+            if patient_id:
+                from apps.patients.models import Patient
+                try:
+                    p = Patient.objects.get(id=patient_id)
+                    patient_age_days = (getattr(p, 'age_years', 0) or 0) * 365 + (getattr(p, 'age_months', 0) or 0) * 30 + (getattr(p, 'age_days', 0) or 0)
+                    patient_gender = getattr(p, 'gender', 'All')
+                except Patient.DoesNotExist:
+                    pass
+                    
+            results = {}
+            for m in mappings:
+                inv = m.investigation
+                if m.age_group:
+                    ag = m.age_group
+                    # Check Gender
+                    if ag.gender != 'All' and ag.gender != patient_gender:
+                        continue
+                    
+                    # Check Age if patient exists
+                    if patient_id:
+                        multiplier = {'Days': 1, 'Months': 30, 'Years': 365, 'Weeks': 7}
+                        min_days = (ag.min_age_value or 0) * multiplier.get(ag.min_age_unit, 365)
+                        max_days = (ag.max_age_value or 150) * multiplier.get(ag.max_age_unit, 365)
+                        if not (min_days <= patient_age_days <= max_days):
+                            continue
+                            
+                results[inv.id] = {
+                    'id': inv.id,
+                    'name': inv.name,
+                    'code': getattr(inv, 'code', ''),
+                    'sample': getattr(inv.sample_type, 'name', 'Whole Blood') if hasattr(inv, 'sample_type') and inv.sample_type else 'Whole Blood'
+                }
+                
+            investigations = list(results.values())
+            response_data = {'status': 'success', 'investigations': investigations}
+            
+            if not investigations:
+                response_data['message'] = 'No investigations mapped'
+                
+            return JsonResponse(response_data)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+            
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
 
 
 def api_investigation_count(request):
@@ -2400,3 +2523,52 @@ def api_referencerange_delete(request, pk):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
+@csrf_exempt
+def api_diagnosis_investigations(request):
+    try:
+        diag_id = request.GET.get('diag_id')
+        patient_id = request.GET.get('patient_id')
+        
+        if not diag_id:
+            return JsonResponse({'status': 'success', 'investigations': []})
+            
+        from apps.lab.models import DiagnosisInvestigationMap
+        mappings = DiagnosisInvestigationMap.objects.filter(diagnosis_id=diag_id, is_active=True).select_related('investigation', 'age_group')
+        
+        patient_age_days = 0
+        patient_gender = 'All'
+        if patient_id:
+            from apps.patients.models import Patient
+            try:
+                p = Patient.objects.get(id=patient_id)
+                patient_age_days = (p.age_years or 0) * 365 + (p.age_months or 0) * 30 + (p.age_days or 0)
+                patient_gender = p.gender
+            except Patient.DoesNotExist:
+                pass
+                
+        results = {}
+        for m in mappings:
+            inv = m.investigation
+            if m.age_group:
+                ag = m.age_group
+                # Compare Gender
+                if ag.gender != 'All' and ag.gender != patient_gender:
+                    continue
+                # Compare Age
+                if patient_id:
+                    multiplier = {'Days': 1, 'Months': 30, 'Years': 365, 'Weeks': 7}
+                    min_days = (ag.min_age_value or 0) * multiplier.get(ag.min_age_unit, 365)
+                    max_days = (ag.max_age_value or 150) * multiplier.get(ag.max_age_unit, 365)
+                    if not (min_days <= patient_age_days <= max_days):
+                        continue
+                        
+            results[inv.id] = {
+                'id': inv.id,
+                'name': inv.name,
+                'short_name': getattr(inv, 'short_name', '')
+            }
+            
+        return JsonResponse({'status': 'success', 'investigations': list(results.values())})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})

@@ -35,6 +35,7 @@ from .models import (
 )
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Prefetch
+from django.db import transaction
 
 class AutoTriggerTimeSettingsView(LoginRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
     permission_required = 'auto_trigger.time_settings.view'
@@ -1862,6 +1863,40 @@ class AutoTriggerResultView(LoginRequiredMixin, MenuAccessRequiredMixin, Templat
         context['investigations'] = Investigation.objects.filter(id__in=inv_ids).order_by('name')
         return context
 
+def format_single_range(r):
+    if r.range_type == 'Numeric':
+        if r.min_value is None and r.max_value is None:
+            return r.reference_text or "-"
+        min_v = f"{r.min_value.normalize():f}" if r.min_value is not None else ""
+        max_v = f"{r.max_value.normalize():f}" if r.max_value is not None else ""
+        return f"{min_v}-{max_v}".strip("-")
+    elif r.range_type == 'Text':
+        return r.reference_text or "-"
+    return "-"
+
+def format_ranges_for_dummy(inv_param):
+    ranges = inv_param.reference_ranges.filter(is_active=True).order_by('age_group__min_age_value', 'gender')
+    if not ranges.exists():
+        return "-"
+    
+    if ranges.count() == 1:
+        r = ranges.first()
+        return format_single_range(r)
+        
+    lines = []
+    for r in ranges:
+        prefix = ""
+        if r.age_group:
+            prefix += f"{r.age_group.label}"
+        if r.gender and r.gender != 'All':
+            if not r.age_group or r.gender.lower() not in r.age_group.label.lower():
+                prefix += f" {r.gender}"
+        
+        prefix = f"{prefix.strip()}: " if prefix.strip() else ""
+        lines.append(f"{prefix}{format_single_range(r)}")
+        
+    return "<br>".join(lines)
+
 def api_get_investigation_parameters(request):
     try:
         inv_id = request.GET.get('investigation_id')
@@ -1873,11 +1908,19 @@ def api_get_investigation_parameters(request):
         
         data = []
         for p in params:
+            # 1. Resolve unit
+            unit_val = getattr(p, 'unit', None)
+            if not unit_val and p.parameter:
+                unit_val = getattr(p.parameter, 'default_unit', None)
+                
+            # 2. Resolve reference range
+            ref_str = format_ranges_for_dummy(p)
+            
             data.append({
                 'id': p.parameter.id if p.parameter else p.id,
                 'name': p.parameter.name if p.parameter else p.name,
-                'unit': (p.parameter.unit.name if getattr(p.parameter, 'unit', None) else '') if p.parameter else p.unit,
-                'reference_range': '', # Can be fetched from ParameterReferenceRange if needed, but simplifying for dummy
+                'unit': unit_val or '',
+                'reference_range': ref_str,
             })
             
         return JsonResponse({'success': True, 'data': data})
@@ -2016,7 +2059,11 @@ def api_get_dummy_results(request):
             'status': r.status,
             'param_count': len(params),
             'parameters': params,
-            'remarks': r.remarks
+            'remarks': r.remarks,
+            # Patient context
+            'patient_name': r.patient_name or '',
+            'patient_age': r.patient_age_display or '',
+            'patient_gender': r.patient_gender or '',
         })
         
     return JsonResponse({'success': True, 'groups': list(groups.values())})
