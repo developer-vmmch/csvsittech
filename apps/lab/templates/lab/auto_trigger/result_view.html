@@ -98,29 +98,17 @@
         transform: translateY(-1px);
     }
     .results-grid {
-        display: grid;
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-wrap: nowrap;
         gap: 16px;
+        overflow-x: auto;
+        padding-bottom: 12px; /* space for scrollbar */
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
     }
-    @media (min-width: 500px) {
-        .results-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-    @media (min-width: 700px) {
-        .results-grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-    @media (min-width: 900px) {
-        .results-grid {
-            grid-template-columns: repeat(4, 1fr);
-        }
-    }
-    @media (min-width: 1200px) {
-        .results-grid {
-            grid-template-columns: repeat(5, 1fr);
-        }
+    .result-card-wrapper {
+        flex: 0 0 auto;
+        width: 260px; /* fixed width for cards inside horizontal scroll */
     }
     .result-card {
         display: flex;
@@ -216,7 +204,7 @@
             </div>
             
             <div id="modalPatientInfo"></div>
-            <div class="modal-table-wrap" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+            <div class="modal-table-wrap" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: left;">
                     <thead>
                         <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
@@ -261,7 +249,7 @@
                 <strong style="color: #1e293b;">Result ID:</strong> <span id="editModalResultId" style="color: #0f172a; margin-left: 4px;"></span>
             </div>
             
-            <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+            <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: left;">
                     <thead>
                         <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
@@ -369,6 +357,7 @@
             
             group.results.forEach((r, rIndex) => {
                 groupHtml += `
+                    <div class="result-card-wrapper">
                     <div class="card result-card p-3 shadow-sm border-0" style="border: 1px solid #e2e8f0 !important; border-radius: 8px;">
                         <div class="flex-between mb-3" style="margin-bottom: 16px;">
                             <div class="d-flex align-items-center" style="display: flex; align-items: center;">
@@ -415,6 +404,7 @@
                                 <i class="bi bi-pencil"></i> Edit
                             </button>
                         </div>
+                    </div>
                     </div>
                 `;
             });

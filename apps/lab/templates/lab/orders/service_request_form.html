@@ -110,6 +110,15 @@
         grid-template-columns: 130px 10px 1fr;
         align-items: center;
     }
+    @media (max-width: 768px) {
+        .patient-details-grid {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+        .detail-group {
+            grid-template-columns: 100px 10px 1fr;
+        }
+    }
     .detail-label {
         font-size: 0.75rem;
         font-weight: 600;
@@ -145,6 +154,7 @@
         display: flex;
         gap: 1rem;
         align-items: center;
+        flex-wrap: wrap;
     }
     
     .btn-add {

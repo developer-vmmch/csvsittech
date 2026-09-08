@@ -16,11 +16,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', () => {
-            body.classList.toggle('sidebar-collapsed');
-            const isCollapsed = body.classList.contains('sidebar-collapsed');
-            localStorage.setItem('vmmc_sidebar_collapsed', isCollapsed);
+            if (window.innerWidth <= 992) {
+                body.classList.toggle('sidebar-open');
+                body.classList.remove('sidebar-collapsed');
+            } else {
+                body.classList.toggle('sidebar-collapsed');
+                body.classList.remove('sidebar-open');
+                const isCollapsed = body.classList.contains('sidebar-collapsed');
+                localStorage.setItem('vmmc_sidebar_collapsed', isCollapsed);
+            }
         });
     }
+
+    // Close sidebar on small screens when clicking outside
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 992 && body.classList.contains('sidebar-open')) {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar && !sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                body.classList.remove('sidebar-open');
+            }
+        }
+    });
 
     // Accordion Sub-Menu Toggle
     const submenuToggles = document.querySelectorAll('.submenu-toggle');
