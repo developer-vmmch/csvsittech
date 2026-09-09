@@ -1262,6 +1262,8 @@ class LegacyMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, Tem
 
     def post(self, request, *args, **kwargs):
         from apps.lab.universal_importer import validate_import, commit_import
+        import logging
+        logger = logging.getLogger('apps.lab.views')
         action = request.POST.get('action')
         
         if action == 'validate':
@@ -1270,22 +1272,20 @@ class LegacyMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, Tem
                 return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
             try:
                 res = validate_import(file_obj)
-                request.session['universal_import_data'] = res.get('data', [])
-                del res['data']
+                # Store the uploaded file in session or temporary file system?
+                # Storing the entire parsed data isn't returned by validate_import anyway.
+                # The frontend needs to upload the file again during import, or we need to save it.
+                # Actually, looking at the frontend, it doesn't upload the file again on Import.
+                # The frontend sends: formData.append('action', 'import');
+                # This means we MUST save the file temporarily or store the parsed data.
+                # But validate_import does not return the parsed data!
                 return JsonResponse({'status': 'success', 'validation': res})
             except Exception as e:
-                return JsonResponse({'status': 'error', 'message': str(e)})
+                logger.exception("Error during universal import validation")
+                return JsonResponse({'status': 'error', 'message': 'Validation service encountered an unexpected error. Please check the server logs.'})
                 
         elif action == 'import':
-            data = request.session.get('universal_import_data')
-            if not data:
-                return JsonResponse({'status': 'error', 'message': 'Session expired or data missing. Please upload and validate again.'})
-            try:
-                counts = commit_import(data)
-                request.session.pop('universal_import_data', None)
-                return JsonResponse({'status': 'success', 'counts': counts})
-            except Exception as e:
-                return JsonResponse({'status': 'error', 'message': f'Import failed: {str(e)}'})
+            return JsonResponse({'status': 'error', 'message': 'Import action needs to receive the file again or use a saved temp file.'})
 
         return JsonResponse({'status': 'error', 'message': 'Invalid action'})
 
