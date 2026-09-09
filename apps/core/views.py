@@ -9,6 +9,14 @@ from django.db.models import Count
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'dashboard/index.html'
 
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            return super().dispatch(request, *args, **kwargs)
+        except Exception as e:
+            import traceback
+            from django.http import HttpResponse
+            return HttpResponse(traceback.format_exc(), content_type='text/plain')
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_title'] = 'VMMC ERP Dashboard'
