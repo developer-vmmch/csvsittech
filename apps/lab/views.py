@@ -1262,30 +1262,83 @@ class LegacyMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, Tem
 
     def post(self, request, *args, **kwargs):
         from apps.lab.universal_importer import validate_import, commit_import
+        from django.conf import settings
+        from django.core.files.storage import FileSystemStorage
         import logging
+        import os
+        import time
+        import uuid
+        
         logger = logging.getLogger('apps.lab.views')
         action = request.POST.get('action')
         
+        # Use a secure temporary folder
+        temp_dir = os.path.join(settings.MEDIA_ROOT, 'temp_imports')
+        fs = FileSystemStorage(location=temp_dir)
+        
+        # Helper to clean up temp files older than 2 hours
+        def cleanup_old_files():
+            try:
+                if not os.path.exists(temp_dir):
+                    return
+                current_time = time.time()
+                for filename in os.listdir(temp_dir):
+                    file_path = os.path.join(temp_dir, filename)
+                    if os.path.isfile(file_path):
+                        if current_time - os.path.getmtime(file_path) > 7200:
+                            os.remove(file_path)
+            except Exception as e:
+                logger.error(f"Failed to cleanup temp imports: {e}")
+
         if action == 'validate':
             file_obj = request.FILES.get('file')
             if not file_obj:
                 return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
             try:
+                cleanup_old_files()
+                
+                # Perform read-only validation
                 res = validate_import(file_obj)
-                # Store the uploaded file in session or temporary file system?
-                # Storing the entire parsed data isn't returned by validate_import anyway.
-                # The frontend needs to upload the file again during import, or we need to save it.
-                # Actually, looking at the frontend, it doesn't upload the file again on Import.
-                # The frontend sends: formData.append('action', 'import');
-                # This means we MUST save the file temporarily or store the parsed data.
-                # But validate_import does not return the parsed data!
+                
+                # Store the uploaded file securely with a UUID
+                validation_id = str(uuid.uuid4())
+                safe_filename = f"{validation_id}.xlsx"
+                
+                # Rewind file pointer because validate_import already read it
+                file_obj.seek(0)
+                fs.save(safe_filename, file_obj)
+                
+                res['validation_id'] = validation_id
+                
                 return JsonResponse({'status': 'success', 'validation': res})
             except Exception as e:
                 logger.exception("Error during universal import validation")
                 return JsonResponse({'status': 'error', 'message': 'Validation service encountered an unexpected error. Please check the server logs.'})
                 
         elif action == 'import':
-            return JsonResponse({'status': 'error', 'message': 'Import action needs to receive the file again or use a saved temp file.'})
+            validation_id = request.POST.get('validation_id')
+            if not validation_id:
+                return JsonResponse({'status': 'error', 'message': 'No validation token provided. Please validate again.'})
+                
+            safe_filename = f"{validation_id}.xlsx"
+            if not fs.exists(safe_filename):
+                return JsonResponse({'status': 'error', 'message': 'Import session expired or the uploaded workbook is no longer available. Please upload the workbook again.'})
+                
+            file_path = fs.path(safe_filename)
+            try:
+                with open(file_path, 'rb') as f:
+                    counts = commit_import(f)
+                
+                # Cleanup after successful import
+                try:
+                    fs.delete(safe_filename)
+                except Exception as cleanup_err:
+                    logger.warning(f"Failed to delete temp file {safe_filename}: {cleanup_err}")
+                    
+                return JsonResponse({'status': 'success', 'counts': counts})
+            except Exception as e:
+                logger.exception("Error during universal import commit")
+                return JsonResponse({'status': 'error', 'message': f'Import failed: {str(e)}'})
 
         return JsonResponse({'status': 'error', 'message': 'Invalid action'})
 

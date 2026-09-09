@@ -104,6 +104,7 @@
 
 <script>
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    let currentValidationId = null;
     
     document.getElementById('btnValidate').addEventListener('click', async () => {
         const fileInput = document.getElementById('importFile');
@@ -129,6 +130,7 @@
             const data = await response.json();
             
             if (data.status === 'success') {
+                currentValidationId = data.validation.validation_id;
                 showPreview(data.validation);
             } else {
                 alert(data.message || 'Validation failed');
@@ -145,12 +147,18 @@
     document.getElementById('btnImport').addEventListener('click', async () => {
         if (!confirm('Are you sure you want to import this data? This cannot be undone.')) return;
 
+        if (!currentValidationId) {
+            alert("No active validation found. Please validate the file again.");
+            return;
+        }
+
         const btn = document.getElementById('btnImport');
         btn.innerHTML = '<i class="spinner-border spinner-border-sm"></i> Importing...';
         btn.disabled = true;
 
         const formData = new FormData();
         formData.append('action', 'import');
+        formData.append('validation_id', currentValidationId);
 
         try {
             const response = await fetch('{% url "lab:legacy_mapping" %}', {
@@ -161,6 +169,7 @@
             const data = await response.json();
             
             if (data.status === 'success') {
+                currentValidationId = null; // Clear token on success
                 showResult(data.counts);
             } else {
                 alert(data.message || 'Import failed');
