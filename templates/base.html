@@ -38,19 +38,23 @@
       .has-submenu.open .submenu-list { display: flex !important; }
       .submenu-list { display: none; flex-direction: column; }
       
-      /* Collapsed Sidebar Rules */
-      #mainSidebar.lg\:w-20 .brand-name,
-      #mainSidebar.lg\:w-20 .nav-section-title,
-      #mainSidebar.lg\:w-20 .nav-item a span,
-      #mainSidebar.lg\:w-20 .submenu-chevron {
+      /* Collapsed Sidebar Rules for desktop (lg:w-20 class added by JS) */
+      #mainSidebar.sidebar-collapsed .brand-name,
+      #mainSidebar.sidebar-collapsed .nav-section-title,
+      #mainSidebar.sidebar-collapsed .nav-item a span,
+      #mainSidebar.sidebar-collapsed .submenu-chevron {
           display: none !important;
       }
-      #mainSidebar.lg\:w-20 .nav-item a {
+      #mainSidebar.sidebar-collapsed .nav-item a {
           justify-content: center;
           padding-left: 0; padding-right: 0;
       }
-      #mainSidebar.lg\:w-20 .brand-logo-container {
+      #mainSidebar.sidebar-collapsed .brand-logo-container {
           margin: 0 auto;
+      }
+      /* Sidebar width when collapsed on desktop */
+      #mainSidebar.sidebar-collapsed {
+          width: 72px !important;
       }
     </style>
     
@@ -415,8 +419,16 @@
         <header class="bg-white border-b border-slate-200 px-3 sm:px-4 py-3 flex items-center gap-2 flex-shrink-0 z-30 shadow-sm min-w-0 overflow-hidden">
             <!-- Left: hamburger + page title -->
             <div class="flex items-center gap-2 min-w-0 flex-1">
-                <button id="sidebarToggle" class="lg:hidden flex-shrink-0 p-2 -ml-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors" title="Toggle Sidebar" aria-label="Open navigation menu">
-                    <i class="bi bi-list text-2xl"></i>
+                <!-- Sidebar Toggle: always visible. Mobile = drawer open/close. Desktop = collapse/expand. -->
+                <button
+                    id="sidebarToggle"
+                    type="button"
+                    class="flex-shrink-0 p-2 -ml-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100 active:bg-slate-200 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    title="Toggle Sidebar"
+                    aria-label="Toggle sidebar"
+                    aria-expanded="false"
+                >
+                    <i class="bi bi-list text-2xl leading-none"></i>
                 </button>
                 <h1 class="text-base sm:text-lg lg:text-xl font-bold text-slate-800 truncate min-w-0">{% block page_heading %}Dashboard{% endblock %}</h1>
             </div>

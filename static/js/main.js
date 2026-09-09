@@ -9,46 +9,78 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.getElementById('mainSidebar');
     const backdrop = document.getElementById('mobileSidebarBackdrop');
 
-    // Load saved sidebar state for desktop
-    const savedState = localStorage.getItem('vmmc_sidebar_collapsed');
-    if (savedState === 'true' && sidebar && window.innerWidth >= 1024) {
-        sidebar.classList.remove('lg:w-64');
-        sidebar.classList.add('lg:w-20');
+    // -------------------------------------------------------
+    // DESKTOP COLLAPSE: uses 'sidebar-collapsed' class on sidebar
+    // MOBILE DRAWER:    uses '-translate-x-full' class on sidebar
+    // -------------------------------------------------------
+
+    // Restore saved desktop collapse state
+    const savedCollapsed = localStorage.getItem('vmmc_sidebar_collapsed') === 'true';
+    if (savedCollapsed && sidebar && window.innerWidth >= 1024) {
+        sidebar.classList.add('sidebar-collapsed');
+        if (sidebarToggle) sidebarToggle.setAttribute('aria-expanded', 'false');
+    } else if (!savedCollapsed && sidebarToggle) {
+        sidebarToggle.setAttribute('aria-expanded', 'true');
     }
 
+    // Toggle handler
     if (sidebarToggle && sidebar) {
         sidebarToggle.addEventListener('click', () => {
             if (window.innerWidth < 1024) {
-                // Mobile/tablet toggle — slide in/out as drawer
+                // ---- MOBILE / TABLET: drawer open/close ----
                 const isHidden = sidebar.classList.contains('-translate-x-full');
                 sidebar.classList.toggle('-translate-x-full');
-                if (backdrop) backdrop.classList.toggle('hidden');
-                // Body lock to prevent background scroll when overlay open
+                if (backdrop) backdrop.classList.toggle('hidden', !isHidden);
+                sidebarToggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
                 document.body.classList.toggle('sidebar-overlay-open', isHidden);
             } else {
-                // Desktop collapse toggle
-                sidebar.classList.toggle('lg:w-64');
-                sidebar.classList.toggle('lg:w-20');
-                const isCollapsed = sidebar.classList.contains('lg:w-20');
+                // ---- DESKTOP: collapse/expand ----
+                const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
                 localStorage.setItem('vmmc_sidebar_collapsed', isCollapsed);
+                sidebarToggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
             }
         });
     }
 
-    // Close sidebar on small screens when clicking backdrop
+    // Close mobile drawer when backdrop is clicked
     if (backdrop) {
         backdrop.addEventListener('click', () => {
             sidebar.classList.add('-translate-x-full');
             backdrop.classList.add('hidden');
             document.body.classList.remove('sidebar-overlay-open');
+            if (sidebarToggle) sidebarToggle.setAttribute('aria-expanded', 'false');
         });
     }
 
-    // On resize to desktop, clear body lock and reset overlay state
+    // Close mobile drawer on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && window.innerWidth < 1024) {
+            if (sidebar && !sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.add('-translate-x-full');
+                if (backdrop) backdrop.classList.add('hidden');
+                document.body.classList.remove('sidebar-overlay-open');
+                if (sidebarToggle) {
+                    sidebarToggle.setAttribute('aria-expanded', 'false');
+                    sidebarToggle.focus();
+                }
+            }
+        }
+    });
+
+    // On resize from mobile to desktop: reset mobile overlay state cleanly
     window.addEventListener('resize', () => {
         if (window.innerWidth >= 1024) {
             document.body.classList.remove('sidebar-overlay-open');
             if (backdrop) backdrop.classList.add('hidden');
+            // Remove mobile translate class so sidebar is visible on desktop
+            if (sidebar) sidebar.classList.remove('-translate-x-full');
+        } else {
+            // On resize to mobile, remove desktop collapse and ensure correct state
+            if (sidebar) sidebar.classList.remove('sidebar-collapsed');
+            // Ensure sidebar is hidden on mobile (drawer closed by default)
+            if (sidebar && !document.body.classList.contains('sidebar-overlay-open')) {
+                sidebar.classList.add('-translate-x-full');
+            }
         }
     });
 

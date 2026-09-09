@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
     /* Main Crisp Light Theme Backgrounds */
@@ -59,6 +59,47 @@ body {
 /* Keeping some specific custom styles for inner elements */
 
 /* Brand styles removed (Handled by Tailwind) */
+
+/* ---- SIDEBAR COLLAPSE (Desktop) ---- */
+/* JS adds/removes 'sidebar-collapsed' on #mainSidebar at lg+ widths */
+#mainSidebar {
+    transition: width 0.25s ease, transform 0.3s ease;
+    /* Default collapsed state guard */
+    overflow: hidden;
+}
+
+/* When sidebar is collapsed on desktop */
+#mainSidebar.sidebar-collapsed {
+    width: 72px !important;
+}
+
+/* Hide text labels when collapsed */
+#mainSidebar.sidebar-collapsed .brand-name,
+#mainSidebar.sidebar-collapsed .nav-section-title,
+#mainSidebar.sidebar-collapsed .nav-item > a > span,
+#mainSidebar.sidebar-collapsed .submenu-chevron,
+#mainSidebar.sidebar-collapsed .submenu-list {
+    display: none !important;
+    opacity: 0;
+}
+
+/* Center nav icons when collapsed */
+#mainSidebar.sidebar-collapsed .nav-item > a {
+    justify-content: center !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    gap: 0 !important;
+}
+
+/* Center brand logo when collapsed */
+#mainSidebar.sidebar-collapsed > div:first-child {
+    justify-content: center !important;
+    gap: 0 !important;
+}
+#mainSidebar.sidebar-collapsed > div:first-child > span {
+    display: none !important;
+}
+
 
 .nav-list {
     list-style: none;
