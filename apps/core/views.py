@@ -11,7 +11,10 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
     def dispatch(self, request, *args, **kwargs):
         try:
-            return super().dispatch(request, *args, **kwargs)
+            response = super().dispatch(request, *args, **kwargs)
+            if hasattr(response, 'render'):
+                response.render()
+            return response
         except Exception as e:
             import traceback
             from django.http import HttpResponse
