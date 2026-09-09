@@ -97,7 +97,7 @@ AUTH_USER_MODEL = 'users.User'
 
 # Authentication URLs
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'patients:list'
+LOGIN_REDIRECT_URL = 'core:dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
 # Password validation

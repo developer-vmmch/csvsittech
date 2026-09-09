@@ -102,13 +102,18 @@
         flex-wrap: nowrap;
         gap: 16px;
         overflow-x: auto;
-        padding-bottom: 12px; /* space for scrollbar */
+        padding-bottom: 8px; /* space for focus/shadows */
         scroll-behavior: smooth;
         -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
+    }
+    .results-grid::-webkit-scrollbar {
+        display: none; /* Chrome, Safari and Opera */
     }
     .result-card-wrapper {
         flex: 0 0 auto;
-        width: 260px; /* fixed width for cards inside horizontal scroll */
+        width: 240px; /* fixed width for cards inside horizontal scroll */
     }
     .result-card {
         display: flex;
@@ -125,10 +130,20 @@
 {% endblock %}
 
 {% block page_heading %}
-<span style="display: flex; flex-direction: column; line-height: 1.2; margin: 0; padding: 0;">
-    <span style="font-size: 1.1rem; font-weight: 600; color: #1e293b;">Result View</span>
-    <span style="font-size: 0.75rem; color: #64748b; font-weight: 400; text-transform: none; letter-spacing: 0; margin-top: 2px;">View saved dummy investigation results</span>
-</span>
+<div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 1rem; flex-wrap: wrap;">
+    <span style="display: flex; flex-direction: column; line-height: 1.2; margin: 0; padding: 0;">
+        <span style="font-size: 1.1rem; font-weight: 600; color: #1e293b;">Result View</span>
+        <span style="font-size: 0.75rem; color: #64748b; font-weight: 400; text-transform: none; letter-spacing: 0; margin-top: 2px;">View saved dummy investigation results</span>
+    </span>
+    <span style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <button class="btn" style="background-color: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; font-weight: 600; border-radius: 6px; padding: 0.4rem 0.9rem; font-size: 0.875rem; white-space: nowrap;" onclick="openImportModal()">
+            <i class="bi bi-cloud-arrow-up"></i> Import Results
+        </button>
+        <button class="btn" style="background-color: #dcfce7; color: #166534; font-weight: 600; border: 1px solid #bbf7d0; border-radius: 6px; padding: 0.4rem 0.9rem; font-size: 0.875rem; white-space: nowrap;" onclick="openExportModal()">
+            <i class="bi bi-file-earmark-excel"></i> Export Results
+        </button>
+    </span>
+</div>
 {% endblock %}
 
 {% block content %}
@@ -183,6 +198,184 @@
         </div>
     </div>
 </div>
+
+
+<!-- Export Modal -->
+<div id="exportModalOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(15, 23, 42, 0.6); z-index: 1040; justify-content: center; align-items: center; backdrop-filter: blur(2px);">
+    <div style="background-color: #ffffff; border-radius: 10px; width: 90%; max-width: 500px; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div style="padding: 20px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+            <h5 style="color: #1e40af; font-weight: 700; font-size: 16px; margin: 0;">EXPORT RESULTS</h5>
+            <button type="button" style="background: none; border: none; font-size: 28px; line-height: 1; cursor: pointer; color: #64748b;" onclick="closeExportModal()">&times;</button>
+        </div>
+        <div style="padding: 24px;">
+            <div class="mb-3">
+                <label class="form-label text-muted small fw-bold mb-1">Investigation</label>
+                <select id="exportInvestigation" class="form-select border-secondary-subtle">
+                    <option value="all">All Investigations</option>
+                    {% for inv in investigations %}
+                        <option value="{{ inv.id }}">{% if inv.short_name and inv.short_name != inv.name %}{{ inv.short_name }} - {% endif %}{{ inv.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="row mb-3">
+                <div class="col-6">
+                    <label class="form-label text-muted small fw-bold mb-1">Date From</label>
+                    <input type="date" id="exportDateFrom" class="form-control border-secondary-subtle">
+                </div>
+                <div class="col-6">
+                    <label class="form-label text-muted small fw-bold mb-1">Date To</label>
+                    <input type="date" id="exportDateTo" class="form-control border-secondary-subtle">
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label text-muted small fw-bold mb-2">Export Scope</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="exportScope" id="exportScopeCurrent" value="current" checked>
+                    <label class="form-check-label" for="exportScopeCurrent">Current Filtered Results</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="exportScope" id="exportScopeAll" value="all">
+                    <label class="form-check-label" for="exportScopeAll">All Results</label>
+                </div>
+            </div>
+        </div>
+        <div style="padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; background-color: #f8fafc; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
+            <button type="button" class="btn btn-light border" onclick="closeExportModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" style="background-color: #0d9488; border: none;" onclick="processExport()">EXPORT EXCEL</button>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal (multi-step) -->
+<div id="importModalOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(15, 23, 42, 0.6); z-index: 1040; justify-content: center; align-items: center; backdrop-filter: blur(2px);">
+    <div style="background-color: #ffffff; border-radius: 10px; width: 90%; max-width: 640px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 40px -8px rgba(0,0,0,0.18);">
+
+        <!-- Modal header -->
+        <div style="padding: 18px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; background: #eff6ff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-cloud-arrow-up" style="color: #1e40af; font-size: 1.1rem;"></i>
+                </div>
+                <div>
+                    <h5 id="importModalTitle" style="color: #0f172a; font-weight: 700; font-size: 15px; margin: 0;">Import Results</h5>
+                    <span id="importModalSubtitle" style="color: #64748b; font-size: 12px;">Upload a .xlsx file to import result records</span>
+                </div>
+            </div>
+            <button type="button" style="background: none; border: none; font-size: 26px; line-height: 1; cursor: pointer; color: #94a3b8; transition: color 0.15s;" onmouseover="this.style.color='#0f172a'" onmouseout="this.style.color='#94a3b8'" onclick="closeImportModal()">&times;</button>
+        </div>
+
+        <!-- Step 1: Upload -->
+        <div style="padding: 24px; overflow-y: auto;" id="importStepUpload">
+            <div style="border: 2px dashed #bfdbfe; border-radius: 10px; padding: 32px 24px; text-align: center; background: #f8faff; margin-bottom: 20px;" id="importDropZone">
+                <i class="bi bi-file-earmark-spreadsheet" style="font-size: 2.5rem; color: #93c5fd; display: block; margin-bottom: 8px;"></i>
+                <div style="font-weight: 600; color: #1e3a8a; margin-bottom: 4px;">Drop your Excel file here</div>
+                <div style="color: #64748b; font-size: 13px; margin-bottom: 16px;">or</div>
+                <label for="importFile" class="btn" style="background: #1e40af; color: #fff; border-radius: 6px; padding: 7px 20px; font-weight: 600; cursor: pointer; font-size: 14px;">
+                    <i class="bi bi-folder2-open"></i> Browse File
+                </label>
+                <input type="file" id="importFile" accept=".xlsx,.xls" style="display: none;" onchange="handleFileSelected(this)">
+            </div>
+            <div id="importFileInfo" style="display: none; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="bi bi-file-earmark-excel" style="color: #166534; font-size: 1.4rem;"></i>
+                <div style="flex: 1; min-width: 0;">
+                    <div id="importFileName" style="font-weight: 600; color: #0f172a; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+                    <div id="importFileSize" style="color: #64748b; font-size: 12px;"></div>
+                </div>
+                <button onclick="clearFileSelection()" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 18px; line-height: 1;">&times;</button>
+            </div>
+            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px 14px; font-size: 13px; color: #1e40af; margin-bottom: 20px;">
+                <i class="bi bi-info-circle"></i> <strong>Result Import Template:</strong> 
+                <a href="{% url 'lab:api_result_import_export' %}?template=true" style="color: #1d4ed8; font-weight: 600;">Download blank template</a>
+                &nbsp;&mdash; Only result data, no patient demographics.
+            </div>
+            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #475569; margin-bottom: 20px;">
+                <div style="font-weight: 600; color: #0f172a; margin-bottom: 6px;">Import rules:</div>
+                <ul style="margin: 0; padding-left: 18px; line-height: 1.8;">
+                    <li>Existing results are identified by <strong>Result ID</strong> and updated safely.</li>
+                    <li>New rows create new result records.</li>
+                    <li>Master data (investigations, parameters) must already exist.</li>
+                    <li>Patient information is <strong>never required or imported</strong>.</li>
+                    <li>Import uses a database transaction — any error rolls back all changes.</li>
+                </ul>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-light border" style="font-weight: 600; border-radius: 6px;" onclick="closeImportModal()">Cancel</button>
+                <button type="button" class="btn" id="btnValidate" style="background: #1e40af; color: #fff; font-weight: 600; border-radius: 6px; padding: 7px 22px;" onclick="validateImport()">
+                    <i class="bi bi-check2-circle"></i> Validate
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Validation Preview -->
+        <div style="padding: 24px; overflow-y: auto; display: none;" id="importStepPreview">
+            <div style="margin-bottom: 18px;">
+                <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">File</div>
+                <div id="prevFileName" style="font-weight: 600; color: #0f172a; font-size: 14px;"></div>
+            </div>
+            <!-- Summary stats -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 20px;" id="importSummaryGrid"></div>
+            <!-- Row preview table (valid) -->
+            <div id="validRowsSection" style="display: none; margin-bottom: 16px;">
+                <div style="font-weight: 600; color: #166534; font-size: 13px; margin-bottom: 8px;"><i class="bi bi-check-circle"></i> Valid Rows Preview</div>
+                <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: auto; max-height: 180px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead style="background: #f8fafc; position: sticky; top: 0;">
+                            <tr>
+                                <th style="padding: 8px 12px; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0;">Row</th>
+                                <th style="padding: 8px 12px; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0;">Investigation</th>
+                                <th style="padding: 8px 12px; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0;">Parameter</th>
+                                <th style="padding: 8px 12px; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="validRowsTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Error rows -->
+            <div id="errorRowsSection" style="display: none; margin-bottom: 16px;">
+                <div style="font-weight: 600; color: #dc2626; font-size: 13px; margin-bottom: 8px;"><i class="bi bi-exclamation-triangle"></i> Blocking Errors</div>
+                <div style="border: 1px solid #fecaca; border-radius: 8px; overflow: auto; max-height: 180px; background: #fff;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead style="background: #fef2f2; position: sticky; top: 0;">
+                            <tr>
+                                <th style="padding: 8px 12px; font-weight: 600; color: #7f1d1d; border-bottom: 1px solid #fecaca;">Row</th>
+                                <th style="padding: 8px 12px; font-weight: 600; color: #7f1d1d; border-bottom: 1px solid #fecaca;">Field</th>
+                                <th style="padding: 8px 12px; font-weight: 600; color: #7f1d1d; border-bottom: 1px solid #fecaca;">Value</th>
+                                <th style="padding: 8px 12px; font-weight: 600; color: #7f1d1d; border-bottom: 1px solid #fecaca;">Error</th>
+                            </tr>
+                        </thead>
+                        <tbody id="errorRowsTbody"></tbody>
+                    </table>
+                </div>
+                <div style="margin-top: 8px;">
+                    <button class="btn" style="background:#f1f5f9; color:#1e293b; border:1px solid #cbd5e1; font-weight:600; border-radius:6px; padding:5px 14px; font-size:13px;" onclick="downloadErrorReport()">
+                        <i class="bi bi-download"></i> Download Error Report
+                    </button>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
+                <button type="button" class="btn btn-light border" style="font-weight: 600; border-radius: 6px;" onclick="resetImport()"><i class="bi bi-arrow-left"></i> Back</button>
+                <button type="button" class="btn" id="btnProcessImport" style="background: #0d9488; color: #fff; font-weight: 600; border-radius: 6px; padding: 7px 22px;" onclick="processImport()">
+                    <i class="bi bi-cloud-upload"></i> Import &amp; Apply
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Result -->
+        <div style="padding: 36px 24px; overflow-y: auto; display: none; text-align: center;" id="importStepResult">
+            <div id="importResultIcon" style="font-size: 3rem; margin-bottom: 12px;"></div>
+            <h5 id="importResultTitle" style="font-weight: 700; font-size: 18px; margin-bottom: 8px;"></h5>
+            <div id="importResultMsg" style="color: #475569; font-size: 14px; margin-bottom: 24px;"></div>
+            <div id="importResultCounts" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 24px; text-align: left;"></div>
+            <div style="display: flex; justify-content: center; gap: 10px;">
+                <button class="btn btn-light border" style="font-weight: 600; border-radius: 6px;" onclick="closeImportModal()">Close</button>
+                <button class="btn" id="importResultRetryBtn" style="display:none; background:#1e40af; color:#fff; font-weight:600; border-radius:6px; padding:7px 22px;" onclick="resetImport()"><i class="bi bi-arrow-clockwise"></i> Try Again</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
 
 <!-- View Result Modal -->
 <!-- View Result Modal (Custom implementation avoiding missing CSS) -->
@@ -344,22 +537,42 @@
             
             let groupHtml = `
                 <div class="mb-5 border-bottom pb-4">
-                    <div class="d-flex align-items-center justify-content-between mb-3 group-header border-0 pb-0" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="toggleGroup(${gIndex})" data-bs-toggle="collapse" data-bs-target="#group-${gIndex}">
+                    <div class="d-flex align-items-center justify-content-between mb-3 group-header border-0 pb-0" style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="d-flex align-items-center" style="display: flex; align-items: center;">
                             <span class="me-2 text-uppercase" style="color: #1e3a8a; margin-right: 8px;">${group.name}</span>
                             <span class="count-badge" style="color: ${countColor}; background-color: ${countBg};">${group.results.length} Results</span>
                         </div>
-                        <i class="bi bi-chevron-up" id="icon-group-${gIndex}" style="color: #64748b; font-weight: bold;"></i>
+                        <div class="d-flex gap-2">
+                            <button type="button" id="btn-prev-${gIndex}" class="btn btn-sm btn-light border px-3" onclick="scrollGrid('grid-${gIndex}', -1)" disabled>&lt;</button>
+                            <button type="button" id="btn-next-${gIndex}" class="btn btn-sm btn-light border px-3" onclick="scrollGrid('grid-${gIndex}', 1)">&gt;</button>
+                        </div>
                     </div>
-                    <div class="collapse show" id="group-${gIndex}">
-                        <div class="results-grid">
+                    <div>
+                        <div class="results-grid" id="grid-${gIndex}" onscroll="updateScrollButtons('grid-${gIndex}', 'btn-prev-${gIndex}', 'btn-next-${gIndex}')">
             `;
             
             group.results.forEach((r, rIndex) => {
+                let firstParam = r.parameters && r.parameters.length > 0 ? r.parameters[0] : {value: '-', unit: '-', reference_range: '-'};
+                
+                let valColor = '#0f172a';
+                let rangeStr = firstParam.reference_range || '-';
+                if (rangeStr !== '-' && rangeStr.includes('-') && firstParam.value && !isNaN(parseFloat(firstParam.value))) {
+                    const parts = rangeStr.split('-');
+                    if (parts.length === 2) {
+                        const lo = parseFloat(parts[0]), hi = parseFloat(parts[1]);
+                        const val = parseFloat(firstParam.value);
+                        if (!isNaN(lo) && !isNaN(hi)) {
+                            if (val < lo || val > hi) {
+                                valColor = '#dc2626';
+                            }
+                        }
+                    }
+                }
+
                 groupHtml += `
                     <div class="result-card-wrapper">
-                    <div class="card result-card p-3 shadow-sm border-0" style="border: 1px solid #e2e8f0 !important; border-radius: 8px;">
-                        <div class="flex-between mb-3" style="margin-bottom: 16px;">
+                    <div class="card result-card p-3 shadow-sm border-0" style="border: 1px solid #e2e8f0 !important; border-radius: 8px; display: flex; flex-direction: column; height: 100%;">
+                        <div class="flex-between mb-3" style="margin-bottom: 24px;">
                             <div class="d-flex align-items-center" style="display: flex; align-items: center;">
                                 <div class="icon-box me-2" style="background-color: ${iconBg}; color: ${iconColor}; margin-right: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">
                                     <i class="bi bi-capsule"></i>
@@ -369,30 +582,18 @@
                             <span class="status-badge" style="background-color: #dcfce7; color: #166534; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;">${r.status || 'Saved'}</span>
                         </div>
                         
-                        <h6 class="fw-bold text-dark mb-2" style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">${r.dummy_name}</h6>
-                        
-                        ${r.patient_name ? `
-                        <div style="background:#f8fafc; border-radius:6px; padding:8px 10px; margin-bottom:10px; border:1px solid #e2e8f0;">
-                            <div style="font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">PATIENT</div>
-                            <div style="font-size:13px; color:#0f172a; font-weight:600;">${r.patient_name}</div>
-                            <div style="display:flex; gap:12px; margin-top:4px;">
-                                ${r.patient_age ? `<span style="font-size:11px; background:#e0e7ff; color:#3730a3; padding:2px 7px; border-radius:10px;">Age: ${r.patient_age}</span>` : ''}
-                                ${r.patient_gender ? `<span style="font-size:11px; background:#fce7f3; color:#9d174d; padding:2px 7px; border-radius:10px;">${r.patient_gender}</span>` : ''}
+                        <div class="mb-3" style="flex-grow: 1;">
+                            <div style="margin-bottom: 12px;">
+                                <div style="color: #64748b; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Result</div>
+                                <div style="font-size: 16px; font-weight: 700; color: ${valColor};">${firstParam.value || '-'}</div>
                             </div>
-                        </div>` : ''}
-                        
-                        <div class="mb-3" style="flex-grow: 1; margin-bottom: 16px;">
-                            <div class="flex-between mb-1" style="justify-content: flex-start; margin-bottom: 4px;">
-                                <span class="result-key" style="width: 80px; color: #64748b; font-size: 12px; font-weight: 600;">Result ID</span>
-                                <span class="result-val fw-bold" style="font-size: 13px; font-weight: 600;">: ${r.result_id}</span>
+                            <div style="margin-bottom: 12px;">
+                                <div style="color: #64748b; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Unit</div>
+                                <div style="font-size: 14px; color: #475569;">${firstParam.unit || '-'}</div>
                             </div>
-                            <div class="flex-between mb-1" style="justify-content: flex-start; margin-bottom: 4px;">
-                                <span class="result-key" style="width: 80px; color: #64748b; font-size: 12px; font-weight: 600;">Created On</span>
-                                <span class="result-val" style="font-size: 13px;">: ${r.created_on}</span>
-                            </div>
-                            <div class="flex-between" style="justify-content: flex-start;">
-                                <span class="result-key" style="width: 80px; color: #64748b; font-size: 12px; font-weight: 600;">Parameters</span>
-                                <span class="result-val" style="font-size: 13px;">: ${r.param_count || r.parameters.length}</span>
+                            <div>
+                                <div style="color: #64748b; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Reference Range</div>
+                                <div style="font-size: 14px; color: #475569;">${rangeStr}</div>
                             </div>
                         </div>
                         
@@ -411,6 +612,11 @@
             
             groupHtml += `</div></div></div>`;
             container.innerHTML += groupHtml;
+            
+            // Check initial scroll bounds after a slight delay to allow DOM render
+            setTimeout(() => {
+                updateScrollButtons('grid-${gIndex}', 'btn-prev-${gIndex}', 'btn-next-${gIndex}');
+            }, 50);
         });
         
         const pagContainer = document.getElementById('paginationContainer');
@@ -422,14 +628,22 @@
         }
     }
     
-    window.toggleGroup = function(index) {
-        let icon = document.getElementById(`icon-group-${index}`);
-        if(icon.classList.contains('bi-chevron-up')) {
-            icon.classList.remove('bi-chevron-up');
-            icon.classList.add('bi-chevron-down');
-        } else {
-            icon.classList.remove('bi-chevron-down');
-            icon.classList.add('bi-chevron-up');
+    function scrollGrid(gridId, direction) {
+        const grid = document.getElementById(gridId);
+        if (grid) {
+            const scrollAmount = 240 + 16;
+            grid.scrollBy({ left: direction * scrollAmount * 3, behavior: 'smooth' });
+        }
+    }
+
+    function updateScrollButtons(gridId, leftBtnId, rightBtnId) {
+        const grid = document.getElementById(gridId);
+        const leftBtn = document.getElementById(leftBtnId);
+        const rightBtn = document.getElementById(rightBtnId);
+        if (grid && leftBtn && rightBtn) {
+            leftBtn.disabled = grid.scrollLeft <= 0;
+            // A bit of tolerance for pixel rounding
+            rightBtn.disabled = grid.scrollLeft >= (grid.scrollWidth - grid.clientWidth - 2);
         }
     }
 
@@ -644,6 +858,291 @@
         }
         return cookieValue;
     }
+
+    
+    // --- IMPORT / EXPORT LOGIC ---
+    function openExportModal() {
+        const invId = document.getElementById('investigationFilter').value;
+        document.getElementById('exportInvestigation').value = invId;
+        document.getElementById('exportScopeCurrent').checked = true;
+        document.getElementById('exportModalOverlay').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeExportModal() {
+        document.getElementById('exportModalOverlay').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    
+    function processExport() {
+        const scope = document.querySelector('input[name="exportScope"]:checked').value;
+        let url = '{% url "lab:api_result_import_export" %}?export=excel';
+        
+        if (scope === 'current') {
+            const invId = document.getElementById('exportInvestigation').value;
+            const dtFrom = document.getElementById('exportDateFrom').value;
+            const dtTo = document.getElementById('exportDateTo').value;
+            
+            if (invId !== 'all') url += '&investigation_id=' + invId;
+            if (dtFrom) url += '&date_from=' + dtFrom;
+            if (dtTo) url += '&date_to=' + dtTo;
+        }
+        
+        window.location.href = url;
+        closeExportModal();
+    }
+    
+    // ── Import/Export state ──────────────────────────────────────────────────
+    let currentImportFile = null;
+    let _importValidationData = null;
+    let _importErrorRows = [];
+
+    function openImportModal() {
+        resetImport();
+        document.getElementById('importModalOverlay').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeImportModal() {
+        document.getElementById('importModalOverlay').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    function resetImport() {
+        currentImportFile = null;
+        _importValidationData = null;
+        _importErrorRows = [];
+        const fi = document.getElementById('importFile');
+        if (fi) fi.value = '';
+        showImportStep('importStepUpload');
+        const fi2 = document.getElementById('importFileInfo');
+        if (fi2) fi2.style.display = 'none';
+        document.getElementById('importModalTitle').textContent = 'Import Results';
+        document.getElementById('importModalSubtitle').textContent = 'Upload a .xlsx file to import result records';
+        const btn = document.getElementById('btnValidate');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-check2-circle"></i> Validate'; }
+    }
+
+    function showImportStep(stepId) {
+        ['importStepUpload','importStepPreview','importStepResult'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = (id === stepId) ? 'block' : 'none';
+        });
+    }
+
+    function handleFileSelected(input) {
+        if (!input.files.length) return;
+        const f = input.files[0];
+        currentImportFile = f;
+        const info = document.getElementById('importFileInfo');
+        document.getElementById('importFileName').textContent = f.name;
+        document.getElementById('importFileSize').textContent = (f.size / 1024).toFixed(1) + ' KB';
+        info.style.display = 'flex';
+    }
+
+    function clearFileSelection() {
+        currentImportFile = null;
+        const fi = document.getElementById('importFile');
+        if (fi) fi.value = '';
+        document.getElementById('importFileInfo').style.display = 'none';
+    }
+
+    function validateImport() {
+        if (!currentImportFile) {
+            // Show inline error, no alert
+            showImportInlineError('Please select a .xlsx file first.');
+            return;
+        }
+        const btn = document.getElementById('btnValidate');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Validating...';
+
+        const fd = new FormData();
+        fd.append('file', currentImportFile);
+        fd.append('action', 'validate');
+
+        fetch('{% url "lab:api_result_import_export" %}', {
+            method: 'POST',
+            body: fd,
+            headers: { 'X-CSRFToken': getCookie('csrftoken') }
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check2-circle"></i> Validate';
+            if (data.status === 'success') {
+                renderValidationPreview(data.validation);
+                showImportStep('importStepPreview');
+            } else {
+                showImportInlineError('Validation failed: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check2-circle"></i> Validate';
+            showImportInlineError('Network error during validation. Please try again.');
+        });
+    }
+
+    function renderValidationPreview(val) {
+        _importValidationData = val;
+        _importErrorRows = val.errors || [];
+        const stats = val.stats || {};
+        const rStats = stats.results || {};
+        const pStats = stats.parameters || {};
+        const errCount = _importErrorRows.length;
+
+        // Update modal header
+        document.getElementById('importModalTitle').textContent = 'Import Validation';
+        document.getElementById('importModalSubtitle').textContent = currentImportFile ? currentImportFile.name : '';
+
+        // File line
+        document.getElementById('prevFileName').textContent = currentImportFile ? currentImportFile.name : '';
+
+        // Summary grid
+        const gridItems = [
+            { label: 'New Results',      value: rStats.new || 0,     color: '#166534', bg: '#dcfce7' },
+            { label: 'Updates',          value: rStats.updates || 0, color: '#1e40af', bg: '#dbeafe' },
+            { label: 'Parameters',       value: pStats.new || 0,     color: '#7e22ce', bg: '#f3e8ff' },
+            { label: 'Blocking Errors',  value: errCount,             color: errCount ? '#b91c1c' : '#166534', bg: errCount ? '#fee2e2' : '#dcfce7' },
+        ];
+        const grid = document.getElementById('importSummaryGrid');
+        grid.innerHTML = gridItems.map(item => `
+            <div style="background:${item.bg}; border-radius:8px; padding:14px 12px; text-align:center;">
+                <div style="font-size:22px; font-weight:800; color:${item.color};">${item.value}</div>
+                <div style="font-size:12px; color:${item.color}; font-weight:600; margin-top:2px;">${item.label}</div>
+            </div>`).join('');
+
+        // Valid rows table (show up to 20 for preview)
+        const validSection = document.getElementById('validRowsSection');
+        const validTbody = document.getElementById('validRowsTbody');
+        const validRows = (val.valid_rows || []).slice(0, 20);
+        if (validRows.length) {
+            validTbody.innerHTML = validRows.map(r => `
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:7px 12px; color:#64748b;">${r.row}</td>
+                    <td style="padding:7px 12px; font-weight:600; color:#0f172a;">${r.investigation || '-'}</td>
+                    <td style="padding:7px 12px; color:#475569;">${r.parameter || '-'}</td>
+                    <td style="padding:7px 12px;"><span style="color:#166534; font-weight:600;">&#10003; Valid</span></td>
+                </tr>`).join('');
+            validSection.style.display = 'block';
+        } else {
+            validSection.style.display = 'none';
+        }
+
+        // Error rows table
+        const errSection = document.getElementById('errorRowsSection');
+        const errTbody = document.getElementById('errorRowsTbody');
+        if (_importErrorRows.length) {
+            errTbody.innerHTML = _importErrorRows.map(e => `
+                <tr style="border-bottom:1px solid #fecaca;">
+                    <td style="padding:7px 12px; color:#7f1d1d; font-weight:700;">${e.row}</td>
+                    <td style="padding:7px 12px; color:#7f1d1d;">${e.field}</td>
+                    <td style="padding:7px 12px; color:#7f1d1d; word-break:break-all;">${e.value}</td>
+                    <td style="padding:7px 12px; color:#dc2626; font-weight:600;">${e.error}</td>
+                </tr>`).join('');
+            errSection.style.display = 'block';
+        } else {
+            errSection.style.display = 'none';
+        }
+
+        // Disable Import & Apply if blocking errors
+        const btn = document.getElementById('btnProcessImport');
+        if (errCount > 0) {
+            btn.disabled = true;
+            btn.title = 'Fix all blocking errors before importing.';
+        } else {
+            btn.disabled = false;
+            btn.title = '';
+        }
+    }
+
+    function downloadErrorReport() {
+        if (!_importErrorRows.length) return;
+        const rows = [['Row','Field','Value','Error']];
+        _importErrorRows.forEach(e => rows.push([e.row, e.field, e.value, e.error]));
+        let csvContent = rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'import_error_report.csv';
+        a.click();
+    }
+
+    function processImport() {
+        if (!currentImportFile) return;
+        const btn = document.getElementById('btnProcessImport');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Importing...';
+
+        const fd = new FormData();
+        fd.append('file', currentImportFile);
+        fd.append('action', 'import');
+
+        fetch('{% url "lab:api_result_import_export" %}', {
+            method: 'POST',
+            body: fd,
+            headers: { 'X-CSRFToken': getCookie('csrftoken') }
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-cloud-upload"></i> Import & Apply';
+            if (data.status === 'success') {
+                showImportSuccess(data.counts);
+                loadResults(); // refresh grid in background
+            } else {
+                showImportFailure(data.message || 'Unknown error');
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-cloud-upload"></i> Import & Apply';
+            showImportFailure('Network error during import. No data was saved.');
+        });
+    }
+
+    function showImportSuccess(counts) {
+        document.getElementById('importResultIcon').innerHTML = '<i class="bi bi-check-circle-fill" style="color:#22c55e;"></i>';
+        document.getElementById('importResultTitle').style.color = '#166534';
+        document.getElementById('importResultTitle').textContent = 'Import Completed Successfully';
+        document.getElementById('importResultMsg').textContent = 'All records were committed to the database.';
+        document.getElementById('importResultRetryBtn').style.display = 'none';
+        const c = counts || {};
+        document.getElementById('importResultCounts').innerHTML = [
+            { label: 'Results Created', value: c.results_created || 0, color:'#166534', bg:'#dcfce7' },
+            { label: 'Results Updated', value: c.results_updated || 0, color:'#1e40af', bg:'#dbeafe' },
+            { label: 'Params Created',  value: c.parameters_created || 0, color:'#7e22ce', bg:'#f3e8ff' },
+        ].map(item => `
+            <div style="background:${item.bg}; border-radius:8px; padding:14px 12px; text-align:center;">
+                <div style="font-size:24px; font-weight:800; color:${item.color};">${item.value}</div>
+                <div style="font-size:12px; color:${item.color}; font-weight:600; margin-top:2px;">${item.label}</div>
+            </div>`).join('');
+        showImportStep('importStepResult');
+    }
+
+    function showImportFailure(reason) {
+        document.getElementById('importResultIcon').innerHTML = '<i class="bi bi-x-circle-fill" style="color:#ef4444;"></i>';
+        document.getElementById('importResultTitle').style.color = '#b91c1c';
+        document.getElementById('importResultTitle').textContent = 'Import Failed';
+        document.getElementById('importResultMsg').innerHTML = '<strong>Reason:</strong> ' + reason + '<br><br><em>No records were saved. The transaction was fully rolled back.</em>';
+        document.getElementById('importResultCounts').innerHTML = '';
+        document.getElementById('importResultRetryBtn').style.display = 'inline-block';
+        showImportStep('importStepResult');
+    }
+
+    function showImportInlineError(msg) {
+        // Remove any existing inline error
+        const old = document.getElementById('importInlineError');
+        if (old) old.remove();
+        const el = document.createElement('div');
+        el.id = 'importInlineError';
+        el.style.cssText = 'background:#fee2e2; border:1px solid #fecaca; border-radius:6px; padding:10px 14px; font-size:13px; color:#b91c1c; margin-bottom:12px;';
+        el.innerHTML = '<i class="bi bi-exclamation-triangle"></i> ' + msg;
+        const step = document.getElementById('importStepUpload');
+        step.insertBefore(el, step.firstChild);
+    }
+
 
     document.addEventListener('DOMContentLoaded', loadResults);
 </script>

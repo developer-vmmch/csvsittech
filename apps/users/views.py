@@ -38,13 +38,84 @@ def check_username_api(request):
             'message': f'Username "{username}" is available.'
         })
 
+def get_default_landing_url(user):
+    """
+    Determine the correct post-login destination for a user.
+
+    Priority:
+      1. Dashboard (if accessible)
+      2. First accessible sidebar module, in the order the sidebar defines them
+      3. A safe fallback (no-access message)
+
+    Uses the exact same permission checks as the sidebar (user.can_access_menu).
+    """
+    from django.urls import reverse
+
+    # Sidebar-ordered candidates: (menu_key, url_name, namespace_or_None)
+    # Map each sidebar entry to its menu key and its URL resolver name.
+    # For top-level items the menu_key is already defined in get_menu_mapping.
+    # For sub-items that don't have individual permission keys we include the
+    # parent key so they are unlocked when the parent is permitted.
+    LANDING_CANDIDATES = [
+        # key                   url_name                    namespace
+        ('dashboard',           'dashboard',                'core'),
+        # Patients sub-items
+        ('add_patient',         'add',                      'patients'),
+        ('search_patient',      'search',                   'patients'),
+        ('patient_list',        'list',                     'patients'),
+        ('op_census',           'op_census',                'patients'),
+        ('patient_companies',   'company_list',             'patients'),
+        ('department_list',     'department_list',          'patients'),
+        # Lab Master – no individual permission key; allow if user is not totally locked
+        ('lab_master_investigation', 'investigation_list',  'lab'),
+        ('lab_master_diagnosis',     'diagnosis_list',      'lab'),
+        ('lab_master_parameter',     'parameter_list',      'lab'),
+        # Administration
+        ('administration',      'list',                     'users'),
+        ('users_roles',         'roles_overview',           'users'),
+    ]
+
+    menu_map = user.get_menu_mapping()
+
+    for key, url_name, namespace in LANDING_CANDIDATES:
+        # Admin users get all keys as True; others check the map
+        if user.is_superuser or user.role == getattr(user.__class__.Roles, 'ADMIN', None):
+            has_perm = True
+        else:
+            has_perm = menu_map.get(key, False)
+
+        if has_perm:
+            try:
+                if namespace:
+                    return reverse(f'{namespace}:{url_name}')
+                return reverse(url_name)
+            except Exception:
+                continue
+
+    # Absolute last-resort: the login page with a message; the user will see
+    # "you have no permitted modules" on the next render.
+    return reverse('login')
+
+
 class ERPLoginView(LoginView):
     form_class = UserLoginForm
     template_name = 'users/login.html'
     redirect_authenticated_user = True
 
     def get_success_url(self):
-        return reverse_lazy('patients:list')
+        # 1. Honour a safe, local "next" parameter if present.
+        next_url = self.request.POST.get('next') or self.request.GET.get('next', '')
+        if next_url:
+            from django.utils.http import url_has_allowed_host_and_scheme
+            if url_has_allowed_host_and_scheme(
+                url=next_url,
+                allowed_hosts={self.request.get_host()},
+                require_https=self.request.is_secure(),
+            ):
+                return next_url
+
+        # 2. Determine landing page from the user's role/profile.
+        return get_default_landing_url(self.request.user)
 
 
 class ERPLogoutView(LogoutView):

@@ -269,6 +269,7 @@
             </div>
 
             <div class="d-flex justify-content-end" style="gap: 12px;">
+                <button class="btn-clear" onclick="generateValues()"><i class="bi bi-magic"></i> Auto-Fill Random Valid Data</button>
                 <button class="btn-clear" onclick="clearForm()"><i class="bi bi-arrow-clockwise"></i> Clear</button>
                 <button class="btn-teal" onclick="saveResult()"><i class="bi bi-file-earmark-check"></i> Save Result</button>
             </div>
@@ -338,6 +339,35 @@
             document.querySelectorAll('.param-result-input').forEach(input => input.value = '');
             document.getElementById('remarksInput').value = '';
         }
+    }
+
+    function generateValues() {
+        if (!currentInvestigationId) return;
+        
+        fetch(`{% url "lab:api_generate_dummy_result_values" %}?investigation_id=${currentInvestigationId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const generatedParams = data.data.parameters;
+                document.querySelectorAll('.param-result-input').forEach(input => {
+                    const index = input.getAttribute('data-index');
+                    const generatedVal = generatedParams[index].result_value;
+                    input.value = generatedVal;
+                    input.classList.remove('is-invalid');
+                });
+                
+                // Add a sample remark
+                document.getElementById('remarksInput').value = `Auto-generated. Age: ${data.data.age_days} days. Gender: ${data.data.gender}.`;
+                
+                alert('Auto-filled with valid generated data.');
+            } else {
+                alert('Error generating values: ' + data.message);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Failed to generate values.');
+        });
     }
 
     function saveResult() {

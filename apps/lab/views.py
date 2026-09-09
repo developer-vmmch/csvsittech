@@ -1230,53 +1230,64 @@ class LegacyMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, Tem
 
     def get(self, request, *args, **kwargs):
         if request.GET.get('export') == 'excel':
-            return self._export_excel(request)
+            from apps.lab.universal_importer import export_universal_master
+            from django.http import HttpResponse
+            output = export_universal_master()
+            response = HttpResponse(output, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = 'attachment; filename="universal_master_export.xlsx"'
+            return response
+        
+        if request.GET.get('template') == 'true':
+            from openpyxl import Workbook
+            from django.http import HttpResponse
+            import io
+            wb = Workbook(write_only=True)
+            ws = wb.create_sheet('Universal Master')
+            headers = [
+                'Department', 'Diagnosis', 'Diagnosis Code', 'Investigation', 'Investigation Code',
+                'Investigation Department', 'Parameter', 'Parameter Code', 'Data Type', 'Unit',
+                'Sample Type', 'Method', 'Age Group', 'Age From', 'Age To', 'Gender',
+                'Min Value', 'Max Value', 'Normal Value', 'Remarks', 'Status'
+            ]
+            ws.append(headers)
+            ws.append(['Biochemistry', 'Diabetes', 'E11.9', 'FBS', '00025527', 'Biochemistry', 'FBS', '00025527', 'NUMERIC', 'mg/dl', 'Serum', 'GOD/POD', 'Adult', '18', '150', 'All', '70', '110', '', '', 'Active'])
+            output = io.BytesIO()
+            wb.save(output)
+            output.seek(0)
+            response = HttpResponse(output, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = 'attachment; filename="universal_master_template.xlsx"'
+            return response
+
         return super().get(request, *args, **kwargs)
 
-    def _export_excel(self, request):
-        from openpyxl import Workbook
-        from django.http import HttpResponse
-        import io as _io
-
-        wb = Workbook(write_only=True)
-        ws = wb.create_sheet('Legacy Diagnosis')
-        ws.append(['legacy_id', 'legacy_text', 'migrated', 'migrated_to_type'])
-        for s in StagingDiagnosis.objects.all().iterator(chunk_size=1000):
-            ws.append([s.legacy_id or '', s.legacy_text or '', 'Yes' if s.migrated else 'No', s.migrated_to_type or ''])
-
-        ws2 = wb.create_sheet('Legacy Investigation')
-        ws2.append(['legacy_id', 'legacy_text', 'migrated', 'migrated_to_type'])
-        for s in StagingInvestigation.objects.all().iterator(chunk_size=1000):
-            ws2.append([s.legacy_id or '', s.legacy_text or '', 'Yes' if s.migrated else 'No', s.migrated_to_type or ''])
-
-        output = _io.BytesIO()
-        wb.save(output)
-        output.seek(0)
-        response = HttpResponse(output, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename="legacy_mapping_export.xlsx"'
-        return response
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+    def post(self, request, *args, **kwargs):
+        from apps.lab.universal_importer import validate_import, commit_import
+        action = request.POST.get('action')
         
-        # Diagnosis Tab Data
-        unmapped_diag = StagingDiagnosis.objects.filter(migrated=False)
-        context['staging_diagnosis'] = unmapped_diag
-        context['diag_unmapped_count'] = unmapped_diag.count()
-        context['diag_total_count'] = StagingDiagnosis.objects.count()
-        
-        # Investigation Tab Data
-        unmapped_inv = StagingInvestigation.objects.filter(migrated=False)
-        context['staging_investigation'] = unmapped_inv
-        context['inv_unmapped_count'] = unmapped_inv.count()
-        context['inv_total_count'] = StagingInvestigation.objects.count()
-        
-        # Lookups for mapping forms
-        context['departments'] = LabDepartment.objects.filter(is_active=True)
-        context['sample_types'] = SampleType.objects.filter(is_active=True)
-        context['hospital_service_categories'] = HospitalService.CategoryChoices.choices
-        
-        return context
+        if action == 'validate':
+            file_obj = request.FILES.get('file')
+            if not file_obj:
+                return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
+            try:
+                res = validate_import(file_obj)
+                request.session['universal_import_data'] = res.get('data', [])
+                del res['data']
+                return JsonResponse({'status': 'success', 'validation': res})
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': str(e)})
+                
+        elif action == 'import':
+            data = request.session.get('universal_import_data')
+            if not data:
+                return JsonResponse({'status': 'error', 'message': 'Session expired or data missing. Please upload and validate again.'})
+            try:
+                counts = commit_import(data)
+                request.session.pop('universal_import_data', None)
+                return JsonResponse({'status': 'success', 'counts': counts})
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': f'Import failed: {str(e)}'})
+
+        return JsonResponse({'status': 'error', 'message': 'Invalid action'})
 
 
 @granular_permission_required('lab_master.legacy_mapping.update')

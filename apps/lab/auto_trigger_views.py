@@ -1927,6 +1927,22 @@ def api_get_investigation_parameters(request):
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)})
 
+def api_generate_dummy_result_values(request):
+    try:
+        inv_id = request.GET.get('investigation_id')
+        if not inv_id:
+            return JsonResponse({'success': False, 'message': 'Missing investigation_id'})
+            
+        from apps.lab.models import Investigation
+        from apps.lab.services.automation_test_service import AutomationTestService
+        
+        inv = Investigation.objects.get(id=inv_id)
+        dummy_data = AutomationTestService.generate_dummy_values_for_investigation(inv)
+        
+        return JsonResponse({'success': True, 'data': dummy_data})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
 @csrf_exempt
 def api_save_dummy_result(request):
     import json
@@ -2162,3 +2178,76 @@ class AutoTriggerDashboardView(LoginRequiredMixin, TemplateView):
             context['last_trigger_run'] = '-'
 
         return context
+
+
+def api_result_import_export(request):
+    from apps.lab.result_importer import export_dummy_results, validate_result_import, import_dummy_results
+    import json
+    from django.http import JsonResponse, HttpResponse
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'validate':
+            if 'file' not in request.FILES:
+                return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
+            file_obj = request.FILES['file']
+            res = validate_result_import(file_obj)
+            return JsonResponse({'status': 'success', 'validation': res})
+            
+        elif action == 'import':
+            if 'file' not in request.FILES:
+                return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
+            file_obj = request.FILES['file']
+            try:
+                counts = import_dummy_results(file_obj, request.user)
+                return JsonResponse({'status': 'success', 'counts': counts})
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                return JsonResponse({'status': 'error', 'message': str(e)})
+                
+    elif request.method == 'GET':
+        # Blank import template
+        if request.GET.get('template') == 'true':
+            from openpyxl import Workbook
+            import io
+            wb = Workbook()
+            ws = wb.active
+            ws.title = 'Results'
+            headers = [
+                'Result ID', 'Investigation', 'Investigation Code',
+                'Parameter', 'Parameter Code', 'Result Value',
+                'Unit', 'Reference Range', 'Remarks', 'Status', 'Created On',
+            ]
+            ws.append(headers)
+            # Style header row
+            from openpyxl.styles import Font, PatternFill, Alignment
+            header_fill = PatternFill(start_color='1E40AF', end_color='1E40AF', fill_type='solid')
+            for cell in ws[1]:
+                cell.font = Font(bold=True, color='FFFFFF')
+                cell.fill = header_fill
+                cell.alignment = Alignment(horizontal='center')
+            output = io.BytesIO()
+            wb.save(output)
+            output.seek(0)
+            response = HttpResponse(
+                output.read(),
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = 'attachment; filename="result_import_template.xlsx"'
+            return response
+
+        if request.GET.get('export') == 'excel':
+            filters = {
+                'investigation_id': request.GET.get('investigation_id'),
+                'date_from': request.GET.get('date_from'),
+                'date_to': request.GET.get('date_to'),
+            }
+            output = export_dummy_results(filters)
+            response = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = 'attachment; filename="result_export.xlsx"'
+            return response
+            
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'})
+

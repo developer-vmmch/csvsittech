@@ -73,7 +73,7 @@ from .auto_trigger_views import (
     api_get_monthly_history, api_save_monthly_trigger_v2, api_get_daily_created_patients,
     AutoTriggerMonthlyReviewsView, api_get_monthly_reviews,
     AutoTriggerMonthlyExecutionView, AutoTriggerAutomateTestView, AutoTriggerResultView,
-    api_get_investigation_parameters, api_save_dummy_result, api_get_dummy_results
+    api_get_investigation_parameters, api_generate_dummy_result_values, api_save_dummy_result, api_get_dummy_results, api_result_import_export
 )
 
 app_name = 'lab'
@@ -297,6 +297,8 @@ urlpatterns = [
     path('auto-trigger/automate-test/', AutoTriggerAutomateTestView.as_view(), name='auto_trigger_automate_test'),
     path('auto-trigger/result-view/', AutoTriggerResultView.as_view(), name='auto_trigger_result_view'),
     path('api/auto-trigger/automate-test/parameters/', api_get_investigation_parameters, name='api_get_investigation_parameters'),
+    path('api/auto-trigger/automate-test/generate-values/', api_generate_dummy_result_values, name='api_generate_dummy_result_values'),
     path('api/auto-trigger/automate-test/save/', api_save_dummy_result, name='api_save_dummy_result'),
     path('api/auto-trigger/result-view/list/', api_get_dummy_results, name='api_get_dummy_results'),
+    path('api/auto-trigger/result-view/import-export/', api_result_import_export, name='api_result_import_export'),
 ]
