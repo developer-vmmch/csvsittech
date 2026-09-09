@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
     /* Main Crisp Light Theme Backgrounds */
@@ -831,6 +831,11 @@ tr:hover {
 
 .hims-age-group {
     width: 100% !important;
+
+}
+
+.hims-age-group {
+    width: 100% !important;
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -841,20 +846,70 @@ tr:hover {
     text-align: center;
     width: 60px !important;
 }
- 
- / *   R e s p o n s i v e   L a y o u t   O v e r r i d e s   * /  
- @ m e d i a   ( m a x - w i d t h :   9 9 2 p x )   {  
-         . s i d e b a r   {  
-                 t r a n s f o r m :   t r a n s l a t e X ( - 1 0 0 % ) ;  
-                 w i d t h :   2 6 0 p x   ! i m p o r t a n t ;  
-         }  
-         b o d y . s i d e b a r - o p e n   . s i d e b a r   {  
-                 t r a n s f o r m :   t r a n s l a t e X ( 0 ) ;  
-                 b o x - s h a d o w :   4 p x   0   1 5 p x   r g b a ( 0 , 0 , 0 , 0 . 1 ) ;  
-         }  
-         . m a i n - l a y o u t ,   b o d y . s i d e b a r - c o l l a p s e d   . m a i n - l a y o u t   {  
-                 m a r g i n - l e f t :   0   ! i m p o r t a n t ;  
-                 m a x - w i d t h :   1 0 0 v w   ! i m p o r t a n t ;  
-         }  
- }  
- 
+
+/* =============================================================
+   GLOBAL RESPONSIVE UTILITIES — VMMC ERP
+   Controls layout for all modules. Do NOT add overflow-x:hidden
+   hacks per-page; fix the source here instead.
+   ============================================================= */
+
+/* Prevent body-level horizontal scroll on any viewport */
+html {
+    overflow-x: hidden;
+}
+body {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+/* Every flex child containing flexible content must have min-width:0 */
+/* This prevents flex children from growing beyond their parent */
+
+/* ---- RESPONSIVE TABLE WRAPPER ---- */
+/* Wrap tables in .table-responsive for proper mobile scrolling */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ---- RESPONSIVE MODAL ---- */
+.modal-responsive {
+    width: calc(100vw - 24px);
+    max-width: 760px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    margin: 12px auto;
+}
+
+@media (min-width: 768px) {
+    .modal-responsive {
+        width: 90vw;
+    }
+}
+
+/* ---- USER BADGE MOBILE ---- */
+@media (max-width: 639px) {
+    .user-badge {
+        padding: 0.35rem 0.55rem;
+        gap: 0.35rem;
+        background: transparent;
+        border: none;
+    }
+}
+
+/* ---- CARD PADDING MOBILE ---- */
+@media (max-width: 639px) {
+    .card { padding: 1rem; }
+    .form-container { padding: 1rem; }
+}
+
+/* ---- DASHBOARD STAT CARDS — MOBILE COMPACT ---- */
+@media (max-width: 639px) {
+    .trend-line-svg { height: 28px !important; }
+}
+
+/* ---- SIDEBAR OVERLAY BODY LOCK ---- */
+body.sidebar-overlay-open {
+    overflow: hidden;
+}

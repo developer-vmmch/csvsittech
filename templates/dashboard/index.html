@@ -13,6 +13,12 @@
         width: 100%;
         height: 40px;
     }
+    /* Mobile: reduce wave height so it doesn't dominate the card */
+    @media (max-width: 639px) {
+        .trend-line-svg { height: 24px; }
+    }
+    /* Charts must never overflow their container */
+    canvas { max-width: 100%; }
 </style>
 {% endblock %}
 
@@ -33,14 +39,14 @@
     <!-- Top Statistics Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 mb-6">
         <!-- Card 1 -->
-        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-5 flex flex-col relative overflow-hidden">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-4 sm:p-5 flex flex-col relative overflow-hidden">
             <div class="flex items-start">
                 <div class="w-11 h-11 rounded-lg flex items-center justify-center text-xl mb-3 bg-blue-50 text-blue-500">
                     <i class="bi bi-droplet-fill"></i>
                 </div>
             </div>
             <div class="text-sm font-semibold text-slate-600 mb-1">Total Investigations</div>
-            <div class="text-3xl font-extrabold text-slate-900 leading-none mb-1">{{ total_investigations }}</div>
+            <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-none mb-1">{{ total_investigations }}</div>
             <div class="text-xs text-slate-500 mb-5">Configured investigations</div>
             <svg class="trend-line-svg" viewBox="0 0 100 20" preserveAspectRatio="none">
                 <path d="M0,15 Q10,5 20,15 T40,15 T60,5 T80,15 T100,10 L100,20 L0,20 Z" fill="rgba(59, 130, 246, 0.1)" stroke="#3b82f6" stroke-width="2"/>
@@ -48,14 +54,14 @@
         </div>
         
         <!-- Card 2 -->
-        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-5 flex flex-col relative overflow-hidden">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-4 sm:p-5 flex flex-col relative overflow-hidden">
             <div class="flex items-start">
                 <div class="w-11 h-11 rounded-lg flex items-center justify-center text-xl mb-3 bg-green-50 text-green-500">
                     <i class="bi bi-list-check"></i>
                 </div>
             </div>
             <div class="text-sm font-semibold text-slate-600 mb-1">Investigation Parameters</div>
-            <div class="text-3xl font-extrabold text-slate-900 leading-none mb-1">{{ total_parameters }}</div>
+            <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-none mb-1">{{ total_parameters }}</div>
             <div class="text-xs text-slate-500 mb-5">Configured parameters</div>
             <svg class="trend-line-svg" viewBox="0 0 100 20" preserveAspectRatio="none">
                 <path d="M0,10 Q15,0 30,10 T60,5 T90,15 T100,5 L100,20 L0,20 Z" fill="rgba(34, 197, 94, 0.1)" stroke="#22c55e" stroke-width="2"/>
@@ -63,14 +69,14 @@
         </div>
         
         <!-- Card 3 -->
-        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-5 flex flex-col relative overflow-hidden">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-4 sm:p-5 flex flex-col relative overflow-hidden">
             <div class="flex items-start">
                 <div class="w-11 h-11 rounded-lg flex items-center justify-center text-xl mb-3 bg-purple-50 text-purple-600">
                     <i class="bi bi-database"></i>
                 </div>
             </div>
             <div class="text-sm font-semibold text-slate-600 mb-1">Auto Trigger Results</div>
-            <div class="text-3xl font-extrabold text-slate-900 leading-none mb-1">{{ total_dummy_results|default:"0" }}</div>
+            <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-none mb-1">{{ total_dummy_results|default:"0" }}</div>
             <div class="text-xs text-slate-500 mb-5">Saved dummy results</div>
             <svg class="trend-line-svg" viewBox="0 0 100 20" preserveAspectRatio="none">
                 <path d="M0,15 Q12,5 25,12 T50,15 T75,8 T100,15 L100,20 L0,20 Z" fill="rgba(147, 51, 234, 0.1)" stroke="#9333ea" stroke-width="2"/>
@@ -78,14 +84,14 @@
         </div>
         
         <!-- Card 4 -->
-        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-5 flex flex-col relative overflow-hidden">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-4 sm:p-5 flex flex-col relative overflow-hidden">
             <div class="flex items-start">
                 <div class="w-11 h-11 rounded-lg flex items-center justify-center text-xl mb-3 bg-orange-50 text-orange-500">
                     <i class="bi bi-check2-circle"></i>
                 </div>
             </div>
             <div class="text-sm font-semibold text-slate-600 mb-1">Results Today</div>
-            <div class="text-3xl font-extrabold text-slate-900 leading-none mb-1">{{ results_today|default:"0" }}</div>
+            <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-none mb-1">{{ results_today|default:"0" }}</div>
             <div class="text-xs text-slate-500 mb-5">Generated today</div>
             <svg class="trend-line-svg" viewBox="0 0 100 20" preserveAspectRatio="none">
                 <path d="M0,10 Q10,15 20,5 T40,15 T60,10 T80,15 T100,5 L100,20 L0,20 Z" fill="rgba(249, 115, 22, 0.1)" stroke="#f97316" stroke-width="2"/>
@@ -93,14 +99,14 @@
         </div>
         
         <!-- Card 5 -->
-        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-5 flex flex-col relative overflow-hidden">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-4 sm:p-5 flex flex-col relative overflow-hidden">
             <div class="flex items-start">
                 <div class="w-11 h-11 rounded-lg flex items-center justify-center text-xl mb-3 bg-cyan-50 text-cyan-500">
                     <i class="bi bi-lightning-charge"></i>
                 </div>
             </div>
             <div class="text-sm font-semibold text-slate-600 mb-1">Automated Tests</div>
-            <div class="text-3xl font-extrabold text-slate-900 leading-none mb-1">{{ monthly_tests|default:"0" }}</div>
+            <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-none mb-1">{{ monthly_tests|default:"0" }}</div>
             <div class="text-xs text-slate-500 mb-5">This month</div>
             <svg class="trend-line-svg" viewBox="0 0 100 20" preserveAspectRatio="none">
                 <path d="M0,15 Q20,5 40,15 T70,5 T100,10 L100,20 L0,20 Z" fill="rgba(6, 182, 212, 0.1)" stroke="#06b6d4" stroke-width="2"/>

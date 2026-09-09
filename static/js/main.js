@@ -11,22 +11,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load saved sidebar state for desktop
     const savedState = localStorage.getItem('vmmc_sidebar_collapsed');
-    if (savedState === 'true' && sidebar && window.innerWidth > 992) {
-        sidebar.classList.remove('md:w-64');
-        sidebar.classList.add('md:w-20');
+    if (savedState === 'true' && sidebar && window.innerWidth >= 1024) {
+        sidebar.classList.remove('lg:w-64');
+        sidebar.classList.add('lg:w-20');
     }
 
     if (sidebarToggle && sidebar) {
         sidebarToggle.addEventListener('click', () => {
-            if (window.innerWidth <= 992) {
-                // Mobile toggle
+            if (window.innerWidth < 1024) {
+                // Mobile/tablet toggle — slide in/out as drawer
+                const isHidden = sidebar.classList.contains('-translate-x-full');
                 sidebar.classList.toggle('-translate-x-full');
                 if (backdrop) backdrop.classList.toggle('hidden');
+                // Body lock to prevent background scroll when overlay open
+                document.body.classList.toggle('sidebar-overlay-open', isHidden);
             } else {
                 // Desktop collapse toggle
-                sidebar.classList.toggle('md:w-64');
-                sidebar.classList.toggle('md:w-20');
-                const isCollapsed = sidebar.classList.contains('md:w-20');
+                sidebar.classList.toggle('lg:w-64');
+                sidebar.classList.toggle('lg:w-20');
+                const isCollapsed = sidebar.classList.contains('lg:w-20');
                 localStorage.setItem('vmmc_sidebar_collapsed', isCollapsed);
             }
         });
@@ -37,8 +40,17 @@ document.addEventListener('DOMContentLoaded', () => {
         backdrop.addEventListener('click', () => {
             sidebar.classList.add('-translate-x-full');
             backdrop.classList.add('hidden');
+            document.body.classList.remove('sidebar-overlay-open');
         });
     }
+
+    // On resize to desktop, clear body lock and reset overlay state
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 1024) {
+            document.body.classList.remove('sidebar-overlay-open');
+            if (backdrop) backdrop.classList.add('hidden');
+        }
+    });
 
     // Accordion Sub-Menu Toggle
     const submenuToggles = document.querySelectorAll('.submenu-toggle');

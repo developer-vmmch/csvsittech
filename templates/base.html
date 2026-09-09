@@ -39,35 +39,35 @@
       .submenu-list { display: none; flex-direction: column; }
       
       /* Collapsed Sidebar Rules */
-      #mainSidebar.md\:w-20 .brand-name,
-      #mainSidebar.md\:w-20 .nav-section-title,
-      #mainSidebar.md\:w-20 .nav-item a span,
-      #mainSidebar.md\:w-20 .submenu-chevron {
+      #mainSidebar.lg\:w-20 .brand-name,
+      #mainSidebar.lg\:w-20 .nav-section-title,
+      #mainSidebar.lg\:w-20 .nav-item a span,
+      #mainSidebar.lg\:w-20 .submenu-chevron {
           display: none !important;
       }
-      #mainSidebar.md\:w-20 .nav-item a {
+      #mainSidebar.lg\:w-20 .nav-item a {
           justify-content: center;
           padding-left: 0; padding-right: 0;
       }
-      #mainSidebar.md\:w-20 .brand-logo-container {
+      #mainSidebar.lg\:w-20 .brand-logo-container {
           margin: 0 auto;
       }
     </style>
     
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans antialiased flex h-screen overflow-hidden">
+<body class="bg-slate-50 text-slate-900 font-sans antialiased flex min-h-screen overflow-x-hidden">
 
     <!-- Mobile Sidebar Backdrop -->
-    <div id="mobileSidebarBackdrop" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden"></div>
+    <div id="mobileSidebarBackdrop" class="fixed inset-0 bg-slate-900/50 z-40 hidden lg:hidden"></div>
     <!-- Sidebar Navigation -->
-    <aside id="mainSidebar" class="fixed inset-y-0 left-0 z-50 w-[260px] md:w-64 bg-sidebar-bg border-r border-sidebar-border transform -translate-x-full md:relative md:translate-x-0 transition-all duration-300 ease-in-out flex flex-col flex-shrink-0 group overflow-hidden">
-        <div class="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border mb-4 whitespace-nowrap min-w-max">
+    <aside id="mainSidebar" class="fixed inset-y-0 left-0 z-50 w-[260px] lg:w-64 bg-sidebar-bg border-r border-sidebar-border transform -translate-x-full lg:relative lg:translate-x-0 transition-all duration-300 ease-in-out flex flex-col flex-shrink-0 group overflow-hidden">
+        <div class="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border mb-4 whitespace-nowrap overflow-hidden">
             <div class="w-10 h-10 min-w-[40px] rounded-xl flex items-center justify-center font-bold text-white text-xl bg-gradient-to-br from-brand-teal to-brand-blue shadow-[0_4px_15px_rgba(13,148,136,0.4)]">V</div>
             <span class="text-white font-bold text-xl tracking-tight transition-opacity duration-200">VMMC ERP</span>
         </div>
 
-        <ul class="nav-list flex-1 overflow-y-auto px-2 pb-4 flex flex-col gap-1 whitespace-nowrap min-w-max">
+        <ul class="nav-list flex-1 overflow-y-auto px-2 pb-4 flex flex-col gap-1 whitespace-nowrap overflow-x-hidden">
             {% if not user.is_authenticated or user.get_menu_mapping.dashboard %}
             <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                 <a href="{% url 'core:dashboard' %}" title="Dashboard">
@@ -411,48 +411,59 @@
     </aside>
 
     <!-- Main Content Layout -->
-    <div class="flex flex-col flex-1 min-w-0 overflow-hidden relative">
-        <header class="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between flex-shrink-0 z-30 shadow-sm">
-            <div class="flex items-center gap-3 min-w-0">
-                <button id="sidebarToggle" class="md:hidden p-2 -ml-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors" title="Toggle Sidebar">
+    <div class="flex flex-col flex-1 min-w-0 overflow-x-hidden relative">
+        <header class="bg-white border-b border-slate-200 px-3 sm:px-4 py-3 flex items-center gap-2 flex-shrink-0 z-30 shadow-sm min-w-0 overflow-hidden">
+            <!-- Left: hamburger + page title -->
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+                <button id="sidebarToggle" class="lg:hidden flex-shrink-0 p-2 -ml-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors" title="Toggle Sidebar" aria-label="Open navigation menu">
                     <i class="bi bi-list text-2xl"></i>
                 </button>
-                <h1 class="text-lg sm:text-xl font-bold text-slate-800 truncate">{% block page_heading %}Dashboard{% endblock %}</h1>
+                <h1 class="text-base sm:text-lg lg:text-xl font-bold text-slate-800 truncate min-w-0">{% block page_heading %}Dashboard{% endblock %}</h1>
             </div>
 
-            <div class="flex items-center gap-2 sm:gap-4 ml-auto pl-2 flex-shrink-0">
-                <!-- Live Header Date & Time Display Widget -->
-                <div id="liveClockWidget" style="display: flex; align-items: center; gap: 0.55rem; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 0.4rem 0.85rem; border-radius: 20px; font-size: 0.82rem; color: #166534; font-weight: 700; box-shadow: var(--shadow-sm);">
-                    <i class="bi bi-clock-fill" style="color: #16a34a; font-size: 0.9rem;"></i>
-                    <span id="liveDateText" style="color: #334155; font-size: 0.8rem; font-weight: 600;">--/--/----</span>
-                    <span style="color: #cbd5e1;">|</span>
-                    <span id="liveTimeText" style="color: #15803d; font-size: 0.85rem; font-weight: 800; letter-spacing: 0.03em;">--:--:-- --</span>
+            <!-- Right: clock + user + logout -->
+            <div class="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+                <!-- Live Clock Widget — compact on mobile -->
+                <div id="liveClockWidget" class="hidden sm:flex items-center gap-1.5 bg-green-50 border border-green-200 px-2.5 py-1.5 rounded-full text-xs font-bold text-green-800">
+                    <i class="bi bi-clock-fill text-green-600 text-sm"></i>
+                    <span id="liveDateText" class="text-slate-600 font-semibold hidden md:inline">--/--/----</span>
+                    <span class="text-slate-300 hidden md:inline">|</span>
+                    <span id="liveTimeText" class="text-green-700 font-extrabold tracking-wide">--:--:-- --</span>
+                </div>
+                <!-- Mobile-only compact clock (time only) -->
+                <div id="liveClockMobile" class="flex sm:hidden items-center gap-1 bg-green-50 border border-green-200 px-2 py-1 rounded-full text-xs font-bold text-green-700">
+                    <i class="bi bi-clock-fill text-green-600"></i>
+                    <span id="liveTimeMobile">--:--</span>
                 </div>
 
+                <!-- User Badge — avatar always visible, text hidden on mobile -->
                 <div class="user-badge">
-                    <div class="avatar">{{ user.username|default:"A"|slice:":1"|upper }}</div>
-                    <span>{{ user.username|default:"Administrator" }}</span>
+                    <div class="avatar flex-shrink-0">{{ user.username|default:"A"|slice:":1"|upper }}</div>
+                    <span class="hidden sm:inline truncate max-w-[80px] lg:max-w-none">{{ user.username|default:"Administrator" }}</span>
                     {% if user.role %}
-                        <span class="badge badge-purple" style="font-size: 0.7rem; margin-left: 4px;">{{ user.get_role_display }}</span>
+                        <span class="badge badge-purple hidden md:inline" style="font-size: 0.7rem;">{{ user.get_role_display }}</span>
                     {% endif %}
                 </div>
+
                 {% if user.is_authenticated %}
                 <form method="post" action="{% url 'logout' %}" style="margin: 0;">
                     {% csrf_token %}
-                    <button type="submit" class="btn-danger-sm" style="cursor: pointer;" title="Sign Out">
-                        <i class="bi bi-box-arrow-right"></i> Logout
+                    <button type="submit" class="btn-danger-sm flex-shrink-0" style="cursor: pointer;" title="Sign Out">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span class="hidden sm:inline">Logout</span>
                     </button>
                 </form>
                 {% else %}
-                <a href="{% url 'login' %}" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.82rem;">
-                    <i class="bi bi-box-arrow-in-right"></i> Login
+                <a href="{% url 'login' %}" class="btn btn-primary flex-shrink-0" style="padding: 0.4rem 0.85rem; font-size: 0.82rem;">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span class="hidden sm:inline">Login</span>
                 </a>
                 {% endif %}
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 relative w-full">
-            <div class="mx-auto w-full max-w-[1920px]">
+        <main class="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 lg:p-7 relative w-full min-w-0">
+            <div class="mx-auto w-full max-w-[1920px] min-w-0">
             {% if messages %}
                 <div class="mb-4">
                     {% for message in messages %}
@@ -484,11 +495,14 @@
             const dateStr = now.toLocaleDateString('en-GB', dateOptions);
             const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
             const timeStr = now.toLocaleTimeString('en-US', timeOptions);
+            const shortTimeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
             
             const dateEl = document.getElementById('liveDateText');
             const timeEl = document.getElementById('liveTimeText');
+            const mobileEl = document.getElementById('liveTimeMobile');
             if (dateEl) dateEl.textContent = dateStr;
             if (timeEl) timeEl.textContent = timeStr;
+            if (mobileEl) mobileEl.textContent = shortTimeStr;
         }
         updateLiveHeaderClock();
         setInterval(updateLiveHeaderClock, 1000);
