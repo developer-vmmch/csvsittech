@@ -6,37 +6,39 @@ document.addEventListener('DOMContentLoaded', () => {
     window.scrollTo(0, 0);
 
     const sidebarToggle = document.getElementById('sidebarToggle');
-    const body = document.body;
+    const sidebar = document.getElementById('mainSidebar');
+    const backdrop = document.getElementById('mobileSidebarBackdrop');
 
-    // Load saved sidebar state
+    // Load saved sidebar state for desktop
     const savedState = localStorage.getItem('vmmc_sidebar_collapsed');
-    if (savedState === 'true') {
-        body.classList.add('sidebar-collapsed');
+    if (savedState === 'true' && sidebar && window.innerWidth > 992) {
+        sidebar.classList.remove('md:w-64');
+        sidebar.classList.add('md:w-20');
     }
 
-    if (sidebarToggle) {
+    if (sidebarToggle && sidebar) {
         sidebarToggle.addEventListener('click', () => {
             if (window.innerWidth <= 992) {
-                body.classList.toggle('sidebar-open');
-                body.classList.remove('sidebar-collapsed');
+                // Mobile toggle
+                sidebar.classList.toggle('-translate-x-full');
+                if (backdrop) backdrop.classList.toggle('hidden');
             } else {
-                body.classList.toggle('sidebar-collapsed');
-                body.classList.remove('sidebar-open');
-                const isCollapsed = body.classList.contains('sidebar-collapsed');
+                // Desktop collapse toggle
+                sidebar.classList.toggle('md:w-64');
+                sidebar.classList.toggle('md:w-20');
+                const isCollapsed = sidebar.classList.contains('md:w-20');
                 localStorage.setItem('vmmc_sidebar_collapsed', isCollapsed);
             }
         });
     }
 
-    // Close sidebar on small screens when clicking outside
-    document.addEventListener('click', (e) => {
-        if (window.innerWidth <= 992 && body.classList.contains('sidebar-open')) {
-            const sidebar = document.querySelector('.sidebar');
-            if (sidebar && !sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
-                body.classList.remove('sidebar-open');
-            }
-        }
-    });
+    // Close sidebar on small screens when clicking backdrop
+    if (backdrop) {
+        backdrop.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+            backdrop.classList.add('hidden');
+        });
+    }
 
     // Accordion Sub-Menu Toggle
     const submenuToggles = document.querySelectorAll('.submenu-toggle');

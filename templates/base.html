@@ -8,18 +8,66 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/vmmc-select.css' %}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'bg-dark': '#f8fafc',
+              'bg-card': '#ffffff',
+              'brand-teal': '#0d9488',
+              'brand-blue': '#0284c7',
+              'brand-indigo': '#025a68',
+              'sidebar-bg': '#071d2b',
+              'sidebar-border': '#0f2e42',
+              'sidebar-active': '#0e7490',
+              'sidebar-text': '#94a3b8',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      /* Tailwind-compatible overrides for specific custom behaviors */
+      .nav-list::-webkit-scrollbar { display: none; }
+      .nav-list { -ms-overflow-style: none; scrollbar-width: none; }
+      
+      /* Handle submenu expansion smoothly */
+      .has-submenu.open .submenu-list { display: flex !important; }
+      .submenu-list { display: none; flex-direction: column; }
+      
+      /* Collapsed Sidebar Rules */
+      #mainSidebar.md\:w-20 .brand-name,
+      #mainSidebar.md\:w-20 .nav-section-title,
+      #mainSidebar.md\:w-20 .nav-item a span,
+      #mainSidebar.md\:w-20 .submenu-chevron {
+          display: none !important;
+      }
+      #mainSidebar.md\:w-20 .nav-item a {
+          justify-content: center;
+          padding-left: 0; padding-right: 0;
+      }
+      #mainSidebar.md\:w-20 .brand-logo-container {
+          margin: 0 auto;
+      }
+    </style>
+    
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased flex h-screen overflow-hidden">
 
-    <!-- Collapsible Sidebar Navigation -->
-    <aside class="sidebar">
-        <div class="brand">
-            <div class="brand-logo">V</div>
-            <span class="brand-name">VMMC ERP</span>
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="mobileSidebarBackdrop" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden"></div>
+    <!-- Sidebar Navigation -->
+    <aside id="mainSidebar" class="fixed inset-y-0 left-0 z-50 w-[260px] md:w-64 bg-sidebar-bg border-r border-sidebar-border transform -translate-x-full md:relative md:translate-x-0 transition-all duration-300 ease-in-out flex flex-col flex-shrink-0 group overflow-hidden">
+        <div class="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border mb-4 whitespace-nowrap min-w-max">
+            <div class="w-10 h-10 min-w-[40px] rounded-xl flex items-center justify-center font-bold text-white text-xl bg-gradient-to-br from-brand-teal to-brand-blue shadow-[0_4px_15px_rgba(13,148,136,0.4)]">V</div>
+            <span class="text-white font-bold text-xl tracking-tight transition-opacity duration-200">VMMC ERP</span>
         </div>
 
-        <ul class="nav-list">
+        <ul class="nav-list flex-1 overflow-y-auto px-2 pb-4 flex flex-col gap-1 whitespace-nowrap min-w-max">
             {% if not user.is_authenticated or user.get_menu_mapping.dashboard %}
             <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                 <a href="{% url 'core:dashboard' %}" title="Dashboard">
@@ -359,19 +407,20 @@
             </li>
             {% endif %}
         </ul>
+        </ul>
     </aside>
 
     <!-- Main Content Layout -->
-    <div class="main-layout">
-        <header class="header">
-            <div class="header-left">
-                <button id="sidebarToggle" class="sidebar-toggle-btn" title="Toggle Sidebar">
-                    <i class="bi bi-layout-sidebar"></i>
+    <div class="flex flex-col flex-1 min-w-0 overflow-hidden relative">
+        <header class="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between flex-shrink-0 z-30 shadow-sm">
+            <div class="flex items-center gap-3 min-w-0">
+                <button id="sidebarToggle" class="md:hidden p-2 -ml-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors" title="Toggle Sidebar">
+                    <i class="bi bi-list text-2xl"></i>
                 </button>
-                <h1 class="header-title">{% block page_heading %}Dashboard{% endblock %}</h1>
+                <h1 class="text-lg sm:text-xl font-bold text-slate-800 truncate">{% block page_heading %}Dashboard{% endblock %}</h1>
             </div>
 
-            <div class="header-right-actions" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: flex-end;">
+            <div class="flex items-center gap-2 sm:gap-4 ml-auto pl-2 flex-shrink-0">
                 <!-- Live Header Date & Time Display Widget -->
                 <div id="liveClockWidget" style="display: flex; align-items: center; gap: 0.55rem; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 0.4rem 0.85rem; border-radius: 20px; font-size: 0.82rem; color: #166534; font-weight: 700; box-shadow: var(--shadow-sm);">
                     <i class="bi bi-clock-fill" style="color: #16a34a; font-size: 0.9rem;"></i>
@@ -402,9 +451,10 @@
             </div>
         </header>
 
-        <main class="content">
+        <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 relative w-full">
+            <div class="mx-auto w-full max-w-[1920px]">
             {% if messages %}
-                <div class="messages-container">
+                <div class="mb-4">
                     {% for message in messages %}
                         {% if forloop.last %}
                         <div class="alert alert-{{ message.tags }}" style="margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between;">
@@ -416,6 +466,7 @@
             {% endif %}
 
             {% block content %}{% endblock %}
+            </div>
         </main>
     </div>
 

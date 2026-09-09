@@ -1313,7 +1313,10 @@ class LegacyMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, Tem
                 return JsonResponse({'status': 'success', 'validation': res})
             except Exception as e:
                 logger.exception("Error during universal import validation")
-                return JsonResponse({'status': 'error', 'message': 'Validation service encountered an unexpected error. Please check the server logs.'})
+                return JsonResponse({
+                    'status': 'error', 
+                    'message': f'Validation service encountered an unexpected error: {str(e)}. Please check the server logs.'
+                })
                 
         elif action == 'import':
             validation_id = request.POST.get('validation_id')
@@ -1338,7 +1341,16 @@ class LegacyMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, Tem
                 return JsonResponse({'status': 'success', 'counts': counts})
             except Exception as e:
                 logger.exception("Error during universal import commit")
-                return JsonResponse({'status': 'error', 'message': f'Import failed: {str(e)}'})
+                # Attempt to cleanup on failure
+                try:
+                    if fs.exists(safe_filename):
+                        fs.delete(safe_filename)
+                except:
+                    pass
+                return JsonResponse({
+                    'status': 'error', 
+                    'message': str(e)
+                })
 
         return JsonResponse({'status': 'error', 'message': 'Invalid action'})
 
