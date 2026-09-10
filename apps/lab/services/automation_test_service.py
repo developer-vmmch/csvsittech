@@ -14,7 +14,9 @@ from apps.lab.models import (
 class AutomationTestService:
     @staticmethod
     def age_to_days(value, unit):
-        unit = unit.strip().lower()
+        if value is None:
+            return 0
+        unit = unit.strip().lower() if unit else 'years'
         if unit in ('days', 'day'):
             return value
         elif unit in ('weeks', 'week'):

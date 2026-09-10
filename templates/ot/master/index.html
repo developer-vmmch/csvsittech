@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}OT Master — VMMC ERP{% endblock %}
+{% block extra_head %}<style>
+.form-label{display:block;font-size:.8rem;font-weight:600;color:#475569;margin-bottom:.3rem;}
+.form-input{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:.55rem .75rem;font-size:.9rem;outline:none;transition:.2s;}
+.form-input:focus{border-color:#0284c7;box-shadow:0 0 0 3px rgba(2,132,199,.12);}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;}
+.dot-active{background:#16a34a;}
+.dot-inactive{background:#dc2626;}
+.dot-maintenance{background:#f59e0b;}
+</style>{% endblock %}
+{% block content %}
+<div class="p-4 sm:p-6 max-w-6xl mx-auto">
+  <h1 class="text-2xl font-bold text-slate-800 mb-6"><i class="bi bi-database-gear text-blue-500"></i> OT Master</h1>
+  {% if messages %}{% for msg in messages %}<div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium {% if msg.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">{{ msg }}</div>{% endfor %}{% endif %}
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- OT Rooms -->
+    <div>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 bg-slate-50">
+          <h2 class="font-bold text-slate-800 text-base"><i class="bi bi-hospital text-blue-500"></i> OT Rooms</h2>
+        </div>
+        <div class="divide-y divide-slate-100">
+          {% for r in rooms %}
+          <div class="flex items-center justify-between px-5 py-3">
+            <div>
+              <div class="font-semibold text-slate-800 text-sm flex items-center">
+                <span class="status-dot {% if r.status == 'ACTIVE' %}dot-active{% elif r.status == 'MAINTENANCE' %}dot-maintenance{% else %}dot-inactive{% endif %}"></span>
+                {{ r.code }} — {{ r.name }}
+              </div>
+              <div class="text-xs text-slate-500">{{ r.location|default:"—" }} | {{ r.get_status_display }}</div>
+            </div>
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="toggle_room">
+              <input type="hidden" name="room_id" value="{{ r.pk }}">
+              <button type="submit" class="text-xs px-3 py-1.5 rounded-lg border {% if r.status == 'ACTIVE' %}border-red-200 text-red-600 hover:bg-red-50{% else %}border-green-200 text-green-600 hover:bg-green-50{% endif %} transition-colors">
+                {% if r.status == 'ACTIVE' %}Deactivate{% else %}Activate{% endif %}
+              </button>
+            </form>
+          </div>
+          {% empty %}
+          <div class="text-center py-8 text-slate-400 text-sm">No OT rooms configured.</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Add Room Form -->
+      <div class="bg-white rounded-xl border border-slate-200 p-5 mt-4">
+        <h3 class="font-bold text-slate-700 text-sm mb-3"><i class="bi bi-plus-circle text-blue-500"></i> Add OT Room</h3>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_room">
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="form-label">Code</label>
+              <input type="text" name="room_code" class="form-input" placeholder="OT-05" required>
+            </div>
+            <div>
+              <label class="form-label">Name</label>
+              <input type="text" name="room_name" class="form-input" placeholder="Major OT" required>
+            </div>
+            <div>
+              <label class="form-label">Location</label>
+              <input type="text" name="room_location" class="form-input" placeholder="2nd Floor">
+            </div>
+          </div>
+          <button type="submit" class="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
+            <i class="bi bi-plus"></i> Add Room
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- OT Procedures -->
+    <div>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 bg-slate-50">
+          <h2 class="font-bold text-slate-800 text-base"><i class="bi bi-scissors text-rose-500"></i> OT Procedures</h2>
+        </div>
+        <div class="overflow-y-auto max-h-80">
+          <table class="w-full text-sm">
+            <thead><tr class="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
+              <th class="px-4 py-2 text-left">Code</th>
+              <th class="px-4 py-2 text-left">Procedure</th>
+              <th class="px-4 py-2 text-left">Dept</th>
+              <th class="px-4 py-2 text-right">Avg Dur.</th>
+            </tr></thead>
+            <tbody class="divide-y divide-slate-100">
+              {% for p in procedures %}
+              <tr>
+                <td class="px-4 py-2 font-mono text-xs text-slate-600">{{ p.code }}</td>
+                <td class="px-4 py-2 font-medium text-slate-800 text-xs">{{ p.name }}</td>
+                <td class="px-4 py-2 text-xs text-slate-500">{{ p.department.name|default:"—" }}</td>
+                <td class="px-4 py-2 text-xs text-slate-600 text-right">{{ p.avg_duration_min }}m</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-center py-6 text-slate-400 text-sm">No procedures. Add one below.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Add Procedure Form -->
+      <div class="bg-white rounded-xl border border-slate-200 p-5 mt-4">
+        <h3 class="font-bold text-slate-700 text-sm mb-3"><i class="bi bi-plus-circle text-rose-500"></i> Add Procedure</h3>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_procedure">
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="form-label">Code</label>
+              <input type="text" name="proc_code" class="form-input" placeholder="APPY" required>
+            </div>
+            <div>
+              <label class="form-label">Procedure Name</label>
+              <input type="text" name="proc_name" class="form-input" placeholder="Appendectomy" required>
+            </div>
+            <div>
+              <label class="form-label">Avg. Duration (min)</label>
+              <input type="number" name="proc_duration" class="form-input" value="60" min="5">
+            </div>
+          </div>
+          <button type="submit" class="mt-3 bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-rose-700 transition-colors">
+            <i class="bi bi-plus"></i> Add Procedure
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

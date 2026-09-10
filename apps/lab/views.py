@@ -1816,16 +1816,19 @@ def api_suggest_investigations(request):
                     'id': inv.id,
                     'name': inv.name,
                     'code': getattr(inv, 'code', ''),
-                    'sample': getattr(inv.sample_type, 'name', 'Whole Blood') if hasattr(inv, 'sample_type') and inv.sample_type else 'Whole Blood'
+                    'sample': getattr(inv.sample_type, 'name', 'Whole Blood') if hasattr(inv, 'sample_type') and inv.sample_type else 'Whole Blood',
+                    'available_count': 0  # To be populated below
                 }
                 
-            investigations = list(results.values())
-            response_data = {'status': 'success', 'investigations': investigations}
-            
-            if not investigations:
-                response_data['message'] = 'No investigations mapped'
-                
-            return JsonResponse(response_data)
+            # Fetch global result pool availability
+            from apps.lab.services.result_allocation_service import ResultAllocationService
+            inv_ids = list(results.keys())
+            pool_stats = ResultAllocationService.get_pool_availability(inv_ids)
+            for inv_id in inv_ids:
+                if inv_id in pool_stats:
+                    results[inv_id]['available_count'] = pool_stats[inv_id]['available']
+                    
+            return JsonResponse({'status': 'success', 'investigations': list(results.values())})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
             
@@ -1863,12 +1866,20 @@ def api_search_investigation(request):
         
 
     results = []
+    inv_ids = [inv.id for inv in investigations]
+    
+    # Fetch global result pool availability
+    from apps.lab.services.result_allocation_service import ResultAllocationService
+    pool_stats = ResultAllocationService.get_pool_availability(inv_ids)
+    
     for inv in investigations:
+        avail = pool_stats.get(inv.id, {}).get('available', 0)
         results.append({
             'id': inv.id,
             'text': inv.name,
             'code': inv.code,
-            'sample': inv.sample_type.name if inv.sample_type else 'Whole Blood'
+            'sample': inv.sample_type.name if inv.sample_type else 'Whole Blood',
+            'available_count': avail
         })
         
     return JsonResponse({'results': results})
@@ -1887,7 +1898,8 @@ class DoctorWindowView(LoginRequiredMixin, GranularPermissionRequiredMixin, Temp
 @login_required
 def api_doctor_window_patients(request):
     department_id = request.GET.get('department_id')
-    visit_type = request.GET.get('visit_type')
+    patient_type = request.GET.get('patient_type')
+    visit_type = request.GET.get('visit_type')  # OP / IP / '' (All)
     date_str = request.GET.get('date')
     
     # We will combine Patient (Visit 1) and PatientVisit (Visit > 1)
@@ -1897,6 +1909,8 @@ def api_doctor_window_patients(request):
         patients_qs = patients_qs.filter(registration_date=date_str)
     if department_id:
         patients_qs = patients_qs.filter(department_obj_id=department_id)
+    if patient_type and patient_type != 'A':
+        patients_qs = patients_qs.filter(patient_type=patient_type)
     if visit_type:
         patients_qs = patients_qs.filter(visit_through=visit_type)
         
@@ -1906,6 +1920,8 @@ def api_doctor_window_patients(request):
         visits_qs = visits_qs.filter(visit_date__date=date_str)
     if department_id:
         visits_qs = visits_qs.filter(department_obj_id=department_id)
+    if patient_type and patient_type != 'A':
+        visits_qs = visits_qs.filter(patient__patient_type=patient_type)
     if visit_type:
         visits_qs = visits_qs.filter(visit_type=visit_type)
         
@@ -1933,6 +1949,7 @@ def api_doctor_window_patients(request):
             'department': p.department_obj.name if p.department_obj else (p.department or '-'),
             'dept_code': p.department_obj.code if p.department_obj else (p.department[:4].upper() if p.department else '-'),
             'visit_type': p.visit_through,
+            'patient_type': p.patient_type,
             'visit_no': 1,
             'consultant': p.unit_doctor or '-',
             'diagnosis': ", ".join(diagnosis_texts) if diagnosis_texts else "Select",
@@ -1961,6 +1978,7 @@ def api_doctor_window_patients(request):
             'department': v.department_obj.name if v.department_obj else (v.department or '-'),
             'dept_code': v.department_obj.code if v.department_obj else (v.department[:4].upper() if v.department else '-'),
             'visit_type': v.visit_type,
+            'patient_type': v.patient.patient_type,
             'visit_no': v.visit_no,
             'consultant': v.unit_doctor or '-',
             'diagnosis': ", ".join(diagnosis_texts) if diagnosis_texts else "Select",
@@ -2051,7 +2069,7 @@ class WorkOrdersView(LoginRequiredMixin, GranularPermissionRequiredMixin, Templa
 def api_work_orders_list(request):
     from_date, to_date = get_default_date_range(request, 'from_date', 'to_date')
     department_id = request.GET.get('department_id')
-    visit_type = request.GET.get('visit_type')
+    patient_type = request.GET.get('patient_type')
     status = request.GET.get('status')
     search = request.GET.get('search', '').strip()
 
@@ -2070,8 +2088,8 @@ def api_work_orders_list(request):
         qs = qs.filter(request_date__lte=to_date)
     if department_id:
         qs = qs.filter(department_id=department_id)
-    if visit_type and visit_type != 'ALL':
-        qs = qs.filter(visit_type=visit_type)
+    if patient_type and patient_type != 'A':
+        qs = qs.filter(patient__patient_type=patient_type)
         
     if search:
         qs = qs.filter(
@@ -2105,6 +2123,7 @@ def api_work_orders_list(request):
             'sample_id': sr.sample_id or '-',
             'patient_id': sr.patient.patient_id,
             'patient_name': sr.patient.name,
+            'patient_type': sr.patient.patient_type,
             'age_gender': f"{sr.patient.age_years} / {sr.patient.gender}",
             'department': sr.department.name if sr.department else '-',
             'visit_type': sr.get_visit_type_display(),
@@ -2648,3 +2667,53 @@ def api_diagnosis_investigations(request):
         return JsonResponse({'status': 'success', 'investigations': list(results.values())})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)})
+
+@login_required
+@csrf_exempt
+@transaction.atomic
+def api_allocate_service_request(request, pk):
+    """
+    Allocates AutomationDummyResults to all pending investigations in a ServiceRequest.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
+    from apps.lab.models import ServiceRequest
+    from apps.lab.services.result_allocation_service import ResultAllocationService, ResultPoolExhaustedError
+
+    sr = get_object_or_404(ServiceRequest, pk=pk)
+
+    try:
+        allocations = ResultAllocationService.allocate_all_for_service_request(sr)
+        return JsonResponse({
+            'status': 'success',
+            'allocated_count': len(allocations),
+            'message': f'Successfully allocated results for {len(allocations)} investigations.'
+        })
+    except ResultPoolExhaustedError as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'An unexpected error occurred: {str(e)}'})
+
+
+@login_required
+@csrf_exempt
+def api_save_and_trigger(request):
+    """
+    Creates a Service Request and automatically generates Lab Orders and Result Entries
+    using the global Dummy Result pool based on a selected Box.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+        
+    try:
+        import json
+        data = json.loads(request.body)
+        
+        from apps.lab.services.save_and_trigger_service import SaveAndTriggerService
+        sr = SaveAndTriggerService.execute_trigger(data, request.user)
+        
+        return JsonResponse({'status': 'success', 'service_request_id': sr.id})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})
+

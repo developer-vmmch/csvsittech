@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Live OT Board — VMMC ERP{% endblock %}
+{% block extra_head %}
+<style>
+.live-badge{display:inline-flex;align-items:center;gap:6px;background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:20px;padding:3px 10px;font-size:.75rem;font-weight:700;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#dc2626;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.room-card{border-radius:14px;border:2px solid #e2e8f0;background:white;overflow:hidden;transition:.2s;}
+.room-card.active{border-color:#f59e0b;box-shadow:0 4px 16px rgba(245,158,11,.2);}
+.room-card.emergency{border-color:#ef4444;box-shadow:0 4px 16px rgba(239,68,68,.2);}
+.room-header{padding:1rem;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;}
+.room-body{padding:1rem;}
+.status-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:600;}
+.sp-inprogress{background:#fef9c3;color:#854d0e;}
+.sp-available{background:#dcfce7;color:#166534;}
+.sp-sign-in{background:#e0e7ff;color:#3730a3;}
+.elapsed-bar{background:#e2e8f0;border-radius:4px;height:6px;margin-top:.5rem;}
+.elapsed-fill{background:linear-gradient(90deg,#0284c7,#7c3aed);border-radius:4px;height:6px;transition:.3s;}
+</style>
+<meta http-equiv="refresh" content="30">
+{% endblock %}
+{% block content %}
+<div class="p-4 sm:p-6 max-w-7xl mx-auto">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+        <span class="live-badge"><span class="live-dot"></span> LIVE</span>
+        OT Board
+      </h1>
+      <p class="text-sm text-slate-500 mt-0.5">Auto-refreshes every 30 seconds</p>
+    </div>
+    <div class="flex gap-2 items-center">
+      <span class="text-sm text-slate-500" id="liveTime"></span>
+      <a href="{% url 'ot:booking_create' %}" class="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors">
+        <i class="bi bi-lightning-fill"></i> Emergency Case
+      </a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    {% for rd in room_data %}
+    <div class="room-card {% if rd.case %}{% if rd.case.is_emergency %}emergency{% else %}active{% endif %}{% endif %}">
+      <!-- Room Header -->
+      <div class="room-header">
+        <div>
+          <div class="font-bold text-slate-800 text-lg">{{ rd.room.code }}</div>
+          <div class="text-xs text-slate-500">{{ rd.room.name }}</div>
+        </div>
+        {% if rd.case %}
+          {% if rd.case.is_emergency %}
+          <span class="status-pill" style="background:#fee2e2;color:#dc2626;">
+            <i class="bi bi-lightning-fill"></i> EMERGENCY
+          </span>
+          {% elif rd.case.status == 'SURGERY_IN_PROGRESS' %}
+          <span class="status-pill sp-inprogress"><i class="bi bi-scissors"></i> SURGERY</span>
+          {% elif rd.case.status == 'SIGN_IN' %}
+          <span class="status-pill sp-sign-in"><i class="bi bi-check-circle"></i> Sign-In</span>
+          {% elif rd.case.status == 'TIME_OUT' %}
+          <span class="status-pill" style="background:#fef9c3;color:#854d0e;"><i class="bi bi-pause-circle"></i> Time-Out</span>
+          {% elif rd.case.status == 'SIGN_OUT' %}
+          <span class="status-pill" style="background:#dcfce7;color:#166534;"><i class="bi bi-check2-circle"></i> Sign-Out</span>
+          {% else %}
+          <span class="status-pill sp-sign-in">{{ rd.case.get_status_display }}</span>
+          {% endif %}
+        {% else %}
+          <span class="status-pill sp-available"><i class="bi bi-check-lg"></i> Available</span>
+        {% endif %}
+      </div>
+
+      <!-- Room Body -->
+      <div class="room-body">
+        {% if rd.case %}
+        <div class="mb-3">
+          <div class="font-semibold text-slate-800 text-sm">{{ rd.case.patient.name }}</div>
+          <div class="text-xs text-slate-500">{{ rd.case.patient.patient_id }} | {{ rd.case.patient.age_years }}y {{ rd.case.patient.gender|slice:":1" }}</div>
+        </div>
+        <div class="text-xs text-slate-600 mb-1">
+          <i class="bi bi-scissors text-rose-500"></i>
+          {{ rd.case.procedure.name }}
+        </div>
+        <div class="text-xs text-slate-500 mb-1">
+          <i class="bi bi-person text-blue-500"></i>
+          {{ rd.case.surgeon.get_full_name|default:rd.case.surgeon.username }}
+          {% if rd.case.anesthetist %}
+          <span class="ml-2 text-purple-600">| {{ rd.case.anesthetist.get_full_name|default:rd.case.anesthetist.username }}</span>
+          {% endif %}
+        </div>
+        {% if rd.case.is_mlc %}
+        <div class="text-xs text-red-600 font-semibold mb-2"><i class="bi bi-exclamation-triangle-fill"></i> MLC {{ rd.case.mlc_number }}</div>
+        {% endif %}
+        <div class="mt-2">
+          <a href="{% url 'ot:case_detail' rd.case.pk %}" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-medium">
+            View Case <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+        {% else %}
+        <div class="text-center py-6 text-slate-300">
+          <i class="bi bi-hospital text-3xl block mb-1"></i>
+          <p class="text-xs">No active case</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-span-4 text-center py-12 text-slate-400">
+      <i class="bi bi-hospital text-4xl block mb-2"></i>
+      <p>No OT rooms configured. <a href="{% url 'ot:master' %}" class="text-blue-600 hover:underline">Add rooms in OT Master →</a></p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+<script>
+function tick() {
+  const now = new Date();
+  document.getElementById('liveTime').textContent = now.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+tick();
+setInterval(tick, 1000);
+</script>
+{% endblock %}

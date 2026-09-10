@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'apps.core',
     'apps.patients',
     'apps.lab',
+    'apps.ot',
 ]
 
 MIDDLEWARE = [

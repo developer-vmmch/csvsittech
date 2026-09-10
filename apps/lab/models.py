@@ -680,7 +680,23 @@ class AutomationDummyResult(TimeStampedModel):
     investigation_code = models.CharField(max_length=50, blank=True)
     dummy_name = models.CharField(max_length=100)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
-    status = models.CharField(max_length=20, default='Saved')
+    class StatusChoices(models.TextChoices):
+        SAVED    = 'Saved',    'Saved'
+        CONSUMED = 'Consumed', 'Consumed'
+
+    class ResultStatusChoices(models.TextChoices):
+        NORMAL      = 'NORMAL',      'Normal'
+        BELOW       = 'BELOW',       'Below Range'
+        ABOVE       = 'ABOVE',       'Above Range'
+        MIXED       = 'MIXED',       'Mixed'
+        NON_NUMERIC = 'NON_NUMERIC', 'Non-Numeric'
+
+    status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.SAVED)
+    result_status = models.CharField(
+        max_length=20, choices=ResultStatusChoices.choices,
+        blank=True, null=True,
+        help_text='Computed classification: NORMAL/BELOW/ABOVE/MIXED/NON_NUMERIC'
+    )
     remarks = models.TextField(blank=True, null=True)
     is_automation_test = models.BooleanField(default=True)
     # Synthetic patient context (stored directly, avoids polluting real Patient master)
@@ -703,6 +719,36 @@ class AutomationDummyResultParameter(TimeStampedModel):
     unit = models.CharField(max_length=50, blank=True, null=True)
     reference_range = models.CharField(max_length=255, blank=True, null=True)
     display_order = models.PositiveIntegerField(default=0)
+    result_status = models.CharField(
+        max_length=20, blank=True, null=True,
+        help_text='NORMAL | BELOW | ABOVE | NON_NUMERIC — computed by classify_existing_results'
+    )
 
     class Meta:
         ordering = ['display_order', 'id']
+
+
+class ServiceRequestAllocation(TimeStampedModel):
+    """
+    Links a ServiceRequestInvestigation to the AutomationDummyResult
+    that was consumed for it.
+    """
+    sr_investigation = models.OneToOneField(
+        ServiceRequestInvestigation, on_delete=models.CASCADE,
+        related_name='dummy_allocation'
+    )
+    dummy_result = models.ForeignKey(
+        AutomationDummyResult, on_delete=models.PROTECT,
+        related_name='allocations'
+    )
+    allocated_at = models.DateTimeField(auto_now_add=True)
+    allocated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='dummy_allocations'
+    )
+
+    class Meta:
+        ordering = ['-allocated_at']
+
+    def __str__(self):
+        return f'Alloc SR#{self.sr_investigation_id} -> {self.dummy_result.result_id}'

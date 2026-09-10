@@ -363,6 +363,53 @@
                 </ul>
             </li>
 
+            <!-- OT Module -->
+            <li class="nav-item has-submenu {% if request.resolver_match.namespace == 'ot' %}open active-parent{% endif %}">
+                <a href="javascript:void(0);" class="submenu-toggle" title="Operation Theatre">
+                    <i class="bi bi-scissors" style="color: #f43f5e;"></i>
+                    <span>OT</span>
+                    <i class="bi bi-chevron-down submenu-chevron"></i>
+                </a>
+                <ul class="submenu-list">
+                    <li class="{% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == 'ot' %}active{% endif %}">
+                        <a href="{% url 'ot:dashboard' %}">
+                            <i class="bi bi-grid-1x2"></i>
+                            <span>OT Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'booking_list' or request.resolver_match.url_name == 'booking_create' or request.resolver_match.url_name == 'case_detail' %}active{% endif %}">
+                        <a href="{% url 'ot:booking_list' %}">
+                            <i class="bi bi-calendar-plus"></i>
+                            <span>OT Booking</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'schedule' %}active{% endif %}">
+                        <a href="{% url 'ot:schedule' %}">
+                            <i class="bi bi-calendar-week"></i>
+                            <span>OT Schedule</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'live' %}active{% endif %}">
+                        <a href="{% url 'ot:live' %}">
+                            <i class="bi bi-activity" style="color: #ef4444;"></i>
+                            <span>Live OT</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'history' %}active{% endif %}">
+                        <a href="{% url 'ot:history' %}">
+                            <i class="bi bi-clock-history"></i>
+                            <span>OT History</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'master' %}active{% endif %}">
+                        <a href="{% url 'ot:master' %}">
+                            <i class="bi bi-database-gear"></i>
+                            <span>OT Master</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
             <!-- General Administration Module (Collapsible Submenu) -->
             {% if not user.is_authenticated or user.get_menu_mapping.system_section %}
             <li class="nav-item has-submenu {% if request.resolver_match.namespace == 'users' %}open active-parent{% endif %}">

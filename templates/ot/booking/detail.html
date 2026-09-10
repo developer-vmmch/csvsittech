@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ case.ot_number }} — OT Case{% endblock %}
+{% block extra_head %}
+<style>
+.ot-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 12px;border-radius:20px;font-size:.75rem;font-weight:600;}
+.badge-blue{background:#dbeafe;color:#1d4ed8;}.badge-purple{background:#ede9fe;color:#6d28d9;}
+.badge-orange{background:#ffedd5;color:#c2410c;}.badge-teal{background:#ccfbf1;color:#0f766e;}
+.badge-indigo{background:#e0e7ff;color:#3730a3;}.badge-yellow{background:#fef9c3;color:#854d0e;}
+.badge-green{background:#dcfce7;color:#166534;}.badge-red{background:#fee2e2;color:#991b1b;}
+.badge-gray{background:#f1f5f9;color:#475569;}.badge-emergency{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;font-weight:700;}
+.info-card{background:white;border-radius:12px;border:1px solid #e2e8f0;padding:1.25rem;}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid #f8fafc;}
+.info-row:last-child{border-bottom:none;}
+.info-lbl{font-size:.78rem;color:#64748b;font-weight:500;}
+.info-val{font-size:.87rem;color:#1e293b;font-weight:600;text-align:right;}
+
+/* Workflow Timeline */
+.wf-steps{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding:.5rem 0;}
+.wf-step{display:flex;flex-direction:column;align-items:center;min-width:70px;position:relative;}
+.wf-step:not(:last-child)::after{content:'';position:absolute;top:14px;left:50%;width:100%;height:2px;background:#e2e8f0;z-index:0;}
+.wf-step.done::after,.wf-step.current::after{background:#16a34a;}
+.wf-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;position:relative;z-index:1;border:2px solid #e2e8f0;background:white;}
+.wf-step.done .wf-dot{background:#16a34a;border-color:#16a34a;color:white;}
+.wf-step.current .wf-dot{background:#0284c7;border-color:#0284c7;color:white;box-shadow:0 0 0 4px rgba(2,132,199,.2);}
+.wf-step .wf-lbl{font-size:.65rem;color:#94a3b8;margin-top:.35rem;text-align:center;max-width:64px;line-height:1.2;}
+.wf-step.done .wf-lbl{color:#166534;}
+.wf-step.current .wf-lbl{color:#0284c7;font-weight:700;}
+
+/* Action buttons */
+.action-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.6rem 1.2rem;border-radius:10px;font-weight:600;font-size:.85rem;border:none;cursor:pointer;transition:.2s;}
+.btn-primary{background:#0284c7;color:white;} .btn-primary:hover{background:#0369a1;}
+.btn-success{background:#16a34a;color:white;} .btn-success:hover{background:#15803d;}
+.btn-danger{background:#dc2626;color:white;} .btn-danger:hover{background:#b91c1c;}
+.btn-warning{background:#d97706;color:white;} .btn-warning:hover{background:#b45309;}
+.btn-secondary{background:#f1f5f9;color:#475569;} .btn-secondary:hover{background:#e2e8f0;}
+
+/* History timeline */
+.hist-item{display:flex;gap:.75rem;align-items:flex-start;padding:.6rem 0;}
+.hist-dot{width:10px;height:10px;border-radius:50%;background:#0284c7;margin-top:.35rem;flex-shrink:0;}
+.hist-item:first-child .hist-dot{background:#16a34a;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="p-4 sm:p-6 max-w-7xl mx-auto">
+
+  <!-- Back + Header -->
+  <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-5">
+    <div class="flex items-start gap-3">
+      <a href="{% url 'ot:booking_list' %}" class="text-slate-400 hover:text-slate-600 mt-1"><i class="bi bi-arrow-left text-xl"></i></a>
+      <div>
+        <div class="flex flex-wrap items-center gap-2 mb-1">
+          <h1 class="text-2xl font-bold text-slate-800 font-mono">{{ case.ot_number }}</h1>
+          {% if case.case_type == 'EMERGENCY' %}
+          <span class="ot-badge badge-emergency text-base px-3 py-1"><i class="bi bi-lightning-fill"></i> EMERGENCY</span>
+          {% endif %}
+          {% if case.is_mlc %}
+          <span class="ot-badge badge-red"><i class="bi bi-exclamation-triangle-fill"></i> MLC</span>
+          {% endif %}
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-slate-600 text-sm font-semibold">{{ case.patient.name }}</span>
+          <span class="text-slate-400 text-xs">{{ case.patient.patient_id }}</span>
+          <span class="text-slate-400 text-xs">{{ case.patient.age_years }}y / {{ case.patient.gender }}</span>
+          <span class="ot-badge {{ case.get_status_display_class }}">{{ case.get_status_display }}</span>
+        </div>
+      </div>
+    </div>
+    <!-- Cancel button -->
+    {% if case.status not in 'CLOSED,CANCELLED,SURGERY_IN_PROGRESS,SIGN_OUT,SURGERY_COMPLETED' %}
+    <form method="post" action="{% url 'ot:cancel_case' case.pk %}" onsubmit="return confirm('Cancel this OT case?')">
+      {% csrf_token %}
+      <input type="hidden" name="cancel_reason" value="Cancelled by user">
+      <button type="submit" class="action-btn btn-secondary text-red-600 border border-red-200">
+        <i class="bi bi-x-circle"></i> Cancel Case
+      </button>
+    </form>
+    {% endif %}
+  </div>
+
+  <!-- Messages -->
+  {% if messages %}
+  {% for msg in messages %}
+  <div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium {% if msg.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+    {{ msg }}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- NEXT ACTION (prominent) -->
+  {% if next_actions and case.status != 'CLOSED' and case.status != 'CANCELLED' %}
+  <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 mb-5 flex flex-wrap items-center gap-3">
+    <div class="flex-1">
+      <p class="text-xs text-blue-600 font-semibold uppercase tracking-wide">Next Action</p>
+      <p class="text-sm text-slate-700 mt-0.5">Current status: <strong>{{ case.get_status_display }}</strong></p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      {% for lbl, url_name, style in next_actions %}
+      {% if style == 'success' %}
+        <a href="{% url url_name case.pk %}" class="action-btn btn-success"><i class="bi bi-arrow-right-circle"></i> {{ lbl }}</a>
+      {% elif style == 'danger' %}
+        <a href="{% url url_name case.pk %}" class="action-btn btn-danger"><i class="bi bi-scissors"></i> {{ lbl }}</a>
+      {% elif style == 'warning' %}
+        <a href="{% url url_name case.pk %}" class="action-btn btn-warning"><i class="bi bi-pencil-fill"></i> {{ lbl }}</a>
+      {% else %}
+        <a href="{% url url_name case.pk %}" class="action-btn btn-primary"><i class="bi bi-arrow-right-circle"></i> {{ lbl }}</a>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Workflow Timeline -->
+  <div class="info-card mb-5 overflow-x-auto">
+    <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Case Progress</p>
+    <div class="wf-steps">
+      {% for step in steps %}
+      <div class="wf-step {% if step.is_done %}done{% elif step.is_current %}current{% endif %}">
+        <div class="wf-dot">
+          {% if step.is_done %}<i class="bi bi-check-lg"></i>{% elif step.is_current %}<i class="bi {{ step.icon }}"></i>{% else %}<i class="bi {{ step.icon }}"></i>{% endif %}
+        </div>
+        <div class="wf-lbl">{{ step.label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <!-- Left: Patient + Case Info -->
+    <div class="lg:col-span-1 flex flex-col gap-4">
+      <!-- Patient Info -->
+      <div class="info-card">
+        <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Patient Information</p>
+        <div class="info-row"><span class="info-lbl">Name</span><span class="info-val">{{ case.patient.name }}</span></div>
+        <div class="info-row"><span class="info-lbl">Patient ID</span><span class="info-val font-mono">{{ case.patient.patient_id }}</span></div>
+        <div class="info-row"><span class="info-lbl">Age / Gender</span><span class="info-val">{{ case.patient.age_years }}y / {{ case.patient.gender }}</span></div>
+        <div class="info-row"><span class="info-lbl">Blood Group</span><span class="info-val">{{ case.patient.blood_group|default:"—" }}</span></div>
+        {% if case.ip_admission %}
+        <div class="info-row"><span class="info-lbl">IP No.</span><span class="info-val font-mono text-indigo-700">{{ case.ip_admission.ipno|default:"—" }}</span></div>
+        <div class="info-row"><span class="info-lbl">Ward / Bed</span><span class="info-val">{{ case.ip_admission.ward|default:"—" }} / {{ case.ip_admission.bed|default:"—" }}</span></div>
+        {% endif %}
+      </div>
+
+      <!-- Case Info -->
+      <div class="info-card">
+        <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Case Information</p>
+        <div class="info-row"><span class="info-lbl">Procedure</span><span class="info-val text-xs">{{ case.procedure.name }}</span></div>
+        <div class="info-row"><span class="info-lbl">Diagnosis</span><span class="info-val text-xs">{{ case.diagnosis.name|default:"—" }}</span></div>
+        <div class="info-row"><span class="info-lbl">OT Room</span><span class="info-val">{{ case.ot_room.code }} — {{ case.ot_room.name }}</span></div>
+        <div class="info-row"><span class="info-lbl">Date</span><span class="info-val">{{ case.preferred_date }}</span></div>
+        <div class="info-row"><span class="info-lbl">Expected Start</span><span class="info-val">{{ case.expected_start|default:"—" }}</span></div>
+        <div class="info-row"><span class="info-lbl">Duration</span><span class="info-val">{{ case.expected_duration_min }} min</span></div>
+        <div class="info-row"><span class="info-lbl">Priority</span><span class="info-val">{{ case.get_priority_display }}</span></div>
+        <div class="info-row"><span class="info-lbl">Surgeon</span><span class="info-val text-xs">{{ case.surgeon.get_full_name|default:case.surgeon.username }}</span></div>
+        {% if case.assistant_surgeon %}<div class="info-row"><span class="info-lbl">Assistant</span><span class="info-val text-xs">{{ case.assistant_surgeon.get_full_name|default:case.assistant_surgeon.username }}</span></div>{% endif %}
+        {% if case.anesthetist %}<div class="info-row"><span class="info-lbl">Anesthetist</span><span class="info-val text-xs">{{ case.anesthetist.get_full_name|default:case.anesthetist.username }}</span></div>{% endif %}
+        {% if case.is_mlc %}
+        <div class="info-row"><span class="info-lbl">MLC No.</span><span class="info-val text-red-700 font-mono">{{ case.mlc_number }}</span></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Right: Sub-records + History -->
+    <div class="lg:col-span-2 flex flex-col gap-4">
+
+      <!-- Sub-record cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        <!-- Pre-Op -->
+        <div class="info-card">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Pre-Op</p>
+            <a href="{% url 'ot:preop_form' case.pk %}" class="text-blue-600 text-xs hover:underline font-medium">
+              {% if preop %}Edit{% else %}Start{% endif %} →
+            </a>
+          </div>
+          {% if preop %}
+          <div class="text-xs space-y-1">
+            <div class="flex justify-between"><span class="text-slate-500">Consent</span>
+              <span class="font-semibold {% if preop.consent_status == 'OBTAINED' %}text-green-700{% else %}text-orange-600{% endif %}">{{ preop.get_consent_status_display }}</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">PAC</span>
+              <span class="font-semibold {% if preop.pac_status == 'DONE' %}text-green-700{% else %}text-orange-600{% endif %}">{{ preop.get_pac_status_display }}</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Site Marking</span>
+              <span class="font-semibold {% if preop.site_marked %}text-green-700{% elif preop.site_not_applicable %}text-slate-500{% else %}text-orange-600{% endif %}">
+                {% if preop.site_marked %}Done{% elif preop.site_not_applicable %}N/A{% else %}Pending{% endif %}
+              </span></div>
+          </div>
+          {% else %}<p class="text-xs text-slate-400">Not started</p>{% endif %}
+        </div>
+
+        <!-- Schedule -->
+        <div class="info-card">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Schedule</p>
+            {% if case.status not in 'SURGERY_IN_PROGRESS,SIGN_OUT,SURGERY_COMPLETED,OUTCOME_RECORDED,RECOVERY,WARD,ICU,CLOSED,CANCELLED' %}
+            <a href="{% url 'ot:schedule_form' case.pk %}" class="text-blue-600 text-xs hover:underline font-medium">
+              {% if schedule %}Edit{% else %}Schedule{% endif %} →
+            </a>
+            {% endif %}
+          </div>
+          {% if schedule %}
+          <div class="text-xs space-y-1">
+            <div class="flex justify-between"><span class="text-slate-500">Date</span><span class="font-semibold">{{ schedule.scheduled_date }}</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Start</span><span class="font-semibold">{{ schedule.scheduled_start }}</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Room</span><span class="font-semibold">{{ schedule.room.code }}</span></div>
+            {% if schedule.actual_start %}<div class="flex justify-between"><span class="text-slate-500">Actual Start</span><span class="font-semibold text-green-700">{{ schedule.actual_start|date:"H:i" }}</span></div>{% endif %}
+            {% if schedule.actual_end %}<div class="flex justify-between"><span class="text-slate-500">Actual End</span><span class="font-semibold text-green-700">{{ schedule.actual_end|date:"H:i" }}</span></div>{% endif %}
+          </div>
+          {% else %}<p class="text-xs text-slate-400">Not scheduled</p>{% endif %}
+        </div>
+
+        <!-- WHO Checklists -->
+        <div class="info-card">
+          <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">WHO Checklists</p>
+          {% if checklist %}
+          <div class="text-xs space-y-1">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500">Sign-In</span>
+              {% if checklist.sign_in_done %}
+              <span class="text-green-700 font-semibold">✓ Done {{ checklist.sign_in_at|date:"d/b H:i" }}</span>
+              {% else %}<a href="{% url 'ot:sign_in' case.pk %}" class="text-blue-600 hover:underline">Complete →</a>{% endif %}
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500">Time-Out</span>
+              {% if checklist.time_out_done %}
+              <span class="text-green-700 font-semibold">✓ Done {{ checklist.time_out_at|date:"d/b H:i" }}</span>
+              {% elif checklist.sign_in_done %}<a href="{% url 'ot:time_out' case.pk %}" class="text-blue-600 hover:underline">Complete →</a>
+              {% else %}<span class="text-slate-400">Pending Sign-In</span>{% endif %}
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500">Sign-Out</span>
+              {% if checklist.sign_out_done %}
+              <span class="text-green-700 font-semibold">✓ Done {{ checklist.sign_out_at|date:"d/b H:i" }}</span>
+              {% elif checklist.time_out_done %}<a href="{% url 'ot:sign_out' case.pk %}" class="text-blue-600 hover:underline">Complete →</a>
+              {% else %}<span class="text-slate-400">Pending</span>{% endif %}
+            </div>
+          </div>
+          {% else %}
+          <p class="text-xs text-slate-400">Checklists will appear when surgery starts.</p>
+          {% if case.status == 'SHIFTED_TO_OT' %}
+          <a href="{% url 'ot:sign_in' case.pk %}" class="text-blue-600 text-xs hover:underline font-medium mt-1 inline-block">Start Sign-In →</a>
+          {% endif %}
+          {% endif %}
+        </div>
+
+        <!-- Operation Notes -->
+        <div class="info-card">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Operation Notes</p>
+            <a href="{% url 'ot:operation_notes' case.pk %}" class="text-blue-600 text-xs hover:underline font-medium">{% if operation %}View/Edit{% else %}Create{% endif %} →</a>
+          </div>
+          {% if operation %}
+          <div class="text-xs space-y-1">
+            <div class="flex justify-between"><span class="text-slate-500">Outcome</span>
+              <span class="font-semibold {% if operation.outcome == 'SUCCESSFUL' %}text-green-700{% elif operation.outcome == 'COMPLICATION' %}text-orange-600{% elif operation.outcome == 'INTRAOPERATIVE_DEATH' %}text-red-700{% else %}text-slate-600{% endif %}">
+                {{ operation.outcome|default:"Not recorded" }}
+              </span>
+            </div>
+            {% if operation.estimated_blood_loss_ml %}<div class="flex justify-between"><span class="text-slate-500">EBL</span><span class="font-semibold">{{ operation.estimated_blood_loss_ml }} ml</span></div>{% endif %}
+            {% if operation.incision_time %}<div class="flex justify-between"><span class="text-slate-500">Incision</span><span class="font-semibold">{{ operation.incision_time|date:"H:i" }}</span></div>{% endif %}
+          </div>
+          {% else %}<p class="text-xs text-slate-400">Not recorded yet.</p>{% endif %}
+        </div>
+
+        <!-- Disposition -->
+        <div class="info-card">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Disposition</p>
+            {% if case.status in 'OUTCOME_RECORDED,RECOVERY,WARD,ICU' %}
+            <a href="{% url 'ot:disposition_form' case.pk %}" class="text-blue-600 text-xs hover:underline font-medium">Update →</a>
+            {% endif %}
+          </div>
+          {% if disposition %}
+          <div class="text-xs space-y-1">
+            <div class="flex justify-between"><span class="text-slate-500">Location</span><span class="font-semibold text-indigo-700">{{ disposition.get_disposition_display }}</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Room/Ward</span><span class="font-semibold">{{ disposition.location|default:"—" }}</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Shifted</span><span class="font-semibold">{{ disposition.shifted_at|date:"d/b H:i" }}</span></div>
+          </div>
+          {% else %}<p class="text-xs text-slate-400">Not recorded.</p>{% endif %}
+        </div>
+
+        <!-- Closure -->
+        <div class="info-card">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Final Closure</p>
+            {% if case.status in 'RECOVERY,WARD,ICU' %}
+            <a href="{% url 'ot:closure_form' case.pk %}" class="text-blue-600 text-xs hover:underline font-medium">Close Case →</a>
+            {% endif %}
+          </div>
+          {% if closure %}
+          <div class="text-xs space-y-1">
+            <div class="flex justify-between"><span class="text-slate-500">Status</span>
+              <span class="font-bold {% if closure.final_closure == 'DECEASED' %}text-red-700{% else %}text-green-700{% endif %}">{{ closure.get_final_closure_display }}</span>
+            </div>
+            <div class="flex justify-between"><span class="text-slate-500">Closed</span><span class="font-semibold">{{ closure.closed_at|date:"d/b/Y H:i" }}</span></div>
+          </div>
+          {% elif case.status == 'CLOSED' %}
+          <p class="text-xs text-green-700 font-semibold">✓ Case Closed</p>
+          {% else %}<p class="text-xs text-slate-400">Case not yet closed.</p>{% endif %}
+        </div>
+      </div>
+
+      <!-- Specimens -->
+      {% if specimens %}
+      <div class="info-card">
+        <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Specimens</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs">
+            <thead><tr class="text-slate-500">
+              <th class="py-1 text-left">Specimen</th><th class="py-1 text-left">Destination</th><th class="py-1 text-left">Status</th><th class="py-1 text-left">Collected</th>
+            </tr></thead>
+            <tbody>
+              {% for sp in specimens %}
+              <tr class="border-t border-slate-100">
+                <td class="py-1 font-medium">{{ sp.specimen_name }}</td>
+                <td class="py-1 text-slate-600">{{ sp.destination }}</td>
+                <td class="py-1">
+                  <span class="{% if sp.status == 'RESULT_RECEIVED' %}text-green-700{% elif sp.status == 'SENT' %}text-blue-600{% else %}text-orange-600{% endif %} font-semibold">{{ sp.get_status_display }}</span>
+                </td>
+                <td class="py-1 text-slate-500">{{ sp.collected_at|date:"H:i"|default:"—" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Status History -->
+      <div class="info-card">
+        <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Status History</p>
+        {% if history %}
+        <div class="space-y-0 divide-y divide-slate-50">
+          {% for h in history %}
+          <div class="hist-item">
+            <div class="hist-dot"></div>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-semibold text-slate-700">
+                {% if h.from_status %}{{ h.from_status }} → {% endif %}{{ h.to_status }}
+              </div>
+              <div class="text-xs text-slate-500">
+                {{ h.changed_at|date:"d/b/Y H:i" }} by {{ h.changed_by.get_full_name|default:h.changed_by.username|default:"System" }}
+                {% if h.remarks %} — <em>{{ h.remarks }}</em>{% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<p class="text-xs text-slate-400">No history recorded.</p>{% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

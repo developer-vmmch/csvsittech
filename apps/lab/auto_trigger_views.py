@@ -2063,9 +2063,14 @@ def api_get_dummy_results(request):
                 'name': p.parameter_name,
                 'value': p.result_value,
                 'unit': p.unit,
-                'reference_range': p.reference_range
+                'reference_range': p.reference_range,
+                'result_status': p.result_status or 'NON_NUMERIC',
             })
             
+        # Overall status: use DB-stored value
+        overall_status = r.result_status or 'NON_NUMERIC'
+        is_consumed = r.status == 'Consumed'
+
         groups[inv_name]['results'].append({
             'id': r.id,
             'result_id': r.result_id,
@@ -2073,6 +2078,8 @@ def api_get_dummy_results(request):
             'created_on': timezone.localtime(r.created_at).strftime('%d-%b-%Y %I:%M %p'),
             'created_by': r.created_by.username if r.created_by else 'System',
             'status': r.status,
+            'overall_status': overall_status,
+            'is_consumed': is_consumed,
             'param_count': len(params),
             'parameters': params,
             'remarks': r.remarks,

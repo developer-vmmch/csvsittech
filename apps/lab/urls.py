@@ -15,7 +15,7 @@ from .views import (
     OrderEntryView, ResultEntryListView, ResultEntryDetailView,
     LegacyMappingView, process_legacy_mapping,
     ServiceRequestListView, ServiceRequestCreateView,
-    api_get_patients_for_request, api_search_diagnosis, api_suggest_investigations, api_search_investigation,
+    api_get_patients_for_request, api_search_diagnosis, api_suggest_investigations, api_search_investigation, api_allocate_service_request, api_save_and_trigger,
     api_diagnosis_count, api_investigation_count, api_parameter_count,
     DoctorWindowView, api_doctor_window_patients, api_doctor_window_get_diagnosis, api_doctor_window_save_diagnosis,
     WorkOrdersView, WorkOrderDetailView, api_work_orders_list, api_work_order_receive, api_work_order_receive_multiple, WorkOrderResultEntryView, api_work_order_save_result
@@ -248,7 +248,9 @@ urlpatterns = [
     path('api/service-request/patients/', api_get_patients_for_request, name='api_get_patients_for_request'),
     path('api/service-request/diagnoses/', api_search_diagnosis, name='api_search_diagnosis'),
     path('api/service-request/suggest-investigations/', api_suggest_investigations, name='api_suggest_investigations'),
-    path('api/service-request/search-investigation/', api_search_investigation, name='api_search_investigation'),
+    path('api/service-request/search-investigations/', api_search_investigation, name='api_search_investigation'),
+    path('api/service-request/<int:pk>/allocate/', api_allocate_service_request, name='api_allocate_service_request'),
+    path('api/service-request/save-and-trigger/', api_save_and_trigger, name='api_save_and_trigger'),
     
     # Doctor Window
     path('doctor-window/', DoctorWindowView.as_view(), name='doctor_window'),

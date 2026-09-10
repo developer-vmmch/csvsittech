@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Anesthesia — {{ case.ot_number }}{% endblock %}
+{% block extra_head %}<style>
+.form-section{background:white;border-radius:12px;border:1px solid #e2e8f0;padding:1.5rem;margin-bottom:1.25rem;}
+.form-section h3{font-size:.9rem;font-weight:700;color:#1e293b;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:.5rem;}
+.form-label{display:block;font-size:.8rem;font-weight:600;color:#475569;margin-bottom:.3rem;}
+.form-input{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:.55rem .75rem;font-size:.9rem;outline:none;transition:.2s;}
+.form-input:focus{border-color:#0284c7;box-shadow:0 0 0 3px rgba(2,132,199,.12);}
+</style>{% endblock %}
+{% block content %}
+<div class="p-4 sm:p-6 max-w-3xl mx-auto">
+  <div class="flex items-center gap-3 mb-6">
+    <a href="{% url 'ot:case_detail' case.pk %}" class="text-slate-400 hover:text-slate-600"><i class="bi bi-arrow-left text-xl"></i></a>
+    <div>
+      <h1 class="text-xl font-bold text-slate-800"><i class="bi bi-droplet text-blue-500"></i> Anesthesia Record</h1>
+      <p class="text-sm text-slate-500">{{ case.ot_number }} — {{ case.patient.name }}</p>
+    </div>
+  </div>
+  {% if messages %}{% for msg in messages %}<div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium {% if msg.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">{{ msg }}</div>{% endfor %}{% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-section">
+      <h3><i class="bi bi-droplet text-blue-500"></i> Anesthesia Type & Timing</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="form-label">Type</label>
+          <select name="anesthesia_type" class="form-input">
+            {% for val, lbl in type_choices %}
+            <option value="{{ val }}" {% if anes.anesthesia_type == val %}selected{% endif %}>{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Start Time</label>
+          <input type="datetime-local" name="start_time" class="form-input"
+            value="{% if anes.start_time %}{{ anes.start_time|date:'Y-m-d\TH:i' }}{% endif %}">
+        </div>
+        <div>
+          <label class="form-label">End Time</label>
+          <input type="datetime-local" name="end_time" class="form-input"
+            value="{% if anes.end_time %}{{ anes.end_time|date:'Y-m-d\TH:i' }}{% endif %}">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3><i class="bi bi-heart-pulse text-red-500"></i> Pre-Op Vitals</h3>
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <label class="form-label">BP</label>
+          <input type="text" name="pre_bp" class="form-input" placeholder="120/80" value="{{ anes.pre_bp|default:'' }}">
+        </div>
+        <div>
+          <label class="form-label">Pulse</label>
+          <input type="text" name="pre_pulse" class="form-input" placeholder="72" value="{{ anes.pre_pulse|default:'' }}">
+        </div>
+        <div>
+          <label class="form-label">SpO2</label>
+          <input type="text" name="pre_spo2" class="form-input" placeholder="99%" value="{{ anes.pre_spo2|default:'' }}">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3><i class="bi bi-heart-pulse text-green-500"></i> Post-Op Vitals</h3>
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <label class="form-label">BP</label>
+          <input type="text" name="post_bp" class="form-input" placeholder="120/80" value="{{ anes.post_bp|default:'' }}">
+        </div>
+        <div>
+          <label class="form-label">Pulse</label>
+          <input type="text" name="post_pulse" class="form-input" placeholder="72" value="{{ anes.post_pulse|default:'' }}">
+        </div>
+        <div>
+          <label class="form-label">SpO2</label>
+          <input type="text" name="post_spo2" class="form-input" placeholder="99%" value="{{ anes.post_spo2|default:'' }}">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3><i class="bi bi-lungs text-purple-500"></i> Airway & Notes</h3>
+      <div class="grid grid-cols-1 gap-4">
+        <div>
+          <label class="form-label">Airway Notes</label>
+          <textarea name="airway_notes" rows="2" class="form-input" placeholder="Airway management, intubation notes...">{{ anes.airway_notes|default:'' }}</textarea>
+        </div>
+        <div>
+          <label class="form-label">Additional Remarks</label>
+          <textarea name="remarks" rows="2" class="form-input" placeholder="Medications given, any events...">{{ anes.remarks|default:'' }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-base transition-colors flex items-center justify-center gap-2">
+        <i class="bi bi-floppy"></i> Save Anesthesia Record
+      </button>
+      <a href="{% url 'ot:case_detail' case.pk %}" class="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition-colors">Back</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

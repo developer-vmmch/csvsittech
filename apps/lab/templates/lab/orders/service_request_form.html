@@ -55,7 +55,7 @@
     
     .sr-main-grid {
         display: grid;
-        grid-template-columns: 2.5fr 1fr;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
         gap: 1.5rem;
         align-items: start;
     }
@@ -557,6 +557,7 @@
                                 <th style="width: 50px;">S.NO</th>
                                 <th>INVESTIGATION NAME</th>
                                 <th>CODE</th>
+                                <th>AVAILABLE</th>
                                 <th>SAMPLE TYPE</th>
                                 <th style="width: 70px; text-align: center;">QTY</th>
                                 <th>SOURCE</th>
@@ -577,9 +578,12 @@
                     </div>
                 </div>
 
-                <div class="footer-actions">
-                    <button type="button" id="btn-save-request" class="btn-save">
-                        <i class="bi bi-check-lg"></i> Save Service Request
+                <div class="footer-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button type="button" id="btn-save-request" class="btn-save" style="background-color: #0b5ed7; display: none;">
+                        <i class="bi bi-floppy"></i> Save
+                    </button>
+                    <button type="button" id="btn-allocate-request" class="btn-save" style="background-color: var(--primary-color);">
+                        <i class="bi bi-check-all"></i> Save & Trigger
                     </button>
                     <button type="button" id="btn-clear-all" class="btn-clear">
                         <i class="bi bi-arrow-repeat"></i> Clear All
@@ -591,17 +595,26 @@
         <!-- RIGHT WORKSPACE (Patient Finder) -->
         <div class="sr-card h-100 mb-0">
             <div class="sr-card-header">
-                <h5 class="sr-card-title"><i class="bi bi-people-fill"></i> Patient List <span id="finder-title-dept" style="color: var(--text-main); font-weight: 500; font-size: 0.9rem; margin-left: 0.25rem;">(OP)</span></h5>
+                <h5 class="sr-card-title"><i class="bi bi-people-fill"></i> Patient List <span id="finder-title-dept" style="color: var(--text-main); font-weight: 500; font-size: 0.9rem; margin-left: 0.25rem;">(A - ALL)</span></h5>
             </div>
             
             <div class="finder-filters">
-                <div class="filter-grid">
+                <div class="filter-grid" style="grid-template-columns: auto auto 1.5fr; gap: 0.75rem; align-items: end;">
                     <div>
-                        <span class="filter-label">Patient Type</span>
-                        <div class="radio-group">
-                            <label class="radio-item"><input type="radio" name="f_visit_type" value="OP" checked> OP</label>
-                            <label class="radio-item"><input type="radio" name="f_visit_type" value="IP"> Inpatient</label>
-                        </div>
+                        <span class="filter-label">Type</span>
+                        <select id="f_patient_type" class="sr-input">
+                            <option value="A">A</option>
+                            <option value="O">O</option>
+                            <option value="D">D</option>
+                        </select>
+                    </div>
+                    <div>
+                        <span class="filter-label">Visit</span>
+                        <select id="f_visit_type" class="sr-input">
+                            <option value="">All</option>
+                            <option value="OP">OP</option>
+                            <option value="IP">IP</option>
+                        </select>
                     </div>
                     <div>
                         <span class="filter-label">Department</span>
@@ -613,7 +626,7 @@
                         </select>
                     </div>
                 </div>
-                <div>
+                <div style="margin-top: 0.75rem;">
                     <span class="filter-label">Date</span>
                     <div class="date-view-row">
                         <input type="date" id="f_date" class="sr-input" value="{% now 'Y-m-d' %}" onclick="if(this.showPicker) this.showPicker();">
@@ -622,23 +635,24 @@
                 </div>
             </div>
             
-            <div style="width: 100%; overflow: auto; max-height: calc(100vh - 350px);">
+            <div style="width: 100%; overflow: auto; max-height: calc(100vh - 370px);">
                 <table class="inv-table patient-table" id="patients-table">
                     <thead>
                         <tr>
-                            <th>S.No</th>
+                            <th>#</th>
                             <th>Patient ID</th>
                             <th>Patient Name</th>
                             <th>Age</th>
+                            <th>Type</th>
+                            <th>Visit</th>
                             <th>Dept</th>
-                            <th>Visit No</th>
                             <th>Diagnosis</th>
-                            <th style="text-align: center;">Requests</th>
+                            <th style="text-align: center;">SR</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td colspan="8" class="text-center text-muted" style="padding: 2rem;">
+                            <td colspan="9" class="text-center text-muted" style="padding: 2rem;">
                                 Please select filters and click View to load patients
                             </td>
                         </tr>
@@ -677,6 +691,35 @@
                 </table>
             </div>
         </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trigger Modal -->
+<div id="trigger-modal" class="modal" tabindex="-1" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1050; align-items: center; justify-content: center;">
+    <div class="modal-dialog" style="background: white; border-radius: 8px; width: 450px; padding: 1.5rem; position: relative;">
+        <h5 style="margin-top: 0; color: var(--primary-blue); border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Select Diagnosis Box</h5>
+        
+        <div style="margin: 1.5rem 0;">
+            <label style="font-weight: 500; font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">Select Box for Dummy Result Generation:</label>
+            <select id="box-selector" class="sr-input">
+                <option value="001">Box 001 - NORMAL</option>
+                <option value="002">Box 002 - NORMAL</option>
+                <option value="003">Box 003 - NORMAL</option>
+                <option value="004">Box 004 - NORMAL</option>
+                <option value="005">Box 005 - NORMAL</option>
+                <option value="006">Box 006 - BELOW</option>
+                <option value="007">Box 007 - BELOW</option>
+                <option value="008">Box 008 - ABOVE</option>
+                <option value="009">Box 009 - ABOVE</option>
+                <option value="010">Box 010 - UNIVERSAL</option>
+            </select>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" id="btn-cancel-trigger" class="btn-clear" style="padding: 0.5rem 1rem;">Cancel</button>
+            <button type="button" id="btn-confirm-trigger" class="btn-save" style="background-color: var(--primary-color); padding: 0.5rem 1rem;">Confirm & Trigger</button>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -693,14 +736,18 @@ $(document).ready(function() {
     let selectedDiagnoses = [];
     let currentDiagnosisIds = [];
     
-    // Update Title on Dept change
-    $('#f_dept').change(function() {
-        const type = $('input[name="f_visit_type"]:checked').val();
+    // Update Title on filter change
+    function updateFinderTitle() {
+        const type = $('#f_patient_type').val() || 'A';
+        const visit = $('#f_visit_type').val() || '';
         const dept = $("#f_dept option:selected").text();
-        $('#finder-title-dept').text(`(${type} - ${dept === 'ALL DEPARTMENTS' ? 'ALL' : dept})`);
-    });
-    $('input[name="f_visit_type"]').change(function() { $('#f_dept').trigger('change'); });
-    $('#f_dept').trigger('change');
+        const visitLabel = visit ? ` | ${visit}` : '';
+        const deptLabel = (dept === 'ALL DEPARTMENTS' || !dept) ? '' : ` | ${dept}`;
+        $('#finder-title-dept').text(`(${type}${visitLabel}${deptLabel})`);
+    }
+    $('#f_patient_type, #f_visit_type').change(updateFinderTitle);
+    $('#f_dept').change(updateFinderTitle);
+    updateFinderTitle();
     
     // --- 1. PATIENT FINDER ---
     function loadPatients() {
@@ -713,7 +760,8 @@ $(document).ready(function() {
             data: {
                 date: $('#f_date').val(),
                 department_id: $('#f_dept').val(),
-                visit_type: $('input[name="f_visit_type"]:checked').val()
+                patient_type: $('#f_patient_type').val(),
+                visit_type: $('#f_visit_type').val()
             },
             success: function(res) {
                 const tbody = $('#patients-table tbody');
@@ -729,7 +777,7 @@ $(document).ready(function() {
                     res.patients.forEach(p => { if (p.request_count === 0) pendingCount++; });
                     
                     if (pendingCount === 0) {
-                        tbody.append('<tr><td colspan="8" class="text-center" style="padding: 1.5rem; color: #059669; font-weight: 600; font-size: 0.95rem; background: #f0fdf4; border-bottom: 2px solid #a7f3d0;"><i class="bi bi-check-circle-fill"></i> All service requests completed</td></tr>');
+                        tbody.append('<tr><td colspan="9" class="text-center" style="padding: 1.5rem; color: #059669; font-weight: 600; font-size: 0.95rem; background: #f0fdf4; border-bottom: 2px solid #a7f3d0;"><i class="bi bi-check-circle-fill"></i> All service requests completed</td></tr>');
                     }
 
                     // Sort patients: Pending (0) first, Request Raised (>0) second
@@ -747,14 +795,18 @@ $(document).ready(function() {
                         else { deptSummary[dCode].ip++; totIP++; }
 
                         const isRaised = p.request_count > 0;
+                        const ptBadge = p.patient_type === 'D'
+                            ? `<span style="color:#b45309;font-weight:700;">D</span>`
+                            : `<span style="color:#0b5ed7;font-weight:700;">O</span>`;
                         const tr = $(`
                             <tr class="patient-row ${isRaised ? 'status-raised' : 'status-pending'}">
                                 <td>${index + 1}</td>
                                 <td style="color: var(--primary-blue); font-weight: 600;">${p.patient_id}</td>
                                 <td style="font-weight: 500;">${p.name}</td>
                                 <td>${p.age}</td>
+                                <td>${ptBadge}</td>
+                                <td>${p.visit_type || '-'}</td>
                                 <td><span title="${p.department}">${dCode}</span></td>
-                                <td>${p.visit_no}</td>
                                 <td>${p.diagnosis.length > 15 ? p.diagnosis.substring(0,15)+'...' : p.diagnosis}</td>
                                 <td style="text-align: center;"><span style="color: var(--primary-blue); font-weight: 700;">${p.request_count}</span></td>
                             </tr>
@@ -782,7 +834,7 @@ $(document).ready(function() {
                     $('#summary-tfoot').show();
 
                 } else {
-                    tbody.html('<tr><td colspan="8" class="text-center text-muted" style="padding: 2rem;">No patients found for the selected date and filters.</td></tr>');
+                    tbody.html('<tr><td colspan="9" class="text-center text-muted" style="padding: 2rem;">No patients found for the selected date and filters.</td></tr>');
                     
                     $('#summary-table tbody').html(`
                         <tr><td colspan="4" class="text-center text-muted">No data available</td></tr>
@@ -792,7 +844,7 @@ $(document).ready(function() {
             },
             error: function(xhr) {
                 console.error("Error loading patients:", xhr);
-                $('#patients-table tbody').html('<tr><td colspan="8" class="text-center text-danger" style="padding: 2rem;">Unable to load patient data. Please try again.</td></tr>');
+                $('#patients-table tbody').html('<tr><td colspan="9" class="text-center text-danger" style="padding: 2rem;">Unable to load patient data. Please try again.</td></tr>');
             },
             complete: function() { btn.html(orig); }
         });
@@ -818,6 +870,18 @@ $(document).ready(function() {
         $('#lbl-visit').text(currentPatient.visit_no);
         $('#lbl-visit-type').text(currentPatient.visit_type || '-');
         $('#lbl-consultant').text(currentPatient.consultant || '-');
+        
+        // Save vs Save & Trigger logic based on actual patient_type
+        if (currentPatient.patient_type === 'D') {
+            $('#btn-save-request').hide();
+            $('#btn-allocate-request').show();
+            $('#btn-allocate-request').prop('disabled', false);
+        } else {
+            // Patient type O (or anything else)
+            $('#btn-save-request').show();
+            $('#btn-save-request').prop('disabled', false);
+            $('#btn-allocate-request').hide();
+        }
         
         // Fetch current diagnoses
         $('#diagnosis-card').show();
@@ -1026,6 +1090,7 @@ $(document).ready(function() {
             id: selectedInvData.id,
             name: selectedInvData.text,
             code: selectedInvData.code || 'N/A',
+            available_count: selectedInvData.available_count || 0,
             sample: 'Manual',
             qty: 1,
             source: 'Manual'
@@ -1053,6 +1118,7 @@ $(document).ready(function() {
                     <td>${idx + 1}</td>
                     <td style="color: var(--text-main); font-weight: 500;">${inv.name}</td>
                     <td>${inv.code}</td>
+                    <td><span class="badge" style="background-color: ${inv.available_count > 0 ? '#10b981' : '#dc2626'};">${inv.available_count || 0}</span></td>
                     <td>${inv.sample}</td>
                     <td style="text-align: center;">
                         <input type="number" min="1" class="qty-input" data-index="${idx}" value="${inv.qty}">
@@ -1081,12 +1147,32 @@ $(document).ready(function() {
     });
     
     // --- 6. SAVE REQUEST ---
-    $('#btn-save-request').click(function() {
+    function submitRequest(allocate) {
         if(!currentPatient) return alert('Please select a patient first.');
         if(currentDiagnosisIds.length === 0) return alert('Please select at least one diagnosis before saving investigations.');
         if(selectedInvestigations.length === 0) return alert('Please add at least one investigation.');
         
-        const btn = $(this);
+        if (allocate) {
+            // Show modal
+            $('#trigger-modal').css('display', 'flex');
+        } else {
+            // Normal save as draft
+            executeRequest(false, null);
+        }
+    }
+    
+    $('#btn-cancel-trigger').click(function() {
+        $('#trigger-modal').hide();
+    });
+    
+    $('#btn-confirm-trigger').click(function() {
+        const boxId = $('#box-selector').val();
+        $('#trigger-modal').hide();
+        executeRequest(true, boxId);
+    });
+
+    function executeRequest(allocate, boxId) {
+        const btn = allocate ? $('#btn-allocate-request') : $('#btn-save-request');
         const orig = btn.html();
         btn.html('<i class="spinner-border spinner-border-sm"></i> Saving...').prop('disabled', true);
         
@@ -1102,11 +1188,15 @@ $(document).ready(function() {
                 id: i.id,
                 qty: i.qty,
                 source: i.source === 'Manual' ? 'MANUAL' : 'AUTO_SUGGESTED'
-            }))
+            })),
+            allocate_results: allocate,
+            box_id: boxId
         };
         
+        const apiUrl = allocate ? "{% url 'lab:api_save_and_trigger' %}" : "{% url 'lab:service_request_add' %}";
+        
         $.ajax({
-            url: "{% url 'lab:service_request_add' %}",
+            url: apiUrl,
             type: 'POST',
             contentType: 'application/json',
             headers: { 'X-CSRFToken': '{{ csrf_token }}' },
@@ -1144,12 +1234,19 @@ $(document).ready(function() {
                     }
                 } else {
                     alert('Error: ' + res.message);
+                    btn.html(orig).prop('disabled', false);
                 }
             },
-            complete: function() { btn.html(orig).prop('disabled', false); }
+            error: function() {
+                alert('An error occurred while saving the request.');
+                btn.html(orig).prop('disabled', false);
+            }
         });
-    });
+    }
 
+    $('#btn-save-request').click(() => submitRequest(false));
+    $('#btn-allocate-request').click(() => submitRequest(true));
+    
     $('#btn-clear-all').click(function() {
         $('#patient-details-block').hide();
         $('#diagnosis-card').hide();

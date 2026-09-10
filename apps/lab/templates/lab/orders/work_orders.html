@@ -190,9 +190,9 @@
         <div class="filter-group">
             <span class="filter-label">Patient Type</span>
             <select id="f_type" class="filter-input" style="width: 100px;">
-                <option value="ALL">All</option>
-                <option value="OP">OP</option>
-                <option value="IP">IP</option>
+                <option value="A">A - All</option>
+                <option value="O">O - Original</option>
+                <option value="D">D - Dummy</option>
             </select>
         </div>
         <div class="filter-group">
@@ -223,6 +223,7 @@
                         <th>Service Request</th>
                         <th>Patient ID</th>
                         <th>Patient Name</th>
+                        <th>Patient Type</th>
                         <th>Sample ID</th>
                         <th>Order Date</th>
                         <th>Sample Date</th>
@@ -283,7 +284,7 @@ $(document).ready(function() {
                 from_date: $('#f_from_date').val(),
                 to_date: $('#f_to_date').val(),
                 department_id: $('#f_dept').val(),
-                visit_type: $('#f_type').val(),
+                patient_type: $('#f_type').val(),
                 status: $('#f_status').val(),
                 search: $('#f_search').val()
             },
@@ -302,6 +303,7 @@ $(document).ready(function() {
                                 <td style="color: var(--text-muted);">SR-${wo.id}</td>
                                 <td style="color: var(--primary-blue); font-weight: 500;">${wo.patient_id}</td>
                                 <td>${wo.patient_name}</td>
+                                <td>${wo.patient_type === 'D' ? '<span style="color:var(--warning-text);font-weight:600;">D</span>' : 'O'}</td>
                                 <td style="font-weight: 600;">${wo.sample_id}</td>
                                 <td>${wo.request_date}</td>
                                 <td>${wo.request_date}</td>
@@ -313,7 +315,7 @@ $(document).ready(function() {
                         tbody.append(tr);
                     });
                 } else {
-                    tbody.html('<tr><td colspan="11" class="text-center text-muted" style="padding: 2rem;">No work orders found.</td></tr>');
+                    tbody.html('<tr><td colspan="12" class="text-center text-muted" style="padding: 2rem;">No work orders found.</td></tr>');
                 }
             },
             complete: function() { btn.html(orig).prop('disabled', false); }

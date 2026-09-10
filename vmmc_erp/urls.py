@@ -13,6 +13,7 @@ urlpatterns = [
     path('patients/', include('apps.patients.urls')),
     path('lab/', include(('apps.lab.urls', 'lab'), namespace='lab')),
     path('administration/', include(('apps.users.urls', 'users'), namespace='users')),
+    path('ot/', include(('apps.ot.urls', 'ot'), namespace='ot')),
 ]
 
 if settings.DEBUG:
