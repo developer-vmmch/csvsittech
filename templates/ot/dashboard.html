@@ -1,169 +1,285 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 
 {% block title %}OT Dashboard — VMMC ERP{% endblock %}
 
 {% block extra_head %}
 <style>
-.ot-stat-card {
-    background: white;
-    border-radius: 12px;
-    padding: 1.25rem 1.5rem;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+/* =====================================================
+   OT DASHBOARD — RESPONSIVE LAYOUT
+   Max-width container, 4x2 KPI grid, proportional table
+   ===================================================== */
+
+.ot-dash-wrap {
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem;
+  box-sizing: border-box;
 }
-.ot-stat-icon {
-    width: 48px; height: 48px; border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.4rem; flex-shrink: 0;
+@media (min-width: 640px)  { .ot-dash-wrap { padding: 1.75rem 1.5rem; } }
+@media (min-width: 1280px) { .ot-dash-wrap { padding: 2rem 2rem; } }
+
+/* PAGE HEADER */
+.ot-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
-.ot-stat-val { font-size: 2rem; font-weight: 700; line-height: 1; }
-.ot-stat-lbl { font-size: 0.78rem; color: #64748b; font-weight: 500; margin-top: 2px; }
-.ot-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 10px; border-radius:20px; font-size:.72rem; font-weight:600; }
-.badge-blue { background:#dbeafe; color:#1d4ed8; }
-.badge-purple { background:#ede9fe; color:#6d28d9; }
-.badge-orange { background:#ffedd5; color:#c2410c; }
-.badge-teal { background:#ccfbf1; color:#0f766e; }
-.badge-indigo { background:#e0e7ff; color:#3730a3; }
-.badge-yellow { background:#fef9c3; color:#854d0e; }
-.badge-green { background:#dcfce7; color:#166534; }
-.badge-red { background:#fee2e2; color:#991b1b; }
-.badge-gray { background:#f1f5f9; color:#475569; }
-.badge-emergency { background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; font-weight:700; }
-.case-row:hover { background:#f8fafc; }
-.timeline-step { display:flex; align-items:center; gap:.5rem; font-size:.82rem; }
-.step-dot { width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:.7rem; }
-.step-done { background:#16a34a; color:white; }
-.step-current { background:#0284c7; color:white; }
-.step-pending { background:#e2e8f0; color:#94a3b8; }
+.ot-page-header h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin: 0;
+}
+@media (min-width: 768px) { .ot-page-header h1 { font-size: 1.85rem; } }
+.ot-page-header p { font-size: .85rem; color: #64748b; margin: .3rem 0 0 0; }
+.ot-new-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: #e11d48;
+  color: #fff !important;
+  font-weight: 700;
+  font-size: .875rem;
+  padding: .65rem 1.25rem;
+  border-radius: 10px;
+  text-decoration: none !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background .15s;
+  align-self: flex-start;
+}
+.ot-new-btn:hover { background: #be123c; }
+@media (max-width: 479px) {
+  .ot-page-header { flex-wrap: wrap; }
+  .ot-new-btn { width: 100%; justify-content: center; }
+}
+
+/* KPI GRID
+   2 cols on mobile, 4 cols 768px+, 8 cols only at 1400px+ */
+.ot-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .875rem;
+  margin-bottom: 1.5rem;
+}
+@media (min-width: 768px)  { .ot-kpi-grid { grid-template-columns: repeat(4, 1fr); gap: 1rem; } }
+/* 8-col only at very large monitors with plenty of room after sidebar */
+@media (min-width: 1800px) { .ot-kpi-grid { grid-template-columns: repeat(8, minmax(160px, 1fr)); } }
+
+/* KPI CARD */
+.kpi-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  padding: 1.1rem 1rem;
+  min-height: 110px;
+  display: flex;
+  align-items: center;
+  gap: .875rem;
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: box-shadow .18s, transform .18s;
+}
+.kpi-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.09); transform: translateY(-1px); }
+.kpi-icon {
+  width: 46px; height: 46px; min-width: 46px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+.kpi-body { min-width: 0; flex: 1; }
+.kpi-num  { font-size: 1.85rem; font-weight: 800; line-height: 1; letter-spacing: -.5px; }
+.kpi-lbl  { font-size: .78rem; color: #64748b; font-weight: 600; margin-top: .2rem; line-height: 1.35; }
+
+/* QUICK ACTIONS */
+.ot-quick-actions { display: flex; flex-wrap: wrap; gap: .625rem; margin-bottom: 1.5rem; align-items: center; }
+.qa-btn {
+  display: inline-flex; align-items: center; gap: .45rem;
+  padding: 0 1rem; border-radius: 9px; font-size: .825rem; font-weight: 600;
+  text-decoration: none !important; border: 1px solid; white-space: nowrap;
+  height: 36px; box-sizing: border-box; transition: background .15s; line-height: 1;
+}
+.qa-live  { background:#fef2f2; border-color:#fca5a5; color:#dc2626; }
+.qa-live:hover  { background:#fee2e2; }
+.qa-blue  { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
+.qa-blue:hover  { background:#dbeafe; }
+.qa-slate { background:#f8fafc; border-color:#e2e8f0; color:#475569; }
+.qa-slate:hover { background:#f1f5f9; }
+
+/* TABLE */
+.ot-table-wrap { background:#fff; border-radius:14px; border:1px solid #e2e8f0; box-shadow:0 1px 4px rgba(0,0,0,.06); overflow:hidden; }
+.ot-table-header { padding:.9rem 1.25rem; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; }
+.ot-table-header h2 { font-size:1rem; font-weight:700; color:#1e293b; margin:0; }
+.ot-table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+
+table.ot-tbl { width:100%; border-collapse:collapse; table-layout:fixed; min-width:700px; }
+table.ot-tbl col.col-otno      { width:13%; }
+table.ot-tbl col.col-patient   { width:22%; }
+table.ot-tbl col.col-procedure { width:20%; }
+table.ot-tbl col.col-room      { width:8%; }
+table.ot-tbl col.col-surgeon   { width:14%; }
+table.ot-tbl col.col-time      { width:8%; }
+table.ot-tbl col.col-status    { width:10%; }
+table.ot-tbl col.col-action    { width:5%; }
+
+table.ot-tbl thead tr { background:#f8fafc; }
+table.ot-tbl thead th {
+  padding:.65rem .875rem; text-align:left; font-size:.7rem;
+  font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#64748b; white-space:nowrap;
+}
+table.ot-tbl thead th:last-child { text-align:center; }
+table.ot-tbl tbody tr { border-top:1px solid #f1f5f9; transition:background .12s; }
+table.ot-tbl tbody tr:hover { background:#f8fafc; }
+table.ot-tbl tbody td { padding:.7rem .875rem; vertical-align:middle; }
+table.ot-tbl tbody td:last-child { text-align:center; }
+
+.tbl-patient-name { font-size:.875rem; font-weight:600; color:#1e293b; }
+.tbl-patient-sub  { font-size:.72rem; color:#94a3b8; margin-top:.1rem; }
+.tbl-otno    { font-family:ui-monospace,monospace; font-size:.78rem; font-weight:700; color:#1d4ed8; }
+.tbl-proc    { font-size:.82rem; color:#334155; }
+.tbl-room    { font-size:.875rem; font-weight:700; color:#334155; }
+.tbl-surgeon { font-size:.78rem; color:#475569; }
+.tbl-time    { font-size:.78rem; color:#64748b; }
+.tbl-view-link { font-size:.78rem; font-weight:700; color:#2563eb; text-decoration:none; white-space:nowrap; }
+.tbl-view-link:hover { color:#1d4ed8; text-decoration:underline; }
+
+.ot-badge { display:inline-flex; align-items:center; gap:3px; padding:3px 9px; border-radius:20px; font-size:.68rem; font-weight:700; white-space:nowrap; }
+.badge-blue      { background:#dbeafe; color:#1d4ed8; }
+.badge-purple    { background:#ede9fe; color:#6d28d9; }
+.badge-orange    { background:#ffedd5; color:#c2410c; }
+.badge-teal      { background:#ccfbf1; color:#0f766e; }
+.badge-indigo    { background:#e0e7ff; color:#3730a3; }
+.badge-yellow    { background:#fef9c3; color:#854d0e; }
+.badge-green     { background:#dcfce7; color:#166534; }
+.badge-red       { background:#fee2e2; color:#991b1b; }
+.badge-gray      { background:#f1f5f9; color:#475569; }
+.badge-emergency { background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; }
+
+.ot-empty { text-align:center; padding:3.5rem 1rem; color:#94a3b8; }
+.ot-empty i { font-size:2.5rem; display:block; margin-bottom:.5rem; }
+.ot-empty p { font-size:.875rem; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="p-4 sm:p-6 max-w-7xl mx-auto">
+<div class="ot-dash-wrap">
 
-  <!-- Header -->
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+  <!-- PAGE HEADER -->
+  <div class="ot-page-header">
     <div>
-      <h1 class="text-2xl font-bold text-slate-800">🔪 OT Dashboard</h1>
-      <p class="text-sm text-slate-500 mt-0.5">Operation Theatre — Today: <strong>{{ today }}</strong></p>
+      <h1><i class="bi bi-scissors" style="color:#e11d48;font-size:1.4rem;"></i> OT Dashboard</h1>
+      <p>Operation Theatre &mdash; Today: <strong>{{ today }}</strong></p>
     </div>
-    <a href="{% url 'ot:booking_create' %}" class="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+    <a href="{% url 'ot:booking_create' %}" class="ot-new-btn">
       <i class="bi bi-plus-lg"></i> New OT Booking
     </a>
   </div>
 
-  <!-- Stats Row -->
-  <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
-    <div class="ot-stat-card col-span-1">
-      <div class="ot-stat-icon bg-blue-100"><i class="bi bi-calendar2-check text-blue-600"></i></div>
-      <div><div class="ot-stat-val text-blue-700">{{ total_today }}</div><div class="ot-stat-lbl">Today's Cases</div></div>
+  <!-- KPI GRID -->
+  <div class="ot-kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#dbeafe;"><i class="bi bi-calendar2-check" style="color:#1d4ed8;"></i></div>
+      <div class="kpi-body"><div class="kpi-num" style="color:#1d4ed8;">{{ total_today }}</div><div class="kpi-lbl">Today&#x27;s Cases</div></div>
     </div>
-    <div class="ot-stat-card col-span-1">
-      <div class="ot-stat-icon bg-indigo-100"><i class="bi bi-hourglass-split text-indigo-600"></i></div>
-      <div><div class="ot-stat-val text-indigo-700">{{ scheduled }}</div><div class="ot-stat-lbl">Scheduled</div></div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#ede9fe;"><i class="bi bi-hourglass-split" style="color:#6d28d9;"></i></div>
+      <div class="kpi-body"><div class="kpi-num" style="color:#6d28d9;">{{ scheduled }}</div><div class="kpi-lbl">Scheduled</div></div>
     </div>
-    <div class="ot-stat-card col-span-1">
-      <div class="ot-stat-icon bg-yellow-100"><i class="bi bi-activity text-yellow-600"></i></div>
-      <div><div class="ot-stat-val text-yellow-700">{{ in_progress }}</div><div class="ot-stat-lbl">In Progress</div></div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#fef9c3;"><i class="bi bi-activity" style="color:#a16207;"></i></div>
+      <div class="kpi-body"><div class="kpi-num" style="color:#a16207;">{{ in_progress }}</div><div class="kpi-lbl">In Progress</div></div>
     </div>
-    <div class="ot-stat-card col-span-1">
-      <div class="ot-stat-icon bg-green-100"><i class="bi bi-check-circle text-green-600"></i></div>
-      <div><div class="ot-stat-val text-green-700">{{ completed_today }}</div><div class="ot-stat-lbl">Completed</div></div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#dcfce7;"><i class="bi bi-check-circle" style="color:#16a34a;"></i></div>
+      <div class="kpi-body"><div class="kpi-num" style="color:#16a34a;">{{ completed_today }}</div><div class="kpi-lbl">Completed</div></div>
     </div>
-    <div class="ot-stat-card col-span-1">
-      <div class="ot-stat-icon bg-red-100"><i class="bi bi-lightning-fill text-red-600"></i></div>
-      <div><div class="ot-stat-val text-red-700">{{ emergency_today }}</div><div class="ot-stat-lbl">Emergency</div></div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#fee2e2;"><i class="bi bi-lightning-fill" style="color:#dc2626;"></i></div>
+      <div class="kpi-body"><div class="kpi-num" style="color:#dc2626;">{{ emergency_today }}</div><div class="kpi-lbl">Emergency</div></div>
     </div>
-    <div class="ot-stat-card col-span-1">
-      <div class="ot-stat-icon bg-orange-100"><i class="bi bi-file-earmark-check text-orange-600"></i></div>
-      <div><div class="ot-stat-val text-orange-700">{{ pending_consent }}</div><div class="ot-stat-lbl">Pending Consent</div></div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#ffedd5;"><i class="bi bi-file-earmark-check" style="color:#c2410c;"></i></div>
+      <div class="kpi-body"><div class="kpi-num" style="color:#c2410c;">{{ pending_consent }}</div><div class="kpi-lbl">Pending Consent</div></div>
     </div>
-    <div class="ot-stat-card col-span-1">
-      <div class="ot-stat-icon bg-purple-100"><i class="bi bi-heart-pulse text-purple-600"></i></div>
-      <div><div class="ot-stat-val text-purple-700">{{ pending_pac }}</div><div class="ot-stat-lbl">Pending PAC</div></div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#fae8ff;"><i class="bi bi-heart-pulse" style="color:#9333ea;"></i></div>
+      <div class="kpi-body"><div class="kpi-num" style="color:#9333ea;">{{ pending_pac }}</div><div class="kpi-lbl">Pending PAC</div></div>
     </div>
-    <div class="ot-stat-card col-span-1">
-      <div class="ot-stat-icon bg-teal-100"><i class="bi bi-clipboard2-pulse text-teal-600"></i></div>
-      <div><div class="ot-stat-val text-teal-700">{{ pending_preop }}</div><div class="ot-stat-lbl">Pre-Op Pending</div></div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#ccfbf1;"><i class="bi bi-clipboard2-pulse" style="color:#0f766e;"></i></div>
+      <div class="kpi-body"><div class="kpi-num" style="color:#0f766e;">{{ pending_preop }}</div><div class="kpi-lbl">Pre-Op Pending</div></div>
     </div>
   </div>
 
-  <!-- Quick Links Row -->
-  <div class="flex flex-wrap gap-2 mb-6">
-    <a href="{% url 'ot:live' %}" class="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
-      <i class="bi bi-broadcast"></i> Live OT Board
-    </a>
-    <a href="{% url 'ot:schedule' %}" class="flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors">
-      <i class="bi bi-calendar-week"></i> Today's Schedule
-    </a>
-    <a href="{% url 'ot:history' %}" class="flex items-center gap-2 bg-slate-50 border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors">
-      <i class="bi bi-clock-history"></i> OT History
-    </a>
-    <a href="{% url 'ot:master' %}" class="flex items-center gap-2 bg-slate-50 border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors">
-      <i class="bi bi-database-gear"></i> OT Master
-    </a>
+  <!-- QUICK ACTIONS -->
+  <div class="ot-quick-actions">
+    <a href="{% url 'ot:live' %}" class="qa-btn qa-live"><i class="bi bi-broadcast"></i> Live OT Board</a>
+    <a href="{% url 'ot:schedule' %}" class="qa-btn qa-blue"><i class="bi bi-calendar-week"></i> Today&#x27;s Schedule</a>
+    <a href="{% url 'ot:booking_list' %}" class="qa-btn qa-slate"><i class="bi bi-list-ul"></i> All Bookings</a>
+    <a href="{% url 'ot:history' %}" class="qa-btn qa-slate"><i class="bi bi-clock-history"></i> OT History</a>
+    <a href="{% url 'ot:master' %}" class="qa-btn qa-slate"><i class="bi bi-database-gear"></i> OT Master</a>
   </div>
 
-  <!-- Today's Cases Table -->
-  <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-    <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-      <h2 class="font-semibold text-slate-800 text-base">Today's OT Cases</h2>
-      <a href="{% url 'ot:booking_list' %}" class="text-xs text-blue-600 hover:text-blue-800 font-medium">View All →</a>
+  <!-- TODAY'S OT CASES -->
+  <div class="ot-table-wrap">
+    <div class="ot-table-header">
+      <h2>Today&#x27;s OT Cases</h2>
+      <a href="{% url 'ot:booking_list' %}" class="tbl-view-link">View All &rarr;</a>
     </div>
     {% if today_cases %}
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
+    <div class="ot-table-scroll">
+      <table class="ot-tbl">
+        <colgroup>
+          <col class="col-otno"><col class="col-patient"><col class="col-procedure">
+          <col class="col-room"><col class="col-surgeon"><col class="col-time">
+          <col class="col-status"><col class="col-action">
+        </colgroup>
         <thead>
-          <tr class="bg-slate-50 text-slate-600 text-xs uppercase tracking-wide">
-            <th class="px-4 py-3 text-left font-semibold">OT No.</th>
-            <th class="px-4 py-3 text-left font-semibold">Patient</th>
-            <th class="px-4 py-3 text-left font-semibold">Procedure</th>
-            <th class="px-4 py-3 text-left font-semibold">Room</th>
-            <th class="px-4 py-3 text-left font-semibold">Surgeon</th>
-            <th class="px-4 py-3 text-left font-semibold">Time</th>
-            <th class="px-4 py-3 text-left font-semibold">Status</th>
-            <th class="px-4 py-3 text-center font-semibold">Action</th>
+          <tr>
+            <th>OT No.</th><th>Patient</th><th>Procedure</th>
+            <th>Room</th><th>Surgeon</th><th>Time</th><th>Status</th><th>Action</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100">
+        <tbody>
           {% for c in today_cases %}
-          <tr class="case-row">
-            <td class="px-4 py-3 font-mono font-semibold text-blue-700">
-              {{ c.ot_number }}
-              {% if c.is_mlc %}<span class="ot-badge badge-red ml-1">MLC</span>{% endif %}
+          <tr>
+            <td><span class="tbl-otno">{{ c.ot_number }}</span>{% if c.is_mlc %}<br><span class="ot-badge badge-red" style="margin-top:3px;">MLC</span>{% endif %}</td>
+            <td>
+              <div class="tbl-patient-name">{{ c.patient.name }}</div>
+              <div class="tbl-patient-sub">{{ c.patient.patient_id }}&nbsp;|&nbsp;{{ c.patient.age_years }}y&nbsp;{{ c.patient.gender|slice:":1" }}</div>
             </td>
-            <td class="px-4 py-3">
-              <div class="font-medium text-slate-800">{{ c.patient.name }}</div>
-              <div class="text-xs text-slate-500">{{ c.patient.patient_id }} | {{ c.patient.age_years }}y {{ c.patient.gender|slice:":1" }}</div>
-            </td>
-            <td class="px-4 py-3 text-slate-700">{{ c.procedure.name }}</td>
-            <td class="px-4 py-3 font-semibold text-slate-700">{{ c.ot_room.code }}</td>
-            <td class="px-4 py-3 text-slate-600 text-xs">{{ c.surgeon.get_full_name|default:c.surgeon.username }}</td>
-            <td class="px-4 py-3 text-slate-600 text-xs">{{ c.expected_start|default:"—" }}</td>
-            <td class="px-4 py-3">
+            <td class="tbl-proc">{{ c.procedure.name }}</td>
+            <td class="tbl-room">{{ c.ot_room.code }}</td>
+            <td class="tbl-surgeon">{{ c.surgeon.get_full_name|default:c.surgeon.username }}</td>
+            <td class="tbl-time">{{ c.expected_start|default:"&mdash;" }}</td>
+            <td>
               {% if c.case_type == 'EMERGENCY' %}
-              <span class="ot-badge badge-emergency"><i class="bi bi-lightning-fill"></i> EMERGENCY</span>
+              <span class="ot-badge badge-emergency"><i class="bi bi-lightning-fill"></i> EMGCY</span>
               {% else %}
               <span class="ot-badge {{ c.get_status_display_class }}">{{ c.get_status_display }}</span>
               {% endif %}
             </td>
-            <td class="px-4 py-3 text-center">
-              <a href="{% url 'ot:case_detail' c.pk %}" class="text-blue-600 hover:text-blue-800 font-medium text-xs">View →</a>
-            </td>
+            <td><a href="{% url 'ot:case_detail' c.pk %}" class="tbl-view-link">View&nbsp;&rarr;</a></td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
     {% else %}
-    <div class="text-center py-12 text-slate-400">
-      <i class="bi bi-calendar-x text-4xl block mb-2"></i>
-      <p class="text-sm">No OT cases scheduled for today.</p>
-      <a href="{% url 'ot:booking_create' %}" class="inline-block mt-3 text-blue-600 text-sm font-medium hover:underline">+ Create New Booking</a>
+    <div class="ot-empty">
+      <i class="bi bi-calendar-x"></i>
+      <p>No OT cases scheduled for today.</p>
+      <a href="{% url 'ot:booking_create' %}" style="color:#2563eb;font-size:.875rem;font-weight:700;text-decoration:none;display:inline-block;margin-top:.75rem;">+ Create New Booking</a>
     </div>
     {% endif %}
   </div>
