@@ -1,0 +1,2722 @@
+[
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CBC",
+        "monthly": 3120,
+        "weekly": 780,
+        "daily": 104
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Hemoglobin",
+        "monthly": 1040,
+        "weekly": 260,
+        "daily": 35
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "ESR",
+        "monthly": 624,
+        "weekly": 156,
+        "daily": 21
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Peripheral Blood Smear",
+        "monthly": 364,
+        "weekly": 91,
+        "daily": 12
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Reticulocyte Count",
+        "monthly": 125,
+        "weekly": 31,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Platelet Count (if separately ordered)",
+        "monthly": 416,
+        "weekly": 104,
+        "daily": 14
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "PT / INR",
+        "monthly": 312,
+        "weekly": 78,
+        "daily": 10
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "aPTT",
+        "monthly": 156,
+        "weekly": 39,
+        "daily": 5
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "D-dimer",
+        "monthly": 83,
+        "weekly": 21,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Fibrinogen",
+        "monthly": 31,
+        "weekly": 8,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood grouping & Rh typing",
+        "monthly": 260,
+        "weekly": 65,
+        "daily": 9
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Cross-match requests",
+        "monthly": 187,
+        "weekly": 47,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood Glucose \u2013 RBS/FBS",
+        "monthly": 2288,
+        "weekly": 572,
+        "daily": 76
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood Urea",
+        "monthly": 1664,
+        "weekly": 416,
+        "daily": 55
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Creatinine",
+        "monthly": 1664,
+        "weekly": 416,
+        "daily": 55
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Sodium",
+        "monthly": 1560,
+        "weekly": 390,
+        "daily": 52
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Potassium",
+        "monthly": 1560,
+        "weekly": 390,
+        "daily": 52
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Chloride",
+        "monthly": 1040,
+        "weekly": 260,
+        "daily": 35
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Calcium",
+        "monthly": 520,
+        "weekly": 130,
+        "daily": 17
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Phosphorus",
+        "monthly": 312,
+        "weekly": 78,
+        "daily": 10
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Magnesium",
+        "monthly": 187,
+        "weekly": 47,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Liver Function Tests",
+        "monthly": 832,
+        "weekly": 208,
+        "daily": 28
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Total Protein / Albumin",
+        "monthly": 624,
+        "weekly": 156,
+        "daily": 21
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Bilirubin",
+        "monthly": 728,
+        "weekly": 182,
+        "daily": 24
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Ammonia",
+        "monthly": 52,
+        "weekly": 13,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Lactate",
+        "monthly": 125,
+        "weekly": 31,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CRP",
+        "monthly": 520,
+        "weekly": 130,
+        "daily": 17
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Procalcitonin",
+        "monthly": 104,
+        "weekly": 26,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "ABG",
+        "monthly": 312,
+        "weekly": 78,
+        "daily": 10
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HbA1c",
+        "monthly": 104,
+        "weekly": 26,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Thyroid Function Tests",
+        "monthly": 187,
+        "weekly": 47,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood culture & sensitivity",
+        "monthly": 260,
+        "weekly": 65,
+        "daily": 9
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine culture & sensitivity",
+        "monthly": 187,
+        "weekly": 47,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Sputum / respiratory sample culture",
+        "monthly": 83,
+        "weekly": 21,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CSF Gram stain / culture",
+        "monthly": 62,
+        "weekly": 16,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Stool microscopy / culture",
+        "monthly": 104,
+        "weekly": 26,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Pus / wound culture",
+        "monthly": 62,
+        "weekly": 16,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "AFB smear / CBNAAT",
+        "monthly": 42,
+        "weekly": 11,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Fungal microscopy / culture",
+        "monthly": 31,
+        "weekly": 8,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Other body-fluid culture",
+        "monthly": 31,
+        "weekly": 8,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Dengue NS1 / IgM / IgG",
+        "monthly": 156,
+        "weekly": 39,
+        "daily": 5
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Malaria antigen / smear",
+        "monthly": 104,
+        "weekly": 26,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Scrub typhus IgM",
+        "monthly": 78,
+        "weekly": 20,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Leptospira IgM",
+        "monthly": 42,
+        "weekly": 11,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Widal / enteric fever testing",
+        "monthly": 83,
+        "weekly": 21,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HIV 1 & 2",
+        "monthly": 104,
+        "weekly": 26,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HBsAg",
+        "monthly": 104,
+        "weekly": 26,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Anti-HCV",
+        "monthly": 78,
+        "weekly": 20,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "VDRL / RPR",
+        "monthly": 31,
+        "weekly": 8,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "ASO titre",
+        "monthly": 52,
+        "weekly": 13,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine routine & microscopy",
+        "monthly": 1248,
+        "weekly": 312,
+        "daily": 42
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine protein / albumin",
+        "monthly": 260,
+        "weekly": 65,
+        "daily": 9
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine sugar / glucose",
+        "monthly": 208,
+        "weekly": 52,
+        "daily": 7
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine ketone bodies",
+        "monthly": 156,
+        "weekly": 39,
+        "daily": 5
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine ACR / microalbumin",
+        "monthly": 62,
+        "weekly": 16,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CSF complete analysis",
+        "monthly": 62,
+        "weekly": 16,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Pleural fluid analysis",
+        "monthly": 21,
+        "weekly": 5,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Ascitic fluid analysis",
+        "monthly": 16,
+        "weekly": 4,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Synovial / other body-fluid analysis",
+        "monthly": 10,
+        "weekly": 3,
+        "daily": 0
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CBC",
+        "monthly": 4000,
+        "weekly": 1000,
+        "daily": 133
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "ESR",
+        "monthly": 1000,
+        "weekly": 250,
+        "daily": 33
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Peripheral Blood Smear",
+        "monthly": 400,
+        "weekly": 100,
+        "daily": 13
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Reticulocyte Count",
+        "monthly": 120,
+        "weekly": 30,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Platelet Count (if separately counted)",
+        "monthly": 400,
+        "weekly": 100,
+        "daily": 13
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "PT / INR",
+        "monthly": 650,
+        "weekly": 162,
+        "daily": 22
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "aPTT",
+        "monthly": 250,
+        "weekly": 62,
+        "daily": 8
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "D-dimer",
+        "monthly": 200,
+        "weekly": 50,
+        "daily": 7
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Fibrinogen",
+        "monthly": 40,
+        "weekly": 10,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Hb electrophoresis / HPLC",
+        "monthly": 40,
+        "weekly": 10,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Bone marrow aspiration / biopsy",
+        "monthly": 15,
+        "weekly": 3,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood Glucose \u2013 FBS/PPBS/RBS",
+        "monthly": 4000,
+        "weekly": 1000,
+        "daily": 133
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HbA1c",
+        "monthly": 500,
+        "weekly": 125,
+        "daily": 17
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood Urea",
+        "monthly": 3300,
+        "weekly": 825,
+        "daily": 110
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Creatinine",
+        "monthly": 3300,
+        "weekly": 825,
+        "daily": 110
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Sodium",
+        "monthly": 2700,
+        "weekly": 675,
+        "daily": 90
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Potassium",
+        "monthly": 2700,
+        "weekly": 675,
+        "daily": 90
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Chloride",
+        "monthly": 2000,
+        "weekly": 500,
+        "daily": 67
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Uric Acid",
+        "monthly": 400,
+        "weekly": 100,
+        "daily": 13
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Total Bilirubin",
+        "monthly": 2000,
+        "weekly": 500,
+        "daily": 67
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Direct / Indirect Bilirubin",
+        "monthly": 1600,
+        "weekly": 400,
+        "daily": 53
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "AST / SGOT",
+        "monthly": 2000,
+        "weekly": 500,
+        "daily": 67
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "ALT / SGPT",
+        "monthly": 2000,
+        "weekly": 500,
+        "daily": 67
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Alkaline Phosphatase",
+        "monthly": 1600,
+        "weekly": 400,
+        "daily": 53
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Total Protein",
+        "monthly": 1300,
+        "weekly": 325,
+        "daily": 43
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Albumin",
+        "monthly": 1300,
+        "weekly": 325,
+        "daily": 43
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Total Cholesterol",
+        "monthly": 650,
+        "weekly": 162,
+        "daily": 22
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Triglycerides",
+        "monthly": 650,
+        "weekly": 162,
+        "daily": 22
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HDL Cholesterol",
+        "monthly": 650,
+        "weekly": 162,
+        "daily": 22
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "LDL Cholesterol",
+        "monthly": 650,
+        "weekly": 162,
+        "daily": 22
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Calcium",
+        "monthly": 650,
+        "weekly": 162,
+        "daily": 22
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Phosphorus",
+        "monthly": 400,
+        "weekly": 100,
+        "daily": 13
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Magnesium",
+        "monthly": 250,
+        "weekly": 62,
+        "daily": 8
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Amylase",
+        "monthly": 200,
+        "weekly": 50,
+        "daily": 7
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Lipase",
+        "monthly": 200,
+        "weekly": 50,
+        "daily": 7
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "LDH",
+        "monthly": 200,
+        "weekly": 50,
+        "daily": 7
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CPK / CK",
+        "monthly": 130,
+        "weekly": 32,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CK-MB",
+        "monthly": 130,
+        "weekly": 32,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Troponin I/T",
+        "monthly": 400,
+        "weekly": 100,
+        "daily": 13
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "TSH",
+        "monthly": 500,
+        "weekly": 125,
+        "daily": 17
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Free T4 / T4",
+        "monthly": 400,
+        "weekly": 100,
+        "daily": 13
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "T3",
+        "monthly": 330,
+        "weekly": 82,
+        "daily": 11
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Vitamin B12",
+        "monthly": 130,
+        "weekly": 32,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Vitamin D",
+        "monthly": 130,
+        "weekly": 32,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Iron",
+        "monthly": 130,
+        "weekly": 32,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Ferritin",
+        "monthly": 200,
+        "weekly": 50,
+        "daily": 7
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "TIBC",
+        "monthly": 130,
+        "weekly": 32,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CRP",
+        "monthly": 650,
+        "weekly": 162,
+        "daily": 22
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Procalcitonin",
+        "monthly": 130,
+        "weekly": 32,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Lactate",
+        "monthly": 200,
+        "weekly": 50,
+        "daily": 7
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "ABG",
+        "monthly": 400,
+        "weekly": 100,
+        "daily": 13
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood culture & sensitivity",
+        "monthly": 270,
+        "weekly": 67,
+        "daily": 9
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine culture & sensitivity",
+        "monthly": 330,
+        "weekly": 82,
+        "daily": 11
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Sputum Gram stain",
+        "monthly": 200,
+        "weekly": 50,
+        "daily": 7
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Sputum culture & sensitivity",
+        "monthly": 130,
+        "weekly": 32,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "AFB smear microscopy",
+        "monthly": 130,
+        "weekly": 32,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CBNAAT / Truenat for TB",
+        "monthly": 100,
+        "weekly": 25,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Pus / wound culture & sensitivity",
+        "monthly": 100,
+        "weekly": 25,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CSF microscopy / culture",
+        "monthly": 35,
+        "weekly": 8,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Pleural fluid culture",
+        "monthly": 30,
+        "weekly": 7,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Ascitic fluid culture",
+        "monthly": 30,
+        "weekly": 7,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Stool microscopy / culture",
+        "monthly": 65,
+        "weekly": 16,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Fungal microscopy / culture",
+        "monthly": 40,
+        "weekly": 10,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HIV 1 & 2",
+        "monthly": 270,
+        "weekly": 67,
+        "daily": 9
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HBsAg",
+        "monthly": 330,
+        "weekly": 82,
+        "daily": 11
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Anti-HCV",
+        "monthly": 200,
+        "weekly": 50,
+        "daily": 7
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Dengue NS1 antigen",
+        "monthly": 130,
+        "weekly": 32,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Dengue IgM / IgG",
+        "monthly": 130,
+        "weekly": 32,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Leptospira IgM",
+        "monthly": 65,
+        "weekly": 16,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Scrub typhus IgM",
+        "monthly": 100,
+        "weekly": 25,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Widal",
+        "monthly": 130,
+        "weekly": 32,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "VDRL / RPR",
+        "monthly": 100,
+        "weekly": 25,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Malaria antigen / rapid test",
+        "monthly": 100,
+        "weekly": 25,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine routine & microscopy",
+        "monthly": 2000,
+        "weekly": 500,
+        "daily": 67
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine protein / albumin",
+        "monthly": 650,
+        "weekly": 162,
+        "daily": 22
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine sugar / glucose",
+        "monthly": 650,
+        "weekly": 162,
+        "daily": 22
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine ketone bodies",
+        "monthly": 270,
+        "weekly": 67,
+        "daily": 9
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine microalbumin",
+        "monthly": 270,
+        "weekly": 67,
+        "daily": 9
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine ACR",
+        "monthly": 200,
+        "weekly": 50,
+        "daily": 7
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "24-hour urinary protein",
+        "monthly": 100,
+        "weekly": 25,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "24-hour creatinine / clearance",
+        "monthly": 65,
+        "weekly": 16,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine electrolytes",
+        "monthly": 65,
+        "weekly": 16,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CSF analysis",
+        "monthly": 40,
+        "weekly": 10,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Pleural fluid analysis",
+        "monthly": 40,
+        "weekly": 10,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Ascitic fluid analysis",
+        "monthly": 40,
+        "weekly": 10,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Synovial fluid analysis",
+        "monthly": 20,
+        "weekly": 5,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Pericardial / other body fluids",
+        "monthly": 12,
+        "weekly": 3,
+        "daily": 0
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CBC",
+        "monthly": 3600,
+        "weekly": 900,
+        "daily": 120
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "ESR",
+        "monthly": 700,
+        "weekly": 175,
+        "daily": 23
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Peripheral Blood Smear",
+        "monthly": 300,
+        "weekly": 75,
+        "daily": 10
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Reticulocyte Count",
+        "monthly": 90,
+        "weekly": 23,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "PT/INR",
+        "monthly": 900,
+        "weekly": 225,
+        "daily": 30
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "aPTT",
+        "monthly": 400,
+        "weekly": 100,
+        "daily": 13
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "D-dimer",
+        "monthly": 180,
+        "weekly": 45,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Fibrinogen",
+        "monthly": 40,
+        "weekly": 10,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood grouping & Rh typing",
+        "monthly": 450,
+        "weekly": 113,
+        "daily": 15
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Cross-match requests",
+        "monthly": 400,
+        "weekly": 100,
+        "daily": 13
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood Glucose \u2013 FBS/PPBS/RBS",
+        "monthly": 3000,
+        "weekly": 750,
+        "daily": 100
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HbA1c",
+        "monthly": 300,
+        "weekly": 75,
+        "daily": 10
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood Urea",
+        "monthly": 2700,
+        "weekly": 675,
+        "daily": 90
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Creatinine",
+        "monthly": 2700,
+        "weekly": 675,
+        "daily": 90
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Sodium",
+        "monthly": 2200,
+        "weekly": 550,
+        "daily": 73
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Potassium",
+        "monthly": 2200,
+        "weekly": 550,
+        "daily": 73
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Chloride",
+        "monthly": 1500,
+        "weekly": 375,
+        "daily": 50
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Liver Function Tests",
+        "monthly": 1500,
+        "weekly": 375,
+        "daily": 50
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Total Protein / Albumin",
+        "monthly": 1100,
+        "weekly": 275,
+        "daily": 37
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Calcium",
+        "monthly": 450,
+        "weekly": 113,
+        "daily": 15
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Phosphorus",
+        "monthly": 250,
+        "weekly": 63,
+        "daily": 8
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Magnesium",
+        "monthly": 180,
+        "weekly": 45,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Amylase",
+        "monthly": 250,
+        "weekly": 63,
+        "daily": 8
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Lipase",
+        "monthly": 250,
+        "weekly": 63,
+        "daily": 8
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "LDH",
+        "monthly": 120,
+        "weekly": 30,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Lactate",
+        "monthly": 180,
+        "weekly": 45,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "ABG",
+        "monthly": 400,
+        "weekly": 100,
+        "daily": 13
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood culture & sensitivity",
+        "monthly": 180,
+        "weekly": 45,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine culture & sensitivity",
+        "monthly": 180,
+        "weekly": 45,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Pus / wound swab culture & sensitivity",
+        "monthly": 450,
+        "weekly": 113,
+        "daily": 15
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Drain fluid culture",
+        "monthly": 100,
+        "weekly": 25,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Tissue culture",
+        "monthly": 60,
+        "weekly": 15,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Sputum Gram stain / culture",
+        "monthly": 90,
+        "weekly": 23,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "AFB smear / CBNAAT",
+        "monthly": 60,
+        "weekly": 15,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Body-fluid Gram stain / culture",
+        "monthly": 60,
+        "weekly": 15,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Fungal microscopy / culture",
+        "monthly": 40,
+        "weekly": 10,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Anaerobic culture",
+        "monthly": 25,
+        "weekly": 6,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HIV 1 & 2",
+        "monthly": 300,
+        "weekly": 75,
+        "daily": 10
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HBsAg",
+        "monthly": 350,
+        "weekly": 88,
+        "daily": 12
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Anti-HCV",
+        "monthly": 250,
+        "weekly": 63,
+        "daily": 8
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "VDRL / RPR",
+        "monthly": 90,
+        "weekly": 23,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Dengue testing",
+        "monthly": 60,
+        "weekly": 15,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Leptospira IgM",
+        "monthly": 30,
+        "weekly": 8,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Scrub typhus IgM",
+        "monthly": 30,
+        "weekly": 8,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CRP",
+        "monthly": 500,
+        "weekly": 125,
+        "daily": 17
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Procalcitonin",
+        "monthly": 120,
+        "weekly": 30,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine routine & microscopy",
+        "monthly": 1500,
+        "weekly": 375,
+        "daily": 50
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine protein / albumin",
+        "monthly": 350,
+        "weekly": 88,
+        "daily": 12
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine sugar / glucose",
+        "monthly": 350,
+        "weekly": 88,
+        "daily": 12
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine ketones",
+        "monthly": 120,
+        "weekly": 30,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine ACR / microalbumin",
+        "monthly": 120,
+        "weekly": 30,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "24-hour urinary protein / studies",
+        "monthly": 40,
+        "weekly": 10,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Ascitic fluid analysis",
+        "monthly": 50,
+        "weekly": 13,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Pleural fluid analysis",
+        "monthly": 30,
+        "weekly": 8,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Drain fluid analysis",
+        "monthly": 100,
+        "weekly": 25,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Other body-fluid analysis",
+        "monthly": 25,
+        "weekly": 6,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Surgical histopathology specimens",
+        "monthly": 400,
+        "weekly": 100,
+        "daily": 13
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Biopsy specimens",
+        "monthly": 180,
+        "weekly": 45,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "FNAC",
+        "monthly": 120,
+        "weekly": 30,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Cytology \u2013 body fluids",
+        "monthly": 60,
+        "weekly": 15,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Frozen section",
+        "monthly": 20,
+        "weekly": 5,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Immunohistochemistry panels",
+        "monthly": 40,
+        "weekly": 10,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "PRBC units issued for Surgery patients",
+        "monthly": 200,
+        "weekly": 50,
+        "daily": 7
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "FFP units",
+        "monthly": 100,
+        "weekly": 25,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Platelet units",
+        "monthly": 50,
+        "weekly": 13,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Cryoprecipitate units",
+        "monthly": 12,
+        "weekly": 3,
+        "daily": 0
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Pre-anaesthetic evaluation cases",
+        "monthly": 500,
+        "weekly": 125,
+        "daily": 17
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CBC",
+        "monthly": 2800,
+        "weekly": 700,
+        "daily": 93
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Hemoglobin",
+        "monthly": 900,
+        "weekly": 225,
+        "daily": 30
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "ESR",
+        "monthly": 700,
+        "weekly": 175,
+        "daily": 23
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Peripheral Blood Smear",
+        "monthly": 250,
+        "weekly": 63,
+        "daily": 8
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Reticulocyte Count",
+        "monthly": 80,
+        "weekly": 20,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Platelet Count (if separately ordered)",
+        "monthly": 350,
+        "weekly": 88,
+        "daily": 12
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "PT / INR",
+        "monthly": 450,
+        "weekly": 113,
+        "daily": 15
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "aPTT",
+        "monthly": 200,
+        "weekly": 50,
+        "daily": 7
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "D-dimer",
+        "monthly": 150,
+        "weekly": 38,
+        "daily": 5
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Fibrinogen",
+        "monthly": 30,
+        "weekly": 8,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood grouping & Rh typing",
+        "monthly": 300,
+        "weekly": 75,
+        "daily": 10
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Cross-match requests",
+        "monthly": 250,
+        "weekly": 63,
+        "daily": 8
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood Glucose \u2013 FBS/PPBS/RBS",
+        "monthly": 1800,
+        "weekly": 450,
+        "daily": 60
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HbA1c",
+        "monthly": 150,
+        "weekly": 38,
+        "daily": 5
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood Urea",
+        "monthly": 1500,
+        "weekly": 375,
+        "daily": 50
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Creatinine",
+        "monthly": 1500,
+        "weekly": 375,
+        "daily": 50
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Sodium",
+        "monthly": 1100,
+        "weekly": 275,
+        "daily": 37
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Potassium",
+        "monthly": 1100,
+        "weekly": 275,
+        "daily": 37
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Chloride",
+        "monthly": 800,
+        "weekly": 200,
+        "daily": 27
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Liver Function Tests",
+        "monthly": 650,
+        "weekly": 163,
+        "daily": 22
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Total Protein / Albumin",
+        "monthly": 500,
+        "weekly": 125,
+        "daily": 17
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Calcium",
+        "monthly": 500,
+        "weekly": 125,
+        "daily": 17
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Phosphorus",
+        "monthly": 300,
+        "weekly": 75,
+        "daily": 10
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Magnesium",
+        "monthly": 150,
+        "weekly": 38,
+        "daily": 5
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Alkaline Phosphatase",
+        "monthly": 400,
+        "weekly": 100,
+        "daily": 13
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Vitamin D",
+        "monthly": 180,
+        "weekly": 45,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Uric Acid",
+        "monthly": 150,
+        "weekly": 38,
+        "daily": 5
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CRP",
+        "monthly": 500,
+        "weekly": 125,
+        "daily": 17
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Procalcitonin",
+        "monthly": 70,
+        "weekly": 18,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum Lactate",
+        "monthly": 80,
+        "weekly": 20,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "ABG",
+        "monthly": 120,
+        "weekly": 30,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Pus / wound culture & sensitivity",
+        "monthly": 300,
+        "weekly": 75,
+        "daily": 10
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Tissue culture & sensitivity",
+        "monthly": 100,
+        "weekly": 25,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood culture & sensitivity",
+        "monthly": 100,
+        "weekly": 25,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine culture & sensitivity",
+        "monthly": 100,
+        "weekly": 25,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Joint / synovial fluid culture",
+        "monthly": 80,
+        "weekly": 20,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Implant / deep tissue culture",
+        "monthly": 60,
+        "weekly": 15,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "AFB smear / CBNAAT",
+        "monthly": 40,
+        "weekly": 10,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Fungal microscopy / culture",
+        "monthly": 30,
+        "weekly": 8,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Anaerobic culture",
+        "monthly": 30,
+        "weekly": 8,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HIV 1 & 2",
+        "monthly": 180,
+        "weekly": 45,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HBsAg",
+        "monthly": 200,
+        "weekly": 50,
+        "daily": 7
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Anti-HCV",
+        "monthly": 150,
+        "weekly": 38,
+        "daily": 5
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "VDRL / RPR",
+        "monthly": 50,
+        "weekly": 13,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CRP",
+        "monthly": 500,
+        "weekly": 125,
+        "daily": 17
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Rheumatoid Factor",
+        "monthly": 100,
+        "weekly": 25,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Anti-CCP",
+        "monthly": 50,
+        "weekly": 13,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "ANA",
+        "monthly": 40,
+        "weekly": 10,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HLA-B27",
+        "monthly": 30,
+        "weekly": 8,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "ASO titre",
+        "monthly": 40,
+        "weekly": 10,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine routine & microscopy",
+        "monthly": 900,
+        "weekly": 225,
+        "daily": 30
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine protein / albumin",
+        "monthly": 180,
+        "weekly": 45,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine sugar / glucose",
+        "monthly": 180,
+        "weekly": 45,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Synovial fluid cell count / analysis",
+        "monthly": 100,
+        "weekly": 25,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Synovial fluid crystal examination",
+        "monthly": 50,
+        "weekly": 13,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Synovial fluid Gram stain / culture",
+        "monthly": 80,
+        "weekly": 20,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Other body-fluid analysis",
+        "monthly": 15,
+        "weekly": 4,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "PRBC units issued for Orthopaedics",
+        "monthly": 120,
+        "weekly": 30,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "FFP units",
+        "monthly": 40,
+        "weekly": 10,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Platelet units",
+        "monthly": 20,
+        "weekly": 5,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Pre-anaesthetic evaluation cases",
+        "monthly": 350,
+        "weekly": 88,
+        "daily": 12
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CBC",
+        "monthly": 3249,
+        "weekly": 812,
+        "daily": 108
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Hemoglobin",
+        "monthly": 1218,
+        "weekly": 305,
+        "daily": 41
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Platelet count (if separately ordered)",
+        "monthly": 508,
+        "weekly": 127,
+        "daily": 17
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Peripheral blood smear",
+        "monthly": 254,
+        "weekly": 64,
+        "daily": 8
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "PT / INR",
+        "monthly": 508,
+        "weekly": 127,
+        "daily": 17
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "aPTT",
+        "monthly": 203,
+        "weekly": 51,
+        "daily": 7
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "D-dimer",
+        "monthly": 122,
+        "weekly": 31,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Fibrinogen",
+        "monthly": 51,
+        "weekly": 13,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood grouping & Rh typing",
+        "monthly": 609,
+        "weekly": 152,
+        "daily": 20
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Cross-match requests",
+        "monthly": 406,
+        "weekly": 102,
+        "daily": 14
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood glucose \u2013 FBS/PPBS/RBS",
+        "monthly": 2538,
+        "weekly": 635,
+        "daily": 85
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HbA1c",
+        "monthly": 203,
+        "weekly": 51,
+        "daily": 7
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood urea",
+        "monthly": 1828,
+        "weekly": 457,
+        "daily": 61
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum creatinine",
+        "monthly": 1828,
+        "weekly": 457,
+        "daily": 61
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum sodium",
+        "monthly": 1320,
+        "weekly": 330,
+        "daily": 44
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum potassium",
+        "monthly": 1320,
+        "weekly": 330,
+        "daily": 44
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum chloride",
+        "monthly": 914,
+        "weekly": 229,
+        "daily": 30
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Liver function tests",
+        "monthly": 914,
+        "weekly": 229,
+        "daily": 30
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Total protein / albumin",
+        "monthly": 711,
+        "weekly": 178,
+        "daily": 24
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum uric acid",
+        "monthly": 355,
+        "weekly": 89,
+        "daily": 12
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum calcium",
+        "monthly": 305,
+        "weekly": 76,
+        "daily": 10
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum phosphorus",
+        "monthly": 152,
+        "weekly": 38,
+        "daily": 5
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum magnesium",
+        "monthly": 122,
+        "weekly": 31,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "LDH",
+        "monthly": 254,
+        "weekly": 64,
+        "daily": 8
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum lactate",
+        "monthly": 102,
+        "weekly": 26,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "ABG",
+        "monthly": 183,
+        "weekly": 46,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine protein / dipstick",
+        "monthly": 711,
+        "weekly": 178,
+        "daily": 24
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine protein-creatinine ratio",
+        "monthly": 183,
+        "weekly": 46,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "24-hour urinary protein",
+        "monthly": 81,
+        "weekly": 20,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Platelet count",
+        "monthly": 355,
+        "weekly": 89,
+        "daily": 12
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum creatinine",
+        "monthly": 305,
+        "weekly": 76,
+        "daily": 10
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "AST / ALT",
+        "monthly": 355,
+        "weekly": 89,
+        "daily": 12
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "LDH",
+        "monthly": 254,
+        "weekly": 64,
+        "daily": 8
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Serum uric acid",
+        "monthly": 254,
+        "weekly": 64,
+        "daily": 8
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Coagulation profile",
+        "monthly": 152,
+        "weekly": 38,
+        "daily": 5
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine culture & sensitivity",
+        "monthly": 254,
+        "weekly": 64,
+        "daily": 8
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "High vaginal swab culture",
+        "monthly": 183,
+        "weekly": 46,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Cervical swab culture",
+        "monthly": 81,
+        "weekly": 20,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Blood culture & sensitivity",
+        "monthly": 81,
+        "weekly": 20,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Pus / wound culture",
+        "monthly": 122,
+        "weekly": 31,
+        "daily": 4
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Placental / tissue culture when indicated",
+        "monthly": 20,
+        "weekly": 5,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "AFB / CBNAAT when indicated",
+        "monthly": 20,
+        "weekly": 5,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Fungal microscopy / culture",
+        "monthly": 25,
+        "weekly": 6,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HIV 1 & 2",
+        "monthly": 457,
+        "weekly": 114,
+        "daily": 15
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "HBsAg",
+        "monthly": 457,
+        "weekly": 114,
+        "daily": 15
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Anti-HCV",
+        "monthly": 305,
+        "weekly": 76,
+        "daily": 10
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "VDRL / RPR",
+        "monthly": 355,
+        "weekly": 89,
+        "daily": 12
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Rubella IgG / relevant TORCH testing",
+        "monthly": 81,
+        "weekly": 20,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Dengue testing",
+        "monthly": 41,
+        "weekly": 10,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Leptospira IgM",
+        "monthly": 15,
+        "weekly": 4,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Scrub typhus IgM",
+        "monthly": 15,
+        "weekly": 4,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "CRP",
+        "monthly": 254,
+        "weekly": 64,
+        "daily": 8
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Procalcitonin",
+        "monthly": 51,
+        "weekly": 13,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine routine & microscopy",
+        "monthly": 1828,
+        "weekly": 457,
+        "daily": 61
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine protein / albumin",
+        "monthly": 711,
+        "weekly": 178,
+        "daily": 24
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine sugar / glucose",
+        "monthly": 406,
+        "weekly": 102,
+        "daily": 14
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine ketones",
+        "monthly": 183,
+        "weekly": 46,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Urine protein-creatinine ratio",
+        "monthly": 183,
+        "weekly": 46,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "24-hour urinary protein",
+        "monthly": 81,
+        "weekly": 20,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Ascitic / other body-fluid analysis",
+        "monthly": 20,
+        "weekly": 5,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "PRBC units issued for OBG patients",
+        "monthly": 183,
+        "weekly": 46,
+        "daily": 6
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "FFP units",
+        "monthly": 81,
+        "weekly": 20,
+        "daily": 3
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Platelet units",
+        "monthly": 51,
+        "weekly": 13,
+        "daily": 2
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Cryoprecipitate units",
+        "monthly": 15,
+        "weekly": 4,
+        "daily": 1
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Massive transfusion activations / major haemorrhage support",
+        "monthly": 5,
+        "weekly": 1,
+        "daily": 0
+    },
+    {
+        "hospital_department": "",
+        "lab_sub_department": null,
+        "investigation": "Hospital Department",
+        "monthly": 0,
+        "weekly": 0,
+        "daily": 0
+    }
+]

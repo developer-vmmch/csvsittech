@@ -138,3 +138,45 @@ def get_overall_result_status(parameter_statuses):
     if STATUS_ABOVE in statuses: return STATUS_ABOVE
     if STATUS_BELOW in statuses: return STATUS_BELOW
     return STATUS_NORMAL
+
+
+def classify_service_request_result(sr_result):
+    from django.utils import timezone
+    patient = sr_result.sr_investigation.service_request.patient
+    patient_gender = patient.gender or 'All'
+    patient_age_days = 0
+    if patient.dob:
+        patient_age_days = (timezone.now().date() - patient.dob).days
+        
+    rr = find_best_db_reference_range(sr_result.investigation_parameter_id, patient_age_days, patient_gender)
+    min_val, max_val = get_db_range_bounds(rr)
+    
+    if min_val is None and max_val is None and sr_result.investigation_parameter.reference_range:
+        min_val, max_val = parse_reference_range(sr_result.investigation_parameter.reference_range)
+        
+    status = classify_result(sr_result.result_value, min_val, max_val)
+    sr_result.status = status
+    sr_result.applied_reference_range = rr
+    sr_result.save(update_fields=['status', 'applied_reference_range'])
+    return status
+
+
+def update_service_request_investigation_status(sr_investigation):
+    results = sr_investigation.results.all()
+    statuses = [r.status for r in results if r.status]
+    
+    if not statuses:
+        for r in results:
+            statuses.append(classify_service_request_result(r))
+            
+    overall = get_overall_result_status(statuses)
+    
+    if overall in (STATUS_ABOVE, STATUS_BELOW, 'MIXED'):
+        sr_investigation.result_status = 'ABNORMAL'
+    elif overall == STATUS_NORMAL:
+        sr_investigation.result_status = 'NORMAL'
+    else:
+        sr_investigation.result_status = None
+        
+    sr_investigation.save(update_fields=['result_status'])
+    return sr_investigation.result_status

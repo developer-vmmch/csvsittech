@@ -445,6 +445,7 @@ class ServiceRequestInvestigation(models.Model):
     
     # Work Order / Processing Tracking
     status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.PENDING)
+    result_status = models.CharField(max_length=20, null=True, blank=True, verbose_name="Overall Result Status")
     received_date = models.DateField(null=True, blank=True)
     received_time = models.TimeField(null=True, blank=True)
     received_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='received_samples')
@@ -455,6 +456,7 @@ class ServiceRequestResult(TimeStampedModel):
     sr_investigation = models.ForeignKey(ServiceRequestInvestigation, on_delete=models.CASCADE, related_name='results')
     investigation_parameter = models.ForeignKey(InvestigationParameter, on_delete=models.CASCADE)
     result_value = models.CharField(max_length=255, verbose_name="Result Value")
+    status = models.CharField(max_length=20, null=True, blank=True, verbose_name="Parameter Result Status")
     applied_reference_range = models.ForeignKey(ParameterReferenceRange, on_delete=models.SET_NULL, null=True, blank=True)
     remarks = models.TextField(null=True, blank=True)
     entered_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
@@ -752,3 +754,33 @@ class ServiceRequestAllocation(TimeStampedModel):
 
     def __str__(self):
         return f'Alloc SR#{self.sr_investigation_id} -> {self.dummy_result.result_id}'
+
+class LabWorkloadMapping(TimeStampedModel):
+    hospital_department = models.ForeignKey('patients.Department', on_delete=models.CASCADE, related_name='lab_workloads')
+    lab_sub_department = models.ForeignKey(LabDepartment, on_delete=models.CASCADE, related_name='workloads')
+    investigation = models.ForeignKey(Investigation, on_delete=models.CASCADE, related_name='workloads')
+    monthly_benchmark = models.PositiveIntegerField(null=True, blank=True)
+    weekly_benchmark = models.PositiveIntegerField(null=True, blank=True)
+    daily_benchmark = models.PositiveIntegerField(null=True, blank=True)
+    source_file = models.CharField(max_length=255, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('hospital_department', 'lab_sub_department', 'investigation')
+        ordering = ['hospital_department', 'lab_sub_department', 'investigation']
+
+    def __str__(self):
+        return f"{self.hospital_department} -> {self.investigation} ({self.lab_sub_department})"
+
+class UnmappedLabInvestigation(TimeStampedModel):
+    hospital_department_name = models.CharField(max_length=255)
+    source_category = models.CharField(max_length=255, null=True, blank=True)
+    investigation_name = models.CharField(max_length=255)
+    reason = models.TextField(null=True, blank=True)
+    resolved = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Unmapped: {self.investigation_name} ({self.hospital_department_name})"
