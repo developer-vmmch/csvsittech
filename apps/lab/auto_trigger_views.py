@@ -1948,6 +1948,7 @@ def api_save_dummy_result(request):
     import json
     from datetime import datetime
     from apps.lab.models import AutomationDummyResult, AutomationDummyResultParameter, Investigation
+    from apps.lab.services.result_classifier import classify_from_range_string, get_overall_result_status
     
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Invalid method'})
@@ -1975,16 +1976,27 @@ def api_save_dummy_result(request):
                 # Deleting and recreating is simpler and ensures display order is kept
                 dummy.parameters.all().delete()
                 
+                param_statuses = []
                 for i, p in enumerate(parameters):
+                    val = p.get('result_value')
+                    ref = p.get('reference_range')
+                    status = classify_from_range_string(val, ref)
+                    param_statuses.append(status)
+                    
                     AutomationDummyResultParameter.objects.create(
                         dummy_result=dummy,
                         parameter_id=p.get('parameter_id'),
                         parameter_name=p.get('parameter_name'),
-                        result_value=p.get('result_value'),
+                        result_value=val,
                         unit=p.get('unit'),
-                        reference_range=p.get('reference_range'),
-                        display_order=i
+                        reference_range=ref,
+                        display_order=i,
+                        result_status=status
                     )
+                
+                dummy.result_status = get_overall_result_status(param_statuses)
+                dummy.save(update_fields=['result_status'])
+                
             return JsonResponse({'success': True, 'message': 'Result updated successfully', 'result_id': dummy.result_id})
         else:
             # Generate Result ID
@@ -2012,16 +2024,26 @@ def api_save_dummy_result(request):
                     remarks=remarks
                 )
                 
+                param_statuses = []
                 for i, p in enumerate(parameters):
+                    val = p.get('result_value')
+                    ref = p.get('reference_range')
+                    status = classify_from_range_string(val, ref)
+                    param_statuses.append(status)
+                    
                     AutomationDummyResultParameter.objects.create(
                         dummy_result=dummy,
                         parameter_id=p.get('parameter_id'),
                         parameter_name=p.get('parameter_name'),
-                        result_value=p.get('result_value'),
+                        result_value=val,
                         unit=p.get('unit'),
-                        reference_range=p.get('reference_range'),
-                        display_order=i
+                        reference_range=ref,
+                        display_order=i,
+                        result_status=status
                     )
+                
+                dummy.result_status = get_overall_result_status(param_statuses)
+                dummy.save(update_fields=['result_status'])
                     
             return JsonResponse({'success': True, 'message': 'Result saved successfully', 'result_id': result_id})
     except Exception as e:
@@ -2188,7 +2210,7 @@ class AutoTriggerDashboardView(LoginRequiredMixin, TemplateView):
 
 
 def api_result_import_export(request):
-    from apps.lab.result_importer import export_dummy_results, validate_result_import, import_dummy_results
+    from apps.lab.result_importer import export_dummy_results, validate_result_import, import_dummy_results_batch
     import json
     from django.http import JsonResponse, HttpResponse
     
@@ -2200,14 +2222,30 @@ def api_result_import_export(request):
                 return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
             file_obj = request.FILES['file']
             res = validate_result_import(file_obj)
+            
+            file_key = None
+            if not res.get('errors'):
+                from django.core.files.storage import FileSystemStorage
+                from django.conf import settings
+                import os
+                import uuid
+                fs = FileSystemStorage(location=os.path.join(settings.BASE_DIR, 'tmp_imports'))
+                file_obj.seek(0)
+                file_key = fs.save(f'tmp_import_{uuid.uuid4().hex}.xlsx', file_obj)
+                res['file_key'] = file_key
+                
             return JsonResponse({'status': 'success', 'validation': res})
             
-        elif action == 'import':
-            if 'file' not in request.FILES:
-                return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
-            file_obj = request.FILES['file']
+        elif action == 'import_batch':
+            file_key = request.POST.get('file_key')
+            batch_index = int(request.POST.get('batch_index', 0))
+            batch_size = int(request.POST.get('batch_size', 500))
+            
+            if not file_key:
+                return JsonResponse({'status': 'error', 'message': 'Missing file key'})
+                
             try:
-                counts = import_dummy_results(file_obj, request.user)
+                counts = import_dummy_results_batch(file_key, batch_index, batch_size, request.user)
                 return JsonResponse({'status': 'success', 'counts': counts})
             except Exception as e:
                 import traceback

@@ -11,23 +11,23 @@ def parse_reference_range(ref_str):
         return None, None
     s = str(ref_str).strip()
     s = re.sub(r'^-(F|M|Female|Male)\s*:\s*', '', s, flags=re.IGNORECASE).strip()
-    m = re.match(r'^(?:UPTO|UP TO|UP-TO|MAX|MAXIMUM)\s*([0-9.]+)', s, re.IGNORECASE)
+    m = re.match(r'^(?:UPTO|UP TO|UP-TO|MAX|MAXIMUM)\s*([-0-9.]+)', s, re.IGNORECASE)
     if m:
         try: return None, float(m.group(1))
         except ValueError: return None, None
-    m = re.match(r'^<[=]?\s*([0-9.]+)', s)
+    m = re.match(r'^<[=]?\s*([-0-9.]+)', s)
     if m:
         try: return None, float(m.group(1))
         except ValueError: return None, None
-    m = re.match(r'^>[=]?\s*([0-9.]+)', s)
+    m = re.match(r'^>[=]?\s*([-0-9.]+)', s)
     if m:
         try: return float(m.group(1)), None
         except ValueError: return None, None
-    m = re.search(r'([0-9.]+)\s*-\s*([0-9.]+)', s)
+    m = re.search(r'([-0-9.]+)\s*(?:-|to)\s*([-0-9.]+)', s, re.IGNORECASE)
     if m:
         try: return float(m.group(1)), float(m.group(2))
         except ValueError: return None, None
-    m = re.match(r'^([0-9.]+)\s*$', s)
+    m = re.match(r'^([-0-9.]+)\s*$', s)
     if m:
         try: return 0.0, float(m.group(1))
         except ValueError: return None, None

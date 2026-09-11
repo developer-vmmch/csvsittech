@@ -168,81 +168,169 @@ def validate_result_import(file_obj):
                     'investigation': inv_name or inv_code or '',
                     'parameter': param_name or param_code or '',
                 })
+                
+    stats['total_results'] = len(seen_result_ids)
         
     return {'stats': stats, 'warnings': warnings, 'errors': errors[:50], 'valid_rows': valid_rows}
 
-def import_dummy_results(file_obj, user=None):
-    wb = load_workbook(filename=file_obj, data_only=True)
+def import_dummy_results_batch(file_path, batch_index, batch_size, user=None):
+    from django.core.files.storage import FileSystemStorage
+    from django.conf import settings
+    import os
+    from apps.lab.services.result_classifier import classify_from_range_string, get_overall_result_status
+    from openpyxl import load_workbook
+    from collections import defaultdict
+    from apps.lab.models import AutomationDummyResult, AutomationDummyResultParameter, Investigation, Parameter
+    from django.db import transaction
+    
+    fs = FileSystemStorage(location=os.path.join(settings.BASE_DIR, 'tmp_imports'))
+    with fs.open(file_path, 'rb') as f:
+        wb = load_workbook(filename=f, data_only=True)
+        
     rows = parse_excel_sheet(wb, 'Results')
     
-    counts = {
-        'results_created': 0,
-        'results_updated': 0,
-        'parameters_created': 0,
-    }
-    
-    # Group rows by result_id
+    # Group by Result ID while maintaining order
     grouped = defaultdict(list)
+    result_ids_ordered = []
     for r in rows:
         rid = clean_val(r.get('result id'))
         if rid:
+            if rid not in grouped:
+                result_ids_ordered.append(rid)
             grouped[rid].append(r)
             
+    # Slicing by Result ID
+    start_idx = batch_index * batch_size
+    end_idx = start_idx + batch_size
+    batch_rids = result_ids_ordered[start_idx:end_idx]
+    
+    counts = {'results_created': 0, 'results_updated': 0, 'parameters_created': 0}
+    if not batch_rids:
+        return counts
+        
     with transaction.atomic():
-        for rid, items in grouped.items():
+        # Bulk fetch existing AutomationDummyResult
+        existing_results = AutomationDummyResult.objects.filter(result_id__in=batch_rids)
+        existing_map = {r.result_id: r for r in existing_results}
+        
+        # Bulk fetch investigations and parameters used in this batch
+        inv_codes_needed = set()
+        param_codes_needed = set()
+        param_names_needed = set()
+        
+        for rid in batch_rids:
+            first = grouped[rid][0]
+            inv_code = clean_val(first.get('investigation code'))
+            if inv_code: inv_codes_needed.add(inv_code)
+            for r in grouped[rid]:
+                pc = clean_val(r.get('parameter code'))
+                pn = clean_val(r.get('parameter')) # Note: the header is "Parameter"
+                if not pn:
+                    pn = clean_val(r.get('parameter name'))
+                if pc: param_codes_needed.add(pc)
+                if pn: param_names_needed.add(pn.lower())
+                
+        inv_map = {i.code: i for i in Investigation.objects.filter(code__in=inv_codes_needed)}
+        param_code_map = {p.code: p for p in Parameter.objects.filter(code__in=param_codes_needed)}
+        
+        from django.db.models import Q
+        import operator
+        from functools import reduce
+        if param_names_needed:
+            q_objects = reduce(operator.or_, [Q(name__iexact=n) for n in param_names_needed])
+            param_name_map = {p.name.lower(): p for p in Parameter.objects.filter(q_objects)}
+        else:
+            param_name_map = {}
+        
+        results_to_create = []
+        results_to_update = []
+        
+        for rid in batch_rids:
+            items = grouped[rid]
             first = items[0]
             inv_code = clean_val(first.get('investigation code'))
             remarks = clean_val(first.get('remarks'))
             status = clean_val(first.get('status')) or 'Saved'
             
-            inv = Investigation.objects.filter(code=inv_code).first() if inv_code else None
+            inv = inv_map.get(inv_code)
             
-            # Since patient info is not in the excel, we don't overwrite it
-            defaults_dict = {
-                'investigation': inv,
-                'investigation_code': inv_code,
-                'remarks': remarks,
-                'status': status,
-            }
+            # calculate statuses
+            param_statuses = []
+            for r in items:
+                val = clean_val(r.get('result value'))
+                ref = clean_val(r.get('reference range'))
+                p_status = classify_from_range_string(val, ref)
+                param_statuses.append(p_status)
+            overall_status = get_overall_result_status(param_statuses)
             
-            # Check if this is a creation
-            existing = AutomationDummyResult.objects.filter(result_id=rid).first()
-            if not existing:
-                defaults_dict['created_by'] = user
-                
-            result_obj, created = AutomationDummyResult.objects.update_or_create(
-                result_id=rid,
-                defaults=defaults_dict
-            )
-            
-            if created:
-                counts['results_created'] += 1
-            else:
+            if rid in existing_map:
+                res_obj = existing_map[rid]
+                res_obj.investigation = inv
+                res_obj.investigation_code = inv_code
+                res_obj.remarks = remarks
+                res_obj.status = status
+                res_obj.result_status = overall_status
+                results_to_update.append(res_obj)
                 counts['results_updated'] += 1
-                # clear old parameters before inserting new ones
-                result_obj.parameters.all().delete()
+            else:
+                res_obj = AutomationDummyResult(
+                    result_id=rid,
+                    investigation=inv,
+                    investigation_code=inv_code,
+                    remarks=remarks,
+                    status=status,
+                    created_by=user,
+                    result_status=overall_status
+                )
+                results_to_create.append(res_obj)
+                existing_map[rid] = res_obj # so we can use it below
+                counts['results_created'] += 1
                 
+        if results_to_create:
+            AutomationDummyResult.objects.bulk_create(results_to_create)
+            
+        if results_to_update:
+            AutomationDummyResult.objects.bulk_update(results_to_update, ['investigation', 'investigation_code', 'remarks', 'status', 'result_status'])
+            
+        # Delete existing parameters for the updated results
+        if results_to_update:
+            AutomationDummyResultParameter.objects.filter(dummy_result__in=results_to_update).delete()
+            
+        # Refetch all results for this batch to get their PKs for foreign keys
+        all_res_objs = {r.result_id: r for r in AutomationDummyResult.objects.filter(result_id__in=batch_rids)}
+        
+        params_to_create = []
+        for rid in batch_rids:
+            res_obj = all_res_objs[rid]
+            items = grouped[rid]
             for idx, r in enumerate(items):
                 param_code = clean_val(r.get('parameter code'))
-                param_name = clean_val(r.get('parameter name'))
+                param_name = clean_val(r.get('parameter'))
+                if not param_name:
+                    param_name = clean_val(r.get('parameter name'))
                 res_val = clean_val(r.get('result value'))
                 unit = clean_val(r.get('unit'))
                 ref = clean_val(r.get('reference range'))
                 
-                if param_code or param_name:
-                    param = Parameter.objects.filter(code=param_code).first() if param_code else None
-                    if not param and param_name:
-                        param = Parameter.objects.filter(name__iexact=param_name).first()
-                        
-                    AutomationDummyResultParameter.objects.create(
-                        dummy_result=result_obj,
-                        parameter=param,
-                        parameter_name=param_name or (param.name if param else ''),
-                        result_value=res_val,
-                        unit=unit,
-                        reference_range=ref,
-                        display_order=idx
-                    )
-                    counts['parameters_created'] += 1
+                param = param_code_map.get(param_code)
+                if not param and param_name:
+                    param = param_name_map.get(param_name.lower())
                     
+                p_status = classify_from_range_string(res_val, ref)
+                
+                params_to_create.append(AutomationDummyResultParameter(
+                    dummy_result=res_obj,
+                    parameter=param,
+                    parameter_name=param_name or (param.name if param else ''),
+                    result_value=res_val,
+                    unit=unit,
+                    reference_range=ref,
+                    display_order=idx,
+                    result_status=p_status
+                ))
+                counts['parameters_created'] += 1
+                
+        if params_to_create:
+            AutomationDummyResultParameter.objects.bulk_create(params_to_create)
+            
     return counts

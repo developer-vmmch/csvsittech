@@ -431,6 +431,34 @@
     .select2-container--default .select2-selection--single .select2-selection__arrow {
         height: 36px;
     }
+    
+    .trigger-box {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.25rem 0;
+        text-align: center;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 1.15rem;
+        color: #334155;
+        transition: all 0.15s ease-in-out;
+        background-color: #fff;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .trigger-box:hover {
+        border-color: #3b82f6;
+        background-color: #f0f9ff;
+        color: #1e40af;
+    }
+    .trigger-box.selected {
+        background-color: #0d6efd;
+        color: #fff;
+        border-color: #0d6efd;
+        box-shadow: 0 4px 6px rgba(13, 110, 253, 0.25);
+    }
+    @media (max-width: 500px) {
+        #box-grid { grid-template-columns: repeat(3, 1fr) !important; }
+    }
 </style>
 {% endblock %}
 
@@ -582,7 +610,7 @@
                     <button type="button" id="btn-save-request" class="btn-save" style="background-color: #0b5ed7; display: none;">
                         <i class="bi bi-floppy"></i> Save
                     </button>
-                    <button type="button" id="btn-allocate-request" class="btn-save" style="background-color: var(--primary-color);">
+                    <button type="button" id="btn-allocate-request" class="btn-save" style="background-color: var(--primary-blue); display: none;">
                         <i class="bi bi-check-all"></i> Save & Trigger
                     </button>
                     <button type="button" id="btn-clear-all" class="btn-clear">
@@ -696,30 +724,58 @@
 </div>
 
 <!-- Trigger Modal -->
-<div id="trigger-modal" class="modal" tabindex="-1" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1050; align-items: center; justify-content: center;">
-    <div class="modal-dialog" style="background: white; border-radius: 8px; width: 450px; padding: 1.5rem; position: relative;">
-        <h5 style="margin-top: 0; color: var(--primary-blue); border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Select Diagnosis Box</h5>
+<div id="trigger-modal" class="modal" tabindex="-1" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.6); z-index: 1050; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+    <div class="modal-dialog" style="background: white; border-radius: 16px; width: 600px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); position: relative; overflow: hidden;">
         
-        <div style="margin: 1.5rem 0;">
-            <label style="font-weight: 500; font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">Select Box for Dummy Result Generation:</label>
-            <select id="box-selector" class="sr-input">
-                <option value="001">Box 001 - NORMAL</option>
-                <option value="002">Box 002 - NORMAL</option>
-                <option value="003">Box 003 - NORMAL</option>
-                <option value="004">Box 004 - NORMAL</option>
-                <option value="005">Box 005 - NORMAL</option>
-                <option value="006">Box 006 - BELOW</option>
-                <option value="007">Box 007 - BELOW</option>
-                <option value="008">Box 008 - ABOVE</option>
-                <option value="009">Box 009 - ABOVE</option>
-                <option value="010">Box 010 - UNIVERSAL</option>
-            </select>
+        <!-- Header -->
+        <div style="padding: 1.5rem 1.5rem 1rem; display: flex; align-items: flex-start; gap: 1rem;">
+            <div style="background-color: #e0e7ff; color: #0d6efd; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; flex-shrink: 0;">
+                <i class="bi bi-diagram-2"></i>
+            </div>
+            <div style="padding-top: 0.1rem;">
+                <h4 style="margin: 0 0 0.35rem 0; font-weight: 700; color: #0f172a; font-size: 1.3rem;">Select Diagnosis Box</h4>
+                <p style="margin: 0; color: #475569; font-size: 0.95rem;">Select a box number (1 - 10) for dummy result generation.</p>
+            </div>
+            <button type="button" class="btn-close-modal" style="position: absolute; top: 1.5rem; right: 1.5rem; background: #f1f5f9; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #475569; transition: background 0.2s;"><i class="bi bi-x-lg"></i></button>
         </div>
         
-        <div style="display: flex; justify-content: flex-end; gap: 10px;">
-            <button type="button" id="btn-cancel-trigger" class="btn-clear" style="padding: 0.5rem 1rem;">Cancel</button>
-            <button type="button" id="btn-confirm-trigger" class="btn-save" style="background-color: var(--primary-color); padding: 0.5rem 1rem;">Confirm & Trigger</button>
+        <!-- Body -->
+        <div style="padding: 0 1.5rem 1.5rem; overflow-y: auto; flex: 1; min-height: 0;">
+            
+            <div style="background-color: #eff6ff; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.85rem;">
+                <i class="bi bi-info-circle-fill" style="font-size: 1.4rem; color: #3b82f6;"></i>
+                <div>
+                    <strong style="color: #1e40af; display: block; font-size: 0.95rem; margin-bottom: 0.15rem;">This is used for dummy result generation only.</strong>
+                    <span style="color: #64748b; font-size: 0.85rem;">Please select a box number from 1 to 10.</span>
+                </div>
+            </div>
+            
+            <div id="box-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem;">
+                <div class="trigger-box" data-value="001">1</div>
+                <div class="trigger-box" data-value="002">2</div>
+                <div class="trigger-box" data-value="003">3</div>
+                <div class="trigger-box" data-value="004">4</div>
+                <div class="trigger-box" data-value="005">5</div>
+                <div class="trigger-box" data-value="006">6</div>
+                <div class="trigger-box" data-value="007">7</div>
+                <div class="trigger-box" data-value="008">8</div>
+                <div class="trigger-box" data-value="009">9</div>
+                <div class="trigger-box" data-value="010">10</div>
+            </div>
+            <input type="hidden" id="box-selector" value="">
+            
         </div>
+        
+        <!-- Footer -->
+        <div style="padding: 1rem 1.5rem; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 0.75rem; background: #fff;">
+            <button type="button" class="btn-clear btn-close-modal" style="padding: 0.5rem 1.25rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #334155; font-weight: 600; display: flex; align-items: center; gap: 0.4rem; transition: background 0.2s;">
+                <i class="bi bi-x-lg" style="font-size: 0.9rem;"></i> Close
+            </button>
+            <button type="button" id="btn-confirm-trigger" class="btn-save" style="background-color: #0d6efd; padding: 0.5rem 1.5rem; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 0.4rem; border: none; color: #fff; transition: background 0.2s;">
+                <i class="bi bi-check2" style="font-size: 1.1rem;"></i> Save
+            </button>
+        </div>
+        
     </div>
 </div>
 {% endblock %}
@@ -855,6 +911,16 @@ $(document).ready(function() {
     
     // --- 2. SELECT PATIENT ---
     $(document).on('click', '.patient-row', function() {
+        // Clear previous patient state completely (Bug 6)
+        selectedInvestigations = [];
+        selectedDiagnoses = [];
+        currentDiagnosisIds = [];
+        removedMappedInvestigations = [];
+        renderInvestigations();
+        $('#box-selector').val('');
+        $('.trigger-box').removeClass('selected');
+        $('#btn-confirm-trigger').prop('disabled', true);
+
         $('.patient-row').removeClass('selected');
         $(this).addClass('selected');
         
@@ -1147,13 +1213,27 @@ $(document).ready(function() {
     });
     
     // --- 6. SAVE REQUEST ---
+    let isSaving = false;
+    
+    // Trigger Box selection
+    $('.trigger-box').click(function() {
+        $('.trigger-box').removeClass('selected');
+        $(this).addClass('selected');
+        $('#box-selector').val($(this).data('value'));
+        $('#btn-confirm-trigger').prop('disabled', false);
+    });
+
     function submitRequest(allocate) {
+        if(isSaving) return;
         if(!currentPatient) return alert('Please select a patient first.');
         if(currentDiagnosisIds.length === 0) return alert('Please select at least one diagnosis before saving investigations.');
         if(selectedInvestigations.length === 0) return alert('Please add at least one investigation.');
         
         if (allocate) {
-            // Show modal
+            // Show modal, require box selection
+            $('#box-selector').val('');
+            $('.trigger-box').removeClass('selected');
+            $('#btn-confirm-trigger').prop('disabled', true);
             $('#trigger-modal').css('display', 'flex');
         } else {
             // Normal save as draft
@@ -1161,7 +1241,7 @@ $(document).ready(function() {
         }
     }
     
-    $('#btn-cancel-trigger').click(function() {
+    $('.btn-close-modal').click(function() {
         $('#trigger-modal').hide();
     });
     
@@ -1172,6 +1252,8 @@ $(document).ready(function() {
     });
 
     function executeRequest(allocate, boxId) {
+        if (isSaving) return;
+        isSaving = true;
         const btn = allocate ? $('#btn-allocate-request') : $('#btn-save-request');
         const orig = btn.html();
         btn.html('<i class="spinner-border spinner-border-sm"></i> Saving...').prop('disabled', true);
@@ -1199,47 +1281,55 @@ $(document).ready(function() {
             url: apiUrl,
             type: 'POST',
             contentType: 'application/json',
+            dataType: 'json',
             headers: { 'X-CSRFToken': '{{ csrf_token }}' },
             data: JSON.stringify(payload),
             success: function(res) {
-                if(res.status === 'success') {
-                    alert('Service Request saved successfully!');
-                    
-                    // Do not lose selected patient, but clear the cart to prevent duplicate saves
-                    selectedInvestigations = [];
-                    renderInvestigations();
-                    
-                    // Update request count in the patient list visually
-                    const row = $(`.patient-row.selected`);
-                    if(row.length > 0) {
-                        const countCell = row.find('td:nth-child(8) span');
-                        let currentCount = parseInt(countCell.text()) || 0;
-                        countCell.text(currentCount + 1);
+                try {
+                    if(res && res.status === 'success') {
+                        alert('Service Request saved successfully!');
                         
-                        // Apply green status styling and move row to bottom
-                        row.removeClass('status-pending').addClass('status-raised');
-                        
-                        const tbody = $('#patients-table tbody');
-                        row.detach().appendTo(tbody);
-                        
-                        // Re-number rows to maintain sequence
-                        tbody.find('tr.patient-row').each(function(idx) {
-                            $(this).find('td:first').text(idx + 1);
-                        });
-                        
-                        // Also update the stored data object
-                        if(currentPatient) {
-                            currentPatient.request_count = currentCount + 1;
+                        // Update request count in the patient list visually before resetting
+                        const row = $(`.patient-row.selected`);
+                        if(row.length > 0) {
+                            const countCell = row.find('td:nth-child(9) span');
+                            let currentCount = parseInt(countCell.text()) || 0;
+                            countCell.text(currentCount + 1);
+                            
+                            // Apply green status styling and move row to bottom
+                            row.removeClass('status-pending').addClass('status-raised');
+                            
+                            const tbody = $('#patients-table tbody');
+                            row.detach().appendTo(tbody);
+                            
+                            // Re-number rows to maintain sequence
+                            tbody.find('tr.patient-row').each(function(idx) {
+                                $(this).find('td:first').text(idx + 1);
+                            });
+                            
+                            // Also update the stored data object
+                            if(currentPatient) {
+                                currentPatient.request_count = currentCount + 1;
+                            }
                         }
+                        
+                        // Reset the form for the next patient (Bug 5)
+                        $('#btn-clear-all').click();
+                    } else {
+                        alert('Error: ' + (res.message || 'Unknown error occurred.'));
                     }
-                } else {
-                    alert('Error: ' + res.message);
-                    btn.html(orig).prop('disabled', false);
+                } catch(err) {
+                    console.error('Error in success callback:', err);
+                    alert('An error occurred while updating the UI.');
                 }
             },
-            error: function() {
-                alert('An error occurred while saving the request.');
+            error: function(xhr) {
+                alert('An error occurred while saving the request. Check console for details.');
+                console.error(xhr);
+            },
+            complete: function() {
                 btn.html(orig).prop('disabled', false);
+                isSaving = false;
             }
         });
     }

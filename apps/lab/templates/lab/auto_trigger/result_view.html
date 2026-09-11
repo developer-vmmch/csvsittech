@@ -608,13 +608,31 @@
                     cardStatusClass = 'status-mixed';
                 }
 
+                // Count highs and lows
+                let highCount = 0, lowCount = 0, normalCount = 0;
+                if (r.parameters) {
+                    r.parameters.forEach(p => {
+                        if (p.result_status === 'ABOVE') highCount++;
+                        else if (p.result_status === 'BELOW') lowCount++;
+                        else if (p.result_status === 'NORMAL') normalCount++;
+                    });
+                }
+
+                let paramCountsHtml = '';
+                if (highCount > 0 || lowCount > 0) {
+                    let parts = [];
+                    if (highCount > 0) parts.push(`${highCount} High`);
+                    if (lowCount > 0) parts.push(`${lowCount} Low`);
+                    paramCountsHtml = `<div style="font-size: 12px; font-weight: 600; color: #64748b; margin-top: 4px;">${parts.join(' &bull; ')}</div>`;
+                }
+
                 // Classification pill
                 let pillClass = 'pill-non', pillIcon = '', pillLabel = overallStatus;
                 if (isConsumed) { pillClass = 'pill-consumed'; pillLabel = 'CONSUMED'; pillIcon = '&#9940;'; }
                 else if (overallStatus === 'NORMAL') { pillClass = 'pill-normal'; pillLabel = 'NORMAL'; pillIcon = '&#10003;'; }
-                else if (overallStatus === 'BELOW')  { pillClass = 'pill-below';  pillLabel = 'LOW'; pillIcon = '&#8595;'; }
-                else if (overallStatus === 'ABOVE')  { pillClass = 'pill-above';  pillLabel = 'HIGH'; pillIcon = '&#8593;'; }
-                else if (overallStatus === 'MIXED')  { pillClass = 'pill-mixed';  pillLabel = 'MIXED'; pillIcon = '~'; }
+                else if (overallStatus === 'BELOW')  { pillClass = 'pill-below';  pillLabel = 'LOW / ABNORMAL'; pillIcon = '&#8595;'; }
+                else if (overallStatus === 'ABOVE')  { pillClass = 'pill-above';  pillLabel = 'HIGH / ABNORMAL'; pillIcon = '&#8593;'; }
+                else if (overallStatus === 'MIXED')  { pillClass = 'pill-mixed';  pillLabel = 'ABNORMAL / OUT OF RANGE'; pillIcon = '&#9888;'; }
                 else { pillClass = 'pill-non'; pillLabel = '&#x2014;'; pillIcon = ''; }
 
                 groupHtml += `
@@ -627,7 +645,10 @@
                                 </div>
                                 <span class="inv-short-badge" style="color: ${iconColor}; font-weight: bold;">${group.short_name}</span>
                             </div>
-                            <span class="result-status-pill ${pillClass}">${pillIcon} ${pillLabel}</span>
+                            <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                <span class="result-status-pill ${pillClass}">${pillIcon} ${pillLabel}</span>
+                                ${paramCountsHtml}
+                            </div>
                         </div>
                         
                         <div class="mb-3" style="flex-grow: 1;">
@@ -723,22 +744,16 @@
         tbody.innerHTML = '';
         
         result.parameters.forEach(p => {
-            // Determine if result is out of range
+            // Determine if result is out of range based on pre-computed status
             let resultStyle = 'font-weight: 700; color: #0f172a;';
             let rangeStr = p.reference_range || '-';
-            if (rangeStr !== '-' && rangeStr.includes('-') && p.value && !isNaN(parseFloat(p.value))) {
-                const parts = rangeStr.split('-');
-                if (parts.length === 2) {
-                    const lo = parseFloat(parts[0]), hi = parseFloat(parts[1]);
-                    const val = parseFloat(p.value);
-                    if (!isNaN(lo) && !isNaN(hi)) {
-                        if (val < lo || val > hi) {
-                            resultStyle = 'font-weight: 700; color: #dc2626;'; // red if out of range
-                        } else {
-                            resultStyle = 'font-weight: 700; color: #16a34a;'; // green if normal
-                        }
-                    }
-                }
+            
+            if (p.result_status === 'ABOVE') {
+                resultStyle = 'font-weight: 700; color: #dc2626;'; // red if high
+            } else if (p.result_status === 'BELOW') {
+                resultStyle = 'font-weight: 700; color: #ea580c;'; // orange if low
+            } else if (p.result_status === 'NORMAL') {
+                resultStyle = 'font-weight: 700; color: #16a34a;'; // green if normal
             }
             tbody.innerHTML += `
                 <tr style="border-bottom: 1px solid #f1f5f9;">
@@ -1117,37 +1132,65 @@
         a.click();
     }
 
-    function processImport() {
-        if (!currentImportFile) return;
+    async function processImport() {
+        if (!_importValidationData || !_importValidationData.file_key) return;
         const btn = document.getElementById('btnProcessImport');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Importing...';
 
-        const fd = new FormData();
-        fd.append('file', currentImportFile);
-        fd.append('action', 'import');
+        const totalResults = _importValidationData.stats.total_results || 0;
+        const fileKey = _importValidationData.file_key;
+        const batchSize = 500;
+        const totalBatches = Math.ceil(totalResults / batchSize) || 1;
+        
+        let cumulativeCounts = {
+            results_created: 0,
+            results_updated: 0,
+            parameters_created: 0
+        };
+        
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status"></span> Importing... 0 / ${totalResults}`;
 
-        fetch('{% url "lab:api_result_import_export" %}', {
-            method: 'POST',
-            body: fd,
-            headers: { 'X-CSRFToken': getCookie('csrftoken') }
-        })
-        .then(r => r.json())
-        .then(data => {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-cloud-upload"></i> Import & Apply';
-            if (data.status === 'success') {
-                showImportSuccess(data.counts);
-                loadResults(); // refresh grid in background
-            } else {
-                showImportFailure(data.message || 'Unknown error');
+        for (let i = 0; i < totalBatches; i++) {
+            const fd = new FormData();
+            fd.append('action', 'import_batch');
+            fd.append('file_key', fileKey);
+            fd.append('batch_index', i);
+            fd.append('batch_size', batchSize);
+
+            try {
+                const r = await fetch('{% url "lab:api_result_import_export" %}', {
+                    method: 'POST',
+                    body: fd,
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+                });
+                const data = await r.json();
+                
+                if (data.status === 'success') {
+                    if (data.counts) {
+                        cumulativeCounts.results_created += data.counts.results_created || 0;
+                        cumulativeCounts.results_updated += data.counts.results_updated || 0;
+                        cumulativeCounts.parameters_created += data.counts.parameters_created || 0;
+                    }
+                    let progress = Math.min((i + 1) * batchSize, totalResults);
+                    btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status"></span> Importing... ${progress} / ${totalResults}`;
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-cloud-upload"></i> Import & Apply';
+                    showImportFailure(`Batch ${i+1} failed: ` + (data.message || 'Unknown error'));
+                    return;
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-cloud-upload"></i> Import & Apply';
+                showImportFailure(`Network error during batch ${i+1}. Processing stopped.`);
+                return;
             }
-        })
-        .catch(err => {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-cloud-upload"></i> Import & Apply';
-            showImportFailure('Network error during import. No data was saved.');
-        });
+        }
+        
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-cloud-upload"></i> Import & Apply';
+        showImportSuccess(cumulativeCounts);
+        loadResults(); // refresh grid in background
     }
 
     function showImportSuccess(counts) {
