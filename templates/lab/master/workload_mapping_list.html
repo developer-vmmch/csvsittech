@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Workload Mapping | VMMCerp{% endblock %}
+{% block page_heading %}Workload Mapping{% endblock %}
+
+{% block content %}
+<div class="mb-4 text-sm text-slate-500">
+    <a href="{% url 'core:dashboard' %}" class="text-blue-600 hover:underline">Home</a> 
+    <i class="bi bi-chevron-right text-xs mx-1"></i>
+    <span class="font-semibold text-slate-800">Workload Mapping</span>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+        <h2 class="font-bold text-lg text-slate-800">Hospital to Lab Workload Mapping</h2>
+        <div class="flex gap-2">
+            <a href="{% url 'lab:import_lab_workload_csv' %}" class="btn btn-outline btn-sm"><i class="bi bi-upload"></i> Import</a>
+            <a href="{% url 'lab:export_lab_workload_csv' %}" class="btn btn-outline btn-sm"><i class="bi bi-download"></i> Export</a>
+        </div>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm">
+                    <th class="p-4 font-semibold">Hospital Department</th>
+                    <th class="p-4 font-semibold">Lab Sub Department</th>
+                    <th class="p-4 font-semibold">Investigation</th>
+                    <th class="p-4 font-semibold text-right">Daily Bench</th>
+                    <th class="p-4 font-semibold text-right">Weekly Bench</th>
+                    <th class="p-4 font-semibold text-right">Monthly Bench</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% for mapping in mappings %}
+                <tr class="border-b border-slate-100 hover:bg-slate-50">
+                    <td class="p-4 font-medium">{{ mapping.hospital_department.name }}</td>
+                    <td class="p-4 text-slate-600">{{ mapping.lab_sub_department.name }}</td>
+                    <td class="p-4 font-medium">{{ mapping.investigation.name }}</td>
+                    <td class="p-4 text-right text-slate-600">{{ mapping.daily_benchmark|default:"-" }}</td>
+                    <td class="p-4 text-right text-slate-600">{{ mapping.weekly_benchmark|default:"-" }}</td>
+                    <td class="p-4 text-right text-slate-600">{{ mapping.monthly_benchmark|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="p-8 text-center text-slate-500">
+                        No workload mappings found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if page_obj.has_other_pages %}
+    <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+        <span class="text-sm text-slate-600">Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        <div class="flex gap-1">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 bg-white border border-slate-300 rounded text-sm hover:bg-slate-50">Previous</a>
+            {% endif %}
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 bg-white border border-slate-300 rounded text-sm hover:bg-slate-50">Next</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

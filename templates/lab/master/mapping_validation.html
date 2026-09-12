@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Mapping Validation | VMMCerp{% endblock %}
+{% block page_heading %}Mapping Validation{% endblock %}
+
+{% block content %}
+<div class="mb-4 text-sm text-slate-500">
+    <a href="{% url 'core:dashboard' %}" class="text-blue-600 hover:underline">Home</a> 
+    <i class="bi bi-chevron-right text-xs mx-1"></i>
+    <a href="{% url 'lab:lab_master_dashboard' %}" class="text-blue-600 hover:underline">Lab Master</a>
+    <i class="bi bi-chevron-right text-xs mx-1"></i>
+    <span class="font-semibold text-slate-800">Mapping Validation</span>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+        <h2 class="font-bold text-lg text-slate-800">Unmapped Investigations (Exceptions)</h2>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm">
+                    <th class="p-4 font-semibold">Hospital Department</th>
+                    <th class="p-4 font-semibold">Source Category</th>
+                    <th class="p-4 font-semibold">Investigation Name</th>
+                    <th class="p-4 font-semibold">Reason</th>
+                    <th class="p-4 font-semibold">Created At</th>
+                    <th class="p-4 font-semibold text-center w-24">Action</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% for item in unmapped %}
+                <tr class="border-b border-slate-100 hover:bg-slate-50">
+                    <td class="p-4 font-medium">{{ item.hospital_department_name }}</td>
+                    <td class="p-4 text-slate-600">{{ item.source_category|default:"-" }}</td>
+                    <td class="p-4 font-medium">{{ item.investigation_name }}</td>
+                    <td class="p-4 text-red-600">{{ item.reason }}</td>
+                    <td class="p-4 text-slate-500">{{ item.created_at|date:"d M Y" }}</td>
+                    <td class="p-4 text-center">
+                        <button class="btn btn-outline btn-sm" title="Resolve Exception">
+                            <i class="bi bi-wrench"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="p-12 text-center text-slate-500">
+                        <i class="bi bi-check-circle text-5xl text-emerald-400 block mb-3"></i>
+                        <p class="text-lg">No unmapped investigations found.</p>
+                        <p class="text-sm mt-1">All imports mapped correctly.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+        <span class="text-sm text-slate-600">Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        <div class="flex gap-1">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 bg-white border border-slate-300 rounded text-sm hover:bg-slate-50">Previous</a>
+            {% endif %}
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 bg-white border border-slate-300 rounded text-sm hover:bg-slate-50">Next</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

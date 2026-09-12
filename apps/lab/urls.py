@@ -76,8 +76,15 @@ from .auto_trigger_views import (
     api_get_investigation_parameters, api_generate_dummy_result_values, api_save_dummy_result, api_get_dummy_results, api_result_import_export
 )
 
-from .lab_master_views import lab_master_dashboard, export_lab_workload_csv, import_lab_workload_csv
-from .lab_reports import lab_workload_dashboard
+from .lab_master_views import (
+    lab_master_dashboard, export_lab_workload_csv, import_lab_workload_csv,
+    LabDepartmentListView, LabWorkloadMappingListView, UnmappedLabInvestigationListView
+)
+from .lab_reports import (
+    lab_workload_dashboard, report_dashboard, report_daily, report_monthly,
+    report_sub_department, report_investigation, report_hospital_department,
+    report_benchmark, report_abnormal
+)
 
 app_name = 'lab'
 
@@ -233,12 +240,22 @@ urlpatterns = [
     
     # Lab Master
     path('lab-master/dashboard/', lab_master_dashboard, name='lab_master_dashboard'),
+    path('lab-master/sub-departments/', LabDepartmentListView.as_view(), name='lab_sub_departments'),
+    path('lab-master/workload-mapping/', LabWorkloadMappingListView.as_view(), name='workload_mapping_list'),
+    path('lab-master/mapping-validation/', UnmappedLabInvestigationListView.as_view(), name='mapping_validation'),
     path('lab-master/export/', export_lab_workload_csv, name='export_lab_workload_csv'),
     path('lab-master/import/', import_lab_workload_csv, name='import_lab_workload_csv'),
     
     # Lab Reports
     path('lab-reports/workload/', lab_workload_dashboard, name='lab_workload_dashboard'),
-    
+    path('lab-reports/dashboard/', report_dashboard, name='report_dashboard'),
+    path('lab-reports/daily/', report_daily, name='report_daily'),
+    path('lab-reports/monthly/', report_monthly, name='report_monthly'),
+    path('lab-reports/sub-department/', report_sub_department, name='report_sub_department'),
+    path('lab-reports/investigation/', report_investigation, name='report_investigation'),
+    path('lab-reports/hospital-department/', report_hospital_department, name='report_hospital_department'),
+    path('lab-reports/benchmark/', report_benchmark, name='report_benchmark'),
+    path('lab-reports/abnormal/', report_abnormal, name='report_abnormal'),
 
     # Transactions
     path('order/add/', OrderEntryView.as_view(), name='order_entry'),

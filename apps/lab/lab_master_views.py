@@ -131,3 +131,30 @@ def import_lab_workload_csv(request):
         return redirect('lab:lab_master_dashboard')
         
     return render(request, 'lab/master/lab_workload_import.html')
+
+from django.views.generic import ListView
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+class LabDepartmentListView(LoginRequiredMixin, ListView):
+    model = LabDepartment
+    template_name = 'lab/master/lab_department_list.html'
+    context_object_name = 'departments'
+    paginate_by = 50
+
+class LabWorkloadMappingListView(LoginRequiredMixin, ListView):
+    model = LabWorkloadMapping
+    template_name = 'lab/master/workload_mapping_list.html'
+    context_object_name = 'mappings'
+    paginate_by = 50
+
+    def get_queryset(self):
+        return LabWorkloadMapping.objects.select_related('hospital_department', 'lab_sub_department', 'investigation').all()
+
+class UnmappedLabInvestigationListView(LoginRequiredMixin, ListView):
+    model = UnmappedLabInvestigation
+    template_name = 'lab/master/mapping_validation.html'
+    context_object_name = 'unmapped'
+    paginate_by = 50
+    
+    def get_queryset(self):
+        return UnmappedLabInvestigation.objects.filter(resolved=False)

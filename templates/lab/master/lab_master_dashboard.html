@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Lab Master Dashboard | VMMCerp{% endblock %}
+{% block page_heading %}Lab Master Dashboard{% endblock %}
+
+{% block content %}
+<div class="mb-4 text-sm text-slate-500">
+    <a href="{% url 'core:dashboard' %}" class="text-blue-600 hover:underline">Home</a> 
+    <i class="bi bi-chevron-right text-xs mx-1"></i>
+    <span class="font-semibold text-slate-800">Lab Master Dashboard</span>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 border-l-4 border-l-blue-500">
+        <h3 class="text-slate-500 font-medium text-sm mb-1 uppercase tracking-wider">Total Workload Mappings</h3>
+        <p class="text-3xl font-bold text-slate-800">{{ total_mapped }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 border-l-4 border-l-red-500">
+        <h3 class="text-slate-500 font-medium text-sm mb-1 uppercase tracking-wider">Unmapped Exceptions</h3>
+        <p class="text-3xl font-bold text-slate-800">{{ unmapped_count }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 border-l-4 border-l-emerald-500 flex flex-col justify-center">
+        <div class="flex gap-2">
+            <a href="{% url 'lab:import_lab_workload_csv' %}" class="btn btn-primary w-full justify-center">
+                <i class="bi bi-upload"></i> Import CSV
+            </a>
+            <a href="{% url 'lab:export_lab_workload_csv' %}" class="btn btn-outline w-full justify-center">
+                <i class="bi bi-download"></i> Export CSV
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+        <h2 class="font-bold text-lg text-slate-800">Recent Unmapped Exceptions</h2>
+        <a href="{% url 'lab:mapping_validation' %}" class="text-blue-600 hover:underline text-sm font-medium">View All <i class="bi bi-arrow-right"></i></a>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm">
+                    <th class="p-4 font-semibold">Hospital Department</th>
+                    <th class="p-4 font-semibold">Source Category</th>
+                    <th class="p-4 font-semibold">Investigation Name</th>
+                    <th class="p-4 font-semibold">Reason</th>
+                    <th class="p-4 font-semibold">Created At</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                {% for item in unmapped_records %}
+                <tr class="border-b border-slate-100 hover:bg-slate-50">
+                    <td class="p-4 font-medium">{{ item.hospital_department_name }}</td>
+                    <td class="p-4">{{ item.source_category|default:"-" }}</td>
+                    <td class="p-4">{{ item.investigation_name }}</td>
+                    <td class="p-4 text-red-600">{{ item.reason }}</td>
+                    <td class="p-4 text-slate-500">{{ item.created_at|date:"d M Y, h:i A" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="p-8 text-center text-slate-500">
+                        <i class="bi bi-check-circle text-4xl text-emerald-400 block mb-3"></i>
+                        No unmapped exceptions found. All good!
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

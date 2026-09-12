@@ -187,73 +187,84 @@
                 </ul>
             </li>
 
-            <!-- Lab Master Module -->
-            <li class="nav-item has-submenu {% if request.resolver_match.namespace == 'lab' %}open active-parent{% endif %}">
-                <a href="javascript:void(0);" class="submenu-toggle" title="Lab Investigation Master">
-                    <i class="bi bi-droplet-fill" style="color: #ef4444;"></i>
-                    <span>Lab Master</span>
+            <!-- MASTER Module -->
+            <li class="nav-item has-submenu {% if request.resolver_match.namespace == 'lab' or 'patients:department_list' in request.resolver_match.url_name %}open active-parent{% endif %}">
+                <a href="javascript:void(0);" class="submenu-toggle" title="Master">
+                    <i class="bi bi-database" style="color: #ef4444;"></i>
+                    <span>Master</span>
                     <i class="bi bi-chevron-down submenu-chevron"></i>
                 </a>
                 <ul class="submenu-list">
-                    <li class="{% if request.resolver_match.url_name == 'diagnosis_list' %}active{% endif %}">
-                        <a href="{% url 'lab:diagnosis_list' %}">
-                            <i class="bi bi-heart-pulse"></i>
-                            <span>Primary Diagnosis</span>
-                        </a>
-                    </li>
-                    <li class="{% if request.resolver_match.url_name == 'lab_diagnosis_list' %}active{% endif %}">
-                        <a href="{% url 'lab:lab_diagnosis_list' %}">
-                            <i class="bi bi-heart"></i>
-                            <span>Diagnosis</span>
+                    <li>
+                        <a href="{% url 'patients:department_list' %}">
+                            <i class="bi bi-building"></i>
+                            <span>Hospital Departments</span>
                         </a>
                     </li>
                     <li class="{% if request.resolver_match.url_name == 'investigation_list' %}active{% endif %}">
                         <a href="{% url 'lab:investigation_list' %}">
                             <i class="bi bi-file-medical"></i>
-                            <span>Investigation</span>
+                            <span>Investigations</span>
                         </a>
                     </li>
                     <li class="{% if request.resolver_match.url_name == 'parameter_list' %}active{% endif %}">
                         <a href="{% url 'lab:parameter_list' %}">
                             <i class="bi bi-list-check"></i>
-                            <span>Parameter</span>
+                            <span>Parameters</span>
                         </a>
                     </li>
-                    <li class="{% if request.resolver_match.url_name == 'agegroup_list' %}active{% endif %}">
-                        <a href="{% url 'lab:agegroup_list' %}">
-                            <i class="bi bi-person-lines-fill"></i>
-                            <span>Age Group</span>
+                    
+                    <!-- LAB MASTER Nested Submenu -->
+                    <li class="has-submenu {% if 'lab_master' in request.resolver_match.url_name or 'workload' in request.resolver_match.url_name or 'mapping' in request.resolver_match.url_name %}open{% endif %}" style="margin-top: 0.25rem;">
+                        <a href="javascript:void(0);" class="submenu-toggle" style="padding-left: 2.5rem;" title="Lab Master">
+                            <i class="bi bi-droplet-fill"></i>
+                            <span>Lab Master</span>
+                            <i class="bi bi-chevron-down submenu-chevron"></i>
                         </a>
-                    </li>
-                    <li class="{% if request.resolver_match.url_name == 'reference_range_grid' %}active{% endif %}">
-                        <a href="{% url 'lab:reference_range_grid' %}">
-                            <i class="bi bi-grid-3x3-gap"></i>
-                            <span>Reference Range</span>
-                        </a>
-                    </li>
-                    <li class="{% if request.resolver_match.url_name == 'investigation_parameter_mapping' %}active{% endif %}">
-                        <a href="{% url 'lab:investigation_parameter_mapping' %}">
-                            <i class="bi bi-diagram-3"></i>
-                            <span>Investigation Parameter Mapping Setup</span>
-                        </a>
-                    </li>
-                    <li class="{% if request.resolver_match.url_name == 'diagnosis_investigation_age_mapping' %}active{% endif %}">
-                        <a href="{% url 'lab:diagnosis_investigation_age_mapping' %}">
-                            <i class="bi bi-link-45deg"></i>
-                            <span>Diagnosis-Investigation Mapping</span>
-                        </a>
-                    </li>
-                    <li class="{% if request.resolver_match.url_name == 'diagnosis_department_mapping' %}active{% endif %}">
-                        <a href="{% url 'lab:diagnosis_department_mapping' %}">
-                            <i class="bi bi-diagram-2"></i>
-                            <span>Diagnosis-Department Mapping</span>
-                        </a>
-                    </li>
-                    <li class="{% if request.resolver_match.url_name == 'legacy_mapping' %}active{% endif %}">
-                        <a href="{% url 'lab:legacy_mapping' %}">
-                            <i class="bi bi-arrow-left-right"></i>
-                            <span>Universal Import / Export</span>
-                        </a>
+                        <ul class="submenu-list" style="padding-left: 1rem; background-color: rgba(0,0,0,0.1); border-radius: 4px; margin: 0.25rem 0.5rem;">
+                            <li class="{% if request.resolver_match.url_name == 'lab_master_dashboard' %}active{% endif %}">
+                                <a href="{% url 'lab:lab_master_dashboard' %}">
+                                    <i class="bi bi-speedometer2"></i>
+                                    <span>Lab Dashboard</span>
+                                </a>
+                            </li>
+                            <li class="{% if request.resolver_match.url_name == 'lab_sub_departments' %}active{% endif %}">
+                                <a href="{% url 'lab:lab_sub_departments' %}">
+                                    <i class="bi bi-diagram-2"></i>
+                                    <span>Lab Sub Departments</span>
+                                </a>
+                            </li>
+                            <li class="{% if request.resolver_match.url_name == 'investigation_parameter_mapping' %}active{% endif %}">
+                                <a href="{% url 'lab:investigation_parameter_mapping' %}">
+                                    <i class="bi bi-diagram-3"></i>
+                                    <span>Investigation Mapping</span>
+                                </a>
+                            </li>
+                            <li class="{% if request.resolver_match.url_name == 'workload_mapping_list' %}active{% endif %}">
+                                <a href="{% url 'lab:workload_mapping_list' %}">
+                                    <i class="bi bi-briefcase"></i>
+                                    <span>Workload Mapping</span>
+                                </a>
+                            </li>
+                            <li class="{% if request.resolver_match.url_name == 'mapping_validation' %}active{% endif %}">
+                                <a href="{% url 'lab:mapping_validation' %}">
+                                    <i class="bi bi-check-circle"></i>
+                                    <span>Mapping Validation</span>
+                                </a>
+                            </li>
+                            <li class="{% if request.resolver_match.url_name == 'import_lab_workload_csv' %}active{% endif %}">
+                                <a href="{% url 'lab:import_lab_workload_csv' %}">
+                                    <i class="bi bi-box-arrow-in-down"></i>
+                                    <span>Import</span>
+                                </a>
+                            </li>
+                            <li class="{% if request.resolver_match.url_name == 'export_lab_workload_csv' %}active{% endif %}">
+                                <a href="{% url 'lab:export_lab_workload_csv' %}">
+                                    <i class="bi bi-box-arrow-up"></i>
+                                    <span>Export</span>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                 </ul>
             </li>
@@ -305,6 +316,65 @@
                         <a href="{% url 'lab:result_entry_list' %}">
                             <i class="bi bi-journal-text"></i>
                             <span>Result Entry</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- LAB REPORTS Module -->
+            <li class="nav-item has-submenu {% if 'report' in request.resolver_match.url_name %}open active-parent{% endif %}">
+                <a href="javascript:void(0);" class="submenu-toggle" title="Lab Reports">
+                    <i class="bi bi-file-earmark-bar-graph" style="color: #2dd4bf;"></i>
+                    <span>Lab Reports</span>
+                    <i class="bi bi-chevron-down submenu-chevron"></i>
+                </a>
+                <ul class="submenu-list">
+                    <li class="{% if request.resolver_match.url_name == 'report_dashboard' %}active{% endif %}">
+                        <a href="{% url 'lab:report_dashboard' %}">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'report_daily' %}active{% endif %}">
+                        <a href="{% url 'lab:report_daily' %}">
+                            <i class="bi bi-calendar-day"></i>
+                            <span>Daily Report</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'report_monthly' %}active{% endif %}">
+                        <a href="{% url 'lab:report_monthly' %}">
+                            <i class="bi bi-calendar-month"></i>
+                            <span>Monthly Report</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'report_sub_department' %}active{% endif %}">
+                        <a href="{% url 'lab:report_sub_department' %}">
+                            <i class="bi bi-diagram-2"></i>
+                            <span>Sub Department Report</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'report_investigation' %}active{% endif %}">
+                        <a href="{% url 'lab:report_investigation' %}">
+                            <i class="bi bi-file-medical"></i>
+                            <span>Investigation Report</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'report_hospital_department' %}active{% endif %}">
+                        <a href="{% url 'lab:report_hospital_department' %}">
+                            <i class="bi bi-building"></i>
+                            <span>Hospital Department-wise Lab Report</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'report_benchmark' %}active{% endif %}">
+                        <a href="{% url 'lab:report_benchmark' %}">
+                            <i class="bi bi-graph-up-arrow"></i>
+                            <span>Benchmark Report</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'report_abnormal' %}active{% endif %}">
+                        <a href="{% url 'lab:report_abnormal' %}">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <span>Abnormal Result Report</span>
                         </a>
                     </li>
                 </ul>
