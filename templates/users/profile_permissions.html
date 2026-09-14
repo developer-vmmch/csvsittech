@@ -10,10 +10,12 @@
             <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">Profile Permissions Matrix</h2>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; margin-bottom: 0;">Configure granular sub-module and action permissions for each profile.</p>
         </div>
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <a href="{% url 'users:roles_overview' %}" class="btn btn-secondary"><i class="bi bi-gear"></i> Manage Profiles</a>
-            <a href="{% url 'users:role_permissions' %}" class="btn btn-secondary"><i class="bi bi-grid-3x3-gap-fill"></i> Role Access Matrix</a>
-            <a href="{% url 'users:role_add' %}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Add Profile</a>
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;">
+            <a href="{% url 'users:roles_overview' %}" class="btn btn-secondary" style="font-size: 0.85rem;"><i class="bi bi-gear"></i> Manage Roles</a>
+            <a href="{% url 'users:role_permissions' %}" class="btn btn-secondary" style="font-size: 0.85rem;"><i class="bi bi-grid-3x3-gap-fill"></i> Role Menu Matrix</a>
+            <a href="{% url 'users:profile_permissions' %}" class="btn btn-primary" style="font-size: 0.85rem; background: #0284c7;"><i class="bi bi-shield-lock"></i> Detailed Permissions Matrix</a>
+            <a href="{% url 'users:role_add' %}" class="btn btn-secondary" style="font-size: 0.85rem;"><i class="bi bi-plus-circle"></i> Add Role</a>
+            <a href="{% url 'users:list' %}" class="btn btn-secondary" style="font-size: 0.85rem;"><i class="bi bi-arrow-left"></i> Users Directory</a>
         </div>
     </div>
 

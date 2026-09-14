@@ -82,16 +82,41 @@ WSGI_APPLICATION = 'vmmc_erp.wsgi.application'
 ASGI_APPLICATION = 'vmmc_erp.asgi.application'
 
 # ============================================================
-# Database - PostgreSQL
+# Database Configuration (PostgreSQL / SQLite)
 # ============================================================
 
 import dj_database_url
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3')
-    )
-}
+DATABASE_URL = os.getenv('DATABASE_URL')
+USE_POSTGRES = os.getenv('USE_POSTGRES', '').lower() in ('true', '1', 't')
+
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+elif USE_POSTGRES:
+    DATABASES = {
+        'default': {
+            'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
+            'NAME': os.getenv('DB_NAME', os.getenv('PGDATABASE', 'project3db')),
+            'USER': os.getenv('DB_USER', os.getenv('PGUSER', 'project3user')),
+            'PASSWORD': os.getenv('DB_PASSWORD', os.getenv('PGPASSWORD', 'VMMCerp@2026')),
+            'HOST': os.getenv('DB_HOST', os.getenv('PGHOST', '127.0.0.1')),
+            'PORT': os.getenv('DB_PORT', os.getenv('PGPORT', '5432')),
+            'CONN_MAX_AGE': 600,
+        }
+    }
+else:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
+            conn_max_age=600,
+        )
+    }
 
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 :root {
     /* Main Crisp Light Theme Backgrounds */
@@ -35,7 +35,7 @@
     --input-focus-border: #0d9488;
 
     --sidebar-width: 260px;
-    --sidebar-collapsed-width: 80px;
+    --sidebar-collapsed-width: 72px;
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
 }
@@ -46,69 +46,118 @@
     padding: 0;
 }
 
+html {
+    overflow-x: hidden;
+    height: 100%;
+}
+
 body {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background-color: var(--bg-dark);
     color: var(--text-main);
     display: flex;
     min-height: 100vh;
+    min-height: 100dvh;
     overflow-x: hidden;
+    width: 100%;
 }
 
-/* Sidebar Styling - Handled primarily by Tailwind in base.html */
-/* Keeping some specific custom styles for inner elements */
-
-/* Brand styles removed (Handled by Tailwind) */
-
-/* ---- SIDEBAR COLLAPSE (Desktop) ---- */
-/* JS adds/removes 'sidebar-collapsed' on #mainSidebar at lg+ widths */
+/* =============================================================
+   SIDEBAR STYLING
+   ============================================================= */
 #mainSidebar {
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    background-color: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
+    height: 100vh;
+    height: 100dvh;
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    z-index: 50;
     transition: width 0.25s ease, transform 0.3s ease;
-    /* Default collapsed state guard */
     overflow: hidden;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
 }
 
-/* When sidebar is collapsed on desktop */
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1.25rem 1.25rem;
+    border-bottom: 1px solid var(--sidebar-border);
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.brand-logo {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.25rem;
+    color: #ffffff;
+    background: linear-gradient(135deg, #0d9488, #0284c7);
+    box-shadow: 0 4px 15px rgba(13, 148, 136, 0.4);
+}
+
+.brand-name {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: -0.01em;
+    transition: opacity 0.2s ease;
+}
+
+/* Sidebar Desktop Collapse */
 #mainSidebar.sidebar-collapsed {
-    width: 72px !important;
+    width: var(--sidebar-collapsed-width) !important;
+    min-width: var(--sidebar-collapsed-width) !important;
 }
 
-/* Hide text labels when collapsed */
 #mainSidebar.sidebar-collapsed .brand-name,
 #mainSidebar.sidebar-collapsed .nav-section-title,
-#mainSidebar.sidebar-collapsed .nav-item > a > span,
+#mainSidebar.sidebar-collapsed .nav-item a span,
 #mainSidebar.sidebar-collapsed .submenu-chevron,
 #mainSidebar.sidebar-collapsed .submenu-list {
     display: none !important;
     opacity: 0;
 }
 
-/* Center nav icons when collapsed */
-#mainSidebar.sidebar-collapsed .nav-item > a {
+#mainSidebar.sidebar-collapsed .sidebar-brand {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+#mainSidebar.sidebar-collapsed .nav-item a {
     justify-content: center !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
     gap: 0 !important;
 }
 
-/* Center brand logo when collapsed */
-#mainSidebar.sidebar-collapsed > div:first-child {
-    justify-content: center !important;
-    gap: 0 !important;
-}
-#mainSidebar.sidebar-collapsed > div:first-child > span {
-    display: none !important;
-}
-
-
+/* Sidebar Navigation Items */
 .nav-list {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.25rem;
+    padding: 0 0.5rem 1.5rem;
     overflow-y: auto;
+    overflow-x: hidden;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    flex: 1;
 }
 
 .nav-list::-webkit-scrollbar {
@@ -127,26 +176,34 @@ body {
 .nav-item a {
     display: flex;
     align-items: center;
-    gap: 0.85rem;
-    padding: 0.75rem 1rem;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
     color: var(--sidebar-text);
     text-decoration: none;
-    border-radius: 10px;
+    border-radius: 8px;
     transition: all 0.2s ease;
     font-weight: 500;
+    font-size: 0.9rem;
     white-space: nowrap;
 }
 
 .nav-item a i {
-    font-size: 1.2rem;
-    min-width: 24px;
+    font-size: 1.15rem;
+    min-width: 22px;
     text-align: center;
 }
 
 .nav-item a:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.07);
     color: #ffffff;
-    transform: translateX(3px);
+    transform: translateX(2px);
+}
+
+.nav-item.active > a {
+    background: var(--sidebar-active-bg) !important;
+    color: var(--sidebar-active-text) !important;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(14, 116, 144, 0.35);
 }
 
 .nav-item.active a {
@@ -219,35 +276,276 @@ body {
     border-left: 3px solid #38bdf8;
 }
 
-/* Main layout and Header handled by Tailwind */
+/* =============================================================
+   MAIN LAYOUT & TOP HEADER
+   ============================================================= */
+.main-layout {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-color: var(--bg-dark);
+    position: relative;
+    overflow-x: hidden;
+    width: 100%;
+}
 
-.user-badge {
+.app-header {
+    background: #ffffff;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.65rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    min-height: 58px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.header-left {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.sidebar-toggle-btn {
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    padding: 0.4rem 0.5rem;
+    border-radius: 8px;
+    color: #64748b;
+    font-size: 1.4rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.sidebar-toggle-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.page-heading-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* Live Clock Widgets */
+.live-clock-widget {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #065f46;
+    box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
+}
+
+.live-clock-widget i {
+    color: #059669;
+    font-size: 0.92rem;
+}
+
+.live-date {
+    color: #475569;
+    font-weight: 600;
+}
+
+.clock-divider {
+    color: #cbd5e1;
+    font-weight: 400;
+    margin: 0 2px;
+}
+
+.live-time {
+    color: #047857;
+    font-weight: 800;
+    font-family: monospace, sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.live-clock-mobile {
+    display: none;
+    align-items: center;
+    gap: 0.35rem;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    padding: 0.3rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #047857;
+}
+
+.live-clock-mobile i {
+    color: #059669;
+    font-size: 0.85rem;
+}
+
+/* User Badge */
+.user-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
     background: #f8fafc;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
+    padding: 0.3rem 0.75rem 0.3rem 0.35rem;
+    border-radius: 9999px;
     border: 1px solid var(--border-color);
     color: var(--text-color);
-    font-size: 0.88rem;
-    font-weight: 500;
+    font-size: 0.84rem;
+    font-weight: 600;
 }
 
 .avatar {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
-    background: var(--accent-teal);
+    background: linear-gradient(135deg, #0d9488, #0284c7);
     color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+    box-shadow: 0 2px 5px rgba(13, 148, 136, 0.3);
 }
 
-/* Content wrapper handled by Tailwind */
+.user-role-badge {
+    font-size: 0.68rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    background: #f3e8ff;
+    color: #7c3aed;
+    border: 1px solid #e9d5ff;
+}
+
+.logout-form {
+    margin: 0;
+    display: inline-flex;
+}
+
+/* Main Content Body */
+.content-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1.5rem;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.content-container {
+    margin: 0 auto;
+    width: 100%;
+    max-width: 1920px;
+    min-width: 0;
+}
+
+/* Mobile Sidebar Backdrop & Responsive rules */
+#mobileSidebarBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 40;
+    transition: opacity 0.2s ease;
+}
+
+#mobileSidebarBackdrop.hidden {
+    display: none !important;
+}
+
+@media (max-width: 1023px) {
+    #mainSidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        height: 100vh;
+        height: 100dvh;
+        transform: translateX(0);
+    }
+    
+    #mainSidebar.-translate-x-full {
+        transform: translateX(-100%) !important;
+    }
+
+    .app-header {
+        padding: 0.5rem 1rem;
+    }
+
+    .content-body {
+        padding: 1rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    #mobileSidebarBackdrop {
+        display: none !important;
+    }
+    
+    #mainSidebar.-translate-x-full {
+        transform: none !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .live-clock-widget {
+        display: none !important;
+    }
+    .live-clock-mobile {
+        display: inline-flex !important;
+    }
+    .user-badge span:not(.avatar) {
+        display: none;
+    }
+    .user-badge {
+        padding: 0.25rem;
+        background: transparent;
+        border: none;
+    }
+    .logout-form span {
+        display: none;
+    }
+    .app-header {
+        padding: 0.5rem 0.75rem;
+    }
+    .content-body {
+        padding: 0.75rem;
+    }
+}
 
 /* Form Container Layout */
 .form-container {
@@ -954,3 +1252,14 @@ body {
 body.sidebar-overlay-open {
     overflow: hidden;
 }
+
+/* Helper Color Utilities */
+.text-blue-600 { color: #2563eb !important; }
+.text-red-500 { color: #ef4444 !important; }
+.text-green-600 { color: #16a34a !important; }
+.text-teal-600 { color: #0d9488 !important; }
+.text-slate-500 { color: #64748b !important; }
+.text-slate-600 { color: #475569 !important; }
+.text-slate-800 { color: #1e293b !important; }
+.bg-slate-50 { background-color: #f8fafc !important; }
+

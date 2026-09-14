@@ -152,6 +152,7 @@
                         <th>Aadhar Card</th>
                         <th>ABHA ID</th>
                         <th>Department</th>
+                        <th>IP Dept</th>
                         <th>Patient Type</th>
                         <th>Doctor</th>
                         <th>Registered By</th>
@@ -170,6 +171,15 @@
                         <td>{{ patient.aadhar_card|default:"--" }}</td>
                         <td><span class="badge badge-purple">{{ patient.abha_id|default:"--" }}</span></td>
                         <td><span class="badge badge-blue">{{ patient.department }}</span></td>
+                        <td>
+                            {% if patient.active_ip_admission %}
+                                <span class="badge badge-purple" style="font-weight: 700;">{{ patient.active_ip_admission.department }}</span>
+                            {% elif patient.is_admitted_inpatient %}
+                                <span class="badge badge-purple" style="font-weight: 700;">{{ patient.department }}</span>
+                            {% else %}
+                                <span style="color: var(--text-muted); font-size: 0.8rem;">--</span>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if patient.patient_type == 'D' or patient.created_source == 'D' %}
                                 <span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">D</span>

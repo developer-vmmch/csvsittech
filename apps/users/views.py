@@ -45,41 +45,73 @@ def get_default_landing_url(user):
     Priority:
       1. Dashboard (if accessible)
       2. First accessible sidebar module, in the order the sidebar defines them
-      3. A safe fallback (no-access message)
-
-    Uses the exact same permission checks as the sidebar (user.can_access_menu).
+      3. Safe fallback to /dashboard/
     """
     from django.urls import reverse
 
-    # Sidebar-ordered candidates: (menu_key, url_name, namespace_or_None)
-    # Map each sidebar entry to its menu key and its URL resolver name.
-    # For top-level items the menu_key is already defined in get_menu_mapping.
-    # For sub-items that don't have individual permission keys we include the
-    # parent key so they are unlocked when the parent is permitted.
     LANDING_CANDIDATES = [
-        # key                   url_name                    namespace
-        ('dashboard',           'dashboard',                'core'),
-        # Patients sub-items
-        ('add_patient',         'add',                      'patients'),
-        ('search_patient',      'search',                   'patients'),
-        ('patient_list',        'list',                     'patients'),
-        ('op_census',           'op_census',                'patients'),
-        ('patient_companies',   'company_list',             'patients'),
-        ('department_list',     'department_list',          'patients'),
-        # Lab Master – no individual permission key; allow if user is not totally locked
-        ('lab_master_investigation', 'investigation_list',  'lab'),
-        ('lab_master_diagnosis',     'diagnosis_list',      'lab'),
-        ('lab_master_parameter',     'parameter_list',      'lab'),
+        # key                       url_name                    namespace
+        ('dashboard',               'dashboard',                'core'),
+        # Patients
+        ('add_patient',             'add',                      'patients'),
+        ('search_patient',          'search',                   'patients'),
+        ('patient_list',            'list',                     'patients'),
+        ('patient_import',          'import',                   'patients'),
+        ('review',                  'review',                   'patients'),
+        ('discharge',               'discharge',                'patients'),
+        ('branch_transfer',         'branch_transfer',          'patients'),
+        ('review_report',           'review_report',            'patients'),
+        ('op_census',               'op_census',                'patients'),
+        ('patient_companies',       'company_list',             'patients'),
+        ('department_list',         'department_list',          'patients'),
+        # Ward
+        ('ward',                    'branch_transfer',          'patients'),
+        ('ward_management',         'branch_transfer',          'patients'),
+        ('ward_allocation',         'branch_transfer',          'patients'),
+        ('ward_transfer',           'branch_transfer',          'patients'),
+        # Master / Lab Master
+        ('master',                  'department_list',          'patients'),
+        ('master_departments',      'department_list',          'patients'),
+        ('master_investigations',   'investigation_list',       'lab'),
+        ('master_parameters',       'parameter_list',           'lab'),
+        ('lab_master',              'lab_master_dashboard',     'lab'),
+        ('lab_master_dashboard',    'lab_master_dashboard',     'lab'),
+        ('lab_sub_departments',     'lab_sub_departments',      'lab'),
+        ('investigation_parameter_mapping', 'investigation_parameter_mapping', 'lab'),
+        ('workload_mapping_list',   'workload_mapping_list',    'lab'),
+        # Consultant
+        ('consultant',              'doctor_window',            'lab'),
+        ('doctor_window',           'doctor_window',            'lab'),
+        ('service_request_add',     'service_request_add',      'lab'),
+        # Lab Orders
+        ('lab_orders',              'work_orders',              'lab'),
+        ('work_orders',             'work_orders',              'lab'),
+        ('order_entry',             'order_entry',              'lab'),
+        ('result_entry_list',       'result_entry_list',        'lab'),
+        # Lab Reports
+        ('lab_reports',             'report_dashboard',         'lab'),
+        ('report_dashboard',        'report_dashboard',         'lab'),
+        ('report_daily',            'report_daily',             'lab'),
+        # Auto Trigger
+        ('auto_trigger',            'auto_trigger_configuration', 'lab'),
+        ('auto_trigger_configuration', 'auto_trigger_configuration', 'lab'),
+        ('auto_trigger_history',    'auto_trigger_history',     'lab'),
+        # OT
+        ('ot',                      'dashboard',                'ot'),
+        ('ot_dashboard',            'dashboard',                'ot'),
+        ('ot_booking',              'booking_list',             'ot'),
+        ('ot_schedule',             'schedule',                 'ot'),
         # Administration
-        ('administration',      'list',                     'users'),
-        ('users_roles',         'roles_overview',           'users'),
+        ('administration',          'list',                     'users'),
+        ('users_roles',             'roles_overview',           'users'),
+        ('system_section',          'list',                     'users'),
     ]
 
-    menu_map = user.get_menu_mapping()
+    menu_map = user.get_menu_mapping() if hasattr(user, 'get_menu_mapping') else {}
 
     for key, url_name, namespace in LANDING_CANDIDATES:
         # Admin users get all keys as True; others check the map
-        if user.is_superuser or user.role == getattr(user.__class__.Roles, 'ADMIN', None):
+        if getattr(user, 'is_superuser', False) or getattr(user, 'role', '') == getattr(user.__class__.Roles, 'ADMIN', 'ADMIN'):
             has_perm = True
         else:
             has_perm = menu_map.get(key, False)
@@ -92,9 +124,11 @@ def get_default_landing_url(user):
             except Exception:
                 continue
 
-    # Absolute last-resort: the login page with a message; the user will see
-    # "you have no permitted modules" on the next render.
-    return reverse('login')
+    # Absolute safe fallback for logged-in user:
+    try:
+        return reverse('core:dashboard')
+    except Exception:
+        return '/dashboard/'
 
 
 class ERPLoginView(LoginView):
@@ -105,7 +139,7 @@ class ERPLoginView(LoginView):
     def get_success_url(self):
         # 1. Honour a safe, local "next" parameter if present.
         next_url = self.request.POST.get('next') or self.request.GET.get('next', '')
-        if next_url:
+        if next_url and next_url != '/' and next_url != reverse_lazy('login'):
             from django.utils.http import url_has_allowed_host_and_scheme
             if url_has_allowed_host_and_scheme(
                 url=next_url,
@@ -115,7 +149,10 @@ class ERPLoginView(LoginView):
                 return next_url
 
         # 2. Determine landing page from the user's role/profile.
-        return get_default_landing_url(self.request.user)
+        url = get_default_landing_url(self.request.user)
+        if not url or url == '/' or url == reverse_lazy('login'):
+            return reverse_lazy('core:dashboard')
+        return url
 
 
 class ERPLogoutView(LogoutView):
@@ -255,39 +292,92 @@ class RoleMenuPermissionsView(LoginRequiredMixin, MenuAccessRequiredMixin, View)
 
     def get_menu_definitions(self):
         return [
+            # Main Navigation
             {'key': 'dashboard', 'label': 'Dashboard Overview', 'section': 'MAIN NAVIGATION'},
+
+            # Patients Management
             {'key': 'add_patient', 'label': 'Add Patient', 'section': 'PATIENT MANAGEMENT'},
             {'key': 'search_patient', 'label': 'Search Patient', 'section': 'PATIENT MANAGEMENT'},
             {'key': 'patient_list', 'label': 'Patient Directory', 'section': 'PATIENT MANAGEMENT'},
+            {'key': 'patient_import', 'label': 'Patient Import', 'section': 'PATIENT MANAGEMENT'},
+            {'key': 'review', 'label': 'Patient Review', 'section': 'PATIENT MANAGEMENT'},
+            {'key': 'discharge', 'label': 'Patient Discharge', 'section': 'PATIENT MANAGEMENT'},
+            {'key': 'review_report', 'label': 'Patient Review Report', 'section': 'PATIENT MANAGEMENT'},
             {'key': 'op_census', 'label': 'OP Census Analytics', 'section': 'PATIENT MANAGEMENT'},
             {'key': 'patient_companies', 'label': 'Patient Companies', 'section': 'PATIENT MANAGEMENT'},
-            {'key': 'department_list', 'label': 'Departments & Units List', 'section': 'PATIENT MANAGEMENT'},
+            {'key': 'department_list', 'label': 'Departments & Units', 'section': 'PATIENT MANAGEMENT'},
             {'key': 'add_department', 'label': '+ Add Department', 'section': 'PATIENT SETUP'},
             {'key': 'add_company', 'label': '+ Add Company', 'section': 'PATIENT SETUP'},
-            {'key': 'administration', 'label': 'User Administration', 'section': 'SYSTEM ADMINISTRATION'},
+
+            # Ward Management
+            {'key': 'ward', 'label': 'Ward Module Access', 'section': 'WARD MANAGEMENT'},
+            {'key': 'ward_management', 'label': 'Ward Management', 'section': 'WARD MANAGEMENT'},
+            {'key': 'ward_allocation', 'label': 'Ward Allocation', 'section': 'WARD MANAGEMENT'},
+            {'key': 'ward_transfer', 'label': 'Ward Transfer (Internal)', 'section': 'WARD MANAGEMENT'},
+            {'key': 'branch_transfer', 'label': 'Ward Transfer', 'section': 'WARD MANAGEMENT'},
+            {'key': 'branch_transfer_report', 'label': 'Ward Transfer Report', 'section': 'WARD MANAGEMENT'},
+
+            # Master Setup
+            {'key': 'master', 'label': 'Master Module Access', 'section': 'MASTER MODULE'},
+            {'key': 'master_departments', 'label': 'Hospital Departments', 'section': 'MASTER MODULE'},
+            {'key': 'master_investigations', 'label': 'Investigations', 'section': 'MASTER MODULE'},
+            {'key': 'master_parameters', 'label': 'Parameters', 'section': 'MASTER MODULE'},
+            {'key': 'lab_master', 'label': 'Lab Master Access', 'section': 'MASTER MODULE'},
+            {'key': 'lab_master_dashboard', 'label': 'Lab Dashboard', 'section': 'MASTER MODULE'},
+            {'key': 'lab_sub_departments', 'label': 'Lab Sub Departments', 'section': 'MASTER MODULE'},
+            {'key': 'investigation_parameter_mapping', 'label': 'Investigation Mapping', 'section': 'MASTER MODULE'},
+            {'key': 'workload_mapping_list', 'label': 'Workload Mapping', 'section': 'MASTER MODULE'},
+            {'key': 'mapping_validation', 'label': 'Mapping Validation', 'section': 'MASTER MODULE'},
+            {'key': 'import_lab_workload_csv', 'label': 'Workload Import', 'section': 'MASTER MODULE'},
+            {'key': 'export_lab_workload_csv', 'label': 'Workload Export', 'section': 'MASTER MODULE'},
+
+            # Consultant
+            {'key': 'consultant', 'label': 'Consultant Module Access', 'section': 'CONSULTANT'},
+            {'key': 'doctor_window', 'label': 'Doctor Window', 'section': 'CONSULTANT'},
+            {'key': 'service_request_add', 'label': 'Service Request', 'section': 'CONSULTANT'},
+
+            # Lab Orders
+            {'key': 'lab_orders', 'label': 'Lab Orders Module Access', 'section': 'LAB ORDERS'},
+            {'key': 'work_orders', 'label': 'Work Orders', 'section': 'LAB ORDERS'},
+            {'key': 'order_entry', 'label': 'New Order Entry', 'section': 'LAB ORDERS'},
+            {'key': 'result_entry_list', 'label': 'Result Entry', 'section': 'LAB ORDERS'},
+
+            # Lab Reports
+            {'key': 'lab_reports', 'label': 'Lab Reports Module Access', 'section': 'LAB REPORTS'},
+            {'key': 'report_dashboard', 'label': 'Reports Dashboard', 'section': 'LAB REPORTS'},
+            {'key': 'report_daily', 'label': 'Daily Report', 'section': 'LAB REPORTS'},
+            {'key': 'report_monthly', 'label': 'Monthly Report', 'section': 'LAB REPORTS'},
+            {'key': 'report_sub_department', 'label': 'Sub Department Report', 'section': 'LAB REPORTS'},
+            {'key': 'report_investigation', 'label': 'Investigation Report', 'section': 'LAB REPORTS'},
+            {'key': 'report_hospital_department', 'label': 'Hospital Department-wise Report', 'section': 'LAB REPORTS'},
+            {'key': 'report_benchmark', 'label': 'Benchmark Report', 'section': 'LAB REPORTS'},
+            {'key': 'report_abnormal', 'label': 'Abnormal Result Report', 'section': 'LAB REPORTS'},
+
+            # Auto Trigger
+            {'key': 'auto_trigger', 'label': 'Auto Trigger Module Access', 'section': 'AUTO TRIGGER'},
+            {'key': 'auto_trigger_configuration', 'label': 'Auto Trigger Configuration', 'section': 'AUTO TRIGGER'},
+            {'key': 'auto_trigger_history', 'label': 'Auto Trigger History', 'section': 'AUTO TRIGGER'},
+            {'key': 'auto_trigger_monthly_create', 'label': 'Monthly Trigger', 'section': 'AUTO TRIGGER'},
+            {'key': 'auto_trigger_monthly', 'label': 'Monthly Trigger History', 'section': 'AUTO TRIGGER'},
+            {'key': 'auto_trigger_monthly_census', 'label': 'Monthly Census', 'section': 'AUTO TRIGGER'},
+            {'key': 'auto_trigger_automate_test', 'label': 'Automate Test', 'section': 'AUTO TRIGGER'},
+            {'key': 'auto_trigger_result_view', 'label': 'Result View', 'section': 'AUTO TRIGGER'},
+
+            # OT
+            {'key': 'ot', 'label': 'OT Module Access', 'section': 'OPERATION THEATRE (OT)'},
+            {'key': 'ot_dashboard', 'label': 'OT Dashboard', 'section': 'OPERATION THEATRE (OT)'},
+            {'key': 'ot_booking', 'label': 'OT Booking', 'section': 'OPERATION THEATRE (OT)'},
+            {'key': 'ot_schedule', 'label': 'OT Schedule', 'section': 'OPERATION THEATRE (OT)'},
+            {'key': 'ot_live', 'label': 'Live OT', 'section': 'OPERATION THEATRE (OT)'},
+            {'key': 'ot_history', 'label': 'OT History', 'section': 'OPERATION THEATRE (OT)'},
+            {'key': 'ot_master', 'label': 'OT Master', 'section': 'OPERATION THEATRE (OT)'},
+
+            # System Administration
+            {'key': 'system_section', 'label': 'Administration Access', 'section': 'SYSTEM ADMINISTRATION'},
+            {'key': 'administration', 'label': 'User Accounts Directory', 'section': 'SYSTEM ADMINISTRATION'},
             {'key': 'users_roles', 'label': 'Users & Roles Matrix', 'section': 'SYSTEM ADMINISTRATION'},
             {'key': 'inventory', 'label': 'Inventory Management', 'section': 'SYSTEM ADMINISTRATION'},
             {'key': 'settings', 'label': 'System Settings', 'section': 'SYSTEM ADMINISTRATION'},
-            
-            # Lab Master
-            {'key': 'lab_master_diagnosis', 'label': 'Diagnosis', 'section': 'LAB MASTER'},
-            {'key': 'lab_master_investigation', 'label': 'Investigation', 'section': 'LAB MASTER'},
-            {'key': 'lab_master_parameter', 'label': 'Parameter', 'section': 'LAB MASTER'},
-            {'key': 'lab_master_age_group', 'label': 'Age Group', 'section': 'LAB MASTER'},
-            {'key': 'lab_master_mapping', 'label': 'Investigation Parameter Mapping', 'section': 'LAB MASTER'},
-            {'key': 'lab_master_reference_range', 'label': 'Reference Range Grid', 'section': 'LAB MASTER'},
-            {'key': 'lab_master_legacy_mapping', 'label': 'Legacy Mapping', 'section': 'LAB MASTER'},
-            
-            # Lab Orders
-            {'key': 'lab_orders_lab_orders', 'label': 'Lab Orders', 'section': 'LAB ORDERS'},
-            {'key': 'lab_orders_create', 'label': 'Create Lab Order', 'section': 'LAB ORDERS'},
-            {'key': 'lab_orders_list', 'label': 'Order List', 'section': 'LAB ORDERS'},
-            {'key': 'lab_orders_details', 'label': 'Order Details', 'section': 'LAB ORDERS'},
-            {'key': 'lab_orders_pending', 'label': 'Pending Orders', 'section': 'LAB ORDERS'},
-            {'key': 'lab_orders_processing', 'label': 'Processing Orders', 'section': 'LAB ORDERS'},
-            {'key': 'lab_orders_completed', 'label': 'Completed Orders', 'section': 'LAB ORDERS'},
-            {'key': 'lab_orders_cancelled', 'label': 'Cancelled Orders', 'section': 'LAB ORDERS'},
-            {'key': 'lab_orders_reports', 'label': 'Reports / Export', 'section': 'LAB ORDERS'},
         ]
 
     def get(self, request, *args, **kwargs):

@@ -1,0 +1,553 @@
+{% extends "base.html" %}
+
+{% block title %}Ward Transfer Analytics & Report | VMMCerp{% endblock %}
+{% block page_heading %}Ward Transfer Audit & Department Transfer Analytics{% endblock %}
+
+{% block content %}
+<style>
+    .report-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.15rem;
+        margin-bottom: 1.5rem;
+    }
+    .report-stat-card {
+        background: #ffffff;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 12px;
+        padding: 1.15rem 1.35rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        display: flex;
+        align-items: center;
+        gap: 1.1rem;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .report-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .report-stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.45rem;
+        flex-shrink: 0;
+    }
+    .report-stat-value {
+        font-size: 1.55rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.15;
+    }
+    .report-stat-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-top: 2px;
+    }
+
+    .filter-grid-4col {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem 1rem;
+    }
+    @media (max-width: 1200px) {
+        .filter-grid-4col {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    @media (max-width: 640px) {
+        .filter-grid-4col {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .status-badge {
+        font-size: 0.76rem;
+        font-weight: 800;
+        padding: 4px 9px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        letter-spacing: 0.3px;
+    }
+    .status-pending { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .status-accepted { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .status-rejected { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .status-cancelled { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+    .quick-range-btn {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+        padding: 0.3rem 0.65rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .quick-range-btn:hover {
+        background: #0284c7;
+        color: #ffffff;
+        border-color: #0284c7;
+    }
+
+    /* Route Summary Pills */
+    .route-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.6rem 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.85rem;
+    }
+
+    .btn-action-sm {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 5px 10px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: all 0.15s ease;
+    }
+
+    @media print {
+        .no-print { display: none !important; }
+        body { background: #ffffff !important; font-size: 11px !important; }
+        .panel { box-shadow: none !important; border: none !important; padding: 0 !important; }
+        .print-header { display: block !important; margin-bottom: 20px; text-align: center; }
+        table { width: 100% !important; border-collapse: collapse !important; }
+        th, td { border: 1px solid #cbd5e1 !important; padding: 6px 8px !important; }
+        th { background: #f1f5f9 !important; -webkit-print-color-adjust: exact; }
+    }
+    .print-header { display: none; }
+</style>
+
+<div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+    <!-- Print Only Header -->
+    <div class="print-header">
+        <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a;">Vinayaka Missions Medical College and Hospital</h2>
+        <h4 style="margin: 2px 0 0 0; font-size: 13px; font-weight: 600; color: #475569;">KEEZHAKASAKUDY MEDU, KARAIKAL - 609 609</h4>
+        <h3 style="margin: 10px 0 0 0; font-size: 15px; font-weight: 700; color: #0284c7; text-transform: uppercase;">
+            Ward Transfer Audit & Department Transfer Report
+        </h3>
+        <p style="margin: 4px 0 0 0; font-size: 11px; color: #64748b;">Generated On: {{ now|date:"d/M/Y H:i" }} | Period: {{ q_from_date|default:"Beginning" }} to {{ q_to_date|default:"Current" }}</p>
+        <hr style="margin: 12px 0; border: 0; border-top: 1px solid #cbd5e1;">
+    </div>
+
+    <!-- KPI Summary Stat Cards -->
+    <div class="report-stat-grid no-print">
+        <div class="report-stat-card">
+            <div class="report-stat-icon" style="background: #e0f2fe; color: #0284c7;">
+                <i class="bi bi-shuffle"></i>
+            </div>
+            <div>
+                <div class="report-stat-value">{{ total_transfers }}</div>
+                <div class="report-stat-label">Total Requests</div>
+            </div>
+        </div>
+
+        <div class="report-stat-card">
+            <div class="report-stat-icon" style="background: #fef3c7; color: #d97706;">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div>
+                <div class="report-stat-value" style="color: #b45309;">{{ pending_count }}</div>
+                <div class="report-stat-label">Pending Approval</div>
+            </div>
+        </div>
+
+        <div class="report-stat-card">
+            <div class="report-stat-icon" style="background: #dcfce7; color: #166534;">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div>
+                <div class="report-stat-value" style="color: #15803d;">{{ accepted_count }}</div>
+                <div class="report-stat-label">Accepted / Completed</div>
+            </div>
+        </div>
+
+        <div class="report-stat-card">
+            <div class="report-stat-icon" style="background: #fee2e2; color: #dc2626;">
+                <i class="bi bi-x-circle-fill"></i>
+            </div>
+            <div>
+                <div class="report-stat-value" style="color: #b91c1c;">{{ rejected_count }}</div>
+                <div class="report-stat-label">Rejected Requests</div>
+            </div>
+        </div>
+
+        <div class="report-stat-card">
+            <div class="report-stat-icon" style="background: #ccfbf1; color: #0d9488;">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div>
+                <div class="report-stat-value">{{ unique_patients_count }}</div>
+                <div class="report-stat-label">Unique Patients</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Control Panel -->
+    <div class="panel no-print">
+        <div class="panel-header-action" style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h2 class="panel-title" style="margin: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+                    <i class="bi bi-funnel-fill" style="color: var(--accent-blue, #0284c7);"></i> Ward Transfer Report Filter
+                </h2>
+                <p style="color: var(--text-muted, #64748b); font-size: 0.84rem; margin-top: 4px; margin-bottom: 0;">
+                    Filter department transfers by Patient ID, Name, Date Range, Origin/Destination Department, Transfer Status, or User.
+                </p>
+            </div>
+            <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;">
+                <a href="{% url 'patients:branch_transfer' %}" class="btn" style="background: #f1f5f9; color: #334155; font-size: 0.85rem; border: 1px solid #cbd5e1; font-weight: 600;">
+                    <i class="bi bi-arrow-left-right"></i> Ward Transfer Management
+                </a>
+                <a href="{% url 'patients:branch_transfer_report_export' %}?q_search={{ q_search }}&q_from_date={{ q_from_date }}&q_to_date={{ q_to_date }}&q_from_dept={{ q_from_dept }}&q_to_dept={{ q_to_dept }}&q_status={{ q_status }}&q_user={{ q_user }}" 
+                   class="btn" style="background: #16a34a; color: #ffffff; font-size: 0.85rem; font-weight: 600; border: none;" title="Export Filtered Records to CSV">
+                    <i class="bi bi-file-earmark-excel"></i> Export CSV
+                </a>
+                <button class="btn" onclick="window.print()" style="font-size: 0.85rem; background: #0284c7; color: #ffffff; border: none; font-weight: 600;">
+                    <i class="bi bi-printer-fill"></i> Print Report
+                </button>
+            </div>
+        </div>
+
+        <form method="get" action="{% url 'patients:branch_transfer_report' %}" class="custom-form" id="filterForm">
+            <div class="filter-grid-4col">
+                <div class="form-group">
+                    <label for="q_search">Search Patient / Request # / IPNO</label>
+                    <input type="text" id="q_search" name="q_search" value="{{ q_search }}" class="form-input" placeholder="TR-..., Patient ID, Name, IP No...">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_from_date">From Date</label>
+                    <input type="date" id="q_from_date" name="q_from_date" value="{{ q_from_date }}" class="form-input" onclick="if(this.showPicker) this.showPicker();">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_to_date">To Date</label>
+                    <input type="date" id="q_to_date" name="q_to_date" value="{{ q_to_date }}" class="form-input" onclick="if(this.showPicker) this.showPicker();">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_status">Transfer Status</label>
+                    <select id="q_status" name="q_status" class="form-select">
+                        <option value="">-- All Statuses --</option>
+                        {% for code, label in status_choices %}
+                        <option value="{{ code }}" {% if q_status == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="q_from_dept">Originating Dept (From)</label>
+                    <select id="q_from_dept" name="q_from_dept" class="form-select">
+                        <option value="">-- All Originating Departments --</option>
+                        {% for d in departments %}
+                        <option value="{{ d.id }}" {% if q_from_dept == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="q_to_dept">Destination Dept (To)</label>
+                    <select id="q_to_dept" name="q_to_dept" class="form-select">
+                        <option value="">-- All Destination Departments --</option>
+                        {% for d in departments %}
+                        <option value="{{ d.id }}" {% if q_to_dept == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="q_user">Processed / Requested By</label>
+                    <select id="q_user" name="q_user" class="form-select">
+                        <option value="">-- All Staff / Doctors --</option>
+                        {% for u in users_list %}
+                        <option value="{{ u.id }}" {% if q_user == u.id|stringformat:"s" %}selected{% endif %}>{{ u.get_full_name|default:u.username }} ({{ u.username }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: flex-end; gap: 0.5rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1; font-weight: 700;">
+                        <i class="bi bi-search"></i> Apply Filter
+                    </button>
+                    {% if has_filters %}
+                    <a href="{% url 'patients:branch_transfer_report' %}" class="btn btn-secondary" title="Reset Filters" style="font-weight: 600;">
+                        <i class="bi bi-x-circle"></i> Reset
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Date Preset Pills -->
+            <div style="margin-top: 0.85rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Quick Ranges:</span>
+                <button type="button" class="quick-range-btn" onclick="setDateRange('today')">Today</button>
+                <button type="button" class="quick-range-btn" onclick="setDateRange('yesterday')">Yesterday</button>
+                <button type="button" class="quick-range-btn" onclick="setDateRange('7days')">Last 7 Days</button>
+                <button type="button" class="quick-range-btn" onclick="setDateRange('month')">This Month</button>
+                <button type="button" class="quick-range-btn" onclick="setDateRange('all')">All Time</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Top Transfer Pathways Summary (If Available) -->
+    {% if top_routes %}
+    <div class="panel no-print" style="padding: 1rem 1.25rem; background: #ffffff;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+            <h4 style="font-size: 0.92rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 6px;">
+                <i class="bi bi-graph-up text-primary" style="color: #0284c7;"></i> Top Department Transfer Pathways
+            </h4>
+            <span style="font-size: 0.78rem; color: #64748b;">High Volume Department Routes</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem;">
+            {% for route in top_routes %}
+            <div class="route-card">
+                <div>
+                    <strong style="color: #0284c7;">{{ route.from_department__name }}</strong>
+                    <i class="bi bi-arrow-right" style="margin: 0 4px; color: #94a3b8; font-size: 0.8rem;"></i>
+                    <strong style="color: #16a34a;">{{ route.to_department__name }}</strong>
+                </div>
+                <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 800; border: 1px solid #bae6fd;">
+                    {{ route.route_count }} transfers
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Transfer Records Table Panel -->
+    <div class="panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <i class="bi bi-table" style="color: var(--accent-teal, #0d9488);"></i> Ward Transfer Audit & Records
+                </h3>
+                <p style="color: #64748b; font-size: 0.82rem; margin: 2px 0 0 0;">
+                    Showing {{ transfers|length }} of {{ total_transfers }} records matching current filter
+                </p>
+            </div>
+            <div class="no-print" style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.82rem; color: #64748b;">Per Page:</span>
+                <select class="form-select" style="width: auto; padding: 4px 8px; font-size: 0.82rem;" onchange="location.href=updateQueryString('page_size', this.value);">
+                    <option value="25" {% if page_size == 25 %}selected{% endif %}>25</option>
+                    <option value="50" {% if page_size == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if page_size == 100 %}selected{% endif %}>100</option>
+                    <option value="200" {% if page_size == 200 %}selected{% endif %}>200</option>
+                </select>
+            </div>
+        </div>
+
+        {% if transfers %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Request #</th>
+                        <th>Date & Time</th>
+                        <th>Patient ID</th>
+                        <th>Patient Name</th>
+                        <th>Age / Sex</th>
+                        <th>IP Number</th>
+                        <th>Origin Dept (From)</th>
+                        <th>Destination Dept (To)</th>
+                        <th>Status</th>
+                        <th>Requested By</th>
+                        <th>Reviewed / Approved By</th>
+                        <th>Clinical Reason & Notes</th>
+                        <th class="no-print" style="text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transfers %}
+                    <tr>
+                        <td>
+                            <strong style="color: #0369a1; font-family: monospace; font-size: 0.9rem;">{{ t.transfer_request_number }}</strong>
+                        </td>
+                        <td><strong>{{ t.requested_at|date:"d/M/Y H:i" }}</strong></td>
+                        <td>
+                            <a href="{% url 'patients:review' %}?patient_id={{ t.patient.patient_id }}" style="font-weight: 700; color: #16a34a; text-decoration: none;" title="Open Patient Review">
+                                {{ t.patient.patient_id }}
+                            </a>
+                        </td>
+                        <td><strong>{{ t.patient.title }} {{ t.patient.name }}</strong></td>
+                        <td>{{ t.patient.age_years }}Y / {{ t.patient.gender }}</td>
+                        <td>
+                            <span class="badge" style="background: #fdf4ff; color: #a21caf; border: 1px solid #f0abfc; font-weight: 700;">
+                                {{ t.admission.ipno|default:t.patient.ipno|default:"--" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge badge-blue" style="font-size: 0.8rem;">
+                                {{ t.from_department.name }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; color: #047857;">
+                                {{ t.to_department.name }}
+                            </div>
+                            {% if t.to_unit %}
+                            <small style="color: #64748b;">Unit: {{ t.to_unit.unit_name }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if t.status == 'PENDING' %}
+                                <span class="status-badge status-pending"><i class="bi bi-clock"></i> PENDING</span>
+                            {% elif t.status == 'ACCEPTED' %}
+                                <span class="status-badge status-accepted"><i class="bi bi-check2-circle"></i> ACCEPTED</span>
+                            {% elif t.status == 'REJECTED' %}
+                                <span class="status-badge status-rejected"><i class="bi bi-x-circle"></i> REJECTED</span>
+                            {% elif t.status == 'CANCELLED' %}
+                                <span class="status-badge status-cancelled"><i class="bi bi-dash-circle"></i> CANCELLED</span>
+                            {% else %}
+                                <span class="badge">{{ t.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span style="font-weight: 600; color: #334155;">{{ t.requested_by.username|default:"System" }}</span>
+                        </td>
+                        <td>
+                            {% if t.reviewed_by %}
+                                <strong style="color: #0f172a;">{{ t.reviewed_by.username }}</strong>
+                                {% if t.reviewed_at %}
+                                <br><small style="color: #64748b;">{{ t.reviewed_at|date:"d/m/y H:i" }}</small>
+                                {% endif %}
+                            {% elif t.cancelled_by %}
+                                <span style="color: #64748b;">Cancelled by {{ t.cancelled_by.username }}</span>
+                            {% else %}
+                                <span style="color: #94a3b8;">--</span>
+                            {% endif %}
+                        </td>
+                        <td style="max-width: 250px;">
+                            <div style="color: #1e293b; font-size: 0.83rem;">{{ t.transfer_reason }}</div>
+                            {% if t.review_notes %}
+                            <div style="margin-top: 3px; font-size: 0.77rem; color: #0369a1;">
+                                <strong>Notes:</strong> {{ t.review_notes }}
+                            </div>
+                            {% endif %}
+                            {% if t.rejection_reason %}
+                            <div style="margin-top: 3px; font-size: 0.77rem; color: #dc2626;">
+                                <strong>Rejected:</strong> {{ t.rejection_reason }}
+                            </div>
+                            {% endif %}
+                            {% if t.cancellation_reason %}
+                            <div style="margin-top: 3px; font-size: 0.77rem; color: #64748b;">
+                                <strong>Cancelled:</strong> {{ t.cancellation_reason }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td class="no-print" style="white-space: nowrap; text-align: center;">
+                            <div style="display: flex; gap: 4px; justify-content: center;">
+                                <a href="{% url 'patients:review' %}?patient_id={{ t.patient.patient_id }}" class="btn-action-sm" style="background: #e0f2fe; color: #0369a1;" title="View Patient Review">
+                                    <i class="bi bi-clock-history"></i> Review
+                                </a>
+                                <a href="{% url 'patients:medical_history_print' t.patient.id %}" target="_blank" class="btn-action-sm" style="background: #dcfce7; color: #166534;" title="Print Complete Medical History">
+                                    <i class="bi bi-printer"></i> History
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 0.75rem;">
+            <div style="font-size: 0.85rem; color: #64748b;">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} total transfers)
+            </div>
+            <div style="display: flex; gap: 4px;">
+                {% if page_obj.has_previous %}
+                <a href="?page=1&q_search={{ q_search }}&q_from_date={{ q_from_date }}&q_to_date={{ q_to_date }}&q_from_dept={{ q_from_dept }}&q_to_dept={{ q_to_dept }}&q_status={{ q_status }}&q_user={{ q_user }}" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.82rem;">&laquo; First</a>
+                <a href="?page={{ page_obj.previous_page_number }}&q_search={{ q_search }}&q_from_date={{ q_from_date }}&q_to_date={{ q_to_date }}&q_from_dept={{ q_from_dept }}&q_to_dept={{ q_to_dept }}&q_status={{ q_status }}&q_user={{ q_user }}" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.82rem;">Previous</a>
+                {% endif %}
+
+                <span class="btn btn-primary" style="padding: 4px 12px; font-size: 0.82rem; font-weight: 700;">{{ page_obj.number }}</span>
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&q_search={{ q_search }}&q_from_date={{ q_from_date }}&q_to_date={{ q_to_date }}&q_from_dept={{ q_from_dept }}&q_to_dept={{ q_to_dept }}&q_status={{ q_status }}&q_user={{ q_user }}" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.82rem;">Next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}&q_search={{ q_search }}&q_from_date={{ q_from_date }}&q_to_date={{ q_to_date }}&q_from_dept={{ q_from_dept }}&q_to_dept={{ q_to_dept }}&q_status={{ q_status }}&q_user={{ q_user }}" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.82rem;">Last &raquo;</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div style="text-align: center; padding: 3.5rem 1.5rem; color: #64748b;">
+            <i class="bi bi-arrow-left-right" style="font-size: 3rem; display: block; margin-bottom: 0.75rem; color: #94a3b8;"></i>
+            <h4 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 0.25rem;">No Ward Transfer Records Found</h4>
+            <p style="font-size: 0.88rem; margin: 0;">Try adjusting your search criteria, date range, or department filters above.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+function setDateRange(range) {
+    const fromInput = document.getElementById('q_from_date');
+    const toInput = document.getElementById('q_to_date');
+    const today = new Date();
+    
+    function formatDate(d) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    if (range === 'today') {
+        const dStr = formatDate(today);
+        fromInput.value = dStr;
+        toInput.value = dStr;
+    } else if (range === 'yesterday') {
+        const y = new Date(today);
+        y.setDate(today.getDate() - 1);
+        const yStr = formatDate(y);
+        fromInput.value = yStr;
+        toInput.value = yStr;
+    } else if (range === '7days') {
+        const past = new Date(today);
+        past.setDate(today.getDate() - 6);
+        fromInput.value = formatDate(past);
+        toInput.value = formatDate(today);
+    } else if (range === 'month') {
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        fromInput.value = formatDate(firstDay);
+        toInput.value = formatDate(today);
+    } else if (range === 'all') {
+        fromInput.value = '';
+        toInput.value = '';
+    }
+
+    document.getElementById('filterForm').submit();
+}
+
+function updateQueryString(key, value) {
+    const url = new URL(window.location.href);
+    url.searchParams.set(key, value);
+    url.searchParams.delete('page');
+    return url.toString();
+}
+</script>
+{% endblock %}

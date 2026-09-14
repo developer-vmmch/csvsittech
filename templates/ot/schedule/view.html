@@ -2,28 +2,70 @@
 {% load static %}
 {% block title %}Schedule OT — {{ case.ot_number }}{% endblock %}
 {% block extra_head %}<style>
-.form-section{background:white;border-radius:12px;border:1px solid #e2e8f0;padding:1.5rem;margin-bottom:1.25rem;}
-.form-section h3{font-size:.9rem;font-weight:700;color:#1e293b;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:.5rem;}
-.form-label{display:block;font-size:.8rem;font-weight:600;color:#475569;margin-bottom:.3rem;}
-.form-input{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:.55rem .75rem;font-size:.9rem;outline:none;transition:.2s;}
-.form-input:focus{border-color:#0284c7;box-shadow:0 0 0 3px rgba(2,132,199,.12);}
+  .form-section {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .form-section h3 {
+    font-size: .9rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1rem;
+    padding-bottom: .5rem;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+
+  .form-label {
+    display: block;
+    font-size: .8rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: .3rem;
+  }
+
+  .form-input {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: .55rem .75rem;
+    font-size: .9rem;
+    outline: none;
+    transition: .2s;
+  }
+
+  .form-input:focus {
+    border-color: #0284c7;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, .12);
+  }
 </style>{% endblock %}
 {% block content %}
 <div class="p-4 sm:p-6 max-w-3xl mx-auto">
   <div class="flex items-center gap-3 mb-6">
-    <a href="{% url 'ot:case_detail' case.pk %}" class="text-slate-400 hover:text-slate-600"><i class="bi bi-arrow-left text-xl"></i></a>
+    <a href="{% url 'ot:case_detail' case.pk %}" class="text-slate-400 hover:text-slate-600"><i
+        class="bi bi-arrow-left text-xl"></i></a>
     <div>
       <h1 class="text-xl font-bold text-slate-800">Schedule OT</h1>
       <p class="text-sm text-slate-500">{{ case.ot_number }} — {{ case.patient.name }}</p>
     </div>
   </div>
-  {% if messages %}{% for msg in messages %}<div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium {% if msg.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">{{ msg }}</div>{% endfor %}{% endif %}
+  {% if messages %}{% for msg in messages %}<div
+    class="mb-4 px-4 py-3 rounded-lg text-sm font-medium {% if msg.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+    {{ msg }}</div>{% endfor %}{% endif %}
 
   {% if conflicts %}
   <div class="mb-4 p-4 bg-amber-50 border border-amber-300 rounded-xl">
-    <p class="font-semibold text-amber-800 mb-2"><i class="bi bi-exclamation-triangle-fill"></i> Scheduling Conflicts Detected</p>
+    <p class="font-semibold text-amber-800 mb-2"><i class="bi bi-exclamation-triangle-fill"></i> Scheduling Conflicts
+      Detected</p>
     {% for c in conflicts %}<p class="text-sm text-amber-700 mb-1">• {{ c.description }}</p>{% endfor %}
-    <p class="text-xs text-amber-600 mt-2">For Emergency cases you may override. Tick "Override" below and provide a reason.</p>
+    <p class="text-xs text-amber-600 mt-2">For Emergency cases you may override. Tick "Override" below and provide a
+      reason.</p>
   </div>
   {% endif %}
 
@@ -36,7 +78,8 @@
           <label class="form-label">OT Room <span class="text-red-500">*</span></label>
           <select name="room_id" class="form-input" required>
             {% for r in rooms %}
-            <option value="{{ r.pk }}" {% if sched and sched.room.pk == r.pk %}selected{% endif %}>{{ r.code }} — {{ r.name }}</option>
+            <option value="{{ r.pk }}" {% if sched and sched.room.pk==r.pk %}selected{% endif %}>{{ r.code }} — {{
+              r.name }}</option>
             {% endfor %}
           </select>
         </div>
@@ -66,16 +109,19 @@
       </label>
       <div>
         <label class="form-label">Override Reason</label>
-        <textarea name="override_reason" rows="2" class="form-input" placeholder="Mandatory if overriding a conflict...">{{ post_data.override_reason|default:'' }}</textarea>
+        <textarea name="override_reason" rows="2" class="form-input"
+          placeholder="Mandatory if overriding a conflict...">{{ post_data.override_reason|default:'' }}</textarea>
       </div>
     </div>
     {% endif %}
 
     <div class="flex gap-3">
-      <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-base transition-colors flex items-center justify-center gap-2">
+      <button type="submit"
+        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-base transition-colors flex items-center justify-center gap-2">
         <i class="bi bi-calendar-check"></i> Confirm Schedule
       </button>
-      <a href="{% url 'ot:case_detail' case.pk %}" class="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition-colors flex items-center gap-2">Back</a>
+      <a href="{% url 'ot:case_detail' case.pk %}"
+        class="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition-colors flex items-center gap-2">Back</a>
     </div>
   </form>
 </div>

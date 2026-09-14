@@ -1,26 +1,262 @@
 {% extends "base.html" %}
 
 {% block title %}Patient Registration | VMMCerp{% endblock %}
-{% block page_heading %}Comprehensive ERP for Hospital Information Management System{% endblock %}
+{% block page_heading %}Patient Registration{% endblock %}
 
 {% block content %}
+<style>
+    .hims-wrapper {
+        max-width: 1300px;
+        margin: 0 auto;
+    }
+    .hims-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 0.65rem 1.25rem;
+        margin-bottom: 0.85rem;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+    .reg-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+    }
+    .last-id-banner {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #f8fafc;
+        padding: 0.25rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+    }
+    .last-id-label {
+        color: #64748b;
+        font-size: 0.8rem;
+    }
+    .last-id-value {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #16a34a;
+        font-family: monospace;
+    }
+    .staff-tag {
+        background: #f3e8ff;
+        color: #7c3aed;
+        font-size: 0.7rem;
+        padding: 0.15rem 0.45rem;
+        border-radius: 4px;
+        font-weight: 600;
+        border: 1px solid #e9d5ff;
+    }
+
+    /* Section Boxes */
+    .hims-section-box {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 0.85rem 1.25rem;
+        margin-bottom: 0.85rem;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+    .mandatory-section-box {
+        border-top: 3px solid #0284c7;
+        background: #ffffff;
+    }
+    .optional-section-box {
+        border-top: 3px solid #64748b;
+        background: #ffffff;
+    }
+    .section-box-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.65rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .section-box-title {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin: 0;
+    }
+    .badge-mandatory {
+        background: #eff6ff;
+        color: #0284c7;
+        border: 1px solid #bfdbfe;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 5px;
+    }
+    .badge-optional {
+        background: #f8fafc;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: 5px;
+    }
+
+    /* Compact Fields Grid */
+    .hims-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+    }
+    .hims-field-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.4rem;
+    }
+    .hims-label {
+        width: 36%;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #334155;
+    }
+    .hims-input-group {
+        width: 64%;
+        display: flex;
+        gap: 0.35rem;
+    }
+    .hims-field-row input.form-input,
+    .hims-field-row select.form-select,
+    .hims-field-row select,
+    .hims-field-row input[type="text"],
+    .hims-field-row input[type="date"],
+    .hims-field-row input[type="number"],
+    .hims-field-row textarea,
+    .hims-input-group input,
+    .hims-input-group select {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.3rem 0.55rem !important;
+        font-size: 0.82rem !important;
+        height: 32px !important;
+        border-radius: 6px !important;
+        border: 1px solid #cbd5e1 !important;
+        background-color: #ffffff;
+        color: #0f172a;
+        outline: none;
+        transition: border-color 0.15s ease-in-out;
+    }
+    .hims-field-row input:focus,
+    .hims-field-row select:focus {
+        border-color: #0284c7 !important;
+        box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15) !important;
+    }
+    .hims-age-group {
+        width: 64%;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    .hims-age-group input {
+        width: 50px !important;
+        height: 32px !important;
+        padding: 0.2rem 0.3rem !important;
+        font-size: 0.82rem !important;
+        text-align: center;
+        border-radius: 6px !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+    .hims-age-group .unit {
+        color: #64748b;
+        font-weight: 700;
+        font-size: 0.75rem;
+        margin-right: 0.35rem;
+    }
+    .hims-btn-small {
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        color: #334155;
+        padding: 0.2rem 0.6rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 600;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+    }
+    .hims-btn-small:hover {
+        background: #0284c7;
+        color: #ffffff;
+        border-color: #0284c7;
+    }
+
+    /* Mid Action Bar */
+    .hims-mid-action-bar {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.55rem 1rem;
+        margin-bottom: 0.85rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    }
+    .hims-action-btn {
+        padding: 0.38rem 0.95rem;
+        border-radius: 6px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #334155;
+        font-weight: 600;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .hims-action-btn:hover {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+    }
+    .primary-save-btn {
+        background: #0284c7 !important;
+        color: #ffffff !important;
+        border: 1px solid #0284c7 !important;
+        font-weight: 700 !important;
+        box-shadow: 0 1px 3px rgba(2, 132, 199, 0.25);
+    }
+    .primary-save-btn:hover {
+        background: #0369a1 !important;
+        border-color: #0369a1 !important;
+    }
+    .required-star {
+        color: #ef4444;
+        font-weight: bold;
+    }
+</style>
+
 <div class="hims-wrapper">
 
     <!-- Error Banner for JS validation -->
-    <div id="jsValidationBanner" class="alert alert-danger" style="display: none; margin-bottom: 1.25rem;">
+    <div id="jsValidationBanner" class="alert alert-danger" style="display: none; margin-bottom: 0.85rem; padding: 0.65rem 1rem; font-size: 0.82rem;">
         <i class="bi bi-exclamation-triangle-fill"></i>
-        <span id="jsValidationMessage"><strong>Validation Error:</strong> Please correct the highlighted errors in the
-            form fields.</span>
+        <span id="jsValidationMessage"><strong>Validation Error:</strong> Please correct the highlighted errors in the form fields.</span>
     </div>
 
-    <!-- Registration Card -->
+    <!-- Registration Card Header -->
     <div class="hims-card">
-        <div class="hims-card-header">
+        <div class="hims-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; padding-bottom: 0; border-bottom: none;">
             <h2 class="reg-title">
                 {% if is_edit %}
-                EDIT PATIENT: {{ object.name }} (ID: {{ object.patient_id }})
+                <i class="bi bi-pencil-square text-blue-600"></i> EDIT PATIENT: {{ object.name }} (ID: {{ object.patient_id }})
                 {% else %}
-                PATIENT REGISTRATION
+                <i class="bi bi-person-vcard text-blue-600"></i> PATIENT REGISTRATION
                 {% endif %}
             </h2>
             <div class="last-id-banner">
@@ -35,25 +271,29 @@
                 <span class="staff-tag">VMMC STAFF</span>
             </div>
         </div>
+    </div>
 
-        <form method="post" class="hims-form" id="patientRegForm" novalidate>
-            {% csrf_token %}
+    <form method="post" class="hims-form" id="patientRegForm" novalidate>
+        {% csrf_token %}
+
+        <!-- ======================================================= -->
+        <!-- BOX 1: MANDATORY & PRIMARY DETAILS                     -->
+        <!-- ======================================================= -->
+        <div class="hims-section-box mandatory-section-box">
+            <div class="section-box-header">
+                <h3 class="section-box-title">
+                    <i class="bi bi-asterisk text-red-500" style="font-size: 0.9rem;"></i>
+                    Mandatory & Primary Information
+                </h3>
+                <span class="badge-mandatory">Required for Registration</span>
+            </div>
 
             <div class="hims-grid">
-
-                <!-- Left Column -->
+                <!-- Left Column (6 Fields) -->
                 <div class="hims-col">
                     <div class="hims-field-row">
-                        <label class="hims-label">IPNO:</label>
-                        <div class="hims-input-group">
-                            {{ form.ipno }}
-                            <button type="button" class="hims-btn-small">Go</button>
-                        </div>
-                    </div>
-
-                    <div class="hims-field-row">
                         <label class="hims-label">Centre <span class="required-star">*</span>:</label>
-                        <div style="width: 62%;">
+                        <div style="width: 64%;">
                             {{ form.centre }}
                             {% if form.centre.errors %}
                             <span class="field-error">{{ form.centre.errors.0 }}</span>
@@ -62,19 +302,8 @@
                     </div>
 
                     <div class="hims-field-row">
-                        <label class="hims-label">Patient Id:</label>
-                        {% if is_edit %}
-                        {{ form.patient_id }}
-                        {% else %}
-                        <input type="text" class="form-input" value="Auto-Generated on Save" disabled
-                            style="background-color: #f1f5f9; color: #64748b; font-style: italic;">
-                        {{ form.patient_id.as_hidden }}
-                        {% endif %}
-                    </div>
-
-                    <div class="hims-field-row">
                         <label class="hims-label">Title / Name <span class="required-star">*</span>:</label>
-                        <div style="width: 62%;">
+                        <div style="width: 64%;">
                             <div class="hims-input-group" style="width: 100%;">
                                 <div style="width: 28%; min-width: 80px;">{{ form.title }}</div>
                                 <div style="width: 72%;">{{ form.name }}</div>
@@ -90,7 +319,7 @@
 
                     <div class="hims-field-row">
                         <label class="hims-label">Gender <span class="required-star">*</span>:</label>
-                        <div style="width: 62%;">
+                        <div style="width: 64%;">
                             {{ form.gender }}
                             {% if form.gender.errors %}
                             <span class="field-error">{{ form.gender.errors.0 }}</span>
@@ -99,13 +328,8 @@
                     </div>
 
                     <div class="hims-field-row">
-                        <label class="hims-label">DOB:</label>
-                        {{ form.dob }}
-                    </div>
-
-                    <div class="hims-field-row">
                         <label class="hims-label">Age <span class="required-star">*</span>:</label>
-                        <div style="width: 62%;">
+                        <div style="width: 64%;">
                             <div class="hims-age-group">
                                 {{ form.age_years }} <span class="unit">Y</span>
                                 {{ form.age_months }} <span class="unit">M</span>
@@ -118,38 +342,8 @@
                     </div>
 
                     <div class="hims-field-row">
-                        <label class="hims-label">AAdhar Card:</label>
-                        <div style="width: 62%;">
-                            {{ form.aadhar_card }}
-                            {% if form.aadhar_card.errors %}
-                            <span class="field-error">{{ form.aadhar_card.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Visit Through:</label>
-                        {{ form.visit_through }}
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Category:</label>
-                        {{ form.category }}
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Marital Status:</label>
-                        {{ form.marital_status }}
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Religion:</label>
-                        {{ form.religion }}
-                    </div>
-
-                    <div class="hims-field-row">
                         <label class="hims-label">Guardian Name <span class="required-star">*</span>:</label>
-                        <div style="width: 62%;">
+                        <div style="width: 64%;">
                             <div class="hims-input-group" style="width: 100%;">
                                 <div style="width: 28%; min-width: 80px;">{{ form.guardian_relationship }}</div>
                                 <div style="width: 72%;">{{ form.guardian_name }}</div>
@@ -161,26 +355,41 @@
                     </div>
 
                     <div class="hims-field-row">
-                        <label class="hims-label">Company Name:</label>
-                        {{ form.patient_company }}
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">ABHAID:</label>
-                        {{ form.abha_id }}
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">OFC Code:</label>
-                        {{ form.ofc_code }}
+                        <label class="hims-label">Aadhar Card:</label>
+                        <div style="width: 64%;">
+                            {{ form.aadhar_card }}
+                            {% if form.aadhar_card.errors %}
+                            <span class="field-error">{{ form.aadhar_card.errors.0 }}</span>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
 
-                <!-- Right Column -->
+                <!-- Right Column (6 Fields) -->
                 <div class="hims-col">
                     <div class="hims-field-row">
+                        <label class="hims-label">Mobile No:</label>
+                        <div style="width: 64%;">
+                            {{ form.mobile_no }}
+                            {% if form.mobile_no.errors %}
+                            <span class="field-error">{{ form.mobile_no.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">ABHA No:</label>
+                        <div style="width: 64%;">
+                            {{ form.abha_id }}
+                            {% if form.abha_id.errors %}
+                            <span class="field-error">{{ form.abha_id.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
                         <label class="hims-label">Address / Street <span class="required-star">*</span>:</label>
-                        <div style="width: 62%;">
+                        <div style="width: 64%;">
                             {{ form.street }}
                             {% if form.street.errors %}
                             <span class="field-error">{{ form.street.errors.0 }}</span>
@@ -190,7 +399,7 @@
 
                     <div class="hims-field-row">
                         <label class="hims-label">Village / Area <span class="required-star">*</span>:</label>
-                        <div style="width: 62%;">
+                        <div style="width: 64%;">
                             {{ form.village_area }}
                             {% if form.village_area.errors %}
                             <span class="field-error">{{ form.village_area.errors.0 }}</span>
@@ -199,62 +408,8 @@
                     </div>
 
                     <div class="hims-field-row">
-                        <label class="hims-label">Country:</label>
-                        {{ form.country }}
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">State:</label>
-                        {{ form.state }}
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">City:</label>
-                        {{ form.city }}
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Pincode:</label>
-                        {{ form.pincode }}
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Mobile No <span class="required-star">*</span>:</label>
-                        <div style="width: 62%;">
-                            {{ form.mobile_no }}
-                            {% if form.mobile_no.errors %}
-                            <span class="field-error">{{ form.mobile_no.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Bloodgroup:</label>
-                        {{ form.blood_group }}
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Diagnosis:</label>
-                        <div style="width: 100%;">
-                            {{ form.complaint }}
-                            <button type="button" class="hims-btn-small" style="margin-top: 4px; float: right;">Add New
-                                Complaint</button>
-                        </div>
-                    </div>
-
-                    <div class="hims-field-row" style="clear: both;">
-                        <label class="hims-label">Occupation:</label>
-                        {{ form.occupation }}
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Income:</label>
-                        {{ form.income }}
-                    </div>
-
-                    <div class="hims-field-row">
                         <label class="hims-label">Department <span class="required-star">*</span>:</label>
-                        <div style="width: 62%;">
+                        <div style="width: 64%;">
                             {{ form.department_obj }}
                             {% if form.department_obj.errors %}
                             <span class="field-error">{{ form.department_obj.errors.0 }}</span>
@@ -264,36 +419,195 @@
 
                     <div class="hims-field-row">
                         <label class="hims-label">Unit / Doctor <span class="required-star">*</span>:</label>
-                        <div style="width: 62%;">
+                        <div style="width: 64%;">
                             {{ form.unit_obj }}
                             {% if form.unit_obj.errors %}
                             <span class="field-error">{{ form.unit_obj.errors.0 }}</span>
                             {% endif %}
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======================================================= -->
+        <!-- ACTION BUTTONS (DIRECTLY BELOW THE MANDATORY BOX)       -->
+        <!-- ======================================================= -->
+        <div class="hims-mid-action-bar">
+            <button type="submit" name="save" class="hims-action-btn primary-save-btn">
+                <i class="bi bi-floppy-fill"></i> Save Patient
+            </button>
+            <button type="button" class="hims-action-btn">Modify</button>
+            <button type="reset" class="hims-action-btn">Reset</button>
+            <button type="submit" name="print" class="hims-action-btn">
+                <i class="bi bi-printer"></i> Print
+            </button>
+            <button type="button" class="hims-action-btn">Label - 1</button>
+            <button type="button" class="hims-action-btn">Label-A4</button>
+            <button type="submit" name="print_op" class="hims-action-btn">
+                <i class="bi bi-printer-fill"></i> Print OP
+            </button>
+            <a href="{% url 'patients:list' %}" class="hims-action-btn" style="margin-left: auto; text-decoration: none;">
+                <i class="bi bi-arrow-left"></i> Back to Directory
+            </a>
+        </div>
+
+        <!-- ======================================================= -->
+        <!-- BOX 2: ADDITIONAL / OPTIONAL DETAILS (BELOW BOX)        -->
+        <!-- ======================================================= -->
+        <div class="hims-section-box optional-section-box">
+            <div class="section-box-header">
+                <h3 class="section-box-title">
+                    <i class="bi bi-card-list text-slate-500"></i>
+                    Additional & Optional Information
+                </h3>
+                <span class="badge-optional">Optional Fields</span>
+            </div>
+
+            <div class="hims-grid">
+                <!-- Left Column (Optional) -->
+                <div class="hims-col">
+                    <div class="hims-field-row">
+                        <label class="hims-label">IPNO:</label>
+                        <div class="hims-input-group">
+                            {{ form.ipno }}
+                            <button type="button" class="hims-btn-small">Go</button>
+                        </div>
+                    </div>
 
                     <div class="hims-field-row">
-                        <label class="hims-label">PanNo:</label>
-                        {{ form.pan_no }}
+                        <label class="hims-label">Patient Id:</label>
+                        <div style="width: 62%;">
+                            {% if is_edit %}
+                            {{ form.patient_id }}
+                            {% else %}
+                            <input type="text" id="id_patient_id_display" class="form-input" value="Auto-Generated on Save" disabled
+                                style="background-color: #f1f5f9; color: #64748b; font-style: italic;">
+                            {{ form.patient_id.as_hidden }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">DOB:</label>
+                        <div style="width: 62%;">
+                            {{ form.dob }}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Visit Through:</label>
+                        <div style="width: 62%;">
+                            {{ form.visit_through }}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Company / Scheme:</label>
+                        <div style="width: 62%;">
+                            {{ form.patient_company }}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Category:</label>
+                        <div style="width: 62%;">
+                            {{ form.category }}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Marital Status:</label>
+                        <div style="width: 62%;">
+                            {{ form.marital_status }}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Religion:</label>
+                        <div style="width: 62%;">
+                            {{ form.religion }}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">OFC Code:</label>
+                        <div style="width: 62%;">
+                            {{ form.ofc_code }}
+                        </div>
                     </div>
                 </div>
 
-            </div>
+                <!-- Right Column (Optional) -->
+                <div class="hims-col">
+                    <div class="hims-field-row">
+                        <label class="hims-label">Country:</label>
+                        <div style="width: 62%;">
+                            {{ form.country }}
+                        </div>
+                    </div>
 
-            <!-- Action Buttons Footer -->
-            <div class="hims-action-bar">
-                <button type="submit" name="save" class="hims-action-btn primary-btn">Save</button>
-                <button type="button" class="hims-action-btn">Modify</button>
-                <button type="reset" class="hims-action-btn">Reset</button>
-                <button type="submit" name="print" class="hims-action-btn"><i class="bi bi-printer"></i> Print</button>
-                <button type="button" class="hims-action-btn">Label - 1</button>
-                <button type="button" class="hims-action-btn">Label-A4</button>
-                <button type="submit" name="print_op" class="hims-action-btn"><i class="bi bi-printer-fill"></i> Print
-                    OP</button>
-            </div>
-        </form>
+                    <div class="hims-field-row">
+                        <label class="hims-label">State:</label>
+                        <div style="width: 62%;">
+                            {{ form.state }}
+                        </div>
+                    </div>
 
-    </div>
+                    <div class="hims-field-row">
+                        <label class="hims-label">City:</label>
+                        <div style="width: 62%;">
+                            {{ form.city }}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Pincode:</label>
+                        <div style="width: 62%;">
+                            {{ form.pincode }}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Bloodgroup:</label>
+                        <div style="width: 62%;">
+                            {{ form.blood_group }}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Diagnosis:</label>
+                        <div style="width: 62%;">
+                            {{ form.complaint }}
+                            <button type="button" class="hims-btn-small" style="margin-top: 4px; float: right;">Add New Complaint</button>
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row" style="clear: both;">
+                        <label class="hims-label">Occupation:</label>
+                        <div style="width: 62%;">
+                            {{ form.occupation }}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">Income:</label>
+                        <div style="width: 62%;">
+                            {{ form.income }}
+                        </div>
+                    </div>
+
+                    <div class="hims-field-row">
+                        <label class="hims-label">PanNo:</label>
+                        <div style="width: 62%;">
+                            {{ form.pan_no }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </form>
 </div>
 {% endblock %}
 
@@ -353,7 +667,63 @@
             });
         }
 
-        // Required field definitions
+        // Link Company / Scheme and Category / Visit Through
+        const companySelect = document.getElementById('id_patient_company');
+        const visitThroughSelect = document.getElementById('id_visit_through');
+        const categorySelect = document.getElementById('id_category');
+
+        if (companySelect && categorySelect) {
+            companySelect.addEventListener('change', function () {
+                const selectedText = companySelect.options[companySelect.selectedIndex] ? companySelect.options[companySelect.selectedIndex].text.toUpperCase() : '';
+                if (selectedText.includes('EMERGENCY') || selectedText.includes('CASUALTY')) {
+                    if (categorySelect.querySelector('option[value="CASUALTY"]')) {
+                        categorySelect.value = 'CASUALTY';
+                    }
+                } else if (selectedText.includes('STAFF') || selectedText.includes('INDIVIDUAL') || selectedText.includes('SCHEME') || selectedText.includes('INSURANCE') || selectedText.includes('CORPORATION')) {
+                    if (categorySelect.value === 'CASUALTY' || categorySelect.value === 'EMERGENCY') {
+                        categorySelect.value = 'CONSULTATION';
+                    }
+                }
+            });
+        }
+
+        // Emergency ID Indicator & Flow
+        const patientIdDisplay = document.getElementById('id_patient_id_display');
+
+        function updatePatientIdFlowIndicator() {
+            if (!patientIdDisplay) return;
+            const catVal = (categorySelect ? categorySelect.value || '' : '').toUpperCase();
+            const deptText = (deptSelect && deptSelect.selectedIndex >= 0 && deptSelect.options[deptSelect.selectedIndex]) 
+                ? deptSelect.options[deptSelect.selectedIndex].text.toUpperCase() 
+                : '';
+            
+            const isEmergency = catVal === 'EMERGENCY' || catVal === 'CASUALTY' || 
+                                deptText.includes('EMERGENCY') || deptText.includes('CASUALTY') || deptText.includes('EMR');
+            
+            if (isEmergency) {
+                patientIdDisplay.value = 'Auto-Generated Emergency ID (Prefix: E...)';
+                patientIdDisplay.style.backgroundColor = '#fef2f2';
+                patientIdDisplay.style.color = '#dc2626';
+                patientIdDisplay.style.fontWeight = '700';
+                patientIdDisplay.style.borderColor = '#fca5a5';
+            } else {
+                patientIdDisplay.value = 'Auto-Generated on Save';
+                patientIdDisplay.style.backgroundColor = '#f1f5f9';
+                patientIdDisplay.style.color = '#64748b';
+                patientIdDisplay.style.fontWeight = 'normal';
+                patientIdDisplay.style.borderColor = '';
+            }
+        }
+
+        if (categorySelect) {
+            categorySelect.addEventListener('change', updatePatientIdFlowIndicator);
+        }
+        if (deptSelect) {
+            deptSelect.addEventListener('change', updatePatientIdFlowIndicator);
+        }
+        updatePatientIdFlowIndicator();
+
+        // Required field definitions (mobile_no removed from mandatory list)
         const requiredFields = [
             { id: 'id_title', name: 'Title' },
             { id: 'id_name', name: 'Patient Name' },
@@ -408,7 +778,7 @@
             }
         });
 
-        // Real-time live validation for Mobile Number as user types
+        // Real-time live validation for Mobile Number as user types (Only if non-empty)
         if (mobileInput) {
             mobileInput.addEventListener('keyup', function () {
                 const val = this.value.trim();
@@ -419,7 +789,7 @@
             });
         }
 
-        // Real-time live validation for Aadhar Card as user types
+        // Real-time live validation for Aadhar Card as user types (Only if non-empty)
         if (aadharInput) {
             aadharInput.addEventListener('keyup', function () {
                 const val = this.value.trim();
@@ -467,21 +837,17 @@
                     if (!firstInvalidEl) firstInvalidEl = ageYearsEl;
                 }
 
-                // Mobile number validation (MUST BE EXACTLY 10 DIGITS)
+                // Mobile number validation (OPTIONAL: ONLY IF ENTERED, MUST BE 10 DIGITS)
                 if (mobileInput) {
                     const mobileVal = mobileInput.value.trim();
-                    if (!mobileVal) {
-                        isValid = false;
-                        createErrorMsg(mobileInput, 'Mobile number is required.');
-                        if (!firstInvalidEl) firstInvalidEl = mobileInput;
-                    } else if (!/^\d{10}$/.test(mobileVal)) {
+                    if (mobileVal && !/^\d{10}$/.test(mobileVal)) {
                         isValid = false;
                         createErrorMsg(mobileInput, 'Mobile number must be exactly 10 digits.');
                         if (!firstInvalidEl) firstInvalidEl = mobileInput;
                     }
                 }
 
-                // Aadhar card validation (MUST BE EXACTLY 12 DIGITS if entered)
+                // Aadhar card validation (OPTIONAL: ONLY IF ENTERED, MUST BE 12 DIGITS)
                 if (aadharInput) {
                     const aadharVal = aadharInput.value.trim();
                     if (aadharVal && !/^\d{12}$/.test(aadharVal)) {

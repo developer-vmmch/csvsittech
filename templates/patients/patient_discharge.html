@@ -1,0 +1,587 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Discharge Management | VMMCerp{% endblock %}
+{% block page_heading %}PATIENT DISCHARGE - Inpatient Management{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --discharge-primary: #0284c7;
+        --discharge-dark: #0369a1;
+        --discharge-danger: #e11d48;
+        --discharge-success: #16a34a;
+        --discharge-warning: #f59e0b;
+        --discharge-bg: #f8fafc;
+        --discharge-border: #e2e8f0;
+    }
+
+    .kpi-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .kpi-card {
+        background: #ffffff;
+        border: 1px solid var(--discharge-border);
+        border-radius: 10px;
+        padding: 1.15rem 1.25rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    .kpi-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+    }
+
+    .kpi-value {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+    }
+
+    .kpi-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 4px;
+    }
+
+    .filter-card {
+        background: #ffffff;
+        border: 1px solid var(--discharge-border);
+        border-radius: 10px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .tab-bar {
+        display: flex;
+        gap: 0.5rem;
+        border-bottom: 2px solid #e2e8f0;
+        margin-bottom: 1.5rem;
+    }
+
+    .tab-link {
+        padding: 0.75rem 1.5rem;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #64748b;
+        text-decoration: none;
+        border-bottom: 3px solid transparent;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: -2px;
+        transition: all 0.2s ease;
+    }
+
+    .tab-link.active {
+        color: #0284c7;
+        border-bottom-color: #0284c7;
+        background: #f0f9ff;
+        border-radius: 6px 6px 0 0;
+    }
+
+    .tab-link:hover:not(.active) {
+        color: #0f172a;
+        border-bottom-color: #cbd5e1;
+    }
+
+    .discharge-table-card {
+        background: #ffffff;
+        border: 1px solid var(--discharge-border);
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        overflow: hidden;
+    }
+
+    .table thead th {
+        background-color: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+        white-space: nowrap;
+    }
+
+    .table tbody td {
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+        font-size: 0.88rem;
+        color: #1e293b;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
+    /* Modal Backdrop and Box */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+        padding: 1rem;
+    }
+
+    .modal-box {
+        background: #ffffff;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 600px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+        animation: modalSlide 0.2s ease-out;
+    }
+
+    @keyframes modalSlide {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        color: white;
+        padding: 1.15rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+        max-height: calc(85vh - 130px);
+        overflow-y: auto;
+    }
+
+    .modal-footer {
+        padding: 1rem 1.5rem;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+    }
+</style>
+
+<div class="container-fluid" style="padding: 0 0.5rem;">
+
+    <!-- TOP KPI METRICS -->
+    <div class="kpi-container">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-value text-primary" style="color: #0284c7 !important;">{{ active_count }}</div>
+                <div class="kpi-label">Active Inpatients</div>
+            </div>
+            <div class="kpi-icon" style="background: #e0f2fe; color: #0284c7;">
+                <i class="bi bi-hospital"></i>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-value" style="color: #16a34a;">{{ discharged_today_count }}</div>
+                <div class="kpi-label">Discharged Today</div>
+            </div>
+            <div class="kpi-icon" style="background: #dcfce7; color: #16a34a;">
+                <i class="bi bi-person-check-fill"></i>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-value" style="color: #64748b;">{{ total_discharged_count }}</div>
+                <div class="kpi-label">Total Discharged</div>
+            </div>
+            <div class="kpi-icon" style="background: #f1f5f9; color: #475569;">
+                <i class="bi bi-archive"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTER & SEARCH BAR -->
+    <div class="filter-card">
+        <form method="get" action="{% url 'patients:discharge' %}" class="row g-2 align-items-end">
+            <input type="hidden" name="tab" value="{{ current_tab }}">
+
+            <div class="col-md-4 col-sm-12">
+                <label class="form-label" style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 0.25rem;">
+                    <i class="bi bi-search"></i> Search Patient / IP No:
+                </label>
+                <div class="input-group">
+                    <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by ID, Name, IP No, Mobile...">
+                    {% if search_query %}
+                    <a href="{% url 'patients:discharge' %}?tab={{ current_tab }}" class="btn btn-outline-secondary" title="Clear search">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-md-3 col-sm-6">
+                <label class="form-label" style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 0.25rem;">
+                    <i class="bi bi-diagram-3"></i> Department:
+                </label>
+                <select name="dept" class="form-select">
+                    <option value="">-- All Departments --</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if selected_dept|stringformat:"s" == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% if current_tab == 'discharged' %}
+            <div class="col-md-2 col-sm-6">
+                <label class="form-label" style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 0.25rem;">From Date:</label>
+                <input type="date" name="from_date" value="{{ from_date }}" class="form-control">
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <label class="form-label" style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 0.25rem;">To Date:</label>
+                <input type="date" name="to_date" value="{{ to_date }}" class="form-control">
+            </div>
+            {% endif %}
+
+            <div class="col-md-auto col-sm-12">
+                <button type="submit" class="btn" style="background: #0284c7; color: white; font-weight: 700; padding: 0.45rem 1.25rem;">
+                    <i class="bi bi-funnel"></i> Apply Filter
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- TAB NAVIGATION BAR -->
+    <div class="tab-bar">
+        <a href="{% url 'patients:discharge' %}?tab=active{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_dept %}&dept={{ selected_dept }}{% endif %}" 
+           class="tab-link {% if current_tab == 'active' %}active{% endif %}">
+            <i class="bi bi-hospital"></i> Active Inpatients ({{ active_count }})
+        </a>
+        <a href="{% url 'patients:discharge' %}?tab=discharged{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_dept %}&dept={{ selected_dept }}{% endif %}" 
+           class="tab-link {% if current_tab == 'discharged' %}active{% endif %}">
+            <i class="bi bi-clock-history"></i> Discharge History ({{ total_discharged_count }})
+        </a>
+    </div>
+
+    <!-- TAB CONTENT: ACTIVE INPATIENTS -->
+    {% if current_tab == 'active' %}
+    <div class="discharge-table-card">
+        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #fafafa;">
+            <div style="font-weight: 800; color: #1e293b; font-size: 0.95rem;">
+                <i class="bi bi-list-ul text-primary"></i> Currently Admitted Inpatients Waiting for Discharge
+            </div>
+            <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 0.8rem; padding: 5px 10px;">
+                Showing {{ active_admissions|length }} Patients
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>IP Number</th>
+                        <th>Patient ID</th>
+                        <th>Patient Name</th>
+                        <th>Age / Gender</th>
+                        <th>Admission Date</th>
+                        <th>Department</th>
+                        <th>Attending Doctor</th>
+                        <th>Ward / Bed</th>
+                        <th style="text-align: center; width: 140px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for visit in active_admissions %}
+                    <tr>
+                        <td>
+                            <strong style="color: #0284c7; font-size: 0.95rem;">{{ visit.ipno|default:visit.visit_no }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border" style="font-weight: 700;">{{ visit.patient.patient_id }}</span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; color: #0f172a;">{{ visit.patient.title }} {{ visit.patient.name }}</div>
+                            <div style="font-size: 0.76rem; color: #64748b;"><i class="bi bi-telephone"></i> {{ visit.patient.mobile_no|default:"--" }}</div>
+                        </td>
+                        <td>{{ visit.patient.age_years }}Y / {{ visit.patient.get_gender_display }}</td>
+                        <td>
+                            <div style="font-weight: 600;">{{ visit.visit_date|date:"d/M/Y" }}</div>
+                            <div style="font-size: 0.75rem; color: #64748b;">{{ visit.visit_date|date:"H:i" }}</div>
+                        </td>
+                        <td>
+                            <span class="badge" style="background: #f1f5f9; color: #334155; font-size: 0.8rem;">
+                                {{ visit.department }}
+                            </span>
+                        </td>
+                        <td style="font-size: 0.82rem; color: #334155;">{{ visit.unit_doctor }}</td>
+                        <td>
+                            <div style="font-size: 0.82rem; color: #475569;">{{ visit.ward|default:"General Ward" }}</div>
+                            <div style="font-size: 0.75rem; color: #64748b;">Bed: {{ visit.bed|default:"--" }}</div>
+                        </td>
+                        <td style="text-align: center;">
+                            <button type="button" class="btn btn-sm" 
+                                    style="background: #e11d48; color: white; font-weight: 700; border-radius: 6px; padding: 0.35rem 0.85rem; font-size: 0.82rem; box-shadow: 0 2px 4px rgba(225,29,72,0.2);"
+                                    onclick="openDischargeModal('{{ visit.id }}', '{{ visit.ipno|default:visit.visit_no }}', '{{ visit.patient.patient_id }}', '{{ visit.patient.name|escapejs }}', '{{ visit.visit_date|date:'d/M/Y' }}', '{{ visit.department|escapejs }}', '{{ visit.unit_doctor|escapejs }}')">
+                                <i class="bi bi-box-arrow-right"></i> Discharge
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5">
+                            <div style="width: 56px; height: 56px; background: #f0fdf4; color: #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.75rem;">
+                                <i class="bi bi-check2-circle"></i>
+                            </div>
+                            <h6 style="font-weight: 700; color: #334155;">No Active Inpatients Found</h6>
+                            <p style="font-size: 0.85rem; color: #64748b; margin: 0;">There are currently no undischarged inpatient admissions matching your criteria.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- TAB CONTENT: DISCHARGED HISTORY -->
+    {% if current_tab == 'discharged' %}
+    <div class="discharge-table-card">
+        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #fafafa;">
+            <div style="font-weight: 800; color: #1e293b; font-size: 0.95rem;">
+                <i class="bi bi-clock-history text-success"></i> Discharged Patients History Log
+            </div>
+            <span class="badge" style="background: #dcfce7; color: #15803d; font-size: 0.8rem; padding: 5px 10px;">
+                Showing {{ discharged_admissions|length }} Records
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>IP Number</th>
+                        <th>Patient ID</th>
+                        <th>Patient Name</th>
+                        <th>Admission Date</th>
+                        <th>Discharge Date</th>
+                        <th>Discharge Type</th>
+                        <th>Department</th>
+                        <th>Summary / Advice</th>
+                        <th style="text-align: center; width: 170px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for visit in discharged_admissions %}
+                    <tr {% if request.GET.highlight == visit.id|stringformat:"s" %}style="background: #fefce8; border-left: 4px solid #eab308;"{% endif %}>
+                        <td>
+                            <strong style="color: #0284c7;">{{ visit.ipno|default:visit.visit_no }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border" style="font-weight: 700;">{{ visit.patient.patient_id }}</span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; color: #0f172a;">{{ visit.patient.title }} {{ visit.patient.name }}</div>
+                            <div style="font-size: 0.76rem; color: #64748b;">{{ visit.patient.age_years }}Y / {{ visit.patient.get_gender_display }}</div>
+                        </td>
+                        <td>{{ visit.visit_date|date:"d/M/Y" }}</td>
+                        <td>
+                            <span class="badge" style="background: #dcfce7; color: #166534; font-size: 0.82rem; padding: 4px 8px; font-weight: 700;">
+                                <i class="bi bi-check-circle"></i> {{ visit.discharge_date|date:"d/M/Y" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge" style="background: #f1f5f9; color: #334155; font-size: 0.78rem;">
+                                {{ visit.discharge_type|default:"Normal / Improved" }}
+                            </span>
+                        </td>
+                        <td>{{ visit.department }}</td>
+                        <td style="max-width: 220px; font-size: 0.82rem; color: #475569;">
+                            {{ visit.discharge_notes|default:"--"|truncatechars:45 }}
+                        </td>
+                        <td style="text-align: center;">
+                            <div style="display: flex; gap: 4px; justify-content: center;">
+                                <a href="{% url 'patients:discharge_slip' visit.id %}" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight: 600; font-size: 0.78rem;" title="Print Discharge Slip">
+                                    <i class="bi bi-printer"></i> Slip
+                                </a>
+                                <form method="post" action="{% url 'patients:discharge' %}" style="margin: 0;" onsubmit="return confirm('Reopen admission for patient {{ visit.patient.name }} (IP #{{ visit.ipno }})?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="cancel_discharge">
+                                    <input type="hidden" name="visit_id" value="{{ visit.id }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary" style="font-size: 0.78rem;" title="Reopen / Undo Discharge">
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5">
+                            <h6 style="font-weight: 700; color: #334155;">No Discharged Records Found</h6>
+                            <p style="font-size: 0.85rem; color: #64748b; margin: 0;">No past discharged inpatient records match your filters.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- DISCHARGE MODAL DIALOG -->
+<div id="dischargeModal" class="modal-overlay">
+    <div class="modal-box">
+        <form method="post" action="{% url 'patients:discharge' %}" id="dischargeForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="discharge">
+            <input type="hidden" name="visit_id" id="modal_visit_id">
+
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 800; font-size: 1.05rem;">
+                    <i class="bi bi-box-arrow-right"></i> Process Patient Discharge
+                </div>
+                <button type="button" onclick="closeDischargeModal()" style="background: none; border: none; color: white; font-size: 1.25rem; cursor: pointer; line-height: 1;">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Patient Admission Card -->
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label style="font-size: 0.75rem; color: #64748b; font-weight: 700; margin: 0;">PATIENT</label>
+                            <div id="modal_patient_name" style="font-weight: 700; color: #0f172a; font-size: 0.95rem;">--</div>
+                            <div id="modal_patient_id" style="font-size: 0.8rem; color: #475569;">ID: --</div>
+                        </div>
+                        <div class="col-6">
+                            <label style="font-size: 0.75rem; color: #64748b; font-weight: 700; margin: 0;">IP NUMBER</label>
+                            <div id="modal_ipno" style="font-weight: 800; color: #0284c7; font-size: 1.05rem;">--</div>
+                            <div id="modal_adm_date" style="font-size: 0.8rem; color: #475569;">Adm: --</div>
+                        </div>
+                        <div class="col-12 mt-2 pt-2 border-top">
+                            <span id="modal_department" style="font-size: 0.8rem; font-weight: 600; color: #334155;">--</span> &bull; 
+                            <span id="modal_doctor" style="font-size: 0.8rem; color: #64748b;">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Discharge Fields -->
+                <div class="mb-3">
+                    <label class="form-label" style="font-weight: 700; font-size: 0.85rem; color: #334155;">
+                        Date of Discharge:<span class="text-danger">*</span>
+                    </label>
+                    <input type="date" name="discharge_date" id="modal_discharge_date" class="form-control" value="{{ today|date:'Y-m-d' }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" style="font-weight: 700; font-size: 0.85rem; color: #334155;">
+                        Discharge Type / Status:<span class="text-danger">*</span>
+                    </label>
+                    <select name="discharge_type" id="modal_discharge_type" class="form-select" required>
+                        <option value="Normal / Improved" selected>Normal / Improved (Recovered)</option>
+                        <option value="Discharged on Request (DOR)">Discharged on Request (DOR)</option>
+                        <option value="LAMA - Left Against Medical Advice">LAMA - Left Against Medical Advice</option>
+                        <option value="Transferred to Higher Centre">Transferred to Higher Centre</option>
+                        <option value="Deceased / Expired">Deceased / Expired</option>
+                        <option value="Relieved">Relieved</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label" style="font-weight: 700; font-size: 0.85rem; color: #334155;">
+                        Discharge Summary / Clinical Advice:
+                    </label>
+                    <textarea name="discharge_notes" id="modal_discharge_notes" class="form-control" rows="3" placeholder="Enter clinical advice, medication on discharge, follow-up instructions..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" onclick="closeDischargeModal()" class="btn btn-light" style="font-weight: 600; border: 1px solid #cbd5e1;">
+                    Cancel
+                </button>
+                <button type="submit" class="btn" style="background: #e11d48; color: white; font-weight: 700; padding: 0.45rem 1.5rem; box-shadow: 0 2px 4px rgba(225,29,72,0.25);">
+                    <i class="bi bi-check2-circle"></i> Confirm Discharge
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openDischargeModal(visitId, ipNo, patientId, patientName, admDate, department, doctor) {
+        document.getElementById('modal_visit_id').value = visitId;
+        document.getElementById('modal_ipno').textContent = '#' + ipNo;
+        document.getElementById('modal_patient_id').textContent = 'ID: ' + patientId;
+        document.getElementById('modal_patient_name').textContent = patientName;
+        document.getElementById('modal_adm_date').textContent = 'Adm: ' + admDate;
+        document.getElementById('modal_department').textContent = department;
+        document.getElementById('modal_doctor').textContent = doctor;
+        
+        // Default today's date
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('modal_discharge_date').value = today;
+        document.getElementById('modal_discharge_notes').value = '';
+
+        document.getElementById('dischargeModal').style.display = 'flex';
+    }
+
+    function closeDischargeModal() {
+        document.getElementById('dischargeModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('dischargeModal');
+        if (event.target === modal) {
+            closeDischargeModal();
+        }
+    };
+
+    // Auto-open modal if selected_visit is present in context
+    {% if selected_visit %}
+    document.addEventListener('DOMContentLoaded', function() {
+        openDischargeModal(
+            '{{ selected_visit.id }}',
+            '{{ selected_visit.ipno|default:selected_visit.visit_no }}',
+            '{{ selected_visit.patient.patient_id }}',
+            '{{ selected_visit.patient.name|escapejs }}',
+            '{{ selected_visit.visit_date|date:"d/M/Y" }}',
+            '{{ selected_visit.department|escapejs }}',
+            '{{ selected_visit.unit_doctor|escapejs }}'
+        );
+    });
+    {% endif %}
+</script>
+{% endblock %}

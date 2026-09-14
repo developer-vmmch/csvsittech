@@ -232,7 +232,7 @@ class Patient(TimeStampedModel):
     pincode = models.CharField(max_length=20, blank=True, null=True)
     
     # Medical & Doctor Assignment
-    mobile_no = models.CharField(max_length=20, verbose_name="Mobile No (without 91)")
+    mobile_no = models.CharField(max_length=20, blank=True, null=True, default='', verbose_name="Mobile No (without 91)")
     alternate_phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Alternate Phone")
     email = models.EmailField(blank=True, null=True, verbose_name="Email")
     emergency_contact_phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Emergency Contact Phone")
@@ -260,13 +260,40 @@ class Patient(TimeStampedModel):
     def __str__(self):
         return f"{self.name} ({self.patient_id})"
 
+    @property
+    def active_ip_admission(self):
+        """Returns the active (undischarged) IP visit if any, else None."""
+        from django.db.models import Q
+        return self.visits.filter(
+            Q(visit_type=self.VisitChoices.IP) | Q(ipno__isnull=False, ipno__gt=''),
+            discharge_date__isnull=True
+        ).order_by('-id').first()
+
+    @property
+    def is_admitted_inpatient(self):
+        """Returns True if the patient currently has an active, undischarged IP admission."""
+        return self.active_ip_admission is not None
+
     def save(self, *args, **kwargs):
         if not self.patient_type:
             self.patient_type = self.created_source or 'O'
         if not self.created_source:
             self.created_source = self.patient_type or 'O'
+            
+        is_emer = False
+        cat = str(self.category or '').upper()
+        if cat in ['EMERGENCY', 'CASUALTY']:
+            is_emer = True
+        elif self.department_obj and any(term in self.department_obj.name.upper() for term in ['EMERGENCY', 'CASUALTY']):
+            is_emer = True
+        elif self.department and any(term in str(self.department).upper() for term in ['EMERGENCY', 'CASUALTY']):
+            is_emer = True
+
         if not self.patient_id:
-            self.patient_id = self.generate_next_patient_id()
+            self.patient_id = self.generate_next_patient_id(is_emergency=is_emer)
+        elif is_emer and not str(self.patient_id).upper().startswith('E') and not self.pk:
+            self.patient_id = f"E{self.patient_id}"
+
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
@@ -276,14 +303,32 @@ class Patient(TimeStampedModel):
         super().delete(*args, **kwargs)
 
     @classmethod
-    def generate_next_patient_id(cls):
+    def generate_next_patient_id(cls, is_emergency=False):
         """
-        Generate the next unique numeric patient ID.
+        Generate the next unique patient ID.
+        Normal: Sequential numeric ID (e.g. 26148627)
+        Emergency: Prefixed with 'E' (e.g. E26148627 or sequential emergency ID)
         """
-
         from django.db.models import Max
         from django.db.models.functions import Cast
         from django.db.models import BigIntegerField
+
+        if is_emergency:
+            e_patients = cls.objects.filter(patient_id__iregex=r'^E[0-9]+$').values_list('patient_id', flat=True)
+            max_e_num = None
+            for pid in e_patients:
+                try:
+                    num_val = int(pid[1:])
+                    if max_e_num is None or num_val > max_e_num:
+                        max_e_num = num_val
+                except (ValueError, TypeError):
+                    continue
+
+            if max_e_num is not None:
+                return f"E{max_e_num + 1}"
+            else:
+                normal_next = cls.generate_next_patient_id(is_emergency=False)
+                return f"E{normal_next}"
 
         max_patient_id = (
             cls.objects
@@ -307,8 +352,35 @@ class Patient(TimeStampedModel):
         return str(max_patient_id + 1)
 
     @classmethod
-    def generate_next_ipno(cls):
-        """Generates sequential numeric IP number starting from 600000"""
+    def generate_next_ipno(cls, is_emergency=False):
+        """
+        Generates sequential numeric IP number starting from 600000.
+        If is_emergency is True, prefixes with 'E' (e.g. E600000, E600001).
+        """
+        if is_emergency:
+            max_num = None
+            for p in cls.objects.filter(ipno__iregex=r'^E[0-9]+$').values_list('ipno', flat=True):
+                try:
+                    num_val = int(p[1:])
+                    if max_num is None or num_val > max_num:
+                        max_num = num_val
+                except (ValueError, TypeError):
+                    continue
+
+            for v in PatientVisit.objects.filter(ipno__iregex=r'^E[0-9]+$').values_list('ipno', flat=True):
+                try:
+                    num_val = int(v[1:])
+                    if max_num is None or num_val > max_num:
+                        max_num = num_val
+                except (ValueError, TypeError):
+                    continue
+
+            if max_num is not None:
+                return f"E{max_num + 1}"
+            else:
+                normal_next = cls.generate_next_ipno(is_emergency=False)
+                return f"E{normal_next}"
+
         max_num = 599999
         p_patients = cls.objects.filter(ipno__isnull=False).exclude(ipno='')
         for p in p_patients:
@@ -372,6 +444,14 @@ class PatientVisit(TimeStampedModel):
     ward = models.CharField(max_length=50, blank=True, null=True)
     bed = models.CharField(max_length=50, blank=True, null=True)
     discharge_date = models.DateField(blank=True, null=True, verbose_name="Date of Discharge")
+    discharge_type = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        default='Normal / Improved',
+        verbose_name="Discharge Type / Status"
+    )
+    discharge_notes = models.TextField(blank=True, null=True, verbose_name="Discharge Summary / Advice")
     ref_no = models.CharField(max_length=50, blank=True, null=True, verbose_name="Ref No")
     ref_by = models.CharField(max_length=100, blank=True, null=True, verbose_name="Referred By")
     ref_date = models.DateField(blank=True, null=True, verbose_name="Ref Date")
@@ -393,6 +473,45 @@ class PatientVisit(TimeStampedModel):
     def __str__(self):
         return f"Visit #{self.visit_no} - {self.patient.name} ({self.visit_date.strftime('%d/%b/%Y')})"
 
+    @property
+    def is_active_ip(self):
+        """Returns True if this visit is an active, undischarged Inpatient admission."""
+        return (self.visit_type == Patient.VisitChoices.IP or bool(self.ipno)) and self.discharge_date is None
+
+    @property
+    def initial_department_name(self):
+        """Returns the initial department name before any ward transfer, or current department."""
+        first_transfer = self.branch_transfers.filter(status='ACCEPTED').order_by('reviewed_at').first()
+        if first_transfer:
+            return first_transfer.from_department.name
+        return self.department
+
+    @property
+    def ip_department_name(self):
+        """Returns the department where the patient is placed for IP admission."""
+        if self.visit_type == Patient.VisitChoices.IP or bool(self.ipno):
+            return self.department
+        return None
+
+    @property
+    def is_transferred(self):
+        """Returns True if this admission has been transferred to another department."""
+        return self.branch_transfers.filter(status='ACCEPTED').exists()
+
+    @property
+    def latest_transfer(self):
+        """Returns the latest accepted transfer request."""
+        return self.branch_transfers.filter(status='ACCEPTED').order_by('-reviewed_at').first()
+
+    def discharge(self, discharge_date=None, discharge_type='Normal / Improved', discharge_notes=None):
+        """Marks this IP visit as discharged."""
+        self.discharge_date = discharge_date or timezone.localdate()
+        if discharge_type:
+            self.discharge_type = discharge_type
+        if discharge_notes is not None:
+            self.discharge_notes = discharge_notes
+        self.save(update_fields=['discharge_date', 'discharge_type', 'discharge_notes'])
+
 class PatientImportHistory(TimeStampedModel):
     file_name = models.CharField(max_length=255)
     upload_file = models.FileField(upload_to='patient_imports/', null=True, blank=True)
@@ -409,3 +528,211 @@ class PatientImportHistory(TimeStampedModel):
         
     def __str__(self):
         return f"{self.file_name} on {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class BranchTransferRequest(TimeStampedModel):
+    class StatusChoices(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        ACCEPTED = 'ACCEPTED', 'Accepted'
+        REJECTED = 'REJECTED', 'Rejected'
+        CANCELLED = 'CANCELLED', 'Cancelled'
+
+    transfer_request_number = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name="Transfer Request ID"
+    )
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name='branch_transfers',
+        verbose_name="Patient"
+    )
+    admission = models.ForeignKey(
+        PatientVisit,
+        on_delete=models.CASCADE,
+        related_name='branch_transfers',
+        verbose_name="Active Admission"
+    )
+    from_department = models.ForeignKey(
+        Department,
+        on_delete=models.CASCADE,
+        related_name='outgoing_branch_transfers',
+        verbose_name="Current Department"
+    )
+    to_department = models.ForeignKey(
+        Department,
+        on_delete=models.CASCADE,
+        related_name='incoming_branch_transfers',
+        verbose_name="Requested Department"
+    )
+    to_unit = models.ForeignKey(
+        DepartmentUnit,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='incoming_unit_transfers',
+        verbose_name="Destination Unit / Doctor"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=StatusChoices.choices,
+        default=StatusChoices.PENDING,
+        verbose_name="Status"
+    )
+    transfer_reason = models.TextField(
+        verbose_name="Transfer Reason / Notes"
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='requested_branch_transfers',
+        verbose_name="Requested By"
+    )
+    requested_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name="Requested Date & Time"
+    )
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_branch_transfers',
+        verbose_name="Reviewed By"
+    )
+    reviewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Reviewed Date & Time"
+    )
+    review_notes = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Review / Rejection Notes"
+    )
+    cancelled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cancelled_branch_transfers',
+        verbose_name="Cancelled By"
+    )
+    cancelled_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Cancelled Date & Time"
+    )
+    cancellation_reason = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Cancellation Reason"
+    )
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Branch Transfer Request"
+        verbose_name_plural = "Branch Transfer Requests"
+
+    def __str__(self):
+        return f"{self.transfer_request_number} - {self.patient.name} ({self.from_department.name} -> {self.to_department.name}) [{self.status}]"
+
+    @classmethod
+    def generate_transfer_request_number(cls):
+        """Generates sequential format: BTR-YYYY-XXXXX (e.g. BTR-2026-00001)"""
+        year = timezone.localdate().year
+        prefix = f"BTR-{year}-"
+        last_req = cls.objects.filter(transfer_request_number__startswith=prefix).order_by('-id').first()
+        if last_req and last_req.transfer_request_number:
+            try:
+                last_seq = int(last_req.transfer_request_number.split('-')[-1])
+                new_seq = last_seq + 1
+            except (ValueError, IndexError):
+                new_seq = 1
+        else:
+            new_seq = 1
+        return f"{prefix}{new_seq:05d}"
+
+    def save(self, *args, **kwargs):
+        if not self.transfer_request_number:
+            self.transfer_request_number = self.generate_transfer_request_number()
+        super().save(*args, **kwargs)
+
+    def accept(self, reviewed_by=None, review_notes=None, to_unit=None):
+        """
+        Atomically executes the transfer:
+        - Updates the patient's active admission department to to_department.
+        - Updates to_unit/doctor if supplied.
+        - Updates patient.department_obj to to_department.
+        - Sets status to ACCEPTED with reviewer info and timestamp.
+        """
+        from django.db import transaction
+        if self.status != self.StatusChoices.PENDING:
+            raise ValueError(f"Cannot accept transfer request with status '{self.status}'.")
+
+        with transaction.atomic():
+            # Update admission record
+            admission = self.admission
+            admission.department_obj = self.to_department
+            admission.department = self.to_department.name
+            if to_unit:
+                self.to_unit = to_unit
+                admission.unit_obj = to_unit
+                admission.unit_doctor = to_unit.unit_name
+            elif self.to_unit:
+                admission.unit_obj = self.to_unit
+                admission.unit_doctor = self.to_unit.unit_name
+            elif self.to_department.units.exists():
+                first_unit = self.to_department.units.first()
+                admission.unit_obj = first_unit
+                admission.unit_doctor = first_unit.unit_name
+            admission.save(update_fields=['department_obj', 'department', 'unit_obj', 'unit_doctor'])
+
+            # Update patient primary department
+            self.patient.department_obj = self.to_department
+            self.patient.department = self.to_department.name
+            if admission.unit_obj:
+                self.patient.unit_obj = admission.unit_obj
+            self.patient.save(update_fields=['department_obj', 'department', 'unit_obj'])
+
+            # Update transfer request record
+            self.status = self.StatusChoices.ACCEPTED
+            self.reviewed_by = reviewed_by
+            self.reviewed_at = timezone.now()
+            if review_notes:
+                self.review_notes = review_notes
+            self.save(update_fields=['status', 'reviewed_by', 'reviewed_at', 'review_notes', 'to_unit'])
+
+    def reject(self, reviewed_by=None, rejection_reason=""):
+        """
+        Rejects the transfer request.
+        Patient remains in the source department.
+        """
+        if self.status != self.StatusChoices.PENDING:
+            raise ValueError(f"Cannot reject transfer request with status '{self.status}'.")
+        if not (rejection_reason or '').strip():
+            raise ValueError("Rejection reason is mandatory.")
+
+        self.status = self.StatusChoices.REJECTED
+        self.reviewed_by = reviewed_by
+        self.reviewed_at = timezone.now()
+        self.review_notes = rejection_reason.strip()
+        self.save(update_fields=['status', 'reviewed_by', 'reviewed_at', 'review_notes'])
+
+    def cancel(self, cancelled_by=None, cancellation_reason=""):
+        """
+        Cancels the transfer request.
+        """
+        if self.status != self.StatusChoices.PENDING:
+            raise ValueError(f"Cannot cancel transfer request with status '{self.status}'.")
+
+        self.status = self.StatusChoices.CANCELLED
+        self.cancelled_by = cancelled_by
+        self.cancelled_at = timezone.now()
+        if cancellation_reason:
+            self.cancellation_reason = cancellation_reason.strip()
+        self.save(update_fields=['status', 'cancelled_by', 'cancelled_at', 'cancellation_reason'])
+
