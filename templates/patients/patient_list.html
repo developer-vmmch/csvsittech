@@ -114,6 +114,7 @@
                     data-age-display="{{ patient.age_years }}"
                     data-gender-age="{{ patient.gender }} / {{ patient.age_years }} Y"
                     data-department="{% if patient.department_obj %}{{ patient.department_obj.name }}{% elif patient.department %}{{ patient.department }}{% else %}Not Assigned{% endif %}"
+                    data-ip-department="{% if patient.active_ip_admission %}{{ patient.active_ip_admission.department }}{% elif patient.is_admitted_inpatient %}{{ patient.department }}{% else %}--{% endif %}"
                     data-mobile-number="{{ patient.mobile_no }}"
                     data-alternate-phone="{{ patient.alternate_phone|default:'' }}"
                     data-email="{{ patient.email|default:'' }}"
@@ -197,14 +198,14 @@
 <script>
     const availableColumns = [
         "Patient ID", "OP Number", "Patient Title", "First Name", "Last Name", "Patient Name", 
-        "Gender", "Date of Birth", "Age", "Age Display", "Gender / Age", "Department", "Mobile Number", "Alternate Phone", 
+        "Gender", "Date of Birth", "Age", "Age Display", "Gender / Age", "Department", "IP Department", "Mobile Number", "Alternate Phone", 
         "Email", "Address", "City", "State", "City / State", "Country", "Pincode", "Blood Group", "Marital Status", 
         "Guardian Title", "Guardian Name", "Guardian Relation", "Guardian", "Guardian Phone", 
         "Emergency Contact", "Emergency Phone", "Registration Date", "Patient Type", "Actions"
     ];
 
     const defaultColumns = [
-        "Patient ID", "OP Number", "Patient Name", "Gender / Age", "Department",
+        "Patient ID", "OP Number", "Patient Name", "Gender / Age", "Department", "IP Department",
         "Mobile Number", "City / State", "Guardian", "Registration Date", "Patient Type", "Actions"
     ];
 

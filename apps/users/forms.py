@@ -17,6 +17,18 @@ def get_all_role_choices():
     return choices
 
 
+def get_all_department_choices():
+    choices = [('', '-- Select Department --')]
+    try:
+        from apps.patients.models import Department
+        Department.seed_defaults()
+        for dept in Department.objects.filter(is_active=True).order_by('name'):
+            choices.append((dept.name, dept.name))
+    except Exception:
+        pass
+    return choices
+
+
 class UserLoginForm(AuthenticationForm):
     username = forms.CharField(
         widget=forms.TextInput(attrs={
@@ -52,6 +64,13 @@ class UserCreationCustomForm(forms.ModelForm):
         self.fields['role'].choices = choices
         self.fields['role'].widget.choices = choices
 
+        dept_choices = get_all_department_choices()
+        self.fields['department'] = forms.ChoiceField(
+            choices=dept_choices,
+            required=False,
+            widget=forms.Select(attrs={'class': 'form-select'})
+        )
+
     class Meta:
         model = User
         fields = [
@@ -64,7 +83,7 @@ class UserCreationCustomForm(forms.ModelForm):
             'last_name': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Last Name'}),
             'email': forms.EmailInput(attrs={'class': 'form-input', 'placeholder': 'user@vmmc.edu.in'}),
             'role': forms.Select(attrs={'class': 'form-select'}),
-            'department': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'e.g. GENERAL MEDICINE or FRONT OFFICE'}),
+            'department': forms.Select(attrs={'class': 'form-select'}),
             'phone_number': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Mobile / Contact Number', 'maxlength': '10'}),
             'employee_id': forms.TextInput(attrs={'class': 'form-input', 'readonly': 'readonly', 'style': 'background-color: #f1f5f9; color: #475569; font-weight: 600;'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
@@ -117,6 +136,16 @@ class UserEditCustomForm(forms.ModelForm):
         self.fields['role'].choices = choices
         self.fields['role'].widget.choices = choices
 
+        dept_choices = get_all_department_choices()
+        current_dept = self.instance.department if self.instance and self.instance.department else None
+        if current_dept and not any(c[0] == current_dept for c in dept_choices):
+            dept_choices.append((current_dept, current_dept))
+        self.fields['department'] = forms.ChoiceField(
+            choices=dept_choices,
+            required=False,
+            widget=forms.Select(attrs={'class': 'form-select'})
+        )
+
     class Meta:
         model = User
         fields = [
@@ -129,7 +158,7 @@ class UserEditCustomForm(forms.ModelForm):
             'last_name': forms.TextInput(attrs={'class': 'form-input'}),
             'email': forms.EmailInput(attrs={'class': 'form-input'}),
             'role': forms.Select(attrs={'class': 'form-select'}),
-            'department': forms.TextInput(attrs={'class': 'form-input'}),
+            'department': forms.Select(attrs={'class': 'form-select'}),
             'phone_number': forms.TextInput(attrs={'class': 'form-input', 'maxlength': '10'}),
             'employee_id': forms.TextInput(attrs={'class': 'form-input'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),

@@ -4,7 +4,9 @@ from .views import (
     PatientCompanyListView, PatientCompanyCreateView, PatientCompanyDeleteView,
     DepartmentListView, DepartmentCreateView, DepartmentUpdateView, DepartmentDeleteView,
     DepartmentUnitCreateView, DepartmentUnitUpdateView, DepartmentUnitDeleteView,
-    get_department_units, OPCensusView, PatientReviewView, PatientReviewReportView, PatientMedicalHistoryPrintView
+    get_department_units, OPCensusView, PatientReviewView, PatientReviewReportView, PatientMedicalHistoryPrintView,
+    PatientDischargeView, PatientDischargeSlipView, BranchTransferListView, api_patient_active_admission,
+    BranchTransferReportView, export_branch_transfers_csv
 )
 from .import_views import (
     PatientImportView, PatientImportHistoryView, api_patient_download_template,
@@ -16,6 +18,12 @@ app_name = 'patients'
 urlpatterns = [
     path('', PatientListView.as_view(), name='list'),
     path('review/', PatientReviewView.as_view(), name='review'),
+    path('discharge/', PatientDischargeView.as_view(), name='discharge'),
+    path('discharge/<int:pk>/slip/', PatientDischargeSlipView.as_view(), name='discharge_slip'),
+    path('ward/branch-transfer/', BranchTransferListView.as_view(), name='branch_transfer'),
+    path('ward/branch-transfer/report/', BranchTransferReportView.as_view(), name='branch_transfer_report'),
+    path('ward/branch-transfer/report/export/', export_branch_transfers_csv, name='branch_transfer_report_export'),
+    path('ward/branch-transfer/api/patient-info/', api_patient_active_admission, name='api_branch_transfer_patient_info'),
     path('review/report/', PatientReviewReportView.as_view(), name='review_report'),
     path('op-census/', OPCensusView.as_view(), name='op_census'),
     path('search/', PatientSearchView.as_view(), name='search'),

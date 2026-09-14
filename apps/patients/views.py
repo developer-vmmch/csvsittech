@@ -22,14 +22,17 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from apps.core.mixins import MenuAccessRequiredMixin, GranularPermissionRequiredMixin
 from django.contrib import messages
-from django.db.models import Q
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
+from apps.core.mixins import MenuAccessRequiredMixin, GranularPermissionRequiredMixin
+from django.db.models import Q, Count
+import csv
+from django.http import HttpResponse
 from django.utils import timezone
 from datetime import datetime
-from .models import Patient, PatientCompany, Department, DepartmentUnit, PatientVisit
-from .forms import PatientRegistrationForm, PatientCompanyForm, DepartmentForm, DepartmentUnitForm, PatientVisitForm
+from .models import Patient, PatientCompany, Department, DepartmentUnit, PatientVisit, BranchTransferRequest
+from .forms import PatientRegistrationForm, PatientCompanyForm, DepartmentForm, DepartmentUnitForm, PatientVisitForm, BranchTransferRequestForm
 
 from django.contrib.auth import get_user_model
 
@@ -81,6 +84,7 @@ class PatientListView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermi
                 elif col == 'Age' or col == 'Age Display': row.append(p.age_years)
                 elif col == 'Gender / Age': row.append(f"{p.gender} / {p.age_years} Y")
                 elif col == 'Department': row.append(p.department_obj.name if p.department_obj else (p.department or 'Not Assigned'))
+                elif col == 'IP Department': row.append(p.active_ip_admission.department if p.active_ip_admission else (p.department if p.is_admitted_inpatient else ''))
                 elif col == 'Mobile Number': row.append(p.mobile_no)
                 elif col == 'Alternate Phone': row.append(p.alternate_phone or '')
                 elif col == 'Email': row.append(p.email or '')
@@ -363,26 +367,19 @@ class PatientCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
     def form_valid(self, form):
         patient = form.save(commit=False)
         
-        # If not confirmed yet, render the review screen
-        if 'confirm_save' not in self.request.POST:
-            context = self.get_context_data(form=form)
-            # Create a mock patient for the review screen to display
-            if patient.department_obj:
-                patient.department = patient.department_obj.name
-            if patient.unit_obj:
-                patient.unit_doctor = patient.unit_obj.unit_name
-            if patient.patient_company:
-                patient.company_name = patient.patient_company.name
-            
-            patient.patient_id = "Auto-Generated"
-            patient.created_at = timezone.now()
-            context['patient'] = patient
-            
-            # Re-render with a different template (the review template)
-            self.template_name = 'patients/patient_registration_review.html'
-            return self.render_to_response(context)
+        is_emer = False
+        cat = str(patient.category or '').upper()
+        if cat in ['EMERGENCY', 'CASUALTY']:
+            is_emer = True
+        elif patient.department_obj and any(term in patient.department_obj.name.upper() for term in ['EMERGENCY', 'CASUALTY']):
+            is_emer = True
+        elif patient.department and any(term in str(patient.department).upper() for term in ['EMERGENCY', 'CASUALTY']):
+            is_emer = True
+
         if not patient.patient_id:
-            patient.patient_id = Patient.generate_next_patient_id()
+            patient.patient_id = Patient.generate_next_patient_id(is_emergency=is_emer)
+        elif is_emer and not str(patient.patient_id).upper().startswith('E'):
+            patient.patient_id = f"E{patient.patient_id}"
 
         if patient.patient_company:
             patient.company_name = patient.patient_company.name
@@ -395,7 +392,9 @@ class PatientCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
             patient.unit_doctor = patient.unit_obj.unit_name
 
         if patient.visit_through == 'IP' and not patient.ipno:
-            patient.ipno = Patient.generate_next_ipno()
+            patient.ipno = Patient.generate_next_ipno(is_emergency=is_emer)
+        elif patient.visit_through == 'IP' and is_emer and not str(patient.ipno).upper().startswith('E'):
+            patient.ipno = f"E{patient.ipno}"
 
         patient.save()
 
@@ -415,20 +414,13 @@ class PatientCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
             created_by=self.request.user if self.request.user.is_authenticated else None
         )
         
-        print_url = reverse('patients:print', kwargs={'pk': patient.pk})
-        msg = (
-            f'Patient <strong>{patient.name}</strong> (ID: <strong>{patient.patient_id}</strong>) registered successfully! '
-            f'<a href="{print_url}" target="_blank" style="margin-left: 12px; background: #0284c7; color: #ffffff; padding: 4px 12px; border-radius: 4px; text-decoration: none; font-weight: 600; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">'
-            f'<i class="bi bi-printer-fill"></i> Print OP Slip</a>'
+        messages.success(
+            self.request,
+            f'Patient <strong>{patient.name}</strong> (ID: <strong>{patient.patient_id}</strong>) registered successfully!'
         )
-        messages.success(self.request, msg)
         
-        # If user clicked Print or Print OP, redirect directly to print slip page
-        if 'print_op' in self.request.POST or 'print' in self.request.POST:
-            return redirect('patients:print', pk=patient.pk)
-
-        # Default Save action: Automatically reset form for registering the next patient
-        return redirect('patients:add')
+        # Redirect directly to the print preview page
+        return redirect('patients:print', pk=patient.pk)
 
 
 class PatientUpdateView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermissionRequiredMixin, UpdateView):
@@ -814,6 +806,16 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
         context['now'] = timezone.now()
 
         if patient:
+            is_emergency = (
+                str(patient.patient_id or '').upper().startswith('E') or 
+                patient.category in ['EMERGENCY', 'CASUALTY'] or
+                (patient.department_obj and any(k in patient.department_obj.name.upper() for k in ['EMERGENCY', 'CASUALTY'])) or
+                (patient.department and any(k in str(patient.department).upper() for k in ['EMERGENCY', 'CASUALTY']))
+            )
+            context['is_emergency_patient'] = is_emergency
+            context['active_ip_admission'] = patient.active_ip_admission
+            context['is_admitted_inpatient'] = patient.is_admitted_inpatient
+
             # Ensure at least Visit #1 exists for legacy patient records
             if not patient.visits.exists():
                 PatientVisit.objects.create(
@@ -824,30 +826,55 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
                     department=patient.department,
                     unit_obj=patient.unit_obj,
                     unit_doctor=patient.unit_doctor,
-                    visit_type=patient.visit_through,
+                    visit_type='IP' if is_emergency else patient.visit_through,
                     category=patient.category,
-                    ipno=patient.ipno,
+                    ipno=patient.ipno if (patient.visit_through == 'IP' or is_emergency) else '',
                     clinical_notes=patient.complaint,
                     created_by=patient.created_by
                 )
 
             context['visits'] = patient.visits.all().order_by('-visit_no')
             context['last_visit'] = patient.visits.order_by('-visit_no').first()
-            next_ip = Patient.generate_next_ipno()
+            context['branch_transfers'] = BranchTransferRequest.objects.filter(patient=patient).select_related(
+                'from_department', 'to_department', 'to_unit', 'requested_by', 'reviewed_by', 'cancelled_by'
+            ).order_by('-requested_at')
+            next_ip = Patient.generate_next_ipno(is_emergency=is_emergency)
             context['next_ipno'] = next_ip
-            context['visit_form'] = PatientVisitForm(initial={
-                'department_obj': patient.department_obj,
-                'unit_obj': patient.unit_obj,
-                'visit_type': 'OP',
-                'category': 'RE_CONSULTATION',
-                'ipno': '',
+            
+            emer_dept = Department.objects.filter(is_active=True).filter(
+                Q(name__icontains='EMERGENCY') | Q(name__icontains='CASUALTY') | Q(code__icontains='EMR')
+            ).first() if is_emergency else None
+
+            context['visit_form'] = PatientVisitForm(patient=patient, initial={
+                'department_obj': emer_dept or patient.department_obj,
+                'unit_obj': (emer_dept.units.first() if (emer_dept and emer_dept.units.exists()) else patient.unit_obj),
+                'visit_type': 'IP' if is_emergency else 'OP',
+                'category': 'EMERGENCY' if is_emergency else 'RE_CONSULTATION',
+                'ipno': next_ip if is_emergency else '',
             })
 
         return context
 
     def post(self, request, *args, **kwargs):
+        from django.db import transaction
         patient_id = request.POST.get('patient_id_hidden') or request.POST.get('patient_id')
         patient = get_object_or_404(Patient, pk=patient_id)
+
+        is_emergency = (
+            str(patient.patient_id or '').upper().startswith('E') or 
+            patient.category in ['EMERGENCY', 'CASUALTY'] or
+            (patient.department_obj and any(k in patient.department_obj.name.upper() for k in ['EMERGENCY', 'CASUALTY'])) or
+            (patient.department and any(k in str(patient.department).upper() for k in ['EMERGENCY', 'CASUALTY']))
+        )
+
+        if request.POST.get('action') == 'discharge_patient':
+            active_ip = patient.active_ip_admission
+            if active_ip:
+                active_ip.discharge()
+                messages.success(request, f"Patient '{patient.name}' (IP #{active_ip.ipno or active_ip.visit_no}) has been successfully discharged.")
+            else:
+                messages.info(request, f"Patient '{patient.name}' does not have an active inpatient admission.")
+            return redirect(f"{reverse('patients:review')}?patient_id={patient.patient_id}")
 
         if request.POST.get('action') == 'update_centre':
             new_centre = request.POST.get('centre')
@@ -857,43 +884,60 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
                 messages.success(request, f"Patient centre updated to '{patient.get_centre_display()}'!")
                 return redirect(f"{reverse('patients:review')}?patient_id={patient.patient_id}")
 
-        form = PatientVisitForm(request.POST)
+        # Strict active IP check: Prevent any new visit while already admitted as Inpatient
+        if patient.is_admitted_inpatient:
+            messages.error(request, "The patient is already admitted as an inpatient.")
+            return redirect(f"{reverse('patients:review')}?patient_id={patient.patient_id}")
+
+        form = PatientVisitForm(request.POST, patient=patient)
         if form.is_valid():
-            visit = form.save(commit=False)
-            visit.patient = patient
+            with transaction.atomic():
+                visit = form.save(commit=False)
+                visit.patient = patient
 
-            last_visit = patient.visits.order_by('-visit_no').first()
-            visit.visit_no = (last_visit.visit_no + 1) if last_visit else 1
+                last_visit = patient.visits.order_by('-visit_no').first()
+                visit.visit_no = (last_visit.visit_no + 1) if last_visit else 1
 
-            if visit.department_obj:
-                visit.department = visit.department_obj.name
-            if visit.unit_obj:
-                visit.unit_doctor = visit.unit_obj.unit_name
+                if is_emergency:
+                    visit.visit_type = 'IP'
+                    if not visit.category or visit.category not in ['EMERGENCY', 'CASUALTY']:
+                        visit.category = 'EMERGENCY'
 
-            # Assign IP Number ONLY when visit_type is IP
-            if visit.visit_type == 'IP':
-                if not visit.ipno or visit.ipno.strip() == '':
-                    visit.ipno = Patient.generate_next_ipno()
-            else:
-                visit.ipno = ''
+                if visit.department_obj:
+                    visit.department = visit.department_obj.name
+                if visit.unit_obj:
+                    visit.unit_doctor = visit.unit_obj.unit_name
 
-            if request.user.is_authenticated:
-                visit.created_by = request.user
+                # Assign IP Number ONLY when visit_type is IP (Manual entry or Auto-generated on save)
+                if visit.visit_type == 'IP' or is_emergency:
+                    raw_ip = (visit.ipno or '').strip()
+                    if not raw_ip or 'AUTO' in raw_ip.upper():
+                        visit.ipno = Patient.generate_next_ipno(is_emergency=is_emergency)
+                    else:
+                        if is_emergency and not raw_ip.upper().startswith('E'):
+                            visit.ipno = f"E{raw_ip}"
+                        else:
+                            visit.ipno = raw_ip
+                else:
+                    visit.ipno = ''
 
-            visit.save()
+                if request.user.is_authenticated:
+                    visit.created_by = request.user
 
-            # Update latest patient metadata
-            patient.department_obj = visit.department_obj
-            patient.department = visit.department
-            patient.unit_obj = visit.unit_obj
-            patient.unit_doctor = visit.unit_doctor
-            if visit.centre:
-                patient.centre = visit.centre
-            if visit.visit_type:
-                patient.visit_through = visit.visit_type
-            if visit.ipno:
-                patient.ipno = visit.ipno
-            patient.save()
+                visit.save()
+
+                # Update latest patient metadata
+                patient.department_obj = visit.department_obj
+                patient.department = visit.department
+                patient.unit_obj = visit.unit_obj
+                patient.unit_doctor = visit.unit_doctor
+                if visit.centre:
+                    patient.centre = visit.centre
+                if visit.visit_type:
+                    patient.visit_through = visit.visit_type
+                if visit.ipno:
+                    patient.ipno = visit.ipno
+                patient.save()
 
             messages.success(request, f"New Visit #{visit.visit_no} recorded successfully for patient '{patient.name}' ({patient.patient_id})!")
             return redirect(f"{reverse('patients:review')}?patient_id={patient.patient_id}")
@@ -913,6 +957,9 @@ class PatientMedicalHistoryPrintView(LoginRequiredMixin, MenuAccessRequiredMixin
         # Sort history by actual visit date/time ascending: oldest visit -> newest visit
         context['visits'] = self.object.visits.all().order_by('visit_date', 'visit_no')
         context['last_visit'] = context['visits'].last()
+        context['branch_transfers'] = BranchTransferRequest.objects.filter(patient=self.object).select_related(
+            'from_department', 'to_department', 'to_unit', 'requested_by', 'reviewed_by', 'cancelled_by'
+        ).order_by('-requested_at')
         context['now'] = timezone.now()
         return context
 
@@ -931,8 +978,10 @@ class PatientReviewReportView(LoginRequiredMixin, MenuAccessRequiredMixin, ListV
         return super().get_paginate_by(queryset)
 
     def get_queryset(self):
-        # Force visit_type='REVIEW' for the Review Report
-        queryset = PatientVisit.objects.filter(visit_type='REVIEW').select_related('patient', 'department_obj', 'unit_obj', 'created_by').order_by('-id')
+        # Include all Review / Re-Consultation visits (visit_no > 1, or category RE_CONSULTATION, or visit_type REVIEW)
+        queryset = PatientVisit.objects.filter(
+            Q(visit_no__gt=1) | Q(visit_type='REVIEW') | Q(category='RE_CONSULTATION')
+        ).select_related('patient', 'department_obj', 'unit_obj', 'created_by').order_by('-id')
 
         q_patient = self.request.GET.get('q_patient', '').strip()
         q_from_date, q_to_date = get_default_date_range(self.request, 'q_from_date', 'q_to_date')
@@ -1010,3 +1059,736 @@ class PatientReviewReportView(LoginRequiredMixin, MenuAccessRequiredMixin, ListV
             context['q_department'], context['q_patient_type'], context['q_centre'], context['q_user']
         ])
         return context
+
+
+class PatientDischargeView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
+    menu_key = 'discharge'
+    permission_required = 'patients.discharge.view'
+    template_name = 'patients/patient_discharge.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        today = timezone.localdate()
+        
+        tab = self.request.GET.get('tab', 'active')
+        context['current_tab'] = tab
+        
+        search_query = self.request.GET.get('q', '').strip()
+        dept_id = self.request.GET.get('dept', '')
+        from_date_raw, to_date_raw = get_default_date_range(self.request, 'from_date', 'to_date')
+        
+        context['search_query'] = search_query
+        context['selected_dept'] = dept_id
+        context['from_date'] = from_date_raw
+        context['to_date'] = to_date_raw
+        context['today'] = today
+
+        # Base active admissions
+        active_qs = PatientVisit.objects.filter(
+            Q(visit_type=Patient.VisitChoices.IP) | (Q(ipno__isnull=False) & ~Q(ipno='')),
+            discharge_date__isnull=True
+        ).select_related('patient', 'department_obj', 'unit_obj').order_by('-visit_date')
+
+        # Base discharged admissions
+        discharged_qs = PatientVisit.objects.filter(
+            discharge_date__isnull=False
+        ).select_related('patient', 'department_obj', 'unit_obj').order_by('-discharge_date', '-visit_date')
+
+        # Filter by search
+        if search_query:
+            active_qs = active_qs.filter(
+                Q(patient__patient_id__icontains=search_query) |
+                Q(patient__name__icontains=search_query) |
+                Q(ipno__icontains=search_query) |
+                Q(patient__mobile_no__icontains=search_query)
+            )
+            discharged_qs = discharged_qs.filter(
+                Q(patient__patient_id__icontains=search_query) |
+                Q(patient__name__icontains=search_query) |
+                Q(ipno__icontains=search_query) |
+                Q(patient__mobile_no__icontains=search_query)
+            )
+
+        # Filter by department
+        if dept_id:
+            try:
+                active_qs = active_qs.filter(department_obj_id=int(dept_id))
+                discharged_qs = discharged_qs.filter(department_obj_id=int(dept_id))
+            except (ValueError, TypeError):
+                active_qs = active_qs.filter(department__icontains=dept_id)
+                discharged_qs = discharged_qs.filter(department__icontains=dept_id)
+
+        # Filter discharged by date range
+        if from_date_raw:
+            try:
+                f_date = datetime.strptime(from_date_raw, '%Y-%m-%d').date()
+                discharged_qs = discharged_qs.filter(discharge_date__gte=f_date)
+            except ValueError:
+                pass
+        if to_date_raw:
+            try:
+                t_date = datetime.strptime(to_date_raw, '%Y-%m-%d').date()
+                discharged_qs = discharged_qs.filter(discharge_date__lte=t_date)
+            except ValueError:
+                pass
+
+        # Metrics
+        context['active_count'] = PatientVisit.objects.filter(
+            Q(visit_type=Patient.VisitChoices.IP) | (Q(ipno__isnull=False) & ~Q(ipno='')),
+            discharge_date__isnull=True
+        ).count()
+        context['discharged_today_count'] = PatientVisit.objects.filter(discharge_date=today).count()
+        context['total_discharged_count'] = PatientVisit.objects.filter(discharge_date__isnull=False).count()
+
+        # Selected patient for instant discharge modal/form
+        select_patient_id = self.request.GET.get('patient_id')
+        select_ipno = self.request.GET.get('ipno')
+        select_visit_id = self.request.GET.get('visit_id')
+
+        selected_visit = None
+        if select_visit_id:
+            selected_visit = PatientVisit.objects.filter(pk=select_visit_id, discharge_date__isnull=True).first()
+        elif select_patient_id:
+            p = Patient.objects.filter(patient_id__iexact=select_patient_id.strip()).first()
+            if p:
+                selected_visit = p.active_ip_admission
+        elif select_ipno:
+            selected_visit = PatientVisit.objects.filter(ipno__iexact=select_ipno.strip(), discharge_date__isnull=True).first()
+
+        context['selected_visit'] = selected_visit
+        context['active_admissions'] = active_qs[:100]
+        context['discharged_admissions'] = discharged_qs[:100]
+        context['departments'] = Department.objects.filter(is_active=True).order_by('name')
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get('action', 'discharge')
+        visit_id = request.POST.get('visit_id')
+        visit = get_object_or_404(PatientVisit, pk=visit_id)
+
+        if action == 'discharge':
+            discharge_date_str = request.POST.get('discharge_date', '').strip()
+            discharge_type = request.POST.get('discharge_type', 'Normal / Improved').strip()
+            discharge_notes = request.POST.get('discharge_notes', '').strip()
+
+            discharge_date = None
+            if discharge_date_str:
+                try:
+                    discharge_date = datetime.strptime(discharge_date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    try:
+                        discharge_date = datetime.strptime(discharge_date_str, '%d/%m/%Y').date()
+                    except ValueError:
+                        discharge_date = timezone.localdate()
+            else:
+                discharge_date = timezone.localdate()
+
+            visit.discharge(
+                discharge_date=discharge_date,
+                discharge_type=discharge_type,
+                discharge_notes=discharge_notes
+            )
+            messages.success(
+                request,
+                f"Patient '{visit.patient.name}' (IP #{visit.ipno or visit.visit_no}) has been successfully discharged on {discharge_date.strftime('%d/%m/%Y')}."
+            )
+            return redirect(f"{reverse('patients:discharge')}?tab=discharged&highlight={visit.id}")
+
+        elif action == 'cancel_discharge':
+            visit.discharge_date = None
+            visit.discharge_type = None
+            visit.discharge_notes = None
+            visit.save(update_fields=['discharge_date', 'discharge_type', 'discharge_notes'])
+            messages.warning(
+                request,
+                f"Discharge for patient '{visit.patient.name}' (IP #{visit.ipno or visit.visit_no}) has been reopened/cancelled."
+            )
+            return redirect(f"{reverse('patients:discharge')}?tab=active")
+
+        return redirect('patients:discharge')
+
+
+class PatientDischargeSlipView(LoginRequiredMixin, DetailView):
+    model = PatientVisit
+    template_name = 'patients/discharge_slip.html'
+    context_object_name = 'visit'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['patient'] = self.object.patient
+        context['now'] = timezone.now()
+        return context
+
+
+class BranchTransferListView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
+    menu_key = 'branch_transfer'
+    permission_required = 'ward.branch_transfer.view'
+    template_name = 'patients/branch_transfer.html'
+
+    def get_user_department_obj(self, user):
+        """Finds matching Department object for the logged-in user if available."""
+        if not user or not user.department:
+            return None
+        dept_str = str(user.department).strip()
+        return Department.objects.filter(
+            Q(name__iexact=dept_str) | Q(code__iexact=dept_str)
+        ).first()
+
+    def user_can_approve_transfer(self, user, transfer_req):
+        """
+        Returns True if the user is authorized to approve/reject the transfer request.
+        Only staff belonging to the destination department (or system administrators) can approve/reject.
+        """
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_superuser or getattr(user, 'role', '') == 'ADMIN':
+            return True
+        user_dept = self.get_user_department_obj(user)
+        if user_dept and user_dept.id == transfer_req.to_department_id:
+            return True
+        if user.department and str(user.department).strip().lower() in [
+            transfer_req.to_department.name.lower(),
+            transfer_req.to_department.code.lower()
+        ]:
+            return True
+        return False
+
+    def user_can_cancel_transfer(self, user, transfer_req):
+        """
+        Returns True if the user is authorized to cancel the transfer request.
+        Only the requester, staff from the originating department, or system administrators can cancel.
+        """
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_superuser or getattr(user, 'role', '') == 'ADMIN':
+            return True
+        if transfer_req.requested_by == user:
+            return True
+        user_dept = self.get_user_department_obj(user)
+        if user_dept and user_dept.id == transfer_req.from_department_id:
+            return True
+        if user.department and str(user.department).strip().lower() in [
+            transfer_req.from_department.name.lower(),
+            transfer_req.from_department.code.lower()
+        ]:
+            return True
+        return False
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        user_dept = self.get_user_department_obj(user)
+
+        tab = self.request.GET.get('tab', 'all')
+        context['current_tab'] = tab
+        
+        search_query = self.request.GET.get('q', '').strip()
+        from_dept_id = self.request.GET.get('from_dept', '').strip()
+        to_dept_id = self.request.GET.get('to_dept', '').strip()
+        status_filter = self.request.GET.get('status', '').strip()
+        from_date_raw = self.request.GET.get('from_date', '').strip()
+        to_date_raw = self.request.GET.get('to_date', '').strip()
+
+        context['search_query'] = search_query
+        context['selected_from_dept'] = from_dept_id
+        context['selected_to_dept'] = to_dept_id
+        context['selected_status'] = status_filter
+        context['from_date'] = from_date_raw
+        context['to_date'] = to_date_raw
+        context['user_dept'] = user_dept
+
+        # Base QuerySet
+        qs = BranchTransferRequest.objects.select_related(
+            'patient', 'admission', 'from_department', 'to_department', 'to_unit', 'requested_by', 'reviewed_by', 'cancelled_by'
+        ).order_by('-created_at')
+
+        # Global search filter
+        if search_query:
+            qs = qs.filter(
+                Q(transfer_request_number__icontains=search_query) |
+                Q(patient__patient_id__icontains=search_query) |
+                Q(patient__name__icontains=search_query) |
+                Q(admission__ipno__icontains=search_query)
+            )
+
+        if from_dept_id:
+            try:
+                qs = qs.filter(from_department_id=int(from_dept_id))
+            except ValueError:
+                pass
+
+        if to_dept_id:
+            try:
+                qs = qs.filter(to_department_id=int(to_dept_id))
+            except ValueError:
+                pass
+
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+
+        if from_date_raw:
+            try:
+                f_date = datetime.strptime(from_date_raw, '%Y-%m-%d').date()
+                qs = qs.filter(requested_at__date__gte=f_date)
+            except ValueError:
+                pass
+
+        if to_date_raw:
+            try:
+                t_date = datetime.strptime(to_date_raw, '%Y-%m-%d').date()
+                qs = qs.filter(requested_at__date__lte=t_date)
+            except ValueError:
+                pass
+
+        # Tab-specific querysets
+        if tab == 'incoming':
+            if user_dept:
+                tab_qs = qs.filter(to_department=user_dept)
+            else:
+                tab_qs = qs
+        elif tab == 'outgoing':
+            if user_dept:
+                tab_qs = qs.filter(from_department=user_dept)
+            else:
+                tab_qs = qs
+        elif tab == 'pending':
+            tab_qs = qs.filter(status=BranchTransferRequest.StatusChoices.PENDING)
+        elif tab == 'history':
+            tab_qs = qs.filter(status__in=[
+                BranchTransferRequest.StatusChoices.ACCEPTED,
+                BranchTransferRequest.StatusChoices.REJECTED,
+                BranchTransferRequest.StatusChoices.CANCELLED
+            ])
+        else: # 'all'
+            tab_qs = qs
+
+        context['transfer_requests'] = tab_qs[:150]
+
+        # KPI Metrics
+        all_unfiltered = BranchTransferRequest.objects.all()
+        context['kpi_total'] = all_unfiltered.count()
+        context['kpi_pending'] = all_unfiltered.filter(status=BranchTransferRequest.StatusChoices.PENDING).count()
+        context['kpi_accepted'] = all_unfiltered.filter(status=BranchTransferRequest.StatusChoices.ACCEPTED).count()
+        context['kpi_rejected'] = all_unfiltered.filter(status=BranchTransferRequest.StatusChoices.REJECTED).count()
+
+        if user_dept:
+            context['kpi_incoming_pending'] = all_unfiltered.filter(to_department=user_dept, status=BranchTransferRequest.StatusChoices.PENDING).count()
+            context['kpi_outgoing_pending'] = all_unfiltered.filter(from_department=user_dept, status=BranchTransferRequest.StatusChoices.PENDING).count()
+        else:
+            context['kpi_incoming_pending'] = context['kpi_pending']
+            context['kpi_outgoing_pending'] = context['kpi_pending']
+
+        Department.seed_defaults()
+        context['departments'] = Department.objects.filter(is_active=True).order_by('name')
+        context['status_choices'] = BranchTransferRequest.StatusChoices.choices
+        context['new_request_form'] = BranchTransferRequestForm()
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get('action', 'create_request')
+
+        if action == 'create_request':
+            form = BranchTransferRequestForm(request.POST, requested_by=request.user)
+            if form.is_valid():
+                transfer_req = form.save(commit=False)
+                transfer_req.patient = form.patient_instance
+                transfer_req.admission = form.active_admission
+                transfer_req.from_department = form.from_department_instance
+                transfer_req.requested_by = request.user
+                transfer_req.status = BranchTransferRequest.StatusChoices.PENDING
+                transfer_req.save()
+
+                messages.success(
+                    request,
+                    f"Branch transfer request '{transfer_req.transfer_request_number}' for patient '{transfer_req.patient.name}' submitted successfully. "
+                    f"The patient will remain in '{transfer_req.from_department.name}' until the destination department ({transfer_req.to_department.name}) accepts the request."
+                )
+                return redirect(f"{reverse('patients:branch_transfer')}?tab=outgoing&highlight={transfer_req.id}")
+            else:
+                for field, errors in form.errors.items():
+                    for err in errors:
+                        messages.error(request, f"{err}")
+                return redirect(f"{reverse('patients:branch_transfer')}?tab=all")
+
+        elif action == 'accept_request':
+            req_id = request.POST.get('transfer_request_id')
+            transfer_req = get_object_or_404(BranchTransferRequest, pk=req_id)
+
+            if transfer_req.status != BranchTransferRequest.StatusChoices.PENDING:
+                messages.error(request, "This transfer request has already been processed and cannot be modified.")
+                return redirect('patients:branch_transfer')
+
+            if not self.user_can_approve_transfer(request.user, transfer_req):
+                messages.error(
+                    request,
+                    f"Permission Denied: Only staff from destination department '{transfer_req.to_department.name}' can accept this transfer request."
+                )
+                return redirect('patients:branch_transfer')
+
+            review_notes = request.POST.get('review_notes', '').strip()
+            to_unit_id = request.POST.get('to_unit', '').strip()
+            to_unit = DepartmentUnit.objects.filter(pk=to_unit_id).first() if to_unit_id else None
+
+            try:
+                transfer_req.accept(reviewed_by=request.user, review_notes=review_notes, to_unit=to_unit)
+                messages.success(
+                    request,
+                    f"Branch transfer request '{transfer_req.transfer_request_number}' accepted successfully. "
+                    f"Patient '{transfer_req.patient.name}' has been transferred to {transfer_req.to_department.name}."
+                )
+            except Exception as e:
+                messages.error(request, f"Failed to accept transfer: {str(e)}")
+
+            return redirect(f"{reverse('patients:branch_transfer')}?tab=history&highlight={transfer_req.id}")
+
+        elif action == 'reject_request':
+            req_id = request.POST.get('transfer_request_id')
+            transfer_req = get_object_or_404(BranchTransferRequest, pk=req_id)
+
+            if transfer_req.status != BranchTransferRequest.StatusChoices.PENDING:
+                messages.error(request, "This transfer request has already been processed and cannot be modified.")
+                return redirect('patients:branch_transfer')
+
+            if not self.user_can_approve_transfer(request.user, transfer_req):
+                messages.error(
+                    request,
+                    f"Permission Denied: Only staff from destination department '{transfer_req.to_department.name}' can reject this transfer request."
+                )
+                return redirect('patients:branch_transfer')
+
+            rejection_reason = request.POST.get('rejection_reason', '').strip()
+            if not rejection_reason:
+                messages.error(request, "Rejection reason is mandatory.")
+                return redirect('patients:branch_transfer')
+
+            try:
+                transfer_req.reject(reviewed_by=request.user, rejection_reason=rejection_reason)
+                messages.warning(
+                    request,
+                    f"Branch transfer request '{transfer_req.transfer_request_number}' rejected. "
+                    f"The patient remains in {transfer_req.from_department.name}."
+                )
+            except Exception as e:
+                messages.error(request, f"Failed to reject transfer: {str(e)}")
+
+            return redirect(f"{reverse('patients:branch_transfer')}?tab=history&highlight={transfer_req.id}")
+
+        elif action == 'cancel_request':
+            req_id = request.POST.get('transfer_request_id')
+            transfer_req = get_object_or_404(BranchTransferRequest, pk=req_id)
+
+            if transfer_req.status != BranchTransferRequest.StatusChoices.PENDING:
+                messages.error(request, "Only pending transfer requests can be cancelled.")
+                return redirect('patients:branch_transfer')
+
+            if not self.user_can_cancel_transfer(request.user, transfer_req):
+                messages.error(
+                    request,
+                    f"Permission Denied: Only the requesting user or staff from '{transfer_req.from_department.name}' can cancel this request."
+                )
+                return redirect('patients:branch_transfer')
+
+            cancellation_reason = request.POST.get('cancellation_reason', '').strip()
+            try:
+                transfer_req.cancel(cancelled_by=request.user, cancellation_reason=cancellation_reason)
+                messages.info(
+                    request,
+                    f"Branch transfer request '{transfer_req.transfer_request_number}' has been cancelled."
+                )
+            except Exception as e:
+                messages.error(request, f"Failed to cancel transfer: {str(e)}")
+
+            return redirect('patients:branch_transfer')
+
+        return redirect('patients:branch_transfer')
+
+
+def api_patient_active_admission(request):
+    """
+    JSON API for Branch Transfer New Request modal.
+    Looks up patient by patient_id or active IP Number.
+    """
+    q = (request.GET.get('q') or request.GET.get('patient_id') or '').strip()
+    if not q:
+        return JsonResponse({'exists': False, 'message': 'Please enter a Patient ID or IP Number.'})
+
+    patient = Patient.objects.filter(
+        Q(patient_id__iexact=q) | Q(visits__ipno__iexact=q)
+    ).distinct().first()
+
+    if not patient:
+        return JsonResponse({'exists': False, 'message': f"No patient found matching '{q}'."})
+
+    is_admitted = patient.is_admitted_inpatient
+    active_admission = patient.active_ip_admission
+
+    has_pending = BranchTransferRequest.objects.filter(
+        patient=patient,
+        status=BranchTransferRequest.StatusChoices.PENDING
+    ).first()
+
+    data = {
+        'exists': True,
+        'patient_id': patient.patient_id,
+        'name': f"{patient.title} {patient.name}".strip(),
+        'age_gender': f"{patient.age_years}Y / {patient.get_gender_display()}",
+        'gender': patient.gender,
+        'is_admitted': is_admitted,
+        'has_pending_transfer': bool(has_pending),
+        'pending_transfer_number': has_pending.transfer_request_number if has_pending else None,
+    }
+
+    if active_admission:
+        data.update({
+            'admission_id': active_admission.id,
+            'ipno': active_admission.ipno or str(active_admission.visit_no),
+            'admission_date': active_admission.visit_date.strftime('%d/%b/%Y %H:%M'),
+            'current_dept_id': active_admission.department_obj_id or (patient.department_obj_id if patient.department_obj else None),
+            'current_dept_name': active_admission.department or (patient.department_obj.name if patient.department_obj else 'GENERAL MEDICINE'),
+            'current_doctor': active_admission.unit_doctor or (patient.unit_obj.unit_name if patient.unit_obj else '--'),
+            'ward': active_admission.ward or 'General Ward',
+            'bed': active_admission.bed or '--',
+        })
+
+    return JsonResponse(data)
+
+
+class BranchTransferReportView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
+    menu_key = 'ward'
+    model = BranchTransferRequest
+    template_name = 'patients/branch_transfer_report.html'
+    context_object_name = 'transfers'
+    paginate_by = 50
+
+    def get_paginate_by(self, queryset):
+        page_size = self.request.GET.get('page_size')
+        if page_size and page_size.isdigit() and int(page_size) in [10, 25, 50, 100, 200]:
+            return int(page_size)
+        return super().get_paginate_by(queryset)
+
+    def get_queryset(self):
+        queryset = BranchTransferRequest.objects.select_related(
+            'patient', 'admission', 'from_department', 'to_department', 'to_unit',
+            'requested_by', 'reviewed_by', 'cancelled_by'
+        ).order_by('-requested_at')
+
+        q_search = self.request.GET.get('q_search', '').strip()
+        q_from_date, q_to_date = get_default_date_range(self.request, 'q_from_date', 'q_to_date')
+        q_from_dept = self.request.GET.get('q_from_dept', '').strip()
+        q_to_dept = self.request.GET.get('q_to_dept', '').strip()
+        q_status = self.request.GET.get('q_status', '').strip()
+        q_user = self.request.GET.get('q_user', '').strip()
+
+        if q_search:
+            queryset = queryset.filter(
+                Q(transfer_request_number__icontains=q_search) |
+                Q(patient__patient_id__icontains=q_search) |
+                Q(patient__name__icontains=q_search) |
+                Q(admission__ipno__icontains=q_search)
+            )
+
+        if q_from_date:
+            try:
+                from_dt = datetime.strptime(q_from_date, '%Y-%m-%d').date()
+                queryset = queryset.filter(requested_at__date__gte=from_dt)
+            except ValueError:
+                pass
+
+        if q_to_date:
+            try:
+                to_dt = datetime.strptime(q_to_date, '%Y-%m-%d').date()
+                queryset = queryset.filter(requested_at__date__lte=to_dt)
+            except ValueError:
+                pass
+
+        if q_from_dept:
+            try:
+                queryset = queryset.filter(from_department_id=int(q_from_dept))
+            except ValueError:
+                pass
+
+        if q_to_dept:
+            try:
+                queryset = queryset.filter(to_department_id=int(q_to_dept))
+            except ValueError:
+                pass
+
+        if q_status:
+            queryset = queryset.filter(status=q_status)
+
+        if q_user:
+            try:
+                user_id = int(q_user)
+                queryset = queryset.filter(Q(requested_by_id=user_id) | Q(reviewed_by_id=user_id))
+            except ValueError:
+                pass
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        User = get_user_model()
+        Department.seed_defaults()
+
+        q_from_date, q_to_date = get_default_date_range(self.request, 'q_from_date', 'q_to_date')
+
+        # Filtered queryset for aggregates (without pagination limit)
+        filtered_qs = self.get_queryset()
+
+        context['total_transfers'] = filtered_qs.count()
+        context['pending_count'] = filtered_qs.filter(status=BranchTransferRequest.StatusChoices.PENDING).count()
+        context['accepted_count'] = filtered_qs.filter(status=BranchTransferRequest.StatusChoices.ACCEPTED).count()
+        context['rejected_count'] = filtered_qs.filter(status=BranchTransferRequest.StatusChoices.REJECTED).count()
+        context['cancelled_count'] = filtered_qs.filter(status=BranchTransferRequest.StatusChoices.CANCELLED).count()
+        context['unique_patients_count'] = filtered_qs.values('patient').distinct().count()
+
+        # Top transfer pathways / routes
+        top_routes = (
+            filtered_qs.values('from_department__name', 'to_department__name')
+            .annotate(route_count=Count('id'))
+            .order_by('-route_count')[:5]
+        )
+        context['top_routes'] = top_routes
+
+        # Filter dropdown data
+        context['departments'] = Department.objects.filter(is_active=True).order_by('name')
+        context['status_choices'] = BranchTransferRequest.StatusChoices.choices
+        context['users_list'] = User.objects.filter(is_active=True).order_by('username')
+
+        # Pass active filter values to context
+        context['q_search'] = self.request.GET.get('q_search', '')
+        context['q_from_date'] = q_from_date
+        context['q_to_date'] = q_to_date
+        context['q_from_dept'] = self.request.GET.get('q_from_dept', '')
+        context['q_to_dept'] = self.request.GET.get('q_to_dept', '')
+        context['q_status'] = self.request.GET.get('q_status', '')
+        context['q_user'] = self.request.GET.get('q_user', '')
+        context['page_size'] = self.get_paginate_by(filtered_qs)
+
+        # Check if custom filter is active
+        context['has_filters'] = bool(
+            self.request.GET.get('q_search') or
+            self.request.GET.get('q_from_dept') or
+            self.request.GET.get('q_to_dept') or
+            self.request.GET.get('q_status') or
+            self.request.GET.get('q_user') or
+            self.request.GET.get('q_from_date') or
+            self.request.GET.get('q_to_date')
+        )
+        context['now'] = timezone.now()
+        return context
+
+
+@login_required
+def export_branch_transfers_csv(request):
+    """
+    Exports filtered branch transfer records to CSV.
+    """
+    queryset = BranchTransferRequest.objects.select_related(
+        'patient', 'admission', 'from_department', 'to_department', 'to_unit',
+        'requested_by', 'reviewed_by', 'cancelled_by'
+    ).order_by('-requested_at')
+
+    q_search = request.GET.get('q_search', '').strip()
+    q_from_date, q_to_date = get_default_date_range(request, 'q_from_date', 'q_to_date')
+    q_from_dept = request.GET.get('q_from_dept', '').strip()
+    q_to_dept = request.GET.get('q_to_dept', '').strip()
+    q_status = request.GET.get('q_status', '').strip()
+    q_user = request.GET.get('q_user', '').strip()
+
+    if q_search:
+        queryset = queryset.filter(
+            Q(transfer_request_number__icontains=q_search) |
+            Q(patient__patient_id__icontains=q_search) |
+            Q(patient__name__icontains=q_search) |
+            Q(admission__ipno__icontains=q_search)
+        )
+
+    if q_from_date:
+        try:
+            from_dt = datetime.strptime(q_from_date, '%Y-%m-%d').date()
+            queryset = queryset.filter(requested_at__date__gte=from_dt)
+        except ValueError:
+            pass
+
+    if q_to_date:
+        try:
+            to_dt = datetime.strptime(q_to_date, '%Y-%m-%d').date()
+            queryset = queryset.filter(requested_at__date__lte=to_dt)
+        except ValueError:
+            pass
+
+    if q_from_dept:
+        try:
+            queryset = queryset.filter(from_department_id=int(q_from_dept))
+        except ValueError:
+            pass
+
+    if q_to_dept:
+        try:
+            queryset = queryset.filter(to_department_id=int(q_to_dept))
+        except ValueError:
+            pass
+
+    if q_status:
+        queryset = queryset.filter(status=q_status)
+
+    if q_user:
+        try:
+            user_id = int(q_user)
+            queryset = queryset.filter(Q(requested_by_id=user_id) | Q(reviewed_by_id=user_id))
+        except ValueError:
+            pass
+
+    response = HttpResponse(content_type='text/csv')
+    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+    response['Content-Disposition'] = f'attachment; filename="branch_transfer_report_{timestamp}.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow([
+        'Transfer Request #',
+        'Request Date & Time',
+        'Patient ID / UHID',
+        'Patient Name',
+        'Age',
+        'Gender',
+        'IP Number',
+        'Originating Department',
+        'Destination Department',
+        'Destination Unit / Doctor',
+        'Status',
+        'Requested By',
+        'Reviewed / Approved By',
+        'Reviewed Date & Time',
+        'Transfer Reason',
+        'Review / Rejection / Approval Notes',
+        'Cancellation Reason'
+    ])
+
+    for r in queryset:
+        writer.writerow([
+            r.transfer_request_number,
+            r.requested_at.strftime('%Y-%m-%d %H:%M:%S') if r.requested_at else '',
+            r.patient.patient_id if r.patient else '',
+            f"{r.patient.title} {r.patient.name}" if r.patient else '',
+            r.patient.age_years if r.patient else '',
+            r.patient.gender if r.patient else '',
+            r.admission.ipno if r.admission and r.admission.ipno else (r.patient.ipno if r.patient else ''),
+            r.from_department.name if r.from_department else '',
+            r.to_department.name if r.to_department else '',
+            r.to_unit.unit_name if r.to_unit else '',
+            r.get_status_display(),
+            r.requested_by.username if r.requested_by else '',
+            r.reviewed_by.username if r.reviewed_by else '',
+            r.reviewed_at.strftime('%Y-%m-%d %H:%M:%S') if r.reviewed_at else '',
+            r.transfer_reason or '',
+            r.review_notes or '',
+            r.cancellation_reason or ''
+        ])
+
+    return response
+
+
+

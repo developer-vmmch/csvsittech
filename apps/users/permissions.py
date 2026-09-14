@@ -19,12 +19,24 @@ PERMISSION_MODULES = [
             {"code": "patients.patient_list", "label": "Patient List", "actions": ["view", "create", "update", "cancel", "delete", "export"]},
             {"code": "patients.patient_import", "label": "Patient Import", "actions": ["view", "create", "update", "cancel", "delete", "export"]},
             {"code": "patients.patient_review", "label": "Patient Review", "actions": ["view", "create", "update", "delete", "export"]},
+            {"code": "patients.discharge", "label": "Patient Discharge", "actions": ["view", "create", "update", "export"]},
             {"code": "patients.review_report", "label": "Patient Review Report", "actions": ["view", "export"]},
             {"code": "patients.op_census", "label": "OP Census", "actions": ["view", "export"]},
             {"code": "patients.patient_companies", "label": "Patient Companies", "actions": ["view", "create", "update", "delete", "export"]},
             {"code": "patients.add_company", "label": "Add Company", "actions": ["view", "create"]},
             {"code": "patients.departments_units", "label": "Departments & Units", "actions": ["view", "create", "update", "delete", "export"]},
             {"code": "patients.add_department", "label": "Add Department", "actions": ["view", "create"]},
+        ]
+    },
+    {
+        "module": "ward",
+        "label": "Ward",
+        "sub_modules": [
+            {"code": "ward.ward_management", "label": "Ward Management", "actions": ["view", "create", "update"]},
+            {"code": "ward.ward_allocation", "label": "Ward Allocation", "actions": ["view", "create", "update"]},
+            {"code": "ward.ward_transfer", "label": "Ward Transfer", "actions": ["view", "create", "update"]},
+            {"code": "ward.branch_transfer", "label": "Ward Transfer", "actions": ["view", "create", "update", "cancel", "export"]},
+            {"code": "ward.branch_transfer_report", "label": "Ward Transfer Report", "actions": ["view", "export"]},
         ]
     },
     {

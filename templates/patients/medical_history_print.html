@@ -275,6 +275,48 @@
             </tbody>
         </table>
 
+        <!-- Inter-Department Ward Transfer History -->
+        <div class="section-heading">
+            <span>INTER-DEPARTMENT WARD TRANSFER RECORDS & APPROVAL LOG</span>
+            <span style="font-size: 11px; font-weight: 500; color: #64748b;">Total Transfers: {{ branch_transfers|length }}</span>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Request #</th>
+                    <th>Date & Time</th>
+                    <th>Originating Dept</th>
+                    <th>Destination Dept / Unit</th>
+                    <th>Status</th>
+                    <th>Approved / Reviewed By</th>
+                    <th>Reason / Clinical Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bt in branch_transfers %}
+                <tr>
+                    <td><strong>{{ bt.transfer_request_number }}</strong></td>
+                    <td>{{ bt.requested_at|date:"d/b/Y H:i" }}</td>
+                    <td>{{ bt.from_department.name }}</td>
+                    <td><strong>{{ bt.to_department.name }}</strong> {% if bt.to_unit %}({{ bt.to_unit.unit_name }}){% endif %}</td>
+                    <td><strong>{{ bt.get_status_display }}</strong></td>
+                    <td>{{ bt.reviewed_by.username|default:"--" }} {% if bt.reviewed_at %}<br><small style="color: #64748b;">{{ bt.reviewed_at|date:"d/m/Y H:i" }}</small>{% endif %}</td>
+                    <td>
+                        {{ bt.transfer_reason }}
+                        {% if bt.review_notes %}<br><small style="color: #475569;"><strong>Notes:</strong> {{ bt.review_notes }}</small>{% endif %}
+                        {% if bt.rejection_reason %}<br><small style="color: #dc2626;"><strong>Rejected:</strong> {{ bt.rejection_reason }}</small>{% endif %}
+                        {% if bt.cancellation_reason %}<br><small style="color: #64748b;"><strong>Cancelled:</strong> {{ bt.cancellation_reason }}</small>{% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: #64748b;">No ward transfer records logged for this patient.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
         <!-- Doctor Referral Notes Section -->
         <div class="section-heading">
             <span>REFERRAL / DOCTOR CONSULTATION NOTES & DIAGNOSIS</span>

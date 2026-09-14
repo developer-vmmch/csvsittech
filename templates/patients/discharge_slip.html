@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discharge Slip - {{ patient.name }} (IP #{{ visit.ipno|default:visit.visit_no }})</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #000;
+            background: #fff;
+            font-size: 13px;
+        }
+
+        .slip-container {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 2px solid #000;
+            padding: 24px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+
+        .hospital-name {
+            font-size: 20px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .hospital-address {
+            font-size: 11px;
+            color: #333;
+        }
+
+        .doc-title {
+            font-size: 15px;
+            font-weight: 800;
+            margin-top: 10px;
+            text-decoration: underline;
+            letter-spacing: 0.5px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px 24px;
+            margin-bottom: 16px;
+        }
+
+        .row-item {
+            display: flex;
+            align-items: baseline;
+        }
+
+        .row-label {
+            font-weight: bold;
+            width: 150px;
+            flex-shrink: 0;
+        }
+
+        .row-value {
+            flex: 1;
+            border-bottom: 1px dotted #888;
+            padding-bottom: 2px;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: bold;
+            background: #f0f0f0;
+            padding: 4px 8px;
+            margin: 16px 0 10px 0;
+            border-left: 4px solid #000;
+        }
+
+        .notes-box {
+            border: 1px solid #999;
+            min-height: 80px;
+            padding: 10px;
+            margin-bottom: 16px;
+            background: #fafafa;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        .footer {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            padding-top: 16px;
+        }
+
+        .sign-box {
+            text-align: center;
+            width: 200px;
+            border-top: 1px solid #000;
+            padding-top: 6px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .no-print {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .btn-print {
+            background: #0284c7;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+            body {
+                padding: 0;
+            }
+            .slip-container {
+                border: 1px solid #000;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print">
+        <button onclick="window.print()" class="btn-print">🖨️ Print Discharge Slip</button>
+    </div>
+
+    <div class="slip-container">
+        <div class="header">
+            <div class="hospital-name">Vinayaka Mission's Medical College & Hospital</div>
+            <div class="hospital-address">Karaikal, Puducherry - 609609 | Ph: 04368-222222</div>
+            <div class="doc-title">INPATIENT DISCHARGE SUMMARY / SLIP</div>
+        </div>
+
+        <div class="grid">
+            <div class="row-item">
+                <span class="row-label">Patient ID (UHID):</span>
+                <span class="row-value"><strong>{{ patient.patient_id }}</strong></span>
+            </div>
+            <div class="row-item">
+                <span class="row-label">IP Admission No:</span>
+                <span class="row-value"><strong>{{ visit.ipno|default:visit.visit_no }}</strong></span>
+            </div>
+
+            <div class="row-item">
+                <span class="row-label">Patient Name:</span>
+                <span class="row-value">{{ patient.title }} {{ patient.name }}</span>
+            </div>
+            <div class="row-item">
+                <span class="row-label">Age / Gender:</span>
+                <span class="row-value">{{ patient.age_years }} Y / {{ patient.get_gender_display }}</span>
+            </div>
+
+            <div class="row-item">
+                <span class="row-label">Date of Admission:</span>
+                <span class="row-value">{{ visit.visit_date|date:"d/M/Y H:i" }}</span>
+            </div>
+            <div class="row-item">
+                <span class="row-label">Date of Discharge:</span>
+                <span class="row-value"><strong>{{ visit.discharge_date|date:"d/M/Y"|default:"--" }}</strong></span>
+            </div>
+
+            <div class="row-item">
+                <span class="row-label">Department:</span>
+                <span class="row-value">{{ visit.department }}</span>
+            </div>
+            <div class="row-item">
+                <span class="row-label">Attending Doctor:</span>
+                <span class="row-value">{{ visit.unit_doctor }}</span>
+            </div>
+
+            <div class="row-item">
+                <span class="row-label">Ward / Bed:</span>
+                <span class="row-value">{{ visit.ward|default:"General Ward" }} / {{ visit.bed|default:"--" }}</span>
+            </div>
+            <div class="row-item">
+                <span class="row-label">Condition on Discharge:</span>
+                <span class="row-value"><strong>{{ visit.discharge_type|default:"Normal / Improved" }}</strong></span>
+            </div>
+        </div>
+
+        <div class="section-title">CLINICAL DIAGNOSIS & ADMISSION NOTES</div>
+        <div class="notes-box">{{ visit.clinical_notes|default:"No specific clinical diagnosis recorded." }}</div>
+
+        <div class="section-title">DISCHARGE ADVICE & TREATMENT SUMMARY</div>
+        <div class="notes-box">{{ visit.discharge_notes|default:"Patient is discharged in stable condition. Continue prescribed discharge medications. Follow up in OP department as advised." }}</div>
+
+        <div class="footer">
+            <div class="sign-box">
+                Prepared / Verified By<br>
+                Staff Signature
+            </div>
+            <div class="sign-box">
+                Attending Medical Officer / Doctor<br>
+                Signature & Stamp
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
