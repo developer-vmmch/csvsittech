@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}ATC Settings | VMMCerp{% endblock %}
+{% block page_heading %}ATC Settings{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="text-sm text-slate-500 mb-2 flex items-center gap-2">
+        <span>Home</span> <i class="bi bi-chevron-right text-xs"></i> 
+        <span>Auto Trigger</span> <i class="bi bi-chevron-right text-xs"></i> 
+        <a href="{% url 'lab:auto_trigger_atc' %}" class="hover:underline">ATC Control</a> <i class="bi bi-chevron-right text-xs"></i>
+        <span class="text-slate-900 font-semibold">Settings</span>
+    </div>
+    
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-white text-2xl shadow-md flex-shrink-0">
+                <i class="bi bi-sliders"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight m-0">ATC SETTINGS & POLICIES</h1>
+                <p class="text-sm text-slate-500 m-0">Configure operational parameters, date boundaries, batch sizes, and stop policies</p>
+            </div>
+        </div>
+        <div>
+            <a href="{% url 'lab:auto_trigger_atc' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-lg shadow-sm transition">
+                <i class="bi bi-play-circle"></i> Open ATC Control
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if messages %}
+<div class="mb-6 space-y-2">
+    {% for message in messages %}
+    <div class="p-4 rounded-xl border text-sm flex items-center gap-2 {% if message.tags == 'success' %}bg-green-50 border-green-200 text-green-900{% else %}bg-red-50 border-red-200 text-red-900{% endif %}">
+        <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill text-green-600{% else %}bi-exclamation-circle-fill text-red-600{% endif %}"></i>
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="max-w-4xl bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+    <div class="bg-slate-50 border-b border-slate-200 px-6 py-4">
+        <h3 class="text-base font-bold text-slate-800 m-0">Operational Configuration</h3>
+        <p class="text-xs text-slate-500 m-0 mt-0.5">Parameters stored in database and enforced globally across all ATC executions.</p>
+    </div>
+
+    <form method="POST" class="p-6 space-y-6">
+        {% csrf_token %}
+
+        <!-- Operating Schedule Window -->
+        <div>
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Operating Window (Default Daily Target Window)</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Default Start Time</label>
+                    <input type="time" name="default_start_time" value="{{ settings.default_start_time|time:'H:i'|default:'08:00' }}" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 shadow-sm" required>
+                    <p class="text-[11px] text-slate-400 mt-1">Earliest operational time for generating patient records.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Default End Time (Day-End)</label>
+                    <input type="time" name="default_end_time" value="{{ settings.default_end_time|time:'H:i'|default:'14:00' }}" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 shadow-sm" required>
+                    <p class="text-[11px] text-slate-400 mt-1">Strict day-end limit. No new OP records will be generated at or after this time.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generation Boundaries -->
+        <div class="pt-4 border-t border-slate-200">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Generation Limits & Batching</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Maximum Future Generation Period (Days)</label>
+                    <input type="number" name="max_future_days" value="{{ settings.max_future_days|default:30 }}" min="1" max="31" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 shadow-sm" required>
+                    <p class="text-[11px] text-slate-400 mt-1">Backend strictly caps Future Patient mode to this ceiling (maximum 31 days).</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Default Batch Size</label>
+                    <input type="number" name="default_batch_size" value="{{ settings.default_batch_size|default:100 }}" min="1" max="1000" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 shadow-sm" required>
+                    <p class="text-[11px] text-slate-400 mt-1">Splits large target counts into safe transactional batches.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historical Demographics Dataset Defaults -->
+        <div class="pt-4 border-t border-slate-200">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Historical Demographics Dataset Defaults</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Default Source From Year</label>
+                    <input type="number" name="source_from_year" value="{{ settings.source_from_year|default:2022 }}" min="2000" max="2030" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 shadow-sm" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Default Source To Year</label>
+                    <input type="number" name="source_to_year" value="{{ settings.source_to_year|default:2024 }}" min="2000" max="2030" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 shadow-sm" required>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gender Ratio Rules -->
+        <div class="pt-4 border-t border-slate-200">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Default Gender Distribution</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Male Ratio (%)</label>
+                    <input type="number" name="gender_ratio_male_pct" value="{{ settings.gender_ratio_male_pct|default:60 }}" min="0" max="100" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 shadow-sm" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Female Ratio (%)</label>
+                    <input type="number" name="gender_ratio_female_pct" value="{{ settings.gender_ratio_female_pct|default:40 }}" min="0" max="100" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 shadow-sm" required>
+                </div>
+            </div>
+        </div>
+
+        <!-- Permissions & Policies -->
+        <div class="pt-4 border-t border-slate-200 space-y-4">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Policy Enforcement</h4>
+
+            <div class="flex items-start gap-3">
+                <input type="checkbox" name="op_date_restriction" id="opDateRestr" {% if settings.op_date_restriction %}checked{% endif %} class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                <div>
+                    <label for="opDateRestr" class="text-sm font-bold text-slate-800">Strict OP Date Restriction (Today Only)</label>
+                    <p class="text-xs text-slate-500">When enabled, OP patient registrations can ONLY be generated for the current server calendar date. Backdating is strictly blocked.</p>
+                </div>
+            </div>
+
+            <div class="flex items-start gap-3">
+                <input type="checkbox" name="allow_review_backdated" id="allowRevBack" {% if settings.allow_review_backdated %}checked{% endif %} class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                <div>
+                    <label for="allowRevBack" class="text-sm font-bold text-slate-800">Allow Backdated Review Creation</label>
+                    <p class="text-xs text-slate-500">Permits creating Review visits for past dates on eligible existing D patients.</p>
+                </div>
+            </div>
+
+            <div class="flex items-start gap-3">
+                <input type="checkbox" name="allow_review_future" id="allowRevFuture" {% if settings.allow_review_future %}checked{% endif %} class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                <div>
+                    <label for="allowRevFuture" class="text-sm font-bold text-slate-800">Allow Future Review Creation</label>
+                    <p class="text-xs text-slate-500">Permits scheduling Review visits for future dates on eligible existing D patients.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="pt-6 border-t border-slate-200 flex justify-end gap-3">
+            <a href="{% url 'lab:auto_trigger_atc' %}" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm rounded-xl transition">
+                Cancel
+            </a>
+            <button type="submit" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-sm transition">
+                Save Settings
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

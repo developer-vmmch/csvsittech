@@ -64,6 +64,34 @@ def api_patient_download_template(request):
     return response
 
 
+def calculate_age(date_of_birth, registration_date):
+    """
+    Calculate age safely:
+    age = registration_year - dob_year
+    subtract 1 when the birthday has not occurred yet.
+    """
+    if isinstance(date_of_birth, str):
+        try:
+            dob = datetime.datetime.strptime(date_of_birth.strip(), '%Y-%m-%d').date()
+        except Exception:
+            dob = pd.to_datetime(date_of_birth).date()
+    else:
+        dob = date_of_birth
+        
+    if isinstance(registration_date, str):
+        try:
+            reg = datetime.datetime.strptime(registration_date.strip(), '%Y-%m-%d').date()
+        except Exception:
+            reg = pd.to_datetime(registration_date).date()
+    else:
+        reg = registration_date
+
+    age = reg.year - dob.year
+    if (reg.month, reg.day) < (dob.month, dob.day):
+        age -= 1
+    return age
+
+
 def validate_patient_row(row, existing_patient_ids, existing_op_numbers, file_patient_ids, file_op_numbers):
     def safe_str(val):
         if pd.isna(val) or str(val).strip().lower() == 'nan': return ''
@@ -73,6 +101,12 @@ def validate_patient_row(row, existing_patient_ids, existing_op_numbers, file_pa
         
     pat_id = safe_str(row.get('patient_id', ''))
     op_num = safe_str(row.get('op_number', ''))
+    pat_type = safe_str(row.get('patient_type', '')).upper()
+    if not pat_type:
+        pat_type = 'O' if op_num else 'D'
+    if pat_type not in ['O', 'D']:
+        pat_type = 'O'
+        
     reg_date_str = safe_str(row.get('registration_date', ''))
     dob_str = safe_str(row.get('date_of_birth', ''))
     fname = safe_str(row.get('first_name', ''))
@@ -83,7 +117,12 @@ def validate_patient_row(row, existing_patient_ids, existing_op_numbers, file_pa
     gender = safe_str(row.get('gender', '')).capitalize()
     if gender not in ['Male', 'Female', 'Other']: gender = 'Male'
     
-    pat_title = safe_str(row.get('patient_title', '')).capitalize()
+    pat_title = safe_str(row.get('patient_title', ''))
+    title_map = {
+        'mr': 'Mr', 'mrs': 'Mrs', 'ms': 'Ms', 'miss': 'Miss',
+        'master': 'Master', 'dr': 'Dr', 'baby': 'Baby', '-': '-'
+    }
+    pat_title = title_map.get(pat_title.lower(), pat_title)
     
     age_raw = safe_str(row.get('age', ''))
     age_display = safe_str(row.get('age_display', ''))
@@ -94,7 +133,8 @@ def validate_patient_row(row, existing_patient_ids, existing_op_numbers, file_pa
     state = safe_str(row.get('state', ''))
     country = safe_str(row.get('country', ''))
     
-    g_title = safe_str(row.get('guardian_title', '')).capitalize()
+    g_title = safe_str(row.get('guardian_title', ''))
+    g_title = title_map.get(g_title.lower(), g_title) if g_title else '-'
     g_name = safe_str(row.get('guardian_name', ''))
     g_relation = safe_str(row.get('guardian_relation', ''))
     g_phone = safe_str(row.get('guardian_phone', ''))
@@ -102,45 +142,88 @@ def validate_patient_row(row, existing_patient_ids, existing_op_numbers, file_pa
     status = 'Valid'
     errors = []
     
-    if not pat_id: errors.append('Patient ID is required')
-    elif not pat_id.isdigit(): errors.append('Patient ID must be numeric')
+    if not pat_id:
+        errors.append('Patient ID is required')
+    elif not pat_id.isdigit():
+        errors.append('Patient ID must be numeric')
     
-    if not op_num: errors.append('OP Number is required')
-    elif not op_num.isdigit(): errors.append('OP Number must be numeric')
+    if pat_type == 'O':
+        if not op_num:
+            errors.append('OP Number is required for OP patient')
+        elif not op_num.isdigit():
+            errors.append('OP Number must be numeric')
+    else:
+        # D patient
+        if op_num and not op_num.isdigit():
+            errors.append('OP Number must be numeric')
     
-    if not fname: errors.append('First name is required')
-    if pat_title not in ['Mr', 'Mrs', 'Miss', 'Master', 'Dr', 'Baby']:
-        pat_title = '-'
-    
+    if not fname:
+        errors.append('First name is required')
+        
     reg_date = None
     dob = None
-    if not reg_date_str: errors.append('Registration Date is required')
+    if not reg_date_str:
+        errors.append('Registration Date is required')
     else:
-        try: reg_date = pd.to_datetime(reg_date_str).date()
-        except: errors.append(f'Invalid Registration Date format: {reg_date_str}')
+        try:
+            reg_date = datetime.datetime.strptime(reg_date_str, '%Y-%m-%d').date()
+        except Exception:
+            try:
+                reg_date = pd.to_datetime(reg_date_str).date()
+            except Exception:
+                errors.append(f'Invalid Registration Date format: {reg_date_str}')
         
-    if not dob_str: errors.append('Date of Birth is required')
+    if not dob_str:
+        errors.append('Date of Birth is required')
     else:
-        try: dob = pd.to_datetime(dob_str).date()
-        except: errors.append(f'Invalid DOB format: {dob_str}')
+        try:
+            dob = datetime.datetime.strptime(dob_str, '%Y-%m-%d').date()
+        except Exception:
+            try:
+                dob = pd.to_datetime(dob_str).date()
+            except Exception:
+                errors.append(f'Invalid DOB format: {dob_str}')
         
     calculated_age = 0
     if reg_date and dob:
-        calculated_age = relativedelta(reg_date, dob).years
-    
-    if calculated_age == 0:
-        if age_display and age_display != 'Baby':
-            errors.append('age_display must be Baby for age 0')
-    else:
-        if age_display and age_display != str(calculated_age):
-            errors.append('age_display does not match calculated age')
+        if dob > reg_date:
+            errors.append('Date of Birth cannot be after Registration Date')
+        else:
+            calculated_age = calculate_age(dob, reg_date)
             
-    if g_title and g_title not in ['Mr', 'Mrs', 'Miss', '-']:
-        g_title = '-'
-    elif not g_title:
-        g_title = '-'
+            # Compare with uploaded age if supplied
+            if age_raw != '':
+                try:
+                    uploaded_age = int(float(age_raw))
+                    if uploaded_age != calculated_age:
+                        errors.append('Age does not match Date of Birth.')
+                except ValueError:
+                    errors.append('Invalid age value')
+            
+            # Child validation (< 18)
+            if calculated_age < 18:
+                if gender == 'Male' and pat_title not in ['Master', 'Baby', '-']:
+                    errors.append(f'Child male title must be Master or Baby, got {pat_title}')
+                elif gender == 'Female' and pat_title not in ['Miss', 'Baby', '-']:
+                    errors.append(f'Child female title must be Miss or Baby, got {pat_title}')
+                if not g_name:
+                    errors.append('Guardian name is required for child')
+                if g_relation and g_relation not in ['F/O', 'M/O', 'G/O', 'S/O', 'D/O', 'C/O', 'H/O', 'W/O', '-']:
+                    errors.append(f'Invalid guardian relation: {g_relation}')
+            else:
+                # Adult validation (>= 18)
+                if gender == 'Male' and pat_title not in ['Mr', 'Dr', '-']:
+                    errors.append(f'Adult male title should be Mr or Dr, got {pat_title}')
+                elif gender == 'Female' and pat_title not in ['Mrs', 'Ms', 'Miss', 'Dr', '-']:
+                    errors.append(f'Adult female title should be Mrs, Ms, or Miss, got {pat_title}')
+                if g_relation and g_relation not in ['H/O', 'W/O', 'F/O', 'M/O', 'S/O', 'D/O', 'C/O', 'G/O', '-']:
+                    errors.append(f'Invalid guardian relation: {g_relation}')
+
+    if not mobile:
+        errors.append('Mobile Number is required')
+    elif not mobile.isdigit() or len(mobile) != 10:
+        errors.append('Mobile number must be exactly 10 digits.')
         
-    if not mobile: errors.append('Mobile Number is required')
     if not address: errors.append('Address Line 1 is required')
     if not city: errors.append('City is required')
     if not state: errors.append('State is required')
@@ -149,14 +232,14 @@ def validate_patient_row(row, existing_patient_ids, existing_op_numbers, file_pa
     if pat_id in existing_patient_ids:
         status = 'Duplicate'
         errors.append(f'Patient ID {pat_id} already exists.')
-    if op_num in existing_op_numbers:
+    if op_num and op_num in existing_op_numbers:
         status = 'Duplicate'
         errors.append(f'OP Number {op_num} already exists.')
         
     if pat_id in file_patient_ids:
         status = 'Error'
         errors.append(f'Duplicate Patient ID in file: {pat_id}')
-    if op_num in file_op_numbers:
+    if op_num and op_num in file_op_numbers:
         status = 'Error'
         errors.append(f'Duplicate OP Number in file: {op_num}')
         
@@ -166,10 +249,15 @@ def validate_patient_row(row, existing_patient_ids, existing_op_numbers, file_pa
     if pat_id: file_patient_ids.add(pat_id)
     if op_num: file_op_numbers.add(op_num)
     
+    # Safe derived age strings for display and database
+    final_age_str = str(calculated_age) if (reg_date and dob and dob <= reg_date) else (age_raw or '0')
+    final_age_display = age_display if age_display else final_age_str
+    
     parsed_data = {
         'patient_id': pat_id,
         'op_number': op_num,
         'patient_title': pat_title,
+        'patient_type': pat_type,
         'full_name': fullname,
         'first_name': fname,
         'last_name': lname,
@@ -180,8 +268,8 @@ def validate_patient_row(row, existing_patient_ids, existing_op_numbers, file_pa
         'state': state,
         'country': country,
         'dob': dob_str,
-        'age': age_raw,
-        'age_display': age_display,
+        'age': final_age_str,
+        'age_display': final_age_display,
         'email': safe_str(row.get('email', '')),
         'alternate_phone': safe_str(row.get('alternate_phone', '')),
         'address_line1': address,
@@ -218,10 +306,10 @@ def api_patient_preview(request):
         else:
             return JsonResponse({'status': 'error', 'message': 'Unsupported file format.'})
             
-        required_columns = ['patient_id', 'op_number', 'first_name', 'gender', 'date_of_birth', 'mobile_number', 'address_line1', 'city', 'state', 'country', 'registration_date']
+        required_columns = ['patient_id', 'first_name', 'gender', 'date_of_birth', 'mobile_number', 'address_line1', 'city', 'state', 'country', 'registration_date']
         
-        # Normalize headers
-        df.columns = [str(c).strip().lower().replace(' ', '_') for c in df.columns]
+        # Normalize headers (and strip BOM)
+        df.columns = [str(c).strip().lower().replace(' ', '_').lstrip('\ufeff') for c in df.columns]
         
         missing_columns = [req for req in required_columns if req not in df.columns]
         if missing_columns:
@@ -274,7 +362,12 @@ def api_patient_preview(request):
         
     except Exception as e:
         traceback.print_exc()
-        return JsonResponse({'status': 'error', 'message': f'Error parsing file: {str(e)}'})
+        msg = str(e)
+        if 'settings.STORAGES' in msg or 'storage' in msg.lower():
+            user_msg = "File upload storage is not configured. Please contact the administrator."
+        else:
+            user_msg = f"Error parsing file: {msg}"
+        return JsonResponse({'status': 'error', 'message': user_msg})
 
 
 import threading
@@ -282,13 +375,24 @@ import threading
 def _process_import_job(history_id, user_id):
     history = PatientImportHistory.objects.get(id=history_id)
     try:
-        file_path = history.upload_file.path
-        if file_path.endswith('.csv'):
-            df = pd.read_csv(file_path, dtype=str)
+        try:
+            file_path = history.upload_file.path
+        except (NotImplementedError, AttributeError, ValueError):
+            file_path = None
+
+        if file_path:
+            if file_path.endswith('.csv') or (history.file_name and history.file_name.endswith('.csv')):
+                df = pd.read_csv(file_path, dtype=str)
+            else:
+                df = pd.read_excel(file_path, dtype=str)
         else:
-            df = pd.read_excel(file_path, dtype=str)
+            with history.upload_file.open('rb') as f:
+                if history.file_name and history.file_name.endswith('.csv'):
+                    df = pd.read_csv(f, dtype=str)
+                else:
+                    df = pd.read_excel(f, dtype=str)
             
-        df.columns = [str(c).strip().lower().replace(' ', '_') for c in df.columns]
+        df.columns = [str(c).strip().lower().replace(' ', '_').lstrip('\ufeff') for c in df.columns]
         
         imported = 0
         failed = 0
@@ -338,7 +442,7 @@ def _process_import_job(history_id, user_id):
                 
                 patient = Patient(
                     patient_id=parsed['patient_id'],
-                    op_number=parsed['op_number'],
+                    op_number=parsed['op_number'] if parsed['op_number'] else None,
                     registration_date=reg_date,
                     title=parsed.get('patient_title', '-'),
                     name=parsed['full_name'],
@@ -362,8 +466,8 @@ def _process_import_job(history_id, user_id):
                     guardian_phone=parsed.get('guardian_phone', ''),
                     emergency_contact_phone=parsed.get('emergency_contact_phone', ''),
                     created_by_id=user_id,
-                    patient_type='O',
-                    created_source='O'
+                    patient_type=parsed.get('patient_type', 'O'),
+                    created_source=parsed.get('patient_type', 'O')
                 )
                 batch_patients.append(patient)
             

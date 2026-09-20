@@ -1238,22 +1238,9 @@ class LegacyMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, Tem
             return response
         
         if request.GET.get('template') == 'true':
-            from openpyxl import Workbook
+            from apps.lab.universal_importer import generate_blank_template
             from django.http import HttpResponse
-            import io
-            wb = Workbook(write_only=True)
-            ws = wb.create_sheet('Universal Master')
-            headers = [
-                'Department', 'Diagnosis', 'Diagnosis Code', 'Investigation', 'Investigation Code',
-                'Investigation Department', 'Parameter', 'Parameter Code', 'Data Type', 'Unit',
-                'Sample Type', 'Method', 'Age Group', 'Age From', 'Age To', 'Gender',
-                'Min Value', 'Max Value', 'Normal Value', 'Remarks', 'Status'
-            ]
-            ws.append(headers)
-            ws.append(['Biochemistry', 'Diabetes', 'E11.9', 'FBS', '00025527', 'Biochemistry', 'FBS', '00025527', 'NUMERIC', 'mg/dl', 'Serum', 'GOD/POD', 'Adult', '18', '150', 'All', '70', '110', '', '', 'Active'])
-            output = io.BytesIO()
-            wb.save(output)
-            output.seek(0)
+            output = generate_blank_template()
             response = HttpResponse(output, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
             response['Content-Disposition'] = 'attachment; filename="universal_master_template.xlsx"'
             return response
@@ -1261,7 +1248,7 @@ class LegacyMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, Tem
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        from apps.lab.universal_importer import validate_import, commit_import
+        from apps.lab.universal_importer import validate_import, commit_import, UniversalImportError
         from django.conf import settings
         from django.core.files.storage import FileSystemStorage
         import logging
@@ -1339,17 +1326,37 @@ class LegacyMappingView(LoginRequiredMixin, GranularPermissionRequiredMixin, Tem
                     logger.warning(f"Failed to delete temp file {safe_filename}: {cleanup_err}")
                     
                 return JsonResponse({'status': 'success', 'counts': counts})
+            except UniversalImportError as uie:
+                logger.error(f"Universal import error: {uie.to_dict()}")
+                try:
+                    if fs.exists(safe_filename):
+                        fs.delete(safe_filename)
+                except Exception:
+                    pass
+                return JsonResponse({
+                    'status': 'error',
+                    'message': uie.message,
+                    'error_details': uie.to_dict()
+                })
             except Exception as e:
                 logger.exception("Error during universal import commit")
                 # Attempt to cleanup on failure
                 try:
                     if fs.exists(safe_filename):
                         fs.delete(safe_filename)
-                except:
+                except Exception:
                     pass
                 return JsonResponse({
                     'status': 'error', 
-                    'message': str(e)
+                    'message': f"Import failed — no partial changes were committed. {str(e)}",
+                    'error_details': {
+                        'entity': 'Master Entity',
+                        'entity_name': '',
+                        'row_number': None,
+                        'reason': str(e),
+                        'action': 'Please verify workbook data and re-try.',
+                        'message': str(e)
+                    }
                 })
 
         return JsonResponse({'status': 'error', 'message': 'Invalid action'})

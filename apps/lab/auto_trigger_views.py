@@ -1614,16 +1614,44 @@ def api_get_monthly_history(request):
         'summary': summary
     })
 
+def add_one_calendar_month(d):
+    import calendar
+    from datetime import date
+    year = d.year + (d.month // 12)
+    month = (d.month % 12) + 1
+    max_day = calendar.monthrange(year, month)[1]
+    day = min(d.day, max_day)
+    return date(year, month, day)
+
 def api_save_monthly_trigger_v2(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Invalid method'})
     try:
         import json
+        from datetime import datetime
         data = json.loads(request.body)
         
+        start_date_str = data.get('automation_start_date')
+        end_date_str = data.get('automation_end_date')
+        if not start_date_str or not end_date_str:
+            return JsonResponse({'success': False, 'message': 'Automation period must be between 1 day and 1 month.'}, status=400)
+            
+        try:
+            start_d = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_d = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({'success': False, 'message': 'Invalid date format.'}, status=400)
+
+        if end_d < start_d:
+            return JsonResponse({'success': False, 'message': 'Automation period must be between 1 day and 1 month.'}, status=400)
+
+        max_allowed_end = add_one_calendar_month(start_d)
+        if end_d > max_allowed_end:
+            return JsonResponse({'success': False, 'message': 'Automation period must be between 1 day and 1 month.'}, status=400)
+        
         plan = MonthlyTriggerPlan.objects.create(
-            automation_start_date=data.get('automation_start_date'),
-            automation_end_date=data.get('automation_end_date'),
+            automation_start_date=start_d,
+            automation_end_date=end_d,
             source_from_date=data.get('source_from_date'),
             source_to_date=data.get('source_to_date'),
             review_source_month_year=data.get('review_source_month_year'),

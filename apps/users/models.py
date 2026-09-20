@@ -67,7 +67,41 @@ class User(AbstractUser):
             return db_perms.get(perm_code, False)
             
         # Default fallback for specific legacy roles if not configured in DB
+        if self.role == self.Roles.MANAGER and perm_code.startswith('auto_trigger.'):
+            return True
+
+        # Check aliases e.g. ATC_EDIT -> auto_trigger.atc.update
+        aliases = {
+            'ATC_VIEW': 'auto_trigger.atc.view',
+            'ATC_CREATE': 'auto_trigger.atc.create',
+            'ATC_EDIT': 'auto_trigger.atc.update',
+            'ATC_TRIGGER': 'auto_trigger.atc.trigger',
+            'ATC_EMERGENCY_STOP': 'auto_trigger.atc.stop',
+        }
+        if perm_code in aliases:
+            return self.has_perm_code(aliases[perm_code])
+
         return False
+
+    @property
+    def can_atc_view(self):
+        return self.has_perm_code('auto_trigger.atc.view')
+
+    @property
+    def can_atc_create(self):
+        return self.has_perm_code('auto_trigger.atc.create')
+
+    @property
+    def can_atc_edit(self):
+        return self.has_perm_code('auto_trigger.atc.update')
+
+    @property
+    def can_atc_trigger(self):
+        return self.has_perm_code('auto_trigger.atc.trigger')
+
+    @property
+    def can_atc_emergency_stop(self):
+        return self.has_perm_code('auto_trigger.atc.stop')
 
     @property
     def is_manager_role(self):
@@ -112,7 +146,7 @@ class User(AbstractUser):
             'master', 'master_departments', 'master_investigations', 'master_parameters',
             'lab_master', 'lab_master_dashboard', 'lab_sub_departments',
             'investigation_parameter_mapping', 'workload_mapping_list', 'mapping_validation',
-            'import_lab_workload_csv', 'export_lab_workload_csv',
+            'import_lab_workload_csv', 'export_lab_workload_csv', 'legacy_mapping', 'universal_master_import_export',
             'consultant', 'doctor_window', 'service_request_add',
             'lab_orders', 'work_orders', 'order_entry', 'result_entry_list',
             'lab_reports', 'report_dashboard', 'report_daily', 'report_monthly',
@@ -121,6 +155,7 @@ class User(AbstractUser):
             'auto_trigger', 'auto_trigger_configuration', 'auto_trigger_history',
             'auto_trigger_monthly_create', 'auto_trigger_monthly', 'auto_trigger_monthly_census',
             'auto_trigger_automate_test', 'auto_trigger_result_view',
+            'auto_trigger_atc', 'auto_trigger_atc_status', 'auto_trigger_atc_settings',
             'ot', 'ot_dashboard', 'ot_booking', 'ot_schedule', 'ot_live', 'ot_history', 'ot_master',
             'system_section', 'administration', 'users_roles', 'inventory', 'settings',
         ]
@@ -149,6 +184,7 @@ class User(AbstractUser):
                 'auto_trigger': True, 'auto_trigger_configuration': True, 'auto_trigger_history': True,
                 'auto_trigger_monthly_create': True, 'auto_trigger_monthly': True, 'auto_trigger_monthly_census': True,
                 'auto_trigger_automate_test': True, 'auto_trigger_result_view': True,
+                'auto_trigger_atc': True, 'auto_trigger_atc_status': True, 'auto_trigger_atc_settings': True,
                 'ot': True, 'ot_dashboard': True, 'ot_booking': True, 'ot_schedule': True, 'ot_live': True, 'ot_history': True, 'ot_master': True,
                 'system_section': True, 'administration': False, 'users_roles': False, 'inventory': True, 'settings': False,
             },

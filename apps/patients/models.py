@@ -106,6 +106,7 @@ class Patient(TimeStampedModel):
         NONE = '-', '-'
         MR = 'Mr', 'Mr'
         MRS = 'Mrs', 'Mrs'
+        MS = 'Ms', 'Ms'
         MISS = 'Miss', 'Miss'
         MASTER = 'Master', 'Master'
         DR = 'Dr', 'Dr'
@@ -136,6 +137,7 @@ class Patient(TimeStampedModel):
         HO = 'H/O', 'H/O (Husband of)'
         FO = 'F/O', 'F/O (Father of)'
         MO = 'M/O', 'M/O (Mother of)'
+        GO = 'G/O', 'G/O (Guardian of)'
 
     class CentreChoices(models.TextChoices):
         VMMCH = 'VMMCH', 'VMMCH'

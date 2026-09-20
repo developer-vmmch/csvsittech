@@ -784,3 +784,163 @@ class UnmappedLabInvestigation(TimeStampedModel):
 
     def __str__(self):
         return f"Unmapped: {self.investigation_name} ({self.hospital_department_name})"
+
+
+# ===========================================================================
+# ATC (AUTO TRIGGER CONTROL) MODULE MODELS
+# ===========================================================================
+
+class ATCSetting(TimeStampedModel):
+    name = models.CharField(max_length=100, default="Default ATC Settings")
+    default_start_time = models.TimeField(default='08:00:00', verbose_name="Default Start Time")
+    default_end_time = models.TimeField(default='14:00:00', verbose_name="Default End Time")
+    max_future_days = models.PositiveIntegerField(default=30, verbose_name="Max Future Generation Period (Days)")
+    op_date_restriction = models.BooleanField(default=True, verbose_name="Enforce OP Today Only Restriction")
+    allow_review_backdated = models.BooleanField(default=True, verbose_name="Allow Backdated Review Dates")
+    allow_review_future = models.BooleanField(default=True, verbose_name="Allow Future Review Dates")
+    default_batch_size = models.PositiveIntegerField(default=100, verbose_name="Default Batch Size")
+    allowed_modes = models.JSONField(default=list, blank=True, verbose_name="Allowed Automation Modes")
+    source_from_year = models.PositiveIntegerField(default=2022, verbose_name="Default Source From Year")
+    source_to_year = models.PositiveIntegerField(default=2024, verbose_name="Default Source To Year")
+    gender_ratio_male_pct = models.PositiveIntegerField(default=60, verbose_name="Default Male %")
+    gender_ratio_female_pct = models.PositiveIntegerField(default=40, verbose_name="Default Female %")
+    default_op_daily_pct = models.PositiveIntegerField(default=75, verbose_name="Default OP Daily %")
+    default_review_pct = models.PositiveIntegerField(default=25, verbose_name="Default Review %")
+    default_review_source_year = models.PositiveIntegerField(default=2024, verbose_name="Default Review Source Year")
+    emergency_stop_policy = models.CharField(max_length=50, default='IMMEDIATE_PRESERVE', verbose_name="Emergency Stop Policy")
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "ATC Setting"
+        verbose_name_plural = "ATC Settings"
+
+    def __str__(self):
+        return self.name
+
+    @classmethod
+    def get_settings(cls):
+        """Returns the active ATC settings instance, or creates a default one."""
+        obj = cls.objects.filter(is_active=True).first()
+        if not obj:
+            obj = cls.objects.create(
+                name="Default ATC Settings",
+                allowed_modes=['OP', 'REVIEW', 'COMBINED']
+            )
+        elif not obj.allowed_modes:
+            obj.allowed_modes = ['OP', 'REVIEW', 'COMBINED']
+            obj.save(update_fields=['allowed_modes'])
+        return obj
+
+
+class ATCJob(TimeStampedModel):
+    class ModeChoices(models.TextChoices):
+        OP = 'OP', 'OP'
+        REVIEW = 'REVIEW', 'Review'
+        COMBINED = 'COMBINED', 'Combined OP + Review'
+        FUTURE_PATIENT = 'FUTURE_PATIENT', 'Future Patient'
+
+    class StatusChoices(models.TextChoices):
+        IDLE = 'IDLE', 'IDLE'
+        DRAFT = 'DRAFT', 'DRAFT'
+        STARTING = 'STARTING', 'STARTING'
+        RUNNING = 'RUNNING', 'RUNNING'
+        STOP_REQUESTED = 'STOP_REQUESTED', 'STOP_REQUESTED'
+        STOPPED = 'STOPPED', 'STOPPED'
+        EMERGENCY_STOPPED = 'EMERGENCY_STOPPED', 'EMERGENCY STOPPED'
+        COMPLETED = 'COMPLETED', 'COMPLETED'
+        FAILED = 'FAILED', 'FAILED'
+
+    job_id = models.CharField(max_length=50, unique=True, db_index=True)
+    mode = models.CharField(max_length=20, choices=ModeChoices.choices, default=ModeChoices.COMBINED)
+    department = models.ForeignKey('patients.Department', on_delete=models.SET_NULL, null=True, blank=True)
+    source_from_year = models.PositiveIntegerField(default=2022)
+    source_to_year = models.PositiveIntegerField(default=2024)
+    review_source_year = models.PositiveIntegerField(default=2024, null=True, blank=True)
+
+    source_data_period = models.CharField(max_length=50, default='2024 – 2025')
+    operation_signal = models.CharField(max_length=20, default='ALL')  # REVIEW, OP, ALL
+
+    target_total = models.PositiveIntegerField(default=0)
+    target_male = models.PositiveIntegerField(default=0)
+    target_female = models.PositiveIntegerField(default=0)
+    child_target = models.PositiveIntegerField(default=0)
+
+    # Percentage allocation
+    op_daily_pct = models.PositiveIntegerField(default=75)
+    review_pct = models.PositiveIntegerField(default=25)
+    target_op = models.PositiveIntegerField(default=0)
+    target_review = models.PositiveIntegerField(default=0)
+
+    # Multi-Department Configuration & Daily Targets
+    plan_departments = models.JSONField(default=list, blank=True)
+    daily_targets = models.JSONField(default=dict, blank=True)
+    is_locked = models.BooleanField(default=False)
+
+    created_op = models.PositiveIntegerField(default=0)
+    created_review = models.PositiveIntegerField(default=0)
+
+    schedule_start_time = models.TimeField(default='08:00:00')
+    schedule_end_time = models.TimeField(default='14:00:00')
+    batch_size = models.PositiveIntegerField(default=100)
+
+    # For REVIEW or Date range
+    from_date = models.DateField(null=True, blank=True)
+    to_date = models.DateField(null=True, blank=True)
+
+    status = models.CharField(max_length=30, choices=StatusChoices.choices, default=StatusChoices.IDLE)
+    current_batch = models.PositiveIntegerField(default=0)
+    total_batches = models.PositiveIntegerField(default=0)
+    created_count = models.PositiveIntegerField(default=0)
+    created_male = models.PositiveIntegerField(default=0)
+    created_female = models.PositiveIntegerField(default=0)
+    failed_count = models.PositiveIntegerField(default=0)
+
+    current_patient_info = models.CharField(max_length=255, blank=True, default='')
+    error_summary = models.TextField(blank=True, default='')
+    stop_reason = models.CharField(max_length=255, blank=True, default='')
+    stop_requested = models.BooleanField(default=False)
+
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.job_id} ({self.mode}) - {self.status}"
+
+    @property
+    def remaining_count(self):
+        return max(0, self.target_total - self.created_count)
+
+    @property
+    def progress_percentage(self):
+        if self.target_total == 0:
+            return 100 if self.status == self.StatusChoices.COMPLETED else 0
+        return min(100, int((self.created_count / self.target_total) * 100))
+
+
+class ATCJobLog(TimeStampedModel):
+    STATUS_CHOICES = (
+        ('Success', 'Success'),
+        ('Failed', 'Failed'),
+        ('Skipped', 'Skipped'),
+    )
+    job = models.ForeignKey(ATCJob, on_delete=models.CASCADE, related_name='logs')
+    patient = models.ForeignKey('patients.Patient', on_delete=models.SET_NULL, null=True, blank=True, related_name='atc_logs')
+    visit = models.ForeignKey('patients.PatientVisit', on_delete=models.SET_NULL, null=True, blank=True, related_name='atc_logs')
+    source_patient = models.ForeignKey('patients.Patient', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    patient_name = models.CharField(max_length=150, blank=True, default='')
+    gender = models.CharField(max_length=10, blank=True, default='')
+    department = models.CharField(max_length=100, blank=True, default='')
+    batch_number = models.PositiveIntegerField(default=1)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Success')
+    error_message = models.TextField(blank=True, default='')
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"ATC Log [{self.job.job_id}] - {self.patient_name} ({self.status})"
+

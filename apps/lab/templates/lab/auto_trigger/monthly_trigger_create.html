@@ -341,9 +341,14 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label required">Review Source Month</label>
-                <input type="month" id="review_source_month" class="form-control" value="2025-10" required>
-                <small class="text-muted" style="font-size: 0.75rem;">Only Patient Type "D" from this month will be used for review.</small>
+                <label class="form-label required">Review Source Year</label>
+                <select id="review_source_year" class="form-control" required>
+                    <option value="2022">2022</option>
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025" selected>2025</option>
+                </select>
+                <small class="text-muted" style="font-size: 0.75rem;">Only Patient Type "D" from this year will be used for review.</small>
             </div>
 
             <!-- Automation Dates -->
@@ -525,6 +530,16 @@
         return cookieValue;
     }
 
+    function addOneCalendarMonth(d) {
+        const res = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const curDay = res.getDate();
+        res.setMonth(res.getMonth() + 1);
+        if (res.getDate() !== curDay) {
+            res.setDate(0); // clamp to last day of target month
+        }
+        return res;
+    }
+
     function generateRows() {
         const startStr = document.getElementById('auto_start').value;
         const endStr = document.getElementById('auto_end').value;
@@ -540,9 +555,18 @@
         const startDate = new Date(startStr);
         const endDate = new Date(endStr);
         
-        if (startDate > endDate) {
-            alert("Automation Start Date cannot be after Automation End Date.");
-            tbody.innerHTML = '<tr><td colspan="100%" class="text-center text-danger py-5">Invalid date range.</td></tr>';
+        if (endDate < startDate) {
+            alert("Automation period must be between 1 day and 1 month.");
+            tbody.innerHTML = '<tr><td colspan="100%" class="text-center text-danger py-5 font-bold"><i class="bi bi-exclamation-triangle me-2"></i>Automation period must be between 1 day and 1 month.</td></tr>';
+            allGeneratedDates = [];
+            updateSummary();
+            return;
+        }
+
+        const maxAllowed = addOneCalendarMonth(startDate);
+        if (endDate > maxAllowed) {
+            alert("Automation period must be between 1 day and 1 month.");
+            tbody.innerHTML = '<tr><td colspan="100%" class="text-center text-danger py-5 font-bold"><i class="bi bi-exclamation-triangle me-2"></i>Automation period must be between 1 day and 1 month.</td></tr>';
             allGeneratedDates = [];
             updateSummary();
             return;
@@ -815,12 +839,16 @@
             html += `<tr><td>${s.name}</td><td class="text-end">${s.min.toLocaleString()}</td><td class="text-end">${s.max.toLocaleString()}</td></tr>`;
         });
         
+        const revYear = document.getElementById('review_source_year') ? document.getElementById('review_source_year').value : '';
         html += `
                 </tbody>
                 <tfoot class="table-light fw-bold">
                     <tr><td>TOTALS (${allGeneratedDates.length} Days)</td><td class="text-end text-success">${totalMin.toLocaleString()}</td><td class="text-end text-primary">${totalMax.toLocaleString()}</td></tr>
                 </tfoot>
             </table>
+            <div class="alert alert-info py-2 mt-3" style="font-size: 0.85rem;">
+                <i class="bi bi-info-circle me-1"></i> <strong>Review Source Year:</strong> ${revYear} | <strong>Cumulative Range:</strong> ${totalMin.toLocaleString()} to ${totalMax.toLocaleString()} patients across ${allGeneratedDates.length} day(s).
+            </div>
         `;
         
         document.getElementById('previewBody').innerHTML = html;
@@ -840,10 +868,12 @@
         const [mins, secs] = intervalStr.split(':');
         const totalIntervalMins = parseInt(mins) + (parseInt(secs) / 60.0);
         
+        const revYearVal = document.getElementById('review_source_year') ? document.getElementById('review_source_year').value : (document.getElementById('review_source_month') ? document.getElementById('review_source_month').value : '');
+
         const payload = {
             source_from_date: source.fromDate,
             source_to_date: source.toDate,
-            review_source_month_year: document.getElementById('review_source_month').value,
+            review_source_month_year: revYearVal,
             automation_start_date: document.getElementById('auto_start').value,
             automation_end_date: document.getElementById('auto_end').value,
             trigger_start_time: document.getElementById('start_time').value,

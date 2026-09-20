@@ -117,6 +117,8 @@ else:
             conn_max_age=600,
         )
     }
+    if 'sqlite' in DATABASES['default'].get('ENGINE', ''):
+        DATABASES['default']['OPTIONS'] = {'timeout': 30}
 
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'
@@ -145,6 +147,9 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },

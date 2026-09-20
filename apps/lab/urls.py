@@ -85,6 +85,11 @@ from .lab_reports import (
     report_sub_department, report_investigation, report_hospital_department,
     report_benchmark, report_abnormal
 )
+from .atc_views import (
+    ATCControlView, ATCLiveStatusView, ATCSettingsView,
+    api_atc_trigger, api_atc_status, api_atc_stop, api_atc_active_job,
+    api_atc_preview, api_atc_save_config
+)
 
 app_name = 'lab'
 
@@ -331,4 +336,15 @@ urlpatterns = [
     path('api/auto-trigger/automate-test/save/', api_save_dummy_result, name='api_save_dummy_result'),
     path('api/auto-trigger/result-view/list/', api_get_dummy_results, name='api_get_dummy_results'),
     path('api/auto-trigger/result-view/import-export/', api_result_import_export, name='api_result_import_export'),
+    
+    # ATC (Auto Trigger Control) Module
+    path('auto-trigger/atc/', ATCControlView.as_view(), name='auto_trigger_atc'),
+    path('auto-trigger/atc/status/', ATCLiveStatusView.as_view(), name='auto_trigger_atc_status'),
+    path('auto-trigger/atc/settings/', ATCSettingsView.as_view(), name='auto_trigger_atc_settings'),
+    path('api/atc/trigger/', api_atc_trigger, name='api_atc_trigger'),
+    path('api/atc/preview/', api_atc_preview, name='api_atc_preview'),
+    path('api/atc/save-config/', api_atc_save_config, name='api_atc_save_config'),
+    path('api/atc/status/<int:job_id>/', api_atc_status, name='api_atc_status'),
+    path('api/atc/stop/<int:job_id>/', api_atc_stop, name='api_atc_stop'),
+    path('api/atc/active/', api_atc_active_job, name='api_atc_active_job'),
 ]

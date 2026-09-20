@@ -90,6 +90,9 @@ PERMISSION_MODULES = [
             {"code": "auto_trigger.configuration", "label": "Auto Trigger Configuration", "actions": ["view", "create", "update", "delete", "trigger", "export"]},
             {"code": "auto_trigger.time_settings", "label": "Auto Trigger Time Settings", "actions": ["view", "create", "update", "delete"]},
             {"code": "auto_trigger.history", "label": "Auto Trigger History", "actions": ["view", "retry", "export"]},
+            {"code": "auto_trigger.atc", "label": "ATC Control", "actions": ["view", "create", "update", "trigger", "stop", "export"]},
+            {"code": "auto_trigger.atc_status", "label": "ATC Live Status", "actions": ["view", "stop"]},
+            {"code": "auto_trigger.atc_settings", "label": "ATC Settings", "actions": ["view", "update"]},
         ]
     }
 ]

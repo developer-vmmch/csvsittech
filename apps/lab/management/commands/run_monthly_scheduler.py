@@ -181,19 +181,25 @@ class Command(BaseCommand):
             
     def generate_and_save_patient(self, plan, target, today, op_type):
         if op_type == 'REVIEW':
-            # Select an existing 'D' patient from the review source month
+            # Select an existing 'D' patient from the review source year
             if plan.review_source_month_year:
                 try:
-                    year_str, month_str = plan.review_source_month_year.split('-')
-                    year, month = int(year_str), int(month_str)
-                    
-                    source_patients = Patient.objects.filter(
-                        patient_type='D',
-                        department_obj=target.department,
-                        registration_date__year=year,
-                        registration_date__month=month
-                    )
-                except:
+                    val = str(plan.review_source_month_year).strip()
+                    if '-' in val:
+                        year_str, month_str = val.split('-')
+                        source_patients = Patient.objects.filter(
+                            patient_type='D',
+                            department_obj=target.department,
+                            registration_date__year=int(year_str),
+                            registration_date__month=int(month_str)
+                        )
+                    else:
+                        source_patients = Patient.objects.filter(
+                            patient_type='D',
+                            department_obj=target.department,
+                            registration_date__year=int(val)
+                        )
+                except Exception:
                     source_patients = Patient.objects.filter(patient_type='D', department_obj=target.department)
             else:
                 source_patients = Patient.objects.filter(patient_type='D', department_obj=target.department)

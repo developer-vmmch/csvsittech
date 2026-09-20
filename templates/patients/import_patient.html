@@ -109,26 +109,26 @@
             </div>
         </div>
 
-        <div class="table-responsive" style="max-height: 400px; overflow-y: auto; margin-bottom: 1.5rem;">
-            <table id="preview-table" class="table table-bordered" style="font-size: 0.85rem;">
-                <thead>
+        <div class="table-responsive" style="max-height: 480px; overflow-x: auto; overflow-y: auto; margin-bottom: 1.5rem; border: 1px solid #e2e8f0; border-radius: 6px;">
+            <table id="preview-table" class="table table-bordered" style="font-size: 0.85rem; margin-bottom: 0; min-width: 1400px;">
+                <thead style="background: #f1f5f9; position: sticky; top: 0; z-index: 1;">
                     <tr>
-                        <th>Row</th>
-                        <th>Pat ID</th>
-                        <th>OP No</th>
-                        <th>Title</th>
-                        <th>Name</th>
-                        <th>Gender</th>
-                        <th>DOB</th>
-                        <th>Age</th>
-                        <th>Age Display</th>
-                        <th>Mobile</th>
-                        <th>Guardian</th>
-                        <th>Relation</th>
-                        <th>City</th>
-                        <th>Reg Date</th>
-                        <th>Status</th>
-                        <th>Message</th>
+                        <th style="white-space: nowrap;">Row</th>
+                        <th style="white-space: nowrap;">Pat ID</th>
+                        <th style="white-space: nowrap;">OP No</th>
+                        <th style="white-space: nowrap;">Title</th>
+                        <th style="white-space: nowrap;">Name</th>
+                        <th style="white-space: nowrap;">Gender</th>
+                        <th style="white-space: nowrap;">DOB</th>
+                        <th style="white-space: nowrap; text-align: center;">Age</th>
+                        <th style="white-space: nowrap; text-align: center;">Age Display</th>
+                        <th style="white-space: nowrap;">Mobile</th>
+                        <th style="white-space: nowrap;">Guardian</th>
+                        <th style="white-space: nowrap;">Relation</th>
+                        <th style="white-space: nowrap;">City</th>
+                        <th style="white-space: nowrap;">Reg Date</th>
+                        <th style="white-space: nowrap;">Status</th>
+                        <th style="white-space: nowrap;">Message</th>
                     </tr>
                 </thead>
                 <tbody id="preview-tbody">
@@ -318,22 +318,22 @@
                 const statusClass = `status-${row.status}`;
                 
                 tr.innerHTML = `
-                    <td>${row.row_num}</td>
-                    <td>${row.patient_id || ''}</td>
-                    <td>${row.op_number || ''}</td>
-                    <td>${row.patient_title || ''}</td>
-                    <td>${row.full_name || ''}</td>
-                    <td>${row.gender || ''}</td>
-                    <td>${row.dob || ''}</td>
-                    <td>${row.age || ''}</td>
-                    <td>${row.age_display || ''}</td>
-                    <td>${row.mobile_number || ''}</td>
-                    <td>${row.guardian_name || ''}</td>
-                    <td>${row.guardian_relation || ''}</td>
-                    <td>${row.city || ''}</td>
-                    <td>${row.registration_date || ''}</td>
-                    <td><span class="status-badge ${statusClass}">${row.status}</span></td>
-                    <td><small style="color: #64748b;">${row.error || ''}</small></td>
+                    <td style="white-space: nowrap;">${row.row_num}</td>
+                    <td style="white-space: nowrap; font-family: monospace;">${row.patient_id || ''}</td>
+                    <td style="white-space: nowrap;">${row.op_number || ''}</td>
+                    <td style="white-space: nowrap;">${row.patient_title || ''}</td>
+                    <td style="white-space: nowrap;">${row.full_name || ''}</td>
+                    <td style="white-space: nowrap;">${row.gender || ''}</td>
+                    <td style="white-space: nowrap;">${row.dob || ''}</td>
+                    <td style="white-space: nowrap; text-align: center; font-weight: bold;">${row.age || ''}</td>
+                    <td style="white-space: nowrap; text-align: center;">${row.age_display || ''}</td>
+                    <td style="white-space: nowrap;">${row.mobile_number || ''}</td>
+                    <td style="white-space: nowrap;">${row.guardian_name || ''}</td>
+                    <td style="white-space: nowrap;">${row.guardian_relation || ''}</td>
+                    <td style="white-space: nowrap;">${row.city || ''}</td>
+                    <td style="white-space: nowrap;">${row.registration_date || ''}</td>
+                    <td style="white-space: nowrap;"><span class="status-badge ${statusClass}">${row.status}</span></td>
+                    <td style="white-space: nowrap;"><small style="color: #64748b;">${row.error || ''}</small></td>
                 `;
                 tbody.appendChild(tr);
                 rendered++;

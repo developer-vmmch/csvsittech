@@ -30,9 +30,73 @@
       }
     </script>
     <style>
-      /* Tailwind-compatible overrides for specific custom behaviors */
-      .nav-list::-webkit-scrollbar { display: none; }
-      .nav-list { -ms-overflow-style: none; scrollbar-width: none; }
+      /* Application Shell & Sidebar Layout */
+      html, body {
+          height: 100% !important;
+          height: 100dvh !important;
+          max-height: 100dvh !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+      }
+      .app-shell {
+          display: flex !important;
+          width: 100% !important;
+          height: 100% !important;
+          height: 100vh !important;
+          height: 100dvh !important;
+          max-height: 100dvh !important;
+          overflow: hidden !important;
+      }
+      #mainSidebar {
+          height: 100% !important;
+          height: 100vh !important;
+          height: 100dvh !important;
+          max-height: 100dvh !important;
+          position: sticky !important;
+          top: 0 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
+          flex-shrink: 0 !important;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+      }
+      #mainSidebar::-webkit-scrollbar {
+          width: 5px;
+      }
+      #mainSidebar::-webkit-scrollbar-track {
+          background: transparent;
+      }
+      #mainSidebar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 4px;
+      }
+      #mainSidebar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.35);
+      }
+      .sidebar-brand {
+          position: sticky;
+          top: 0;
+          background-color: #071d2b;
+          z-index: 20;
+      }
+      .nav-list {
+          padding-bottom: 4.5rem !important;
+      }
+      .main-layout {
+          flex: 1 1 0% !important;
+          min-width: 0 !important;
+          height: 100% !important;
+          height: 100vh !important;
+          height: 100dvh !important;
+          max-height: 100dvh !important;
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
+          display: flex !important;
+          flex-direction: column !important;
+      }
       
       /* Handle submenu expansion smoothly */
       .has-submenu.open .submenu-list { display: flex !important; }
@@ -65,12 +129,13 @@
     <!-- Mobile Sidebar Backdrop -->
     <div id="mobileSidebarBackdrop" class="hidden"></div>
 
-    <!-- Sidebar Navigation -->
-    <aside id="mainSidebar" class="-translate-x-full">
-        <div class="sidebar-brand">
-            <div class="brand-logo">V</div>
-            <span class="brand-name">VMMC ERP</span>
-        </div>
+    <div class="app-shell flex h-screen h-dvh w-full overflow-hidden">
+        <!-- Sidebar Navigation -->
+        <aside id="mainSidebar" class="-translate-x-full">
+            <div class="sidebar-brand">
+                <div class="brand-logo">V</div>
+                <span class="brand-name">VMMC ERP</span>
+            </div>
 
         <ul class="nav-list">
             {% if not user.is_authenticated or user.get_menu_mapping.dashboard %}
@@ -328,11 +393,19 @@
                                 </a>
                             </li>
                             {% endif %}
+                            {% if not user.is_authenticated or user.get_menu_mapping.universal_master_import_export or user.get_menu_mapping.legacy_mapping or user.get_menu_mapping.lab_master %}
+                            <li class="{% if request.resolver_match.url_name == 'legacy_mapping' %}active{% endif %}">
+                                <a href="{% url 'lab:legacy_mapping' %}">
+                                    <i class="bi bi-file-earmark-spreadsheet" style="color: #3b82f6;"></i>
+                                    <span>Universal Import / Export</span>
+                                </a>
+                            </li>
+                            {% endif %}
                             {% if not user.is_authenticated or user.get_menu_mapping.import_lab_workload_csv %}
                             <li class="{% if request.resolver_match.url_name == 'import_lab_workload_csv' %}active{% endif %}">
                                 <a href="{% url 'lab:import_lab_workload_csv' %}">
                                     <i class="bi bi-box-arrow-in-down"></i>
-                                    <span>Import</span>
+                                    <span>Import Workload</span>
                                 </a>
                             </li>
                             {% endif %}
@@ -340,7 +413,7 @@
                             <li class="{% if request.resolver_match.url_name == 'export_lab_workload_csv' %}active{% endif %}">
                                 <a href="{% url 'lab:export_lab_workload_csv' %}">
                                     <i class="bi bi-box-arrow-up"></i>
-                                    <span>Export</span>
+                                    <span>Export Workload</span>
                                 </a>
                             </li>
                             {% endif %}
@@ -559,6 +632,31 @@
                         </a>
                     </li>
                     {% endif %}
+                    <!-- ATC Submodules -->
+                    {% if not user.is_authenticated or user.get_menu_mapping.auto_trigger_atc %}
+                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_atc' %}active{% endif %}" style="border-top: 1px solid rgba(255,255,255,0.08); margin-top: 4px; padding-top: 4px;">
+                        <a href="{% url 'lab:auto_trigger_atc' %}" style="color: #34d399; font-weight: 600;">
+                            <i class="bi bi-play-circle-fill" style="color: #10b981;"></i>
+                            <span>ATC</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if not user.is_authenticated or user.get_menu_mapping.auto_trigger_atc_status %}
+                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_atc_status' %}active{% endif %}">
+                        <a href="{% url 'lab:auto_trigger_atc_status' %}">
+                            <i class="bi bi-activity" style="color: #38bdf8;"></i>
+                            <span>ATC Live Status</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if not user.is_authenticated or user.get_menu_mapping.auto_trigger_atc_settings %}
+                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_atc_settings' %}active{% endif %}">
+                        <a href="{% url 'lab:auto_trigger_atc_settings' %}">
+                            <i class="bi bi-gear" style="color: #94a3b8;"></i>
+                            <span>ATC Settings</span>
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
             </li>
             {% endif %}
@@ -752,6 +850,7 @@
             </div>
         </main>
     </div>
+    </div> <!-- end app-shell -->
 
     <!-- Floating Back-to-Top Button -->
     <button id="scrollToTopBtn" class="btn-scroll-top" title="Scroll to Top">
