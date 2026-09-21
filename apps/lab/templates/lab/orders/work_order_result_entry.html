@@ -359,25 +359,25 @@
                     <div><input type="checkbox" {% if wo.status == 'COMPLETED' %}disabled{% endif %}> Reprint</div>
                 </div>
             </div>
-            <div style="flex: 1;">
+            <div style="flex: 1.2; min-width: 320px;">
                 <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--text-main);">Reporting Format:</div>
                 <div style="display: flex; gap: 1rem; font-size: 0.8rem; margin-bottom: 0.5rem;">
                     <label><input type="radio" name="nabl" value="approved"> Approved by NABL</label>
                     <label><input type="radio" name="nabl" value="unapproved"> Unapproved by NABL</label>
                     <label><input type="radio" name="nabl" value="both" checked> Both</label>
                 </div>
-                <div style="display: flex; gap: 1rem; font-size: 0.8rem; margin-bottom: 1rem;">
+                <div style="display: flex; gap: 1rem; font-size: 0.8rem; margin-bottom: 0.75rem;">
                     <label><input type="radio" name="header" value="with" checked> With Header</label>
                     <label><input type="radio" name="header" value="without"> Without Header</label>
                 </div>
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <button type="button" class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; font-weight: 600; cursor: pointer;" onclick="openPrintPreview('all')">
+                <div style="display: flex; gap: 0.5rem; flex-wrap: nowrap; align-items: center;">
+                    <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 0.35rem;" onclick="openPrintPreview('all')">
                         <i class="bi bi-printer"></i> Print All
                     </button>
-                    <button type="button" class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; cursor: pointer;" onclick="openPrintPreview('sino')">
+                    <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; cursor: pointer; white-space: nowrap;" onclick="openPrintPreview('sino')">
                         Print Sino Wise
                     </button>
-                    <button type="button" class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; cursor: pointer;" onclick="openPrintPreview('overall')">
+                    <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; cursor: pointer; white-space: nowrap;" onclick="openPrintPreview('overall')">
                         Print Sino Wise - Overall
                     </button>
                 </div>
