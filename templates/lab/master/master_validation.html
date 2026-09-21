@@ -1,0 +1,74 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}Master Data Validation & Health | Lab Master{% endblock %}
+{% block page_heading %}Laboratory Master Data Validation{% endblock %}
+
+{% block lab_content %}
+<!-- Top Summary Health Card -->
+<div class="lab-health-banner mb-4">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 {% if results.overall_status == 'OK' %}bg-emerald-100 text-emerald-600{% elif results.overall_status == 'WARNING' %}bg-amber-100 text-amber-600{% else %}bg-rose-100 text-rose-600{% endif %}">
+                {% if results.overall_status == 'OK' %}
+                <i class="bi bi-check-circle-fill text-2xl"></i>
+                {% elif results.overall_status == 'WARNING' %}
+                <i class="bi bi-exclamation-triangle-fill text-2xl"></i>
+                {% else %}
+                <i class="bi bi-x-circle-fill text-2xl"></i>
+                {% endif %}
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-slate-900 text-base">Overall Master Health:</span>
+                    <span class="lab-badge {% if results.overall_status == 'OK' %}lab-badge-success{% elif results.overall_status == 'WARNING' %}lab-badge-warning{% else %}lab-badge-danger{% endif %}">
+                        {{ results.overall_status }}
+                    </span>
+                </div>
+                <div class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span>Total checks: <strong class="text-slate-700">{{ results.total_checks }}</strong></span>
+                    <span>•</span>
+                    <span>Passed: <strong class="text-emerald-600">{{ results.passed_checks }}</strong></span>
+                    <span>•</span>
+                    <span>Warnings: <strong class="text-amber-600">{{ results.warning_checks }}</strong></span>
+                    <span>•</span>
+                    <span>Errors: <strong class="text-rose-600">{{ results.error_checks }}</strong></span>
+                </div>
+            </div>
+        </div>
+        <div>
+            <a href="{% url 'lab:master_validation' %}" class="lab-btn lab-btn-primary">
+                <i class="bi bi-arrow-repeat"></i>Re-Scan Database
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 13 Master Validation Checks Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for sec in results.sections %}
+    <div class="lab-card flex flex-col justify-between" style="border-left: 4px solid {% if sec.status == 'OK' %}#10b981{% elif sec.status == 'WARNING' %}#f59e0b{% else %}#ef4444{% endif %};">
+        <div>
+            <div class="flex justify-between items-center mb-2">
+                <span class="lab-badge lab-badge-secondary" style="font-size: 0.68rem;">{{ sec.category }}</span>
+                <span class="lab-badge {% if sec.status == 'OK' %}lab-badge-success{% elif sec.status == 'WARNING' %}lab-badge-warning{% else %}lab-badge-danger{% endif %}">
+                    {{ sec.status }}
+                </span>
+            </div>
+            <h4 class="font-bold text-slate-800 text-sm mb-1">{{ sec.title }}</h4>
+            <p class="text-xs text-slate-500 mb-2 leading-relaxed">{{ sec.message }}</p>
+        </div>
+
+        {% if sec.details %}
+        <div class="mt-2 pt-2 border-t border-slate-100">
+            <span class="text-xs font-semibold text-slate-500 block mb-1">Detected items ({{ sec.count }}):</span>
+            <div class="bg-slate-50 border border-slate-200 rounded p-2 text-xs font-mono text-slate-700 max-h-28 overflow-y-auto space-y-1">
+                {% for d in sec.details %}
+                <div class="truncate">• {{ d }}</div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,228 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}Age Groups Master | Lab Master{% endblock %}
+{% block page_heading %}Age Groups Master{% endblock %}
+
+{% block lab_content %}
+<!-- Top Action Banner -->
+<div class="lab-card mb-4">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+            <h4 class="font-bold text-slate-800 text-sm mb-1">Age Groups Demographic Master</h4>
+            <p class="text-xs text-slate-500 mb-0">Demographic cohorts used for dynamic reference range selection and clinical eligibility rules.</p>
+        </div>
+        <div>
+            <button type="button" class="lab-btn lab-btn-success" onclick="openAddAgeGroupModal()">
+                <i class="bi bi-plus-lg"></i>Add Age Group
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="lab-table-container">
+    <div class="lab-table-card-header">
+        <span class="lab-table-title">Age Group Cohorts ({{ age_groups|length|default:0 }})</span>
+        <span class="lab-table-subtitle">Reference Range & Diagnostic Demographics</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="lab-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">Order</th>
+                    <th style="width: 150px;">Cohort Code</th>
+                    <th>Cohort Label</th>
+                    <th>Minimum Age</th>
+                    <th>Maximum Age</th>
+                    <th style="width: 100px;">Gender</th>
+                    <th style="width: 90px;">Status</th>
+                    <th style="width: 90px;" class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ag in age_groups %}
+                <tr>
+                    <td class="text-muted font-bold">{{ ag.sort_order }}</td>
+                    <td><span class="lab-code-pill font-mono font-bold">{{ ag.code }}</span></td>
+                    <td class="font-semibold text-slate-800">{{ ag.label }}</td>
+                    <td>{{ ag.min_age_value|default:"0" }} {{ ag.min_age_unit }}</td>
+                    <td>{{ ag.max_age_value|default:"Any" }} {{ ag.max_age_unit }}</td>
+                    <td>
+                        {% if ag.gender == 'Male' %}
+                        <span class="lab-badge lab-badge-info">Male</span>
+                        {% elif ag.gender == 'Female' %}
+                        <span class="lab-badge lab-badge-danger">Female</span>
+                        {% else %}
+                        <span class="lab-badge lab-badge-secondary">All</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if ag.is_active %}
+                        <span class="lab-badge lab-badge-success">Active</span>
+                        {% else %}
+                        <span class="lab-badge lab-badge-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <button type="button" class="lab-btn lab-btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="openEditAgeGroupModal({{ ag.id }}, '{{ ag.code|escapejs }}', '{{ ag.label|escapejs }}', '{{ ag.min_age_value|default:'' }}', '{{ ag.min_age_unit|default:'Years' }}', '{{ ag.max_age_value|default:'' }}', '{{ ag.max_age_unit|default:'Years' }}', '{{ ag.gender }}', {{ ag.sort_order|default:0 }}, {{ ag.is_active|yesno:'true,false' }})">
+                            Edit
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-8 text-slate-400">
+                        <i class="bi bi-inbox text-3xl block mb-2 text-slate-300"></i>
+                        No age groups configured.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Add/Edit Age Group -->
+<div class="lab-modal-overlay" id="agModal">
+    <div class="lab-modal-dialog">
+        <div class="lab-modal-header">
+            <h3 class="lab-modal-title" id="agModalTitle">Age Group Configuration</h3>
+            <button type="button" class="lab-modal-close" onclick="closeLabModal('agModal')">&times;</button>
+        </div>
+        <form id="agForm" onsubmit="submitAgeGroupForm(event)">
+            {% csrf_token %}
+            <input type="hidden" id="ag_id">
+            <div class="lab-modal-body">
+                <div class="lab-form-group mb-3">
+                    <label class="lab-form-label">Age Group Code <span class="text-rose-500">*</span></label>
+                    <input type="text" class="lab-form-input font-mono" id="ag_code" required placeholder="e.g. ADULT, PEDIATRIC">
+                </div>
+                <div class="lab-form-group mb-3">
+                    <label class="lab-form-label">Label <span class="text-rose-500">*</span></label>
+                    <input type="text" class="lab-form-input" id="ag_label" required placeholder="e.g. Adult (18-59 Years)">
+                </div>
+                <div class="lab-form-grid-2 mb-3">
+                    <div class="lab-form-group">
+                        <label class="lab-form-label">Min Age Value</label>
+                        <input type="number" class="lab-form-input" id="ag_min_val">
+                    </div>
+                    <div class="lab-form-group">
+                        <label class="lab-form-label">Min Age Unit</label>
+                        <select class="lab-form-select" id="ag_min_unit">
+                            <option value="Years">Years</option>
+                            <option value="Months">Months</option>
+                            <option value="Days">Days</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="lab-form-grid-2 mb-3">
+                    <div class="lab-form-group">
+                        <label class="lab-form-label">Max Age Value</label>
+                        <input type="number" class="lab-form-input" id="ag_max_val">
+                    </div>
+                    <div class="lab-form-group">
+                        <label class="lab-form-label">Max Age Unit</label>
+                        <select class="lab-form-select" id="ag_max_unit">
+                            <option value="Years">Years</option>
+                            <option value="Months">Months</option>
+                            <option value="Days">Days</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="lab-form-grid-2 mb-3">
+                    <div class="lab-form-group">
+                        <label class="lab-form-label">Gender</label>
+                        <select class="lab-form-select" id="ag_gender">
+                            <option value="All">All</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                    <div class="lab-form-group">
+                        <label class="lab-form-label">Display Order</label>
+                        <input type="number" class="lab-form-input" id="ag_sort" value="0">
+                    </div>
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label">Status</label>
+                    <select class="lab-form-select" id="ag_status">
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+            </div>
+            <div class="lab-modal-footer">
+                <button type="button" class="lab-btn lab-btn-secondary" onclick="closeLabModal('agModal')">Cancel</button>
+                <button type="submit" class="lab-btn lab-btn-primary"><i class="bi bi-check-lg"></i>Save Age Group</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openAddAgeGroupModal() {
+    document.getElementById('agModalTitle').innerText = 'Add Age Group';
+    document.getElementById('ag_id').value = '';
+    document.getElementById('ag_code').value = '';
+    document.getElementById('ag_label').value = '';
+    document.getElementById('ag_min_val').value = '';
+    document.getElementById('ag_min_unit').value = 'Years';
+    document.getElementById('ag_max_val').value = '';
+    document.getElementById('ag_max_unit').value = 'Years';
+    document.getElementById('ag_gender').value = 'All';
+    document.getElementById('ag_sort').value = '0';
+    document.getElementById('ag_status').value = 'true';
+    openLabModal('agModal');
+}
+
+function openEditAgeGroupModal(id, code, label, minVal, minUnit, maxVal, maxUnit, gender, sort, active) {
+    document.getElementById('agModalTitle').innerText = 'Edit Age Group: ' + label;
+    document.getElementById('ag_id').value = id;
+    document.getElementById('ag_code').value = code;
+    document.getElementById('ag_label').value = label;
+    document.getElementById('ag_min_val').value = minVal || '';
+    document.getElementById('ag_min_unit').value = minUnit || 'Years';
+    document.getElementById('ag_max_val').value = maxVal || '';
+    document.getElementById('ag_max_unit').value = maxUnit || 'Years';
+    document.getElementById('ag_gender').value = gender || 'All';
+    document.getElementById('ag_sort').value = sort || 0;
+    document.getElementById('ag_status').value = active ? 'true' : 'false';
+    openLabModal('agModal');
+}
+
+async function submitAgeGroupForm(e) {
+    e.preventDefault();
+    const payload = {
+        id: document.getElementById('ag_id').value || null,
+        code: document.getElementById('ag_code').value.trim(),
+        label: document.getElementById('ag_label').value.trim(),
+        min_age_value: document.getElementById('ag_min_val').value || null,
+        min_age_unit: document.getElementById('ag_min_unit').value,
+        max_age_value: document.getElementById('ag_max_val').value || null,
+        max_age_unit: document.getElementById('ag_max_unit').value,
+        gender: document.getElementById('ag_gender').value,
+        sort_order: parseInt(document.getElementById('ag_sort').value) || 0,
+        is_active: document.getElementById('ag_status').value === 'true'
+    };
+
+    try {
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const res = await fetch("{% url 'lab:api_master_age_group_save' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error saving age group.');
+        }
+    } catch(err) {
+        alert('Failed: ' + err);
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Report - {{ patient.name }} - SR #{{ service_request.id }}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background: #f8fafc; color: #1e293b; padding: 20px; font-size: 13px; line-height: 1.4; }
+        .report-page { max-width: 820px; margin: 0 auto; background: #fff; padding: 30px; border: 1px solid #e2e8f0; border-radius: 6px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 20px; }
+        .hospital-title h1 { font-size: 22px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
+        .hospital-title p { font-size: 11px; color: #64748b; margin-top: 3px; }
+        .report-title { text-align: right; }
+        .report-title h2 { font-size: 15px; font-weight: 700; color: #0284c7; text-transform: uppercase; }
+        .report-title p { font-size: 11px; color: #64748b; }
+        
+        .patient-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 12px 16px; margin-bottom: 20px; }
+        .patient-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 12px; }
+        .grid-item span.label { color: #64748b; text-transform: uppercase; font-size: 10px; font-weight: 600; display: block; }
+        .grid-item span.value { color: #0f172a; font-weight: 600; font-size: 12px; }
+        
+        .inv-section { margin-bottom: 25px; page-break-inside: avoid; }
+        .inv-header { background: #0f172a; color: #fff; padding: 6px 12px; font-size: 12px; font-weight: 700; text-transform: uppercase; border-radius: 3px 3px 0 0; }
+        table.results-table { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; }
+        table.results-table th { background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 6px 10px; border-bottom: 1px solid #cbd5e1; text-align: left; }
+        table.results-table td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px; }
+        table.results-table tr:nth-child(even) { background-color: #fafbfc; }
+        .val-col { font-weight: 700; font-family: monospace; font-size: 13px; }
+        .flag-badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .flag-normal { background: #dcfce7; color: #166534; }
+        .flag-high { background: #fee2e2; color: #991b1b; }
+        .flag-low { background: #fef3c7; color: #92400e; }
+        
+        .footer-signatures { display: flex; justify-content: space-between; margin-top: 50px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+        .sig-block { text-align: center; width: 180px; }
+        .sig-line { border-top: 1px dashed #94a3b8; margin-bottom: 5px; }
+        .sig-title { font-size: 11px; font-weight: 600; color: #475569; }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .report-page { border: none; padding: 0; max-width: 100%; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="max-width: 820px; margin: 0 auto 15px auto; display: flex; justify-content: flex-end; gap: 10px;">
+        <button onclick="window.print()" style="background: #0284c7; color: #fff; border: none; padding: 8px 18px; border-radius: 4px; font-weight: 600; cursor: pointer;">
+            Print Lab Report
+        </button>
+        <button onclick="window.close()" style="background: #e2e8f0; color: #334155; border: none; padding: 8px 14px; border-radius: 4px; font-weight: 600; cursor: pointer;">
+            Close
+        </button>
+    </div>
+
+    <div class="report-page">
+        <!-- Hospital Header -->
+        <div class="header">
+            <div class="hospital-title">
+                <h1>Vinayaka Mission's Medical College & Hospital</h1>
+                <p>Keezhakasakudymedu, Karaikal, Puducherry - 609609 | Central Clinical Laboratory</p>
+            </div>
+            <div class="report-title">
+                <h2>Laboratory Report</h2>
+                <p>Sample ID: <strong>{{ service_request.sample_id }}</strong></p>
+                <p>Date: {{ service_request.request_date|date:"d/m/Y" }}</p>
+            </div>
+        </div>
+
+        <!-- Patient Demographics & Clinical Diagnosis -->
+        <div class="patient-box">
+            <div class="patient-grid">
+                <div class="grid-item">
+                    <span class="label">Patient Name</span>
+                    <span class="value">{{ patient.name }}</span>
+                </div>
+                <div class="grid-item">
+                    <span class="label">Patient ID / OP No</span>
+                    <span class="value">{{ patient.patient_id }} / {{ patient.op_number|default:"—" }}</span>
+                </div>
+                <div class="grid-item">
+                    <span class="label">Age / Gender</span>
+                    <span class="value">{{ age_display }} / {{ patient.gender }}</span>
+                </div>
+                <div class="grid-item">
+                    <span class="label">Department</span>
+                    <span class="value">{{ department.name|default:"General Medicine" }}</span>
+                </div>
+                <div class="grid-item" style="grid-column: span 2;">
+                    <span class="label">Clinical Diagnosis</span>
+                    <span class="value" style="color: #0284c7;">{{ primary_diagnosis.name|default:"General Clinical Evaluation" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Investigation Results Table -->
+        {% for rep in investigations %}
+        <div class="inv-section">
+            <div class="inv-header">
+                {{ rep.investigation.name }} ({{ rep.investigation.code }})
+            </div>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Test / Parameter</th>
+                        <th style="width: 20%; text-align: right;">Result Value</th>
+                        <th style="width: 15%;">Unit</th>
+                        <th style="width: 25%;">Reference Range</th>
+                        <th style="width: 10%; text-align: center;">Flag</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in rep.parameters %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ p.parameter_name }}</td>
+                        <td class="val-col" style="text-align: right;">{{ p.result_value }}</td>
+                        <td>{{ p.unit|default:"—" }}</td>
+                        <td style="color: #475569;">{{ p.reference_range }}</td>
+                        <td style="text-align: center;">
+                            {% if p.flag == 'Normal' %}
+                            <span class="flag-badge flag-normal">Normal</span>
+                            {% elif p.flag == 'High' %}
+                            <span class="flag-badge flag-high">High</span>
+                            {% elif p.flag == 'Low' %}
+                            <span class="flag-badge flag-low">Low</span>
+                            {% else %}
+                            <span class="flag-badge" style="background: #f1f5f9; color: #475569;">{{ p.flag }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #64748b;">No parameters recorded.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+
+        <!-- Signatures Footer -->
+        <div class="footer-signatures">
+            <div class="sig-block">
+                <div class="sig-line"></div>
+                <div class="sig-title">Medical Lab Technologist</div>
+            </div>
+            <div class="sig-block">
+                <div class="sig-line"></div>
+                <div class="sig-title">Biochemist / Microbiologist</div>
+            </div>
+            <div class="sig-block">
+                <div class="sig-line"></div>
+                <div class="sig-title">Pathologist / HOD</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

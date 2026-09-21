@@ -1,0 +1,270 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}{{ investigation.name }} ({{ investigation.code }}) | Lab Master{% endblock %}
+{% block lab_master_title %}Investigation Configuration{% endblock %}
+{% block lab_master_subtitle %}Detailed master record, parameter linkages, reference ranges, and clinical diagnostic mappings{% endblock %}
+
+{% block lab_master_actions %}
+<a href="{% url 'lab:master_investigation_list' %}" class="lab-btn lab-btn-secondary lab-btn-sm">
+    <i class="bi bi-arrow-left"></i> Back to List
+</a>
+<a href="{% url 'lab:master_investigation_parameter_mapping' %}?investigation={{ investigation.id }}" class="lab-btn lab-btn-primary lab-btn-sm">
+    <i class="bi bi-diagram-3"></i> Map Parameters
+</a>
+<a href="{% url 'lab:master_reference_ranges' %}?investigation={{ investigation.id }}" class="lab-btn lab-btn-secondary lab-btn-sm">
+    <i class="bi bi-rulers"></i> Reference Ranges
+</a>
+{% endblock %}
+
+{% block master_content %}
+<!-- Primary Investigation Metadata Card -->
+<div class="lab-card">
+    <div class="lab-card-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="lab-badge lab-badge-info" style="font-size: 13px; padding: 4px 10px; font-family: monospace;">{{ investigation.code }}</span>
+            <h2 class="lab-card-title" style="font-size: 1.15rem; margin: 0;">{{ investigation.name }}</h2>
+        </div>
+        <div>
+            {% if investigation.is_active %}
+            <span class="lab-badge lab-badge-active">Active Investigation</span>
+            {% else %}
+            <span class="lab-badge lab-badge-inactive">Inactive Investigation</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="lab-meta-grid">
+        <div class="lab-meta-item">
+            <span class="lab-meta-label">Department</span>
+            <span class="lab-meta-value">{{ investigation.department.name|default:"—" }}</span>
+        </div>
+        <div class="lab-meta-item">
+            <span class="lab-meta-label">Sample Type</span>
+            <span class="lab-meta-value">{{ investigation.sample_type.name|default:"—" }}</span>
+        </div>
+        <div class="lab-meta-item">
+            <span class="lab-meta-label">Category</span>
+            <span class="lab-meta-value">{{ investigation.category|default:"—" }}</span>
+        </div>
+        <div class="lab-meta-item">
+            <span class="lab-meta-label">Specimen</span>
+            <span class="lab-meta-value">{{ investigation.specimen|default:"—" }}</span>
+        </div>
+        <div class="lab-meta-item">
+            <span class="lab-meta-label">Method</span>
+            <span class="lab-meta-value">{{ investigation.method|default:"—" }}</span>
+        </div>
+        <div class="lab-meta-item">
+            <span class="lab-meta-label">Display Order</span>
+            <span class="lab-meta-value">{{ investigation.display_order|default:0 }}</span>
+        </div>
+        <div class="lab-meta-item">
+            <span class="lab-meta-label">Panel Hierarchy</span>
+            <span class="lab-meta-value">{% if investigation.is_panel %}<span class="lab-badge lab-badge-info">Multi-parameter Panel</span>{% else %}<span class="text-muted" style="font-size: 13px;">Single Test</span>{% endif %}</span>
+        </div>
+        <div class="lab-meta-item">
+            <span class="lab-meta-label">Turnaround Time</span>
+            <span class="lab-meta-value">{{ investigation.turnaround_time_hours|default:"—" }} hours</span>
+        </div>
+    </div>
+</div>
+
+<!-- Section 1: Parameters Card -->
+<div class="lab-table-container">
+    <div class="lab-card-header" style="padding: 12px 16px; margin-bottom: 0; background: #ffffff;">
+        <span class="lab-card-title" style="font-size: 0.9rem;">
+            <i class="bi bi-list-check text-primary"></i> Configured Parameters ({{ parameters|length }})
+        </span>
+        <a href="{% url 'lab:master_investigation_parameter_mapping' %}?investigation={{ investigation.id }}" class="lab-btn lab-btn-secondary lab-btn-sm">
+            <i class="bi bi-plus-circle"></i> Add / Edit Mappings
+        </a>
+    </div>
+    <table class="lab-table">
+        <thead>
+            <tr>
+                <th style="width: 50px;">Order</th>
+                <th style="width: 140px;">Parameter Code</th>
+                <th>Parameter Name</th>
+                <th style="width: 110px;">Data Type</th>
+                <th style="width: 90px;">Unit</th>
+                <th class="text-center" style="width: 90px;">Mandatory</th>
+                <th class="text-center" style="width: 90px;">Calculated</th>
+                <th style="width: 85px;">Status</th>
+                <th style="width: 110px;" class="text-end">Ranges</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in parameters %}
+            <tr>
+                <td style="color: var(--lab-text-muted); font-weight: 600;">{{ p.display_order|default:forloop.counter }}</td>
+                <td style="font-weight: 700; color: var(--lab-blue); font-family: monospace;">{{ p.code|default:p.parameter.code }}</td>
+                <td style="font-weight: 600; color: var(--lab-text-main);">{{ p.name|default:p.parameter.name }}</td>
+                <td><span class="lab-badge lab-badge-neutral">{{ p.parameter.data_type|default:p.result_type }}</span></td>
+                <td>{{ p.unit|default:p.parameter.default_unit|default:"—" }}</td>
+                <td class="text-center">
+                    {% if p.is_mandatory %}
+                    <span class="lab-badge lab-badge-active">Yes</span>
+                    {% else %}
+                    <span class="text-muted" style="font-size: 12px;">No</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if p.is_calculated %}
+                    <span class="lab-badge lab-badge-info">Yes</span>
+                    {% else %}
+                    <span class="text-muted" style="font-size: 12px;">No</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if p.is_active %}
+                    <span class="lab-badge lab-badge-active">Active</span>
+                    {% else %}
+                    <span class="lab-badge lab-badge-inactive">Inactive</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <a href="{% url 'lab:master_reference_ranges' %}?investigation={{ investigation.id }}" class="lab-btn lab-btn-secondary lab-btn-sm" style="font-size: 11.5px; height: 26px;">
+                        Ranges
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9">
+                    <div class="lab-empty-state">
+                        <i class="bi bi-info-circle"></i>
+                        <p style="margin: 0;">No parameters mapped to this investigation yet.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Section 2: Reference Ranges Card -->
+<div class="lab-table-container">
+    <div class="lab-card-header" style="padding: 12px 16px; margin-bottom: 0; background: #ffffff;">
+        <span class="lab-card-title" style="font-size: 0.9rem;">
+            <i class="bi bi-rulers text-success"></i> Reference Ranges ({{ reference_ranges|length }})
+        </span>
+        <a href="{% url 'lab:master_reference_ranges' %}?investigation={{ investigation.id }}" class="lab-btn lab-btn-secondary lab-btn-sm">
+            <i class="bi bi-sliders"></i> Configure Ranges
+        </a>
+    </div>
+    <table class="lab-table">
+        <thead>
+            <tr>
+                <th>Parameter</th>
+                <th>Age Group</th>
+                <th>Gender</th>
+                <th>Range Type</th>
+                <th>Normal Range / Text</th>
+                <th>Unit</th>
+                <th style="width: 85px;">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rr in reference_ranges %}
+            <tr>
+                <td style="font-weight: 600; color: var(--lab-text-main);">{{ rr.investigation_parameter.name }}</td>
+                <td>{{ rr.age_group.label|default:"Universal (All Ages)" }}</td>
+                <td>
+                    {% if rr.gender == 'Male' %}<span class="lab-badge lab-badge-info">Male</span>
+                    {% elif rr.gender == 'Female' %}<span class="lab-badge lab-badge-warning">Female</span>
+                    {% else %}<span class="lab-badge lab-badge-neutral">All</span>{% endif %}
+                </td>
+                <td><span class="lab-badge lab-badge-neutral">{{ rr.range_type }}</span></td>
+                <td style="font-weight: 600; color: var(--lab-primary);">
+                    {% if rr.range_type == 'Numeric' %}
+                        {{ rr.min_value|default:"—" }} – {{ rr.max_value|default:"—" }}
+                    {% else %}
+                        {{ rr.reference_text|default:"—" }}
+                    {% endif %}
+                </td>
+                <td>{{ rr.unit|default:rr.investigation_parameter.unit|default:"—" }}</td>
+                <td>
+                    {% if rr.is_active %}
+                    <span class="lab-badge lab-badge-active">Active</span>
+                    {% else %}
+                    <span class="lab-badge lab-badge-inactive">Inactive</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7">
+                    <div class="lab-empty-state">
+                        <i class="bi bi-rulers"></i>
+                        <p style="margin: 0;">No reference ranges defined for this investigation.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Section 3: Diagnosis Mapping Card -->
+<div class="lab-table-container">
+    <div class="lab-card-header" style="padding: 12px 16px; margin-bottom: 0; background: #ffffff;">
+        <span class="lab-card-title" style="font-size: 0.9rem;">
+            <i class="bi bi-arrow-left-right text-warning"></i> Clinical Diagnosis Mapping ({{ diagnosis_mappings|length }})
+        </span>
+        <a href="{% url 'lab:master_diagnosis_investigation_mapping' %}?investigation={{ investigation.id }}" class="lab-btn lab-btn-secondary lab-btn-sm">
+            <i class="bi bi-plus-circle"></i> Add Diagnosis Trigger
+        </a>
+    </div>
+    <table class="lab-table">
+        <thead>
+            <tr>
+                <th>Diagnosis Name</th>
+                <th>Age Cohort</th>
+                <th>Department</th>
+                <th>Gender</th>
+                <th class="text-center" style="width: 100px;">Pregnancy Req</th>
+                <th style="width: 80px;" class="text-center">Priority</th>
+                <th style="width: 85px;">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dm in diagnosis_mappings %}
+            <tr>
+                <td style="font-weight: 600; color: var(--lab-text-main);">{{ dm.diagnosis.name }}</td>
+                <td>{{ dm.age_group.label|default:"All Ages" }}</td>
+                <td>{{ dm.department.name|default:"All Departments" }}</td>
+                <td>
+                    {% if dm.gender == 'Male' %}<span class="lab-badge lab-badge-info">Male</span>
+                    {% elif dm.gender == 'Female' %}<span class="lab-badge lab-badge-warning">Female</span>
+                    {% else %}<span class="lab-badge lab-badge-neutral">All</span>{% endif %}
+                </td>
+                <td class="text-center">
+                    {% if dm.pregnancy_required %}
+                    <span class="lab-badge lab-badge-warning">Required</span>
+                    {% else %}
+                    <span class="text-muted" style="font-size: 12px;">No</span>
+                    {% endif %}
+                </td>
+                <td class="text-center" style="font-weight: 600; color: var(--lab-text-muted);">{{ dm.priority }}</td>
+                <td>
+                    {% if dm.is_active %}
+                    <span class="lab-badge lab-badge-active">Active</span>
+                    {% else %}
+                    <span class="lab-badge lab-badge-inactive">Inactive</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7">
+                    <div class="lab-empty-state">
+                        <i class="bi bi-arrow-left-right"></i>
+                        <p style="margin: 0;">No diagnoses currently trigger this investigation automatically.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

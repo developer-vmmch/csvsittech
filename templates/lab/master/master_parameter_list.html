@@ -1,0 +1,252 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}Parameters Master | Lab Master{% endblock %}
+{% block lab_master_title %}Parameters Master{% endblock %}
+{% block lab_master_subtitle %}Clinical laboratory parameter dictionary, data types, and strict string code preservation{% endblock %}
+
+{% block lab_master_actions %}
+<button type="button" class="lab-btn lab-btn-primary lab-btn-sm" onclick="openAddParamModal()">
+    <i class="bi bi-plus-lg"></i> Add Parameter
+</button>
+{% endblock %}
+
+{% block master_content %}
+<!-- Filter Card -->
+<div class="lab-filter-card">
+    <form method="get" class="lab-filter-grid">
+        <div class="lab-filter-col-4">
+            <div class="lab-input-with-icon">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" class="lab-form-input" placeholder="Search code (e.g. 00022681), parameter name, unit..." value="{{ request.GET.search }}">
+            </div>
+        </div>
+        <div class="lab-filter-col-3">
+            <select name="data_type" class="lab-form-select">
+                <option value="">-- All Data Types --</option>
+                <option value="NUMERIC" {% if request.GET.data_type == 'NUMERIC' %}selected{% endif %}>Numeric</option>
+                <option value="TEXT" {% if request.GET.data_type == 'TEXT' %}selected{% endif %}>Text</option>
+                <option value="SELECT" {% if request.GET.data_type == 'SELECT' %}selected{% endif %}>Select / Dropdown</option>
+            </select>
+        </div>
+        <div class="lab-filter-col-2">
+            <select name="status" class="lab-form-select">
+                <option value="">-- All Status --</option>
+                <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+        <div class="lab-filter-col-auto lab-filter-actions">
+            <button type="submit" class="lab-btn lab-btn-primary lab-btn-sm">
+                <i class="bi bi-funnel"></i> Apply Filter
+            </button>
+            <a href="{% url 'lab:master_parameter_list' %}" class="lab-btn lab-btn-secondary lab-btn-sm">
+                <i class="bi bi-x-circle"></i> Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Table Card -->
+<div class="lab-table-container">
+    <div class="lab-card-header" style="padding: 12px 16px; margin-bottom: 0; background: #ffffff;">
+        <span class="lab-card-title" style="font-size: 0.88rem;">
+            <i class="bi bi-list-check text-primary"></i> Master Parameters Dictionary ({{ total_count }})
+        </span>
+        {% if page_obj.has_other_pages %}
+        <span class="lab-card-subtitle">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% endif %}
+    </div>
+
+    <table class="lab-table">
+        <thead>
+            <tr>
+                <th style="width: 55px;">S.No</th>
+                <th style="width: 140px;">Parameter Code</th>
+                <th>Parameter Name</th>
+                <th style="width: 120px;">Data Type</th>
+                <th style="width: 100px;">Default Unit</th>
+                <th style="width: 110px;">Result Type</th>
+                <th style="width: 90px;" class="text-center">Decimals</th>
+                <th style="width: 85px;">Status</th>
+                <th style="width: 100px;" class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in parameters %}
+            <tr>
+                <td style="color: var(--lab-text-muted);">{{ forloop.counter0|add:page_obj.start_index }}</td>
+                <td style="font-weight: 700; color: var(--lab-blue); font-family: monospace;">{{ p.code }}</td>
+                <td style="font-weight: 600; color: var(--lab-text-main);">{{ p.name }}</td>
+                <td><span class="lab-badge lab-badge-neutral">{{ p.data_type }}</span></td>
+                <td>{{ p.default_unit|default:"—" }}</td>
+                <td>{{ p.result_type|default:"Numeric" }}</td>
+                <td class="text-center" style="font-weight: 600; color: var(--lab-text-muted);">{{ p.default_decimal_places|default:2 }}</td>
+                <td>
+                    {% if p.is_active %}
+                    <span class="lab-badge lab-badge-active">Active</span>
+                    {% else %}
+                    <span class="lab-badge lab-badge-inactive">Inactive</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <button type="button" class="lab-btn lab-btn-secondary lab-btn-sm" onclick="openEditParamModal({{ p.id }}, '{{ p.code|escapejs }}', '{{ p.name|escapejs }}', '{{ p.data_type }}', '{{ p.default_unit|default:''|escapejs }}', '{{ p.result_type|default:'Numeric'|escapejs }}', {{ p.default_decimal_places|default:2 }}, {{ p.is_active|yesno:'true,false' }})" title="Edit Parameter">
+                        <i class="bi bi-pencil"></i> Edit
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9">
+                    <div class="lab-empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <p style="margin: 0;">No parameters found matching your criteria.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% include "lab/master/pagination.html" %}
+</div>
+
+<!-- Modal: Add / Edit Parameter -->
+<div class="lab-modal" id="paramModal" tabindex="-1" role="dialog" aria-labelledby="paramModalTitle" aria-hidden="true">
+    <div class="lab-modal-dialog" role="document">
+        <div class="lab-modal-header">
+            <div>
+                <h2 class="lab-modal-title" id="paramModalTitle">Parameter Configuration</h2>
+                <div style="font-size: 0.78rem; color: var(--lab-text-muted); margin-top: 2px;">Manage master parameter definition</div>
+            </div>
+            <button type="button" class="lab-modal-close" data-lab-dismiss="modal" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <form id="paramForm" onsubmit="submitParamForm(event)">
+            {% csrf_token %}
+            <input type="hidden" id="param_id">
+
+            <div class="lab-modal-body">
+                <div class="lab-form-grid-2">
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="param_code">Parameter Code <span class="lab-required">*</span></label>
+                        <input type="text" class="lab-form-input" id="param_code" placeholder="e.g. 00022681" style="font-family: monospace;" required>
+                        <span style="font-size: 11px; color: var(--lab-text-muted); margin-top: 2px;">Preserves exact string format & leading zeros</span>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="param_name">Parameter Name <span class="lab-required">*</span></label>
+                        <input type="text" class="lab-form-input" id="param_name" placeholder="e.g. Haemoglobin" required>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="param_data_type">Data Type</label>
+                        <select class="lab-form-select" id="param_data_type">
+                            <option value="NUMERIC">Numeric</option>
+                            <option value="TEXT">Text</option>
+                            <option value="SELECT">Select / Dropdown</option>
+                        </select>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="param_unit">Default Unit</label>
+                        <input type="text" class="lab-form-input" id="param_unit" placeholder="e.g. g/dL, mg/dL, %">
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="param_result_type">Result Type</label>
+                        <input type="text" class="lab-form-input" id="param_result_type" value="Numeric" placeholder="Numeric, Text, etc.">
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="param_decimals">Decimal Places</label>
+                        <input type="number" class="lab-form-input" id="param_decimals" value="2" min="0" max="6">
+                    </div>
+
+                    <div class="lab-form-group lab-form-col-full">
+                        <label class="lab-form-label" for="param_is_active">Status</label>
+                        <select class="lab-form-select" id="param_is_active">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lab-modal-footer">
+                <button type="button" class="lab-btn lab-btn-secondary" data-lab-dismiss="modal">Cancel</button>
+                <button type="submit" class="lab-btn lab-btn-primary" id="btnSaveParam">
+                    <i class="bi bi-check-lg"></i> Save Parameter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block lab_master_extra_js %}
+<script>
+function openAddParamModal() {
+    document.getElementById('paramModalTitle').innerText = 'Add Parameter';
+    document.getElementById('param_id').value = '';
+    document.getElementById('param_code').value = '';
+    document.getElementById('param_name').value = '';
+    document.getElementById('param_data_type').value = 'NUMERIC';
+    document.getElementById('param_unit').value = '';
+    document.getElementById('param_result_type').value = 'Numeric';
+    document.getElementById('param_decimals').value = '2';
+    document.getElementById('param_is_active').value = 'true';
+    openLabModal('paramModal');
+}
+
+function openEditParamModal(id, code, name, dataType, unit, resultType, decimals, isActive) {
+    document.getElementById('paramModalTitle').innerText = 'Edit Parameter: ' + name;
+    document.getElementById('param_id').value = id;
+    document.getElementById('param_code').value = code;
+    document.getElementById('param_name').value = name;
+    document.getElementById('param_data_type').value = dataType;
+    document.getElementById('param_unit').value = unit || '';
+    document.getElementById('param_result_type').value = resultType || 'Numeric';
+    document.getElementById('param_decimals').value = decimals || 2;
+    document.getElementById('param_is_active').value = isActive ? 'true' : 'false';
+    openLabModal('paramModal');
+}
+
+async function submitParamForm(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveParam');
+    btn.disabled = true;
+
+    const payload = {
+        id: document.getElementById('param_id').value || null,
+        code: document.getElementById('param_code').value.trim(),
+        name: document.getElementById('param_name').value.trim(),
+        data_type: document.getElementById('param_data_type').value,
+        default_unit: document.getElementById('param_unit').value.trim(),
+        result_type: document.getElementById('param_result_type').value.trim(),
+        default_decimal_places: parseInt(document.getElementById('param_decimals').value) || 2,
+        is_active: document.getElementById('param_is_active').value === 'true'
+    };
+
+    try {
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const res = await fetch("{% url 'lab:api_master_parameter_save' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error saving parameter.');
+            btn.disabled = false;
+        }
+    } catch(err) {
+        alert('Request failed: ' + err);
+        btn.disabled = false;
+    }
+}
+</script>
+{% endblock %}

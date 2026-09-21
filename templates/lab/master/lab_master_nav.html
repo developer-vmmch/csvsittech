@@ -1,0 +1,34 @@
+<nav class="lab-nav-container" aria-label="Lab Master Navigation">
+    <div class="lab-nav-pills">
+        <a href="{% url 'lab:lab_master_hub' %}" class="lab-nav-pill {% if request.resolver_match.url_name == 'lab_master_hub' %}active{% endif %}">
+            <i class="bi bi-grid-fill"></i> Hub
+        </a>
+        <a href="{% url 'lab:master_investigation_list' %}" class="lab-nav-pill {% if request.resolver_match.url_name == 'master_investigation_list' or request.resolver_match.url_name == 'master_investigation_detail' %}active{% endif %}">
+            <i class="bi bi-file-medical"></i> Investigations
+        </a>
+        <a href="{% url 'lab:master_parameter_list' %}" class="lab-nav-pill {% if request.resolver_match.url_name == 'master_parameter_list' %}active{% endif %}">
+            <i class="bi bi-list-check"></i> Parameters
+        </a>
+        <a href="{% url 'lab:master_investigation_parameter_mapping' %}" class="lab-nav-pill {% if request.resolver_match.url_name == 'master_investigation_parameter_mapping' %}active{% endif %}">
+            <i class="bi bi-diagram-3"></i> Inv Parameters
+        </a>
+        <a href="{% url 'lab:master_reference_ranges' %}" class="lab-nav-pill {% if request.resolver_match.url_name == 'master_reference_ranges' %}active{% endif %}">
+            <i class="bi bi-rulers"></i> Ref Ranges
+        </a>
+        <a href="{% url 'lab:master_diagnosis_list' %}" class="lab-nav-pill {% if request.resolver_match.url_name == 'master_diagnosis_list' %}active{% endif %}">
+            <i class="bi bi-clipboard2-pulse"></i> Diagnoses
+        </a>
+        <a href="{% url 'lab:master_diagnosis_investigation_mapping' %}" class="lab-nav-pill {% if request.resolver_match.url_name == 'master_diagnosis_investigation_mapping' %}active{% endif %}">
+            <i class="bi bi-arrow-left-right"></i> Diag → Inv
+        </a>
+        <a href="{% url 'lab:master_diagnosis_department_mapping' %}" class="lab-nav-pill {% if request.resolver_match.url_name == 'master_diagnosis_department_mapping' %}active{% endif %}">
+            <i class="bi bi-building"></i> Diag → Dept
+        </a>
+        <a href="{% url 'lab:master_age_groups' %}" class="lab-nav-pill {% if request.resolver_match.url_name == 'master_age_groups' %}active{% endif %}">
+            <i class="bi bi-people"></i> Age Groups
+        </a>
+        <a href="{% url 'lab:master_validation' %}" class="lab-nav-pill pill-danger {% if request.resolver_match.url_name == 'master_validation' %}active{% endif %}">
+            <i class="bi bi-shield-check"></i> Validation
+        </a>
+    </div>
+</nav>

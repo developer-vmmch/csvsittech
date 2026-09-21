@@ -1,0 +1,329 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}Diagnosis → Investigation Mapping | Lab Master{% endblock %}
+{% block page_heading %}Diagnosis → Investigation Mapping & Rules{% endblock %}
+
+{% block lab_content %}
+<!-- Filter Card -->
+<div class="lab-filter-card">
+    <form method="get" class="lab-filter-grid">
+        <div class="lab-filter-col">
+            <label class="lab-form-label">Diagnosis</label>
+            <select name="diagnosis" class="lab-form-select">
+                <option value="">-- All Diagnoses --</option>
+                {% for d in diagnoses %}
+                <option value="{{ d.id }}" {% if request.GET.diagnosis == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="lab-filter-col">
+            <label class="lab-form-label">Investigation</label>
+            <select name="investigation" class="lab-form-select">
+                <option value="">-- All Investigations --</option>
+                {% for inv in investigations %}
+                <option value="{{ inv.id }}" {% if request.GET.investigation == inv.id|stringformat:"s" %}selected{% endif %}>{{ inv.code }} - {{ inv.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="lab-filter-col">
+            <label class="lab-form-label">Gender</label>
+            <select name="gender" class="lab-form-select">
+                <option value="">-- Gender --</option>
+                <option value="All" {% if request.GET.gender == 'All' %}selected{% endif %}>Universal (All)</option>
+                <option value="Male" {% if request.GET.gender == 'Male' %}selected{% endif %}>Male</option>
+                <option value="Female" {% if request.GET.gender == 'Female' %}selected{% endif %}>Female</option>
+            </select>
+        </div>
+        <div class="lab-filter-col">
+            <label class="lab-form-label">Search</label>
+            <input type="text" name="search" class="lab-form-input" placeholder="Search name/code..." value="{{ request.GET.search }}">
+        </div>
+        <div class="lab-filter-actions">
+            <button type="submit" class="lab-btn lab-btn-primary"><i class="bi bi-funnel"></i>Filter</button>
+            <a href="{% url 'lab:master_diagnosis_investigation_mapping' %}" class="lab-btn lab-btn-light"><i class="bi bi-x-circle"></i>Reset</a>
+            <button type="button" class="lab-btn lab-btn-success" onclick="openAddDiagInvModal()"><i class="bi bi-plus-lg"></i>Add Rule</button>
+        </div>
+    </form>
+</div>
+
+<!-- Table Card -->
+<div class="lab-table-container">
+    <div class="lab-table-card-header">
+        <span class="lab-table-title">Diagnosis Investigation Eligibility Rules ({{ page_obj.paginator.count|default:0 }})</span>
+        <span class="lab-table-subtitle">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages|default:1 }}</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="lab-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">S.No</th>
+                    <th>Diagnosis</th>
+                    <th>Investigation</th>
+                    <th style="width: 100px;">Gender</th>
+                    <th style="width: 110px;" class="text-center">Age Bounds</th>
+                    <th>Department</th>
+                    <th style="width: 140px;" class="text-center">Pregnancy Req.</th>
+                    <th style="width: 70px;" class="text-center">Priority</th>
+                    <th style="width: 80px;">Status</th>
+                    <th style="width: 120px;" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in mappings %}
+                <tr>
+                    <td class="text-muted">{{ forloop.counter0|add:page_obj.start_index }}</td>
+                    <td class="font-semibold text-slate-800">{{ m.diagnosis.name }}</td>
+                    <td>
+                        <div class="font-medium text-slate-800">{{ m.investigation.name }}</div>
+                        <span class="lab-code-pill font-mono">{{ m.investigation.code }}</span>
+                    </td>
+                    <td>
+                        {% if m.gender == 'Male' %}
+                        <span class="lab-badge lab-badge-info">Male</span>
+                        {% elif m.gender == 'Female' %}
+                        <span class="lab-badge lab-badge-danger">Female</span>
+                        {% else %}
+                        <span class="lab-badge lab-badge-secondary">Universal</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if m.min_age or m.max_age %}
+                        <span class="font-medium">{{ m.min_age|default:"0" }} – {{ m.max_age|default:"Any" }} Y</span>
+                        {% elif m.age_group %}
+                        <span class="lab-badge lab-badge-secondary">{{ m.age_group.label }}</span>
+                        {% else %}
+                        <span class="text-slate-400 text-xs">Any Age</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ m.department.name|default:"Universal" }}</td>
+                    <td class="text-center">
+                        {% if m.pregnancy_required %}
+                        <span class="lab-badge lab-badge-warning">Yes (Pregnancy)</span>
+                        {% else %}
+                        <span class="text-slate-400 text-xs">No</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center font-medium">{{ m.priority }}</td>
+                    <td>
+                        {% if m.is_active %}
+                        <span class="lab-badge lab-badge-success">Active</span>
+                        {% else %}
+                        <span class="lab-badge lab-badge-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="flex items-center justify-end gap-1">
+                            <button type="button" class="lab-btn lab-btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="openEditDiagInvModal({{ m.id }}, {{ m.diagnosis_id }}, {{ m.investigation_id }}, {{ m.age_group_id|default:'null' }}, {{ m.department_id|default:'null' }}, '{{ m.gender }}', '{{ m.min_age|default:'' }}', '{{ m.max_age|default:'' }}', {{ m.pregnancy_required|yesno:'true,false' }}, {{ m.priority|default:100 }}, {{ m.is_active|yesno:'true,false' }})">
+                                Edit
+                            </button>
+                            <button type="button" class="lab-btn lab-btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteDiagInvMap({{ m.id }})">
+                                Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="text-center py-8 text-slate-400">
+                        <i class="bi bi-inbox text-3xl block mb-2 text-slate-300"></i>
+                        No diagnosis to investigation mappings found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include "lab/master/pagination.html" %}
+</div>
+
+<!-- Modal: Add / Edit Mapping -->
+<div class="lab-modal-overlay" id="diagInvModal">
+    <div class="lab-modal-dialog lab-modal-lg">
+        <div class="lab-modal-header">
+            <h3 class="lab-modal-title" id="diagInvModalTitle">Diagnosis → Investigation Eligibility Rule</h3>
+            <button type="button" class="lab-modal-close" onclick="closeLabModal('diagInvModal')">&times;</button>
+        </div>
+        <form id="diagInvForm" onsubmit="submitDiagInvForm(event)">
+            {% csrf_token %}
+            <input type="hidden" id="dim_id">
+            <div class="lab-modal-body">
+                <div class="lab-form-grid-2">
+                    <div class="lab-form-group">
+                        <label class="lab-form-label">Diagnosis <span class="text-rose-500">*</span></label>
+                        <select class="lab-form-select" id="dim_diag" required>
+                            <option value="">-- Select Diagnosis --</option>
+                            {% for d in diagnoses %}
+                            <option value="{{ d.id }}">{{ d.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="lab-form-group">
+                        <label class="lab-form-label">Investigation <span class="text-rose-500">*</span></label>
+                        <select class="lab-form-select" id="dim_inv" required>
+                            <option value="">-- Select Investigation --</option>
+                            {% for inv in investigations %}
+                            <option value="{{ inv.id }}">{{ inv.code }} - {{ inv.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="lab-form-grid-3 mt-3">
+                    <div class="lab-form-group">
+                        <label class="lab-form-label">Gender Eligibility</label>
+                        <select class="lab-form-select" id="dim_gender">
+                            <option value="All">Universal (All)</option>
+                            <option value="Male">Male Only</option>
+                            <option value="Female">Female Only</option>
+                        </select>
+                    </div>
+                    <div class="lab-form-group">
+                        <label class="lab-form-label">Min Age (Y)</label>
+                        <input type="number" class="lab-form-input" id="dim_min_age" placeholder="0">
+                    </div>
+                    <div class="lab-form-group">
+                        <label class="lab-form-label">Max Age (Y)</label>
+                        <input type="number" class="lab-form-input" id="dim_max_age" placeholder="120">
+                    </div>
+                </div>
+
+                <div class="lab-form-grid-2 mt-3">
+                    <div class="lab-form-group">
+                        <label class="lab-form-label">Hospital Department Filter</label>
+                        <select class="lab-form-select" id="dim_dept">
+                            <option value="">-- Universal (Any Dept) --</option>
+                            {% for d in departments %}
+                            <option value="{{ d.id }}">{{ d.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="lab-form-group">
+                        <label class="lab-form-label">Age Group Preset</label>
+                        <select class="lab-form-select" id="dim_age_group">
+                            <option value="">-- None --</option>
+                            {% for ag in age_groups %}
+                            <option value="{{ ag.id }}">{{ ag.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="lab-form-grid-3 mt-3">
+                    <div class="lab-form-group">
+                        <label class="lab-form-label">Pregnancy Required</label>
+                        <select class="lab-form-select" id="dim_preg">
+                            <option value="false">No</option>
+                            <option value="true">Yes (Female Only)</option>
+                        </select>
+                    </div>
+                    <div class="lab-form-group">
+                        <label class="lab-form-label">Rule Priority</label>
+                        <input type="number" class="lab-form-input" id="dim_priority" value="100">
+                    </div>
+                    <div class="lab-form-group">
+                        <label class="lab-form-label">Status</label>
+                        <select class="lab-form-select" id="dim_status">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="lab-modal-footer">
+                <button type="button" class="lab-btn lab-btn-secondary" onclick="closeLabModal('diagInvModal')">Cancel</button>
+                <button type="submit" class="lab-btn lab-btn-primary"><i class="bi bi-check-lg"></i>Save Mapping Rule</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openAddDiagInvModal() {
+    document.getElementById('diagInvModalTitle').innerText = 'Add Diagnosis → Investigation Rule';
+    document.getElementById('dim_id').value = '';
+    document.getElementById('dim_diag').value = '{{ request.GET.diagnosis }}' || '';
+    document.getElementById('dim_inv').value = '{{ request.GET.investigation }}' || '';
+    document.getElementById('dim_gender').value = 'All';
+    document.getElementById('dim_min_age').value = '';
+    document.getElementById('dim_max_age').value = '';
+    document.getElementById('dim_dept').value = '';
+    document.getElementById('dim_age_group').value = '';
+    document.getElementById('dim_preg').value = 'false';
+    document.getElementById('dim_priority').value = '100';
+    document.getElementById('dim_status').value = 'true';
+    openLabModal('diagInvModal');
+}
+
+function openEditDiagInvModal(id, diagId, invId, ageGroupId, deptId, gender, minAge, maxAge, pregReq, priority, active) {
+    document.getElementById('diagInvModalTitle').innerText = 'Edit Diagnosis → Investigation Rule';
+    document.getElementById('dim_id').value = id;
+    document.getElementById('dim_diag').value = diagId;
+    document.getElementById('dim_inv').value = invId;
+    document.getElementById('dim_age_group').value = ageGroupId || '';
+    document.getElementById('dim_dept').value = deptId || '';
+    document.getElementById('dim_gender').value = gender;
+    document.getElementById('dim_min_age').value = minAge || '';
+    document.getElementById('dim_max_age').value = maxAge || '';
+    document.getElementById('dim_preg').value = pregReq ? 'true' : 'false';
+    document.getElementById('dim_priority').value = priority || 100;
+    document.getElementById('dim_status').value = active ? 'true' : 'false';
+    openLabModal('diagInvModal');
+}
+
+async function submitDiagInvForm(e) {
+    e.preventDefault();
+    const payload = {
+        id: document.getElementById('dim_id').value || null,
+        diagnosis_id: document.getElementById('dim_diag').value,
+        investigation_id: document.getElementById('dim_inv').value,
+        gender: document.getElementById('dim_gender').value,
+        min_age: document.getElementById('dim_min_age').value || null,
+        max_age: document.getElementById('dim_max_age').value || null,
+        department_id: document.getElementById('dim_dept').value || null,
+        age_group_id: document.getElementById('dim_age_group').value || null,
+        pregnancy_required: document.getElementById('dim_preg').value === 'true',
+        priority: parseInt(document.getElementById('dim_priority').value) || 100,
+        is_active: document.getElementById('dim_status').value === 'true'
+    };
+
+    try {
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const res = await fetch("{% url 'lab:api_master_diag_inv_map_save' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error saving rule.');
+        }
+    } catch(err) {
+        alert('Request failed: ' + err);
+    }
+}
+
+async function deleteDiagInvMap(id) {
+    if (!confirm('Are you sure you want to delete this diagnosis to investigation mapping?')) return;
+    const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    try {
+        const res = await fetch(`/lab/master/api/diagnosis-investigations/${id}/delete/`, {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrf}
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error deleting mapping.');
+        }
+    } catch(err) {
+        alert('Delete failed: ' + err);
+    }
+}
+</script>
+{% endblock %}

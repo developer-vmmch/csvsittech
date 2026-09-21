@@ -1,92 +1,97 @@
-{% extends "base.html" %}
+{% extends "lab/master/base.html" %}
 
-{% block title %}{% if object %}Edit Age Group{% else %}Add Age Group{% endif %} | VMMCerp{% endblock %}
+{% block title %}{% if object %}Edit Age Group{% else %}Add Age Group{% endif %} | Lab Master{% endblock %}
 {% block page_heading %}{% if object %}Edit Age Group{% else %}Add New Age Group{% endif %}{% endblock %}
 
-{% block content %}
-<div class="panel" style="max-width: 800px; margin: 0 auto;">
-    <div class="panel-header" style="margin-bottom: 1.5rem;">
-        <h2 class="panel-title">Age Group Details</h2>
+{% block lab_content %}
+<div style="max-width: 860px; margin: 0 auto;">
+    <div class="lab-card">
+        <div class="lab-table-card-header mb-4 pb-2 border-b border-slate-100">
+            <span class="lab-table-title">{% if object %}Edit Age Group: {{ object.label }}{% else %}Age Group Details{% endif %}</span>
+            <span class="lab-table-subtitle">Demographic Cohort Master</span>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="p-3 mb-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <div class="lab-form-grid-2 mb-3">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.code.id_for_label }}">Age Group Code <span class="text-rose-500">*</span></label>
+                    {{ form.code }}
+                    {% if form.code.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.code.errors }}</div>{% endif %}
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.label.id_for_label }}">Age Group Name / Label <span class="text-rose-500">*</span></label>
+                    {{ form.label }}
+                    {% if form.label.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.label.errors }}</div>{% endif %}
+                </div>
+            </div>
+            
+            <div class="lab-form-grid-2 mb-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.min_age_value.id_for_label }}">Min Age Value <span class="text-rose-500">*</span></label>
+                    {{ form.min_age_value }}
+                    {% if form.min_age_value.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.min_age_value.errors }}</div>{% endif %}
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.min_age_unit.id_for_label }}">Min Age Unit <span class="text-rose-500">*</span></label>
+                    {{ form.min_age_unit }}
+                    {% if form.min_age_unit.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.min_age_unit.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="lab-form-grid-2 mb-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.max_age_value.id_for_label }}">Max Age Value <span class="text-rose-500">*</span></label>
+                    {{ form.max_age_value }}
+                    {% if form.max_age_value.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.max_age_value.errors }}</div>{% endif %}
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.max_age_unit.id_for_label }}">Max Age Unit <span class="text-rose-500">*</span></label>
+                    {{ form.max_age_unit }}
+                    {% if form.max_age_unit.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.max_age_unit.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="lab-form-grid-3 mb-4">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.gender.id_for_label }}">Gender</label>
+                    {{ form.gender }}
+                    {% if form.gender.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.gender.errors }}</div>{% endif %}
+                </div>
+                <div class="lab-form-group flex flex-col justify-center pt-5">
+                    <label class="flex items-center gap-2 cursor-pointer mb-0">
+                        {{ form.pregnancy_applicable }}
+                        <span class="text-xs font-semibold text-slate-700">Pregnancy Applicable</span>
+                    </label>
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.sort_order.id_for_label }}">Display Order</label>
+                    {{ form.sort_order }}
+                    {% if form.sort_order.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.sort_order.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="p-3 mb-4 rounded-lg bg-slate-50 border border-slate-200">
+                <label class="flex items-center gap-2 cursor-pointer mb-0">
+                    {{ form.is_active }}
+                    <span class="text-xs font-semibold text-slate-700">Active Status</span>
+                </label>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <a href="{% url 'lab:agegroup_list' %}" class="lab-btn lab-btn-secondary">Cancel</a>
+                <button type="submit" class="lab-btn lab-btn-primary">
+                    <i class="bi bi-check-lg"></i> {% if object %}Update{% else %}Save{% endif %} Age Group
+                </button>
+            </div>
+        </form>
     </div>
-
-    <form method="post">
-        {% csrf_token %}
-        
-        {% if form.non_field_errors %}
-        <div class="alert alert-error">
-            {{ form.non_field_errors }}
-        </div>
-        {% endif %}
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-            <div>
-                <label for="{{ form.code.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Age Group Code *</label>
-                {{ form.code }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.code.errors }}</div>
-            </div>
-            <div>
-                <label for="{{ form.label.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Age Group Name *</label>
-                {{ form.label }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.label.errors }}</div>
-            </div>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; background: #f8fafc; padding: 1rem; border-radius: 6px; border: 1px solid #e2e8f0;">
-            <div>
-                <label for="{{ form.min_age_value.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Min Age Value *</label>
-                {{ form.min_age_value }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.min_age_value.errors }}</div>
-            </div>
-            <div>
-                <label for="{{ form.min_age_unit.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Min Age Unit *</label>
-                {{ form.min_age_unit }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.min_age_unit.errors }}</div>
-            </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; background: #f8fafc; padding: 1rem; border-radius: 6px; border: 1px solid #e2e8f0;">
-            <div>
-                <label for="{{ form.max_age_value.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Max Age Value *</label>
-                {{ form.max_age_value }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.max_age_value.errors }}</div>
-            </div>
-            <div>
-                <label for="{{ form.max_age_unit.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Max Age Unit *</label>
-                {{ form.max_age_unit }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.max_age_unit.errors }}</div>
-            </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-            <div>
-                <label for="{{ form.gender.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Gender</label>
-                {{ form.gender }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.gender.errors }}</div>
-            </div>
-            <div style="display: flex; align-items: center; padding-top: 1.8rem; gap: 0.5rem;">
-                {{ form.pregnancy_applicable }}
-                <label for="{{ form.pregnancy_applicable.id_for_label }}" style="font-weight: 600; margin: 0;">Pregnancy Applicable</label>
-            </div>
-            <div>
-                <label for="{{ form.sort_order.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Display Order</label>
-                {{ form.sort_order }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.sort_order.errors }}</div>
-            </div>
-        </div>
-
-        <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem; background: #f8fafc; padding: 1rem; border-radius: 6px; border: 1px solid #e2e8f0;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                {{ form.is_active }}
-                <label for="{{ form.is_active.id_for_label }}" style="font-weight: 600; margin: 0; cursor: pointer;">Active Status</label>
-            </div>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
-            <a href="{% url 'lab:agegroup_list' %}" class="btn btn-secondary">Cancel</a>
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-save"></i> {% if object %}Update{% else %}Save{% endif %} Age Group
-            </button>
-        </div>
-    </form>
 </div>
 {% endblock %}
