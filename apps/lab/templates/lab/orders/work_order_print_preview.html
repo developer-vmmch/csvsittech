@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rpt_ReportViewer.aspx - {{ wo.service_request.patient.patient_id }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #525659;
+            color: #000000;
+        }
+
+        /* Top ReportViewer Navigation Bar (Chrome / ASP.NET ReportViewer Style) */
+        .viewer-toolbar {
+            width: 100%;
+            height: 48px;
+            background: #323639;
+            color: #f1f1f1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+            font-size: 13px;
+            user-select: none;
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toolbar-icon-btn {
+            background: none;
+            border: none;
+            color: #f1f1f1;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 6px 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+            text-decoration: none;
+        }
+
+        .toolbar-icon-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .doc-name {
+            font-weight: 500;
+            color: #e8eaed;
+            font-size: 13px;
+            letter-spacing: 0.2px;
+        }
+
+        .toolbar-center {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-nav-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: #202124;
+            padding: 2px 8px;
+            border-radius: 3px;
+            border: 1px solid #5f6368;
+            font-size: 12px;
+            color: #e8eaed;
+        }
+
+        .page-input {
+            width: 28px;
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-weight: bold;
+            text-align: center;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #202124;
+            padding: 2px 8px;
+            border-radius: 3px;
+            border: 1px solid #5f6368;
+            font-size: 12px;
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-print-primary {
+            background: #008080;
+            color: #ffffff;
+            border: none;
+            padding: 5px 14px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+
+        .btn-print-primary:hover {
+            background: #006666;
+        }
+
+        /* Layout Body */
+        .viewer-layout {
+            display: flex;
+            width: 100%;
+            height: calc(100vh - 48px);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Left Side Preview Slider Panel */
+        .viewer-sidebar {
+            width: 200px;
+            min-width: 200px;
+            height: 100%;
+            background: #282a2d;
+            border-right: 1px solid #1a1a1a;
+            overflow-y: auto;
+            padding: 20px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            align-items: center;
+            transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            z-index: 100;
+        }
+
+        .viewer-sidebar.collapsed {
+            margin-left: -200px;
+        }
+
+        /* Thumbnail Preview Item */
+        .sidebar-thumb-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+
+        .sidebar-thumb-item:hover {
+            transform: scale(1.02);
+        }
+
+        .thumb-sheet {
+            width: 140px;
+            height: 198px;
+            background: #ffffff;
+            border: 2px solid #555555;
+            border-radius: 3px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+            padding: 6px 7px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            position: relative;
+            font-size: 5px;
+            color: #000000;
+            line-height: 1.15;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .sidebar-thumb-item.active .thumb-sheet {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.6), 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .thumb-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #9aa0a6;
+            margin-top: 6px;
+            transition: color 0.2s;
+        }
+
+        .sidebar-thumb-item.active .thumb-label {
+            color: #38bdf8;
+        }
+
+        .thumb-header {
+            border-bottom: 0.8px solid #000;
+            padding-bottom: 2px;
+            margin-bottom: 3px;
+            text-align: center;
+        }
+
+        .thumb-hosp-title {
+            font-size: 5.5px;
+            font-weight: 800;
+            color: #007e8a;
+            letter-spacing: 0.2px;
+            line-height: 1.1;
+        }
+
+        .thumb-hosp-sub {
+            font-size: 4.5px;
+            color: #990000;
+            font-weight: 700;
+        }
+
+        .thumb-patient-box {
+            border: 0.8px solid #000;
+            padding: 2px 3px;
+            margin-bottom: 3px;
+            font-size: 4.5px;
+            background: #fafafa;
+        }
+
+        .thumb-p-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1px;
+        }
+
+        .thumb-test-banner {
+            background: #f1f5f9;
+            border-left: 2px solid #007e8a;
+            border-top: 0.5px solid #000;
+            border-right: 0.5px solid #000;
+            border-bottom: 0.5px solid #000;
+            padding: 1px 3px;
+            font-weight: 800;
+            font-size: 4.8px;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .thumb-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 4.2px;
+        }
+
+        .thumb-table th {
+            background: #e2e8f0;
+            padding: 1px 2px;
+            font-weight: 700;
+            border: 0.5px solid #000;
+            text-align: left;
+        }
+
+        .thumb-table td {
+            padding: 1px 2px;
+            border: 0.5px solid #ddd;
+            color: #1e293b;
+        }
+
+        .thumb-footer {
+            border-top: 0.5px solid #777;
+            padding-top: 2px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 4px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .thumb-mock-table th {
+            height: 3px;
+            background: #ccc;
+        }
+
+        .thumb-mock-table td {
+            height: 3px;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* Main Scrollable Canvas Area */
+        .viewer-main-scroll {
+            flex: 1;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px 60px;
+            background-color: #525659;
+        }
+
+        .pages-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            align-items: center;
+        }
+
+        /* Authentic A4 Diagnostic Report Page */
+        .report-page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 12mm 16mm 16mm 16mm;
+            background: #ffffff;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+            position: relative;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease;
+        }
+
+        /* Top Bar Meta: QR Code + Page Number */
+        .page-top-meta {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 4px;
+        }
+
+        .qr-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .page-text {
+            font-size: 8.5px;
+            font-weight: 700;
+            color: #000000;
+            margin-top: 1px;
+        }
+
+        /* Hospital Official Letterhead */
+        .hospital-header {
+            margin-bottom: 6px;
+            padding-bottom: 4px;
+        }
+
+        .header-main-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-left-col {
+            width: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .title-center-col {
+            flex: 1;
+            text-align: center;
+            padding: 0 8px;
+        }
+
+        .vmmc-title-line1 {
+            color: #007e8a;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            line-height: 1.15;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .vmmc-title-line2 {
+            color: #007e8a;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            line-height: 1.15;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .vmmc-title-karaikal {
+            color: #990000;
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'Times New Roman', Georgia, serif;
+            margin-top: 1px;
+        }
+
+        .logo-right-col {
+            width: 110px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hfrid-text {
+            font-size: 8.5px;
+            font-weight: 800;
+            color: #000000;
+            margin-top: 2px;
+            white-space: nowrap;
+            letter-spacing: 0.2px;
+        }
+
+        /* Address & Contact Info */
+        .header-address-line {
+            text-align: center;
+            font-size: 10px;
+            font-weight: 800;
+            color: #000000;
+            margin-top: 4px;
+            line-height: 1.25;
+            letter-spacing: 0.2px;
+        }
+
+        .header-contact-line {
+            text-align: center;
+            font-size: 9.5px;
+            font-weight: 700;
+            color: #000000;
+            margin-top: 2px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #000000;
+            line-height: 1.25;
+        }
+
+        .header-contact-line a {
+            color: #000000;
+            text-decoration: underline;
+        }
+
+        /* LAB INVESTIGATION REPORT Title */
+        .report-heading {
+            text-align: center;
+            font-size: 12.5px;
+            font-weight: 800;
+            color: #000000;
+            text-decoration: underline;
+            margin: 6px 0;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* Patient Information Box */
+        .patient-box-container {
+            border: 1.5px solid #000000;
+            margin-bottom: 12px;
+            display: flex;
+            background: #ffffff;
+        }
+
+        .p-box-left {
+            flex: 1.1;
+            border-right: 1.5px solid #000000;
+            padding: 5px 8px;
+            font-size: 10.5px;
+        }
+
+        .p-box-right {
+            flex: 1;
+            padding: 5px 8px;
+            font-size: 10.5px;
+            position: relative;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 3px;
+            line-height: 1.35;
+        }
+
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .lbl-left {
+            width: 85px;
+            font-weight: 700;
+            color: #000000;
+            flex-shrink: 0;
+        }
+
+        .lbl-right {
+            width: 140px;
+            font-weight: 700;
+            color: #000000;
+            flex-shrink: 0;
+        }
+
+        .val-text {
+            color: #000000;
+            font-weight: 700;
+            flex: 1;
+        }
+
+        .barcode-wrap {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Test Section & Separation Styles */
+        .test-report-block {
+            margin-bottom: 22px;
+        }
+
+        .test-report-block:last-child {
+            margin-bottom: 8px;
+        }
+
+        .test-section-banner {
+            background-color: #f1f5f9;
+            border-top: 1px solid #000000;
+            border-left: 4px solid #007e8a;
+            border-right: 1px solid #000000;
+            border-bottom: 1px solid #000000;
+            padding: 5px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .test-banner-title {
+            font-size: 11.5px;
+            font-weight: 800;
+            color: #000000;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .test-banner-meta {
+            font-size: 9.5px;
+            color: #334155;
+        }
+
+        /* Investigation Results Table */
+        .results-table-wrap {
+            margin-bottom: 12px;
+        }
+
+        .lab-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            border: 1px solid #000000;
+        }
+
+        .lab-table th {
+            background-color: #d9d9d9;
+            color: #000000;
+            font-weight: 800;
+            text-align: left;
+            padding: 4px 6px;
+            border: 1px solid #000000;
+            font-size: 10px;
+        }
+
+        .lab-table td {
+            padding: 4px 6px;
+            border: 1px solid #777777;
+            vertical-align: top;
+            color: #000000;
+            line-height: 1.3;
+        }
+
+        .cell-bold {
+            font-weight: 700;
+        }
+
+        .cell-center {
+            text-align: center;
+        }
+
+        /* Clinical Remarks */
+        .remarks-box {
+            font-size: 9.5px;
+            color: #000000;
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+
+        .remarks-box strong {
+            font-weight: 800;
+        }
+
+        /* Bottom Notice & Signatures */
+        .bottom-section {
+            margin-top: auto;
+            padding-top: 14px;
+        }
+
+        .end-report-line {
+            text-align: center;
+            font-size: 10px;
+            font-weight: 800;
+            color: #000000;
+            margin: 10px 0 20px;
+            letter-spacing: 0.5px;
+        }
+
+        .signatures-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 0 10px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #000000;
+        }
+
+        .sign-col {
+            text-align: center;
+            min-width: 130px;
+        }
+
+        .sign-title {
+            margin-top: 25px;
+            border-top: 1px solid #000000;
+            padding-top: 4px;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        /* Print Media CSS */
+        @media print {
+            html, body {
+                height: auto !important;
+                overflow: visible !important;
+                background: #ffffff !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .viewer-toolbar,
+            .viewer-sidebar {
+                display: none !important;
+            }
+
+            .viewer-layout {
+                height: auto !important;
+                overflow: visible !important;
+                display: block !important;
+            }
+
+            .viewer-main-scroll {
+                height: auto !important;
+                overflow: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: transparent !important;
+                display: block !important;
+            }
+
+            .pages-container {
+                gap: 0 !important;
+                display: block !important;
+            }
+
+            .report-page {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 10mm 12mm 12mm 12mm !important;
+                width: 100% !important;
+                min-height: auto !important;
+                page-break-after: always;
+                transform: none !important;
+            }
+
+            .test-section-banner {
+                background-color: #f1f5f9 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .lab-table th {
+                background-color: #d9d9d9 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            @page {
+                size: A4 portrait;
+                margin: 6mm;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Top PDF ReportViewer Navigation Bar -->
+    <div class="viewer-toolbar">
+        <div class="toolbar-left">
+            <button type="button" class="toolbar-icon-btn" onclick="toggleSidebar()" title="Toggle Sidebar Slider">
+                <i class="bi bi-layout-sidebar-inset"></i>
+            </button>
+            <i class="bi bi-file-earmark-medical" style="color: #38bdf8;"></i>
+            <span class="doc-name">Rpt_ReportViewer.aspx</span>
+        </div>
+
+        <div class="toolbar-center">
+            <button type="button" class="toolbar-icon-btn" onclick="prevPage()" title="Previous Page">
+                <i class="bi bi-chevron-up"></i>
+            </button>
+            <div class="page-nav-group">
+                <input type="text" id="pageInput" class="page-input" value="1" onchange="goToPage(this.value)">
+                <span>/</span>
+                <span id="totalPagesCount">{{ reports_data|length|default:"1" }}</span>
+            </div>
+            <button type="button" class="toolbar-icon-btn" onclick="nextPage()" title="Next Page">
+                <i class="bi bi-chevron-down"></i>
+            </button>
+            <div class="zoom-controls">
+                <button type="button" class="toolbar-icon-btn" style="padding: 0 4px;" onclick="zoomOut()"><i class="bi bi-dash"></i></button>
+                <span id="zoomVal">100%</span>
+                <button type="button" class="toolbar-icon-btn" style="padding: 0 4px;" onclick="zoomIn()"><i class="bi bi-plus"></i></button>
+            </div>
+            <button type="button" class="toolbar-icon-btn" onclick="resetZoom()" title="Fit to width">
+                <i class="bi bi-arrows-fullscreen"></i>
+            </button>
+        </div>
+
+        <div class="toolbar-right">
+            <button type="button" class="btn-print-primary" onclick="window.print()">
+                <i class="bi bi-printer-fill"></i> Print
+            </button>
+            <button type="button" class="toolbar-icon-btn" onclick="window.print()" title="Download PDF">
+                <i class="bi bi-download"></i>
+            </button>
+            <button type="button" class="toolbar-icon-btn" onclick="window.close()" title="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Body with Left Thumbnail Sidebar Slider + Canvas -->
+    <div class="viewer-layout">
+
+        <!-- Left Sidebar Page Slider -->
+        <aside class="viewer-sidebar" id="viewerSidebar">
+            {% for rep in reports_data %}
+            <div class="sidebar-thumb-item {% if forloop.first %}active{% endif %}" id="thumb-{{ forloop.counter }}" onclick="scrollToPage({{ forloop.counter }})">
+                <div class="thumb-sheet">
+                    <div>
+                        <div class="thumb-header">
+                            <div class="thumb-hosp-title">VINAYAKA MISSION'S</div>
+                            <div class="thumb-hosp-title" style="font-size: 5px;">MEDICAL COLLEGE</div>
+                            <div class="thumb-hosp-sub">Karaikal</div>
+                        </div>
+                        <div class="thumb-patient-box">
+                            <div class="thumb-p-row">
+                                <span><b>Pt:</b> {{ wo.service_request.patient.name|truncatechars:12 }}</span>
+                                <span><b>ID:</b> {{ wo.service_request.patient.patient_id }}</span>
+                            </div>
+                            <div class="thumb-p-row">
+                                <span><b>Age:</b> {{ wo.service_request.patient.age_years }}Y/{{ wo.service_request.patient.gender|slice:":1" }}</span>
+                                <span><b>Ref:</b> Dr. {{ consultant_display_name|truncatechars:8 }}</span>
+                            </div>
+                        </div>
+                        <div class="thumb-test-banner">
+                            {{ rep.inv.investigation.name|truncatechars:22 }}
+                        </div>
+                        <table class="thumb-table">
+                            <thead>
+                                <tr>
+                                    <th>Test</th>
+                                    <th>Val</th>
+                                    <th>Ref</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in rep.parameters|slice:":4" %}
+                                <tr>
+                                    <td style="font-weight: 600;">{{ p.test_name|truncatechars:10 }}</td>
+                                    <td style="font-weight: 700; text-align: center;">{{ p.result_value|default:"-" }}</td>
+                                    <td>{{ p.unit|default:"-" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td>{{ rep.inv.investigation.name|truncatechars:10 }}</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="thumb-footer">
+                        <span>Technician</span>
+                        <span>Verified</span>
+                        <span>Signatory</span>
+                    </div>
+                </div>
+                <div class="thumb-label">{{ forloop.counter }}</div>
+            </div>
+            {% empty %}
+            <div class="sidebar-thumb-item active" id="thumb-1" onclick="scrollToPage(1)">
+                <div class="thumb-sheet">
+                    <div>
+                        <div class="thumb-header">
+                            <div class="thumb-hosp-title">VINAYAKA MISSION'S</div>
+                            <div class="thumb-hosp-title" style="font-size: 5px;">MEDICAL COLLEGE</div>
+                            <div class="thumb-hosp-sub">Karaikal</div>
+                        </div>
+                        <div class="thumb-patient-box">
+                            <div class="thumb-p-row">
+                                <span><b>Pt:</b> {{ wo.service_request.patient.name|truncatechars:12 }}</span>
+                                <span><b>ID:</b> {{ wo.service_request.patient.patient_id }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="thumb-footer">
+                        <span>Technician</span>
+                        <span>Verified</span>
+                    </div>
+                </div>
+                <div class="thumb-label">1</div>
+            </div>
+            {% endfor %}
+        </aside>
+
+        <!-- Main Canvas Containing Full Report Pages -->
+        <main class="viewer-main-scroll" id="viewerMainScroll">
+            <div class="pages-container" id="pagesContainer">
+
+                <div class="report-page" id="reportPage-1" data-page-number="1">
+                    <div>
+                        <!-- Top Header with QR & Page Number -->
+                        <div class="page-top-meta">
+                            <div class="qr-box">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="#000000">
+                                    <path d="M2 2h8v8H2V2zm2 2v4h4V4H4zm10-2h8v8h-8V2zm2 2v4h4V4h-4zM2 14h8v8H2v-8zm2 2v4h4v-4H4zm14-2h4v2h-4v-2zm-4 0h2v4h-2v-4zm2 4h2v4h-2v-4zm2 2h4v2h-4v-2zm0-4h2v2h-2v-2zm-6 4h2v2h-2v-2zm2-8h2v2h-2V8zm-2 2h4v2h-4v-2zm2 2h2v2h-2v-2z"/>
+                                </svg>
+                                <div class="page-text">Page 1 of 1</div>
+                            </div>
+                        </div>
+
+                        <!-- Hospital Header -->
+                        <div class="hospital-header">
+                            <div class="header-main-row">
+                                <!-- Left Logo: Vinayaka Missions Medical College Seal -->
+                                <div class="logo-left-col">
+                                    <svg width="74" height="74" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="50" cy="50" r="47" stroke="#1e3a5f" stroke-width="2.5" fill="#ffffff"/>
+                                        <circle cx="50" cy="50" r="42" stroke="#007e8a" stroke-width="1.5" stroke-dasharray="2 1.5"/>
+                                        <circle cx="50" cy="50" r="33" fill="#f0fdfa" stroke="#007e8a" stroke-width="1.2"/>
+                                        <ellipse cx="50" cy="50" rx="20" ry="11" stroke="#007e8a" stroke-width="1" fill="none"/>
+                                        <ellipse cx="50" cy="50" rx="10" ry="20" stroke="#007e8a" stroke-width="1" fill="none"/>
+                                        <line x1="50" y1="20" x2="50" y2="80" stroke="#007e8a" stroke-width="1.2"/>
+                                        <line x1="20" y1="50" x2="80" y2="50" stroke="#007e8a" stroke-width="1.2"/>
+                                        <circle cx="50" cy="50" r="8" fill="#eab308" stroke="#ca8a04" stroke-width="1"/>
+                                        <path d="M50 36C45 42 45 46 50 49C55 52 55 57 50 64" stroke="#990000" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+                                        <path d="M47 38L50 34L53 38" stroke="#990000" stroke-width="2" stroke-linecap="round"/>
+                                        <path id="sealTextPath" d="M 18, 50 a 32,32 0 1,1 64,0 a 32,32 0 1,1 -64,0" fill="none"/>
+                                        <text font-size="6" font-weight="900" fill="#0f172a" font-family="Arial, sans-serif" letter-spacing="0.8">
+                                            <textPath href="#sealTextPath" startOffset="3%">VINAYAKA MISSION'S &bull; MEDICAL</textPath>
+                                        </text>
+                                    </svg>
+                                </div>
+
+                                <!-- Center Hospital Titles -->
+                                <div class="title-center-col">
+                                    <div class="vmmc-title-line1">VINAYAKA MISSION'S</div>
+                                    <div class="vmmc-title-line2">MEDICAL COLLEGE</div>
+                                    <div class="vmmc-title-karaikal">Karaikal</div>
+                                </div>
+
+                                <!-- Right Logo: NABH Accredited Triangle & HFRID -->
+                                <div class="logo-right-col">
+                                    <svg width="68" height="56" viewBox="0 0 100 86" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <polygon points="50,4 96,82 4,82" fill="#006837" stroke="#004d26" stroke-width="2"/>
+                                        <polygon points="50,15 87,76 13,76" fill="#ffffff"/>
+                                        <circle cx="50" cy="46" r="17" fill="#008080" stroke="#005a5a" stroke-width="1"/>
+                                        <circle cx="50" cy="46" r="13" fill="#ffffff"/>
+                                        <path d="M50 36V56M43 44H57" stroke="#006837" stroke-width="2.5" stroke-linecap="round"/>
+                                        <path d="M45 40C43 46 57 44 55 50" stroke="#d97706" stroke-width="1.5" fill="none"/>
+                                        <text x="50" y="70" font-size="8" font-weight="900" fill="#006837" text-anchor="middle" font-family="Arial, sans-serif">NABH</text>
+                                        <text x="50" y="79" font-size="4.5" font-weight="bold" fill="#ffffff" text-anchor="middle" font-family="Arial, sans-serif">NABH ACCREDITED</text>
+                                    </svg>
+                                    <div class="hfrid-text">HFRID : IN3410000736</div>
+                                </div>
+                            </div>
+
+                            <div class="header-address-line">
+                                ADDRESS : KEEZHAKASAKUDY MEDU, KOTTUCHERRY [POST], KARAIKAL &ndash; 609 609, PUDUCHERRY [UT]
+                            </div>
+                            <div class="header-contact-line">
+                                PH : 04368 &ndash; 263331, 263340, 263259, Email : <a href="mailto:dean@vmmckkl.edu.in">dean@vmmckkl.edu.in</a>, website: <a href="http://www.vmmckkl.edu.in" target="_blank">www.vmmckkl.edu.in</a>
+                            </div>
+                        </div>
+
+                        <!-- Document Heading -->
+                        <div class="report-heading">
+                            LAB INVESTIGATION REPORT
+                        </div>
+
+                        <!-- Patient & Order Demographics Box -->
+                        <div class="patient-box-container">
+                            <div class="p-box-left">
+                                <div class="info-row">
+                                    <span class="lbl-left">Name</span>
+                                    <span class="val-text">: {{ wo.service_request.patient.name }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="lbl-left">Age/Sex</span>
+                                    <span class="val-text">: {{ wo.service_request.patient.age_years }} &nbsp; Yrs / {{ wo.service_request.patient.gender|slice:":1"|upper }}</span>
+                                </div>
+                                <div class="info-row" style="margin-top: 4px;">
+                                    <span class="lbl-left">Patient ID</span>
+                                    <span class="val-text">: {{ wo.service_request.patient.patient_id }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="lbl-left">Dept.</span>
+                                    <span class="val-text">: {{ wo.service_request.department.name|default:"General Medicine" }} - </span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="lbl-left">Ref.DR</span>
+                                    <span class="val-text">: Dr. {{ consultant_display_name }}</span>
+                                </div>
+                            </div>
+
+                            <div class="p-box-right">
+                                <div class="barcode-wrap">
+                                    <svg width="120" height="24" viewBox="0 0 120 24" fill="#000000">
+                                        <rect x="2" y="1" width="2" height="18"/>
+                                        <rect x="6" y="1" width="1" height="18"/>
+                                        <rect x="9" y="1" width="3" height="18"/>
+                                        <rect x="14" y="1" width="1" height="18"/>
+                                        <rect x="17" y="1" width="2" height="18"/>
+                                        <rect x="21" y="1" width="3" height="18"/>
+                                        <rect x="26" y="1" width="1" height="18"/>
+                                        <rect x="29" y="1" width="2" height="18"/>
+                                        <rect x="33" y="1" width="1" height="18"/>
+                                        <rect x="36" y="1" width="3" height="18"/>
+                                        <rect x="41" y="1" width="2" height="18"/>
+                                        <rect x="45" y="1" width="1" height="18"/>
+                                        <rect x="48" y="1" width="3" height="18"/>
+                                        <rect x="53" y="1" width="2" height="18"/>
+                                        <rect x="57" y="1" width="1" height="18"/>
+                                        <rect x="60" y="1" width="3" height="18"/>
+                                        <rect x="65" y="1" width="1" height="18"/>
+                                        <rect x="68" y="1" width="2" height="18"/>
+                                        <rect x="72" y="1" width="3" height="18"/>
+                                        <rect x="77" y="1" width="1" height="18"/>
+                                        <rect x="80" y="1" width="2" height="18"/>
+                                        <rect x="84" y="1" width="3" height="18"/>
+                                        <rect x="89" y="1" width="1" height="18"/>
+                                        <rect x="92" y="1" width="2" height="18"/>
+                                        <rect x="96" y="1" width="3" height="18"/>
+                                        <rect x="101" y="1" width="1" height="18"/>
+                                        <rect x="104" y="1" width="2" height="18"/>
+                                        <rect x="108" y="1" width="3" height="18"/>
+                                        <rect x="113" y="1" width="1" height="18"/>
+                                        <rect x="116" y="1" width="2" height="18"/>
+                                    </svg>
+                                    <span style="font-size: 7px; font-family: monospace; letter-spacing: 0.5px;">*{{ wo.service_request.sample_id|default:wo.id }}*</span>
+                                </div>
+
+                                <div class="info-row">
+                                    <span class="lbl-right">Bill Date</span>
+                                    <span class="val-text">: {{ wo.service_request.request_date|date:"d-M-Y" }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="lbl-right">Sample ID</span>
+                                    <span class="val-text">: {{ wo.service_request.sample_id|default:wo.id }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="lbl-right">Sample Received on</span>
+                                    <span class="val-text">: {{ wo.received_date|date:"d-M-Y"|default:wo.service_request.request_date|date:"d-M-Y" }} &nbsp;&nbsp;&nbsp; <b>Time</b> &nbsp; {{ wo.received_time|default:"13:58" }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="lbl-right">Reported on</span>
+                                    <span class="val-text">: {% now "d-M-Y" %} &nbsp;&nbsp;&nbsp; <b>Time</b> &nbsp; {% now "H:i" %}</span>
+                                </div>
+                                <div class="info-row" style="margin-top: 4px;">
+                                    <span class="lbl-right">VISIT TYPE</span>
+                                    <span class="val-text">: {{ wo.service_request.patient.ip_op_type|default:"OP" }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Investigation Results Section with Multiple Test Separators -->
+                        <div class="results-table-wrap">
+                            {% for rep in reports_data %}
+                            <div class="test-report-block" id="testBlock-{{ forloop.counter }}">
+                                <!-- 1. Test Name at Top (Bold, visible, slightly larger) -->
+                                <div class="test-section-banner">
+                                    <div class="test-banner-title">
+                                        {{ rep.inv.investigation.name }} {% if rep.inv.investigation.code %}({{ rep.inv.investigation.code }}){% endif %}
+                                    </div>
+                                    <div class="test-banner-meta">
+                                        Sample: <b>{{ rep.sample_type|default:"Serum" }}</b>
+                                    </div>
+                                </div>
+
+                                <!-- 2. Test Details Table directly below Test Name -->
+                                <table class="lab-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 14%;">Sample</th>
+                                            <th style="width: 32%;">Test Description</th>
+                                            <th style="width: 15%; text-align: center;">Observed Value</th>
+                                            <th style="width: 10%;">Units</th>
+                                            <th style="width: 15%;">Bio.Reference</th>
+                                            <th style="width: 14%;">Method</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for p in rep.parameters %}
+                                        <tr>
+                                            <td>{{ p.sample_type|default:"Serum" }}</td>
+                                            <td class="cell-bold">{{ p.test_name }}</td>
+                                            <td class="cell-center cell-bold">{{ p.result_value|default:"-" }}</td>
+                                            <td>{{ p.unit|default:"-" }}</td>
+                                            <td>{{ p.reference_text|default:"-" }}</td>
+                                            <td>{{ p.method|default:"Calculated" }}</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td>{{ rep.sample_type|default:"Serum" }}</td>
+                                            <td class="cell-bold">{{ rep.inv.investigation.name }}</td>
+                                            <td class="cell-center cell-bold">-</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>Calculated</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Clinical Remarks -->
+                        <div class="remarks-box">
+                            <strong>Clinical Diagnosis / Remarks:</strong> {{ diagnosis_text }}
+                        </div>
+                    </div>
+
+                    <!-- Footer & Signatures -->
+                    <div class="bottom-section">
+                        <div class="end-report-line">
+                            &bull;&bull;&bull; End Of Report &bull;&bull;&bull;
+                        </div>
+
+                        <div class="signatures-row">
+                            <div class="sign-col">
+                                <div class="sign-title">{{ completed_by_display_name }}<br><span style="font-weight: normal; font-size: 9px;">Technician</span></div>
+                            </div>
+                            <div class="sign-col">
+                                <div class="sign-title">Verified By<br><span style="font-weight: normal; font-size: 9px;">Quality Supervisor</span></div>
+                            </div>
+                            <div class="sign-col">
+                                <div class="sign-title">Dr. Pathologist / HOD<br><span style="font-weight: normal; font-size: 9px;">Authorized Signatory</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currentZoom = 100;
+        let currentPage = 1;
+        const totalPages = parseInt("{{ reports_data|length|default:'1' }}", 10);
+
+        function updateZoom() {
+            const pages = document.querySelectorAll('.report-page');
+            pages.forEach(p => {
+                p.style.transform = `scale(${currentZoom / 100})`;
+                p.style.transformOrigin = 'top center';
+            });
+            document.getElementById('zoomVal').innerText = currentZoom + '%';
+        }
+
+        function zoomIn() {
+            if (currentZoom < 180) {
+                currentZoom += 10;
+                updateZoom();
+            }
+        }
+
+        function zoomOut() {
+            if (currentZoom > 60) {
+                currentZoom -= 10;
+                updateZoom();
+            }
+        }
+
+        function resetZoom() {
+            currentZoom = 100;
+            updateZoom();
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('viewerSidebar');
+            sb.classList.toggle('collapsed');
+        }
+
+        function scrollToPage(pageNumber) {
+            currentPage = pageNumber;
+            const targetEl = document.getElementById('testBlock-' + pageNumber) || document.getElementById('reportPage-' + pageNumber);
+            if (targetEl) {
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            updateActiveState(pageNumber);
+        }
+
+        function updateActiveState(pageNumber) {
+            document.getElementById('pageInput').value = pageNumber;
+            document.querySelectorAll('.sidebar-thumb-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            const activeThumb = document.getElementById('thumb-' + pageNumber);
+            if (activeThumb) {
+                activeThumb.classList.add('active');
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                scrollToPage(currentPage - 1);
+            }
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                scrollToPage(currentPage + 1);
+            }
+        }
+
+        function goToPage(val) {
+            const p = parseInt(val, 10);
+            if (!isNaN(p) && p >= 1 && p <= totalPages) {
+                scrollToPage(p);
+            } else {
+                document.getElementById('pageInput').value = currentPage;
+            }
+        }
+
+        // Scroll observer to track active investigation section
+        const scrollContainer = document.getElementById('viewerMainScroll');
+        scrollContainer.addEventListener('scroll', () => {
+            const blocks = document.querySelectorAll('.test-report-block');
+            if (blocks.length > 0) {
+                const containerTop = scrollContainer.getBoundingClientRect().top;
+                blocks.forEach((b, idx) => {
+                    const rect = b.getBoundingClientRect();
+                    if (rect.top - containerTop <= 250 && rect.bottom - containerTop > 50) {
+                        const pageNum = idx + 1;
+                        if (currentPage !== pageNum) {
+                            currentPage = pageNum;
+                            updateActiveState(pageNum);
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
