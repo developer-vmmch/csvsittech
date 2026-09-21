@@ -2367,6 +2367,204 @@ def api_work_order_save_result(request, pk):
         return JsonResponse({'status': 'error', 'message': str(e)})
 
 
+class WorkOrderPrintPreviewView(LoginRequiredMixin, DetailView):
+    template_name = 'lab/orders/work_order_print_preview.html'
+    context_object_name = 'wo'
+
+    def get_queryset(self):
+        from apps.lab.models import ServiceRequestInvestigation
+        return ServiceRequestInvestigation.objects.select_related(
+            'service_request',
+            'service_request__patient',
+            'service_request__department',
+            'service_request__consultant',
+            'investigation',
+            'investigation__sample_type'
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        wo = self.object
+        service_request = wo.service_request
+        patient = service_request.patient
+
+        print_type = self.request.GET.get('type', 'all')
+        header_option = self.request.GET.get('header', 'with')
+        nabl_option = self.request.GET.get('nabl', 'both')
+
+        # Patient age calculation
+        patient_age_days = (patient.age_years * 365) + (patient.age_months * 30) + patient.age_days
+
+        from apps.lab.models import (
+            InvestigationParameter, ParameterReferenceRange, AgeGroup,
+            ServiceRequestInvestigation, ServiceRequestResult
+        )
+
+        age_groups = AgeGroup.objects.filter(is_active=True).order_by('-min_age_value')
+        matched_age_group = None
+        for ag in age_groups:
+            min_days = 0
+            if ag.min_age_unit == 'Years': min_days = (ag.min_age_value or 0) * 365
+            elif ag.min_age_unit == 'Months': min_days = (ag.min_age_value or 0) * 30
+            else: min_days = ag.min_age_value or 0
+            
+            max_days = float('inf')
+            if ag.max_age_value is not None:
+                if ag.max_age_unit == 'Years': max_days = ag.max_age_value * 365
+                elif ag.max_age_unit == 'Months': max_days = ag.max_age_value * 30
+                else: max_days = ag.max_age_value
+            
+            if min_days <= patient_age_days <= max_days:
+                if ag.gender == 'All' or ag.gender == patient.gender:
+                    matched_age_group = ag
+                    break
+                    
+        if not matched_age_group:
+            matched_age_group = AgeGroup.objects.filter(label__icontains='Adult').first()
+
+        # Decide which investigations to include
+        if print_type == 'all':
+            investigations_qs = list(service_request.investigations.filter(is_removed=False).select_related(
+                'investigation', 'investigation__sample_type'
+            ))
+            if not investigations_qs:
+                investigations_qs = [wo]
+        else:
+            investigations_qs = [wo]
+
+        reports_data = []
+        overall_sno = 1
+        has_abnormal_flags = False
+
+        for inv_obj in investigations_qs:
+            parameters = InvestigationParameter.objects.filter(
+                investigation=inv_obj.investigation,
+                is_active=True
+            ).select_related('parameter').order_by('display_order')
+
+            saved_results = {
+                r.investigation_parameter_id: r
+                for r in ServiceRequestResult.objects.filter(sr_investigation=inv_obj).select_related('entered_by')
+            }
+
+            params_list = []
+            for ip in parameters:
+                ref_range = None
+                if matched_age_group:
+                    ref_range = ParameterReferenceRange.objects.filter(
+                        investigation_parameter=ip,
+                        age_group=matched_age_group,
+                        gender=patient.gender
+                    ).first()
+                    if not ref_range:
+                        ref_range = ParameterReferenceRange.objects.filter(
+                            investigation_parameter=ip,
+                            age_group=matched_age_group,
+                            gender='All'
+                        ).first()
+
+                test_code = ip.code if ip.code else (ip.parameter.code if ip.parameter else "-")
+                test_name = ip.name if ip.name else (ip.parameter.name if ip.parameter else "-")
+                
+                unit = "-"
+                if ref_range and ref_range.unit: unit = ref_range.unit
+                elif ip.unit: unit = ip.unit
+                elif ip.parameter and hasattr(ip.parameter, 'default_unit') and ip.parameter.default_unit: unit = ip.parameter.default_unit
+
+                ref_text = "Not Available"
+                if ref_range and ref_range.reference_text: ref_text = ref_range.reference_text
+                elif ip.reference_range: ref_text = ip.reference_range
+                elif ref_range and ref_range.min_value is not None and ref_range.max_value is not None:
+                    ref_text = f"{ref_range.min_value} - {ref_range.max_value}"
+
+                sample_type = inv_obj.investigation.sample_type.name if (inv_obj.investigation and inv_obj.investigation.sample_type) else "Serum"
+
+                method = "Not Specified"
+                if ip.parameter and hasattr(ip.parameter, 'method') and ip.parameter.method:
+                    method = ip.parameter.method
+                elif 'HGB' in str(test_code).upper() or 'HEMOGLOBIN' in str(test_name).upper():
+                    method = 'Colorimetric'
+                elif 'COUNT' in str(test_name).upper() or 'WBC' in str(test_code).upper():
+                    method = 'Laser Flow'
+                else:
+                    method = 'Calculated'
+
+                res_obj = saved_results.get(ip.id)
+                res_val = res_obj.result_value if res_obj else ''
+                res_rem = res_obj.remarks if res_obj else ''
+
+                flag = '-'
+                is_abnormal = False
+                if res_val and ref_range and ref_range.min_value is not None and ref_range.max_value is not None:
+                    try:
+                        val_num = float(res_val)
+                        if val_num < float(ref_range.min_value):
+                            flag = 'LOW'
+                            is_abnormal = True
+                            has_abnormal_flags = True
+                        elif val_num > float(ref_range.max_value):
+                            flag = 'HIGH'
+                            is_abnormal = True
+                            has_abnormal_flags = True
+                        else:
+                            flag = 'NORMAL'
+                    except (ValueError, TypeError):
+                        pass
+
+                params_list.append({
+                    'sno': overall_sno,
+                    'ip': ip,
+                    'test_code': test_code,
+                    'test_name': test_name,
+                    'result_value': res_val,
+                    'unit': unit,
+                    'reference_text': ref_text,
+                    'min_value': ref_range.min_value if ref_range else None,
+                    'max_value': ref_range.max_value if ref_range else None,
+                    'method': method,
+                    'sample_type': sample_type,
+                    'remarks': res_rem,
+                    'flag': flag,
+                    'is_abnormal': is_abnormal,
+                })
+                overall_sno += 1
+
+            reports_data.append({
+                'inv': inv_obj,
+                'parameters': params_list,
+                'sample_type': inv_obj.investigation.sample_type.name if (inv_obj.investigation and inv_obj.investigation.sample_type) else "Serum"
+            })
+
+        # Consultant name safe handling
+        consultant_name = "Hospital Medical Officer"
+        if service_request.consultant:
+            consultant_name = service_request.consultant.get_full_name() or service_request.consultant.username
+        elif getattr(service_request, 'consultant_name', None):
+            consultant_name = service_request.consultant_name
+
+        # Completed by name safe handling
+        completed_by_name = "Lab Technician"
+        if wo.completed_by:
+            completed_by_name = wo.completed_by.get_full_name() or wo.completed_by.username
+
+        # Diagnosis text
+        diagnosis_texts = []
+        for d in service_request.diagnoses.all():
+            if d.diagnosis: diagnosis_texts.append(d.diagnosis.name)
+            elif d.chief_complaint: diagnosis_texts.append(d.chief_complaint.name)
+
+        context['diagnosis_text'] = ", ".join(diagnosis_texts) if diagnosis_texts else "Not Added"
+        context['consultant_display_name'] = consultant_name
+        context['completed_by_display_name'] = completed_by_name
+        context['reports_data'] = reports_data
+        context['matched_age_group'] = matched_age_group
+        context['print_type'] = print_type
+        context['header_option'] = header_option
+        context['nabl_option'] = nabl_option
+        context['has_abnormal_flags'] = has_abnormal_flags
+        return context
+
+
 @csrf_exempt
 @login_required
 def api_lab_diagnosis_save(request):

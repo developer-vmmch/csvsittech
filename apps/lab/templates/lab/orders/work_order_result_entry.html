@@ -362,18 +362,24 @@
             <div style="flex: 1;">
                 <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--text-main);">Reporting Format:</div>
                 <div style="display: flex; gap: 1rem; font-size: 0.8rem; margin-bottom: 0.5rem;">
-                    <label><input type="radio" name="nabl"> Approved by NABL</label>
-                    <label><input type="radio" name="nabl"> Unapproved by NABL</label>
-                    <label><input type="radio" name="nabl" checked> Both</label>
+                    <label><input type="radio" name="nabl" value="approved"> Approved by NABL</label>
+                    <label><input type="radio" name="nabl" value="unapproved"> Unapproved by NABL</label>
+                    <label><input type="radio" name="nabl" value="both" checked> Both</label>
                 </div>
                 <div style="display: flex; gap: 1rem; font-size: 0.8rem; margin-bottom: 1rem;">
-                    <label><input type="radio" name="header" checked> With Header</label>
-                    <label><input type="radio" name="header"> Without Header</label>
+                    <label><input type="radio" name="header" value="with" checked> With Header</label>
+                    <label><input type="radio" name="header" value="without"> Without Header</label>
                 </div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Print All</button>
-                    <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Print Sino Wise</button>
-                    <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Print Sino Wise - Overall</button>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; font-weight: 600; cursor: pointer;" onclick="openPrintPreview('all')">
+                        <i class="bi bi-printer"></i> Print All
+                    </button>
+                    <button type="button" class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; cursor: pointer;" onclick="openPrintPreview('sino')">
+                        Print Sino Wise
+                    </button>
+                    <button type="button" class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; cursor: pointer;" onclick="openPrintPreview('overall')">
+                        Print Sino Wise - Overall
+                    </button>
                 </div>
             </div>
         </div>
@@ -489,6 +495,41 @@ function saveResults(complete) {
         btn.innerHTML = orig;
         btn.disabled = false;
     });
+}
+
+function openPrintPreview(printType) {
+    const headerOption = document.querySelector('input[name="header"]:checked')?.value || 'with';
+    const nablOption = document.querySelector('input[name="nabl"]:checked')?.value || 'both';
+    
+    const previewUrl = "{% url 'lab:work_order_print_preview' wo.id %}?type=" + encodeURIComponent(printType || 'all') + "&header=" + encodeURIComponent(headerOption) + "&nabl=" + encodeURIComponent(nablOption);
+
+    // Open immediately in a new window/tab so modern popup blockers never block it
+    const newWin = window.open(previewUrl, '_blank');
+    if (newWin) {
+        newWin.focus();
+    }
+
+    // Auto-save entered results in the background
+    const results = [];
+    document.querySelectorAll('.result-row').forEach(row => {
+        const id = row.getAttribute('data-param-id');
+        const val = row.querySelector('.result-val')?.value.trim();
+        const rem = row.querySelector('.result-rem')?.value.trim() || '';
+        if (val) {
+            results.push({ parameter_id: id, value: val, remarks: rem });
+        }
+    });
+
+    if (results.length > 0) {
+        fetch('{% url "lab:api_work_order_save_result" wo.id %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ results: results, complete: false })
+        });
+    }
 }
 
 document.getElementById('btn-save-result')?.addEventListener('click', function(e) { saveResults(false); });
