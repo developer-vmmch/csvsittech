@@ -22,6 +22,7 @@ from apps.lab.atc_service import (
     trigger_atc_job_async,
     get_server_today,
     get_server_now,
+    is_job_thread_alive,
 )
 
 
@@ -36,6 +37,113 @@ def parse_source_period(period_str):
     return 2022, 2024
 
 
+def recover_stale_atc_jobs():
+    """
+    Recovers orphaned or stale ATC jobs left in STARTING/RUNNING/STOP_REQUESTED state
+    without an active worker thread. Preserves historical record while unlocking states.
+    """
+    today = get_server_today()
+    stale_jobs = ATCJob.objects.filter(
+        status__in=[ATCJob.StatusChoices.STARTING, ATCJob.StatusChoices.RUNNING, ATCJob.StatusChoices.STOP_REQUESTED]
+    )
+    for j in stale_jobs:
+        if not is_job_thread_alive(j.id):
+            if j.created_at.date() < today or j.started_at is None:
+                j.status = ATCJob.StatusChoices.STOPPED
+                j.stop_reason = "Stale orphaned job recovered on system startup."
+                j.stopped_at = get_server_now()
+                j.completed_at = get_server_now()
+                j.save(update_fields=['status', 'stop_reason', 'stopped_at', 'completed_at'])
+
+
+def get_plan_date_statuses(plan_obj=None, from_d=None, to_d=None, configured_depts_count=0, op_date_restricted=True):
+    """
+    Computes date-level execution states for every configured automation date.
+    Returns dict mapping 'YYYY-MM-DD' to status dictionary:
+      {
+        'status': 'PENDING' | 'READY' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'STOPPED',
+        'job_id': ...,
+        'job_pk': ...,
+        'created_count': ...,
+        'target_total': ...,
+        'stop_reason': ...,
+        'error_summary': ...,
+      }
+    """
+    today = get_server_today()
+    date_statuses = {}
+    if not from_d or not to_d:
+        return date_statuses
+
+    cur = from_d
+    dates_list = []
+    while cur <= to_d:
+        dates_list.append(cur)
+        cur += timedelta(days=1)
+
+    from django.db.models import F
+    # Query all execution jobs matching these dates. Exclude multi-day parent plans.
+    jobs_qs = ATCJob.objects.filter(
+        Q(automation_date__in=dates_list) | (
+            Q(automation_date__isnull=True, from_date__in=dates_list, to_date=F('from_date')) &
+            ~Q(status=ATCJob.StatusChoices.DRAFT)
+        )
+    ).order_by('created_at')
+
+    job_map = {}
+    for j in jobs_qs:
+        j_date = j.automation_date or j.from_date
+        if j_date:
+            job_map[j_date] = j
+
+    for d in dates_list:
+        d_str = d.strftime('%Y-%m-%d')
+        j = job_map.get(d)
+        if j:
+            if j.status in [ATCJob.StatusChoices.STARTING, ATCJob.StatusChoices.RUNNING, ATCJob.StatusChoices.STOP_REQUESTED]:
+                status_code = 'RUNNING'
+            elif j.status == ATCJob.StatusChoices.COMPLETED:
+                status_code = 'COMPLETED'
+            elif j.status in [ATCJob.StatusChoices.STOPPED, ATCJob.StatusChoices.EMERGENCY_STOPPED]:
+                status_code = 'STOPPED'
+            elif j.status == ATCJob.StatusChoices.FAILED:
+                status_code = 'FAILED'
+            elif j.status == ATCJob.StatusChoices.READY:
+                status_code = 'READY'
+            else:
+                status_code = 'PENDING'
+
+            date_statuses[d_str] = {
+                'status': status_code,
+                'job_id': j.job_id,
+                'job_pk': j.pk,
+                'created_count': j.created_count,
+                'target_total': j.target_total,
+                'stop_reason': j.stop_reason,
+                'error_summary': j.error_summary,
+            }
+        else:
+            is_past = (d < today)
+            if is_past and op_date_restricted:
+                status_code = 'PENDING'
+            elif configured_depts_count >= 5:
+                status_code = 'READY'
+            else:
+                status_code = 'PENDING'
+
+            date_statuses[d_str] = {
+                'status': status_code,
+                'job_id': None,
+                'job_pk': None,
+                'created_count': 0,
+                'target_total': 0,
+                'stop_reason': '',
+                'error_summary': '',
+            }
+
+    return date_statuses
+
+
 class ATCControlView(LoginRequiredMixin, GranularPermissionRequiredMixin, TemplateView):
     """
     Single-page control center for ATC matching reference layout.
@@ -47,6 +155,9 @@ class ATCControlView(LoginRequiredMixin, GranularPermissionRequiredMixin, Templa
         context = super().get_context_data(**kwargs)
         settings = ATCSetting.get_settings()
         today = get_server_today()
+
+        # Recover any stale orphaned jobs from previous sessions
+        recover_stale_atc_jobs()
 
         context['settings'] = settings
         context['departments'] = Department.objects.filter(is_active=True).order_by('name')
@@ -76,16 +187,26 @@ class ATCControlView(LoginRequiredMixin, GranularPermissionRequiredMixin, Templa
         context['can_trigger'] = u.can_atc_trigger or u.is_superuser
         context['can_emergency_stop'] = u.can_atc_emergency_stop or u.is_superuser
 
-        # Check for active or draft job
+        # Check for configured plan vs active/execution job
+        plan_id = self.request.GET.get('plan_id')
+        plan_job = None
+        if plan_id:
+            plan_job = ATCJob.objects.filter(pk=plan_id).first()
+
+        if not plan_job:
+            # 1. Look for explicit DRAFT plan
+            plan_job = ATCJob.objects.filter(status=ATCJob.StatusChoices.DRAFT).order_by('-id').first()
+            # 2. Look for configured plan with plan_departments
+            if not plan_job:
+                plan_job = ATCJob.objects.filter(plan__isnull=True).exclude(status__in=[ATCJob.StatusChoices.FAILED]).order_by('-id').first()
+
         active_job = ATCJob.objects.filter(
             status__in=[ATCJob.StatusChoices.STARTING, ATCJob.StatusChoices.RUNNING, ATCJob.StatusChoices.STOP_REQUESTED]
         ).first()
 
-        draft_job = None
-        if not active_job:
-            draft_job = ATCJob.objects.filter(status=ATCJob.StatusChoices.DRAFT).order_by('-id').first()
+        draft_job = ATCJob.objects.filter(status=ATCJob.StatusChoices.DRAFT).order_by('-id').first()
+        selected_job = plan_job or active_job or draft_job
 
-        selected_job = active_job or draft_job
         context['active_job'] = active_job
         context['draft_job'] = draft_job
         context['selected_job'] = selected_job
@@ -158,6 +279,17 @@ class ATCControlView(LoginRequiredMixin, GranularPermissionRequiredMixin, Templa
             context['initial_date_display'] = d1.strftime('%d-%m-%Y')
         else:
             context['initial_date_display'] = f"{d1.strftime('%d-%m-%Y')} → {d2.strftime('%d-%m-%Y')}"
+
+        configured_depts_count = len([d for d in initial_depts if isinstance(d, dict) and d.get('is_configured') is not False])
+        date_statuses = get_plan_date_statuses(
+            plan_obj=selected_job,
+            from_d=d1,
+            to_d=d2,
+            configured_depts_count=configured_depts_count,
+            op_date_restricted=getattr(settings, 'op_date_restriction', True)
+        )
+        context['initial_date_statuses_json'] = json.dumps(date_statuses)
+        context['date_statuses_json'] = json.dumps(date_statuses)
 
         return context
 
@@ -233,7 +365,7 @@ class ATCSettingsView(LoginRequiredMixin, GranularPermissionRequiredMixin, Templ
 @login_required
 def api_atc_trigger(request):
     """
-    Trigger a new ATC automation job with concurrency and duplicate prevention.
+    Trigger a new ATC automation job with date-specific concurrency and duplicate prevention.
     Combined OP + Review execution based on percentage allocation and multi-department daily targets.
     """
     # Permission check: ATC_TRIGGER
@@ -242,18 +374,6 @@ def api_atc_trigger(request):
             'status': 'error',
             'message': 'Permission Denied: You do not have permission to trigger ATC automation (ATC_TRIGGER required).'
         }, status=403)
-
-    # Double-click / Concurrency prevention:
-    # If ATC is already running, return error
-    running_job = ATCJob.objects.filter(
-        status__in=[ATCJob.StatusChoices.STARTING, ATCJob.StatusChoices.RUNNING, ATCJob.StatusChoices.STOP_REQUESTED]
-    ).first()
-
-    if running_job:
-        return JsonResponse({
-            'status': 'error',
-            'message': f"An ATC job is already running (Job #{running_job.job_id}). Please wait for it to complete or use Emergency Stop."
-        }, status=400)
 
     import json
     try:
@@ -274,6 +394,56 @@ def api_atc_trigger(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f'Invalid request data: {e}'}, status=400)
 
+    today = get_server_today()
+    settings = ATCSetting.get_settings()
+
+    # Determine automation_date / selected_date to trigger
+    auto_date_str = data.get('automation_date') or data.get('selected_date') or data.get('from_date') or data.get('op_date')
+    selected_date = None
+    if auto_date_str:
+        try:
+            selected_date = datetime.strptime(str(auto_date_str).strip()[:10], '%Y-%m-%d').date()
+        except ValueError:
+            try:
+                selected_date = datetime.strptime(str(auto_date_str).strip()[:10], '%d-%m-%Y').date()
+            except ValueError:
+                selected_date = today
+    if not selected_date:
+        selected_date = today
+
+    # 1. Date-specific Concurrency Check: ONLY for THIS SELECTED DATE
+    active_job_for_date = ATCJob.objects.filter(
+        Q(automation_date=selected_date) | (Q(automation_date__isnull=True, from_date=selected_date, to_date=selected_date)),
+        status__in=[ATCJob.StatusChoices.STARTING, ATCJob.StatusChoices.RUNNING, ATCJob.StatusChoices.STOP_REQUESTED]
+    ).first()
+
+    if active_job_for_date:
+        is_today_recent = (active_job_for_date.created_at.date() == today and (get_server_now() - active_job_for_date.created_at).total_seconds() < 3600)
+        if is_job_thread_alive(active_job_for_date.id) or is_today_recent:
+            return JsonResponse({
+                'status': 'error',
+                'message': f"Automation is currently running for {selected_date.strftime('%d-%m-%Y')} (Job #{active_job_for_date.job_id}). Please wait for it to complete or use Emergency Stop."
+            }, status=400)
+        else:
+            # Recover stale job for this date
+            active_job_for_date.status = ATCJob.StatusChoices.STOPPED
+            active_job_for_date.stop_reason = "Stale orphaned job recovered upon new trigger."
+            active_job_for_date.stopped_at = get_server_now()
+            active_job_for_date.completed_at = get_server_now()
+            active_job_for_date.save(update_fields=['status', 'stop_reason', 'stopped_at', 'completed_at'])
+
+    # 2. Date-specific Duplicate Check: ONLY for THIS SELECTED DATE
+    completed_job_for_date = ATCJob.objects.filter(
+        Q(automation_date=selected_date) | (Q(automation_date__isnull=True, from_date=selected_date, to_date=selected_date)),
+        status=ATCJob.StatusChoices.COMPLETED
+    ).first()
+
+    if completed_job_for_date and not data.get('force_retry') and not data.get('allow_duplicate'):
+        return JsonResponse({
+            'status': 'error',
+            'message': f"Automation already completed for {selected_date.strftime('%d-%m-%Y')}."
+        }, status=400)
+
     mode = data.get('mode', 'COMBINED')
     valid_modes = [c[0] for c in ATCJob.ModeChoices.choices]
     if mode not in valid_modes:
@@ -281,9 +451,6 @@ def api_atc_trigger(request):
             'status': 'error',
             'message': f"Invalid ATC mode: '{mode}'. Must be one of: {valid_modes}"
         }, status=400)
-
-    today = get_server_today()
-    settings = ATCSetting.get_settings()
 
     if mode == 'FUTURE_PATIENT':
         to_date_str = data.get('to_date')
@@ -334,28 +501,9 @@ def api_atc_trigger(request):
         }, status=400)
 
     signal = data.get('operation_signal', 'ALL')
-    from_date_str = data.get('from_date', data.get('op_date'))
-    to_date_str = data.get('to_date', data.get('op_date'))
-    from_d = today
-    to_d = today
-    if from_date_str:
-        try:
-            from_d = datetime.strptime(from_date_str, '%Y-%m-%d').date()
-        except ValueError:
-            pass
-    if to_date_str:
-        try:
-            to_d = datetime.strptime(to_date_str, '%Y-%m-%d').date()
-        except ValueError:
-            pass
 
-    if from_d > to_d:
-        return JsonResponse({
-            'status': 'error',
-            'message': 'From date cannot be after To date.'
-        }, status=400)
-
-    if signal in ['OP', 'ALL'] and from_d < today:
+    # OP backdate validation
+    if signal in ['OP', 'ALL'] and selected_date < today and getattr(settings, 'op_date_restriction', True):
         return JsonResponse({
             'status': 'error',
             'message': f"OP automation can only create records for today's application date ({today.strftime('%d-%m-%Y')}) or future. Backdated OP registration is blocked."
@@ -424,7 +572,7 @@ def api_atc_trigger(request):
         end_t = time(14, 0)
 
     cur_time = get_server_now().time()
-    if from_d == today and cur_time >= end_t and target_op > 0:
+    if selected_date == today and cur_time >= end_t and target_op > 0:
         return JsonResponse({
             'status': 'error',
             'message': f"Cannot start OP automation: Current server time ({cur_time.strftime('%H:%M')}) is past the configured day-end time ({end_t.strftime('%H:%M')})."
@@ -445,9 +593,21 @@ def api_atc_trigger(request):
         seq += 1
         job_id_str = f"ATC-{date_prefix}-{seq:03d}"
 
-    # Lock configuration after Save & Trigger
+    # Associate with configured parent plan if available
+    parent_plan_id = data.get('plan_id')
+    parent_plan = None
+    if parent_plan_id:
+        parent_plan = ATCJob.objects.filter(pk=parent_plan_id).first()
+    if not parent_plan:
+        parent_plan = ATCJob.objects.filter(plan__isnull=True, status=ATCJob.StatusChoices.DRAFT).order_by('-id').first()
+    if not parent_plan:
+        parent_plan = ATCJob.objects.filter(plan__isnull=True).exclude(status=ATCJob.StatusChoices.FAILED).order_by('-id').first()
+
+    # Create date-specific execution job
     job = ATCJob.objects.create(
         job_id=job_id_str,
+        plan=parent_plan,
+        automation_date=selected_date,
         mode=mode,
         department=dept,
         source_from_year=from_year,
@@ -468,8 +628,8 @@ def api_atc_trigger(request):
         schedule_start_time=start_t,
         schedule_end_time=end_t,
         batch_size=int(data.get('batch_size', 100) or 100),
-        from_date=from_d,
-        to_date=to_d,
+        from_date=selected_date,
+        to_date=selected_date,
         status=ATCJob.StatusChoices.STARTING,
         is_locked=True,
         created_by=request.user,
@@ -479,9 +639,12 @@ def api_atc_trigger(request):
 
     return JsonResponse({
         'status': 'success',
-        'message': f"ATC automation started successfully ({target_op} OP + {target_review} Reviews across {len(plan_depts or [1])} departments).",
-        'job_id': job.id,
+        'message': f"ATC automation started successfully for {selected_date.strftime('%d-%m-%Y')} ({target_op} OP + {target_review} Reviews across {len(plan_depts or [1])} departments).",
+        'job_id': job.job_id,
+        'job_pk': job.id,
         'job_code': job.job_id,
+        'automation_date': selected_date.isoformat(),
+        'date_status': 'RUNNING',
         'target_op': target_op,
         'target_review': target_review,
         'target_total': total_target,
@@ -586,7 +749,7 @@ def api_atc_active_job(request):
 @login_required
 def api_atc_stop(request, job_id):
     """
-    Triggers Emergency Stop for an ongoing ATC job.
+    Triggers Emergency Stop for an ongoing ATC job or for the selected date.
     """
     if not (request.user.can_atc_emergency_stop or request.user.is_superuser):
         return JsonResponse({
@@ -594,12 +757,38 @@ def api_atc_stop(request, job_id):
             'message': 'Permission Denied: You do not have permission to emergency stop ATC automation (ATC_EMERGENCY_STOP required).'
         }, status=403)
 
+    import json
+    data = {}
+    try:
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+        else:
+            data = request.POST.dict()
+    except Exception:
+        pass
+
+    job = None
     if job_id == 0:
-        job = ATCJob.objects.filter(status__in=[
-            ATCJob.StatusChoices.STARTING,
-            ATCJob.StatusChoices.RUNNING,
-            ATCJob.StatusChoices.STOP_REQUESTED,
-        ]).first() or ATCJob.objects.order_by('-id').first()
+        date_str = data.get('automation_date') or data.get('selected_date') or request.GET.get('automation_date')
+        if date_str:
+            try:
+                target_d = datetime.strptime(str(date_str).strip()[:10], '%Y-%m-%d').date()
+                job = ATCJob.objects.filter(
+                    Q(automation_date=target_d) | (Q(automation_date__isnull=True, from_date=target_d, to_date=target_d)),
+                    status__in=[ATCJob.StatusChoices.STARTING, ATCJob.StatusChoices.RUNNING, ATCJob.StatusChoices.STOP_REQUESTED]
+                ).first() or ATCJob.objects.filter(
+                    Q(automation_date=target_d) | (Q(automation_date__isnull=True, from_date=target_d, to_date=target_d))
+                ).order_by('-id').first()
+            except Exception:
+                pass
+
+        if not job:
+            job = ATCJob.objects.filter(status__in=[
+                ATCJob.StatusChoices.STARTING,
+                ATCJob.StatusChoices.RUNNING,
+                ATCJob.StatusChoices.STOP_REQUESTED,
+            ]).first() or ATCJob.objects.order_by('-id').first()
+
         if not job:
             return JsonResponse({'status': 'info', 'message': 'No active ATC job found to stop.'})
     else:
@@ -612,13 +801,71 @@ def api_atc_stop(request, job_id):
         })
 
     job.stop_requested = True
-    job.status = ATCJob.StatusChoices.STOP_REQUESTED
     job.stop_reason = "Emergency Stop clicked by user."
-    job.save(update_fields=['stop_requested', 'status', 'stop_reason'])
+    job.stopped_at = get_server_now()
+
+    if not is_job_thread_alive(job.id):
+        job.status = ATCJob.StatusChoices.EMERGENCY_STOPPED
+        job.completed_at = get_server_now()
+        job.save(update_fields=['stop_requested', 'status', 'stopped_at', 'completed_at', 'stop_reason'])
+    else:
+        job.status = ATCJob.StatusChoices.STOP_REQUESTED
+        job.save(update_fields=['stop_requested', 'status', 'stopped_at', 'stop_reason'])
+
+    j_date = job.automation_date or job.from_date
+    date_str = j_date.strftime('%d-%m-%Y') if j_date else job.job_id
+    return JsonResponse({
+        'status': 'success',
+        'message': f"Emergency Stop signal sent for {job.job_id}. Automation for {date_str} will halt immediately.",
+        'job_id': job.id,
+        'job_code': job.job_id,
+        'automation_date': j_date.isoformat() if j_date else None,
+        'date_status': 'STOPPED',
+    })
+
+
+@require_GET
+@login_required
+def api_atc_date_statuses(request):
+    """
+    Returns current DB-persisted statuses for all configured dates within a plan or date range.
+    Enables real-time client-side table updates without full page reload.
+    """
+    from_date_str = request.GET.get('from_date')
+    to_date_str = request.GET.get('to_date')
+    today = get_server_today()
+
+    from_d = today
+    to_d = today
+    if from_date_str:
+        try:
+            from_d = datetime.strptime(from_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            pass
+    if to_date_str:
+        try:
+            to_d = datetime.strptime(to_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            pass
+
+    plan_id = request.GET.get('plan_id')
+    plan_obj = None
+    if plan_id:
+        plan_obj = ATCJob.objects.filter(pk=plan_id).first()
+
+    settings = ATCSetting.get_settings()
+    configured_depts_count = len(plan_obj.plan_departments) if plan_obj and plan_obj.plan_departments else 5
+    date_statuses = get_plan_date_statuses(
+        plan_obj=plan_obj,
+        from_d=from_d,
+        to_d=to_d,
+        configured_depts_count=configured_depts_count,
+        op_date_restricted=getattr(settings, 'op_date_restriction', True)
+    )
 
     return JsonResponse({
         'status': 'success',
-        'message': "Emergency Stop signal sent. Automation will halt immediately."
+        'date_statuses': date_statuses,
     })
 
 

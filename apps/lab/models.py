@@ -842,6 +842,8 @@ class ATCJob(TimeStampedModel):
     class StatusChoices(models.TextChoices):
         IDLE = 'IDLE', 'IDLE'
         DRAFT = 'DRAFT', 'DRAFT'
+        PENDING = 'PENDING', 'PENDING'
+        READY = 'READY', 'READY'
         STARTING = 'STARTING', 'STARTING'
         RUNNING = 'RUNNING', 'RUNNING'
         STOP_REQUESTED = 'STOP_REQUESTED', 'STOP_REQUESTED'
@@ -851,6 +853,8 @@ class ATCJob(TimeStampedModel):
         FAILED = 'FAILED', 'FAILED'
 
     job_id = models.CharField(max_length=50, unique=True, db_index=True)
+    plan = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='execution_jobs')
+    automation_date = models.DateField(null=True, blank=True, db_index=True)
     mode = models.CharField(max_length=20, choices=ModeChoices.choices, default=ModeChoices.COMBINED)
     department = models.ForeignKey('patients.Department', on_delete=models.SET_NULL, null=True, blank=True)
     source_from_year = models.PositiveIntegerField(default=2022)
@@ -902,10 +906,15 @@ class ATCJob(TimeStampedModel):
 
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    stopped_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['automation_date', 'status']),
+            models.Index(fields=['plan', 'automation_date']),
+        ]
 
     def __str__(self):
         return f"{self.job_id} ({self.mode}) - {self.status}"

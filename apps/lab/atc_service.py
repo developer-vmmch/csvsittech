@@ -51,12 +51,22 @@ def get_server_now():
     return timezone.localtime()
 
 
+_ACTIVE_ATC_THREADS = {}
+
+
+def is_job_thread_alive(job_id):
+    """Check whether a thread is actively executing for the given ATC job."""
+    thread = _ACTIVE_ATC_THREADS.get(job_id)
+    return bool(thread and thread.is_alive())
+
+
 def trigger_atc_job_async(job_id):
     """
     Launch ATC job execution in a separate daemon thread to allow non-blocking UI polling.
     """
     import threading
     worker = threading.Thread(target=run_atc_job, args=(job_id,), daemon=True)
+    _ACTIVE_ATC_THREADS[job_id] = worker
     worker.start()
     return worker
 
@@ -66,33 +76,36 @@ def run_atc_job(job_id):
     Main job executor for ATC.
     """
     try:
-        job = ATCJob.objects.get(pk=job_id)
-    except ATCJob.DoesNotExist:
-        logger.error(f"ATC job {job_id} not found")
-        return
+        try:
+            job = ATCJob.objects.get(pk=job_id)
+        except ATCJob.DoesNotExist:
+            logger.error(f"ATC job {job_id} not found")
+            return
 
-    job.status = ATCJob.StatusChoices.RUNNING
-    job.started_at = get_server_now()
-    job.save(update_fields=['status', 'started_at'])
+        job.status = ATCJob.StatusChoices.RUNNING
+        job.started_at = get_server_now()
+        job.save(update_fields=['status', 'started_at'])
 
-    try:
-        if job.mode == ATCJob.ModeChoices.COMBINED:
-            execute_combined_atc_automation(job)
-        elif job.mode == ATCJob.ModeChoices.OP:
-            execute_op_automation(job)
-        elif job.mode == ATCJob.ModeChoices.REVIEW:
-            execute_review_automation(job)
-        elif job.mode == ATCJob.ModeChoices.FUTURE_PATIENT:
-            execute_future_patient_automation(job)
-        else:
-            raise ValueError(f"Unsupported ATC mode: {job.mode}")
-    except Exception as exc:
-        logger.exception(f"Fatal error in ATC job {job.job_id}: {exc}")
-        job.refresh_from_db()
-        job.status = ATCJob.StatusChoices.FAILED
-        job.error_summary = str(exc)
-        job.completed_at = get_server_now()
-        job.save(update_fields=['status', 'error_summary', 'completed_at'])
+        try:
+            if job.mode == ATCJob.ModeChoices.COMBINED:
+                execute_combined_atc_automation(job)
+            elif job.mode == ATCJob.ModeChoices.OP:
+                execute_op_automation(job)
+            elif job.mode == ATCJob.ModeChoices.REVIEW:
+                execute_review_automation(job)
+            elif job.mode == ATCJob.ModeChoices.FUTURE_PATIENT:
+                execute_future_patient_automation(job)
+            else:
+                raise ValueError(f"Unsupported ATC mode: {job.mode}")
+        except Exception as exc:
+            logger.exception(f"Fatal error in ATC job {job.job_id}: {exc}")
+            job.refresh_from_db()
+            job.status = ATCJob.StatusChoices.FAILED
+            job.error_summary = str(exc)
+            job.completed_at = get_server_now()
+            job.save(update_fields=['status', 'error_summary', 'completed_at'])
+    finally:
+        _ACTIVE_ATC_THREADS.pop(job_id, None)
 
 
 # ---------------------------------------------------------------------------
@@ -152,8 +165,9 @@ def execute_combined_atc_automation(job):
     ]:
         job.status = ATCJob.StatusChoices.EMERGENCY_STOPPED
         job.stop_reason = "Emergency Stop clicked by user."
+        job.stopped_at = get_server_now()
         job.completed_at = get_server_now()
-        job.save(update_fields=['status', 'stop_reason', 'completed_at'])
+        job.save(update_fields=['status', 'stop_reason', 'stopped_at', 'completed_at'])
         return
 
     # -----------------------------------------------------------------------
@@ -168,8 +182,9 @@ def execute_combined_atc_automation(job):
         ]:
             job.status = ATCJob.StatusChoices.EMERGENCY_STOPPED
             job.stop_reason = "Emergency Stop clicked by user."
+            job.stopped_at = get_server_now()
             job.completed_at = get_server_now()
-            job.save(update_fields=['status', 'stop_reason', 'completed_at'])
+            job.save(update_fields=['status', 'stop_reason', 'stopped_at', 'completed_at'])
             return
 
         now_time = get_server_now().time()
@@ -237,16 +252,18 @@ def execute_combined_atc_automation(job):
             ]:
                 job.status = ATCJob.StatusChoices.EMERGENCY_STOPPED
                 job.stop_reason = "Emergency Stop clicked by user."
+                job.stopped_at = get_server_now()
                 job.completed_at = get_server_now()
-                job.save(update_fields=['status', 'stop_reason', 'completed_at'])
+                job.save(update_fields=['status', 'stop_reason', 'stopped_at', 'completed_at'])
                 return
 
             cur_time = get_server_now().time()
             if cur_time >= sched_end:
                 job.status = ATCJob.StatusChoices.STOPPED
                 job.stop_reason = f"Day-end ({sched_end.strftime('%H:%M')}) reached. Stopped before next patient."
+                job.stopped_at = get_server_now()
                 job.completed_at = get_server_now()
-                job.save(update_fields=['status', 'stop_reason', 'completed_at'])
+                job.save(update_fields=['status', 'stop_reason', 'stopped_at', 'completed_at'])
                 return
 
             job.current_batch = (job.created_count // batch_size) + 1
@@ -271,10 +288,13 @@ def execute_combined_atc_automation(job):
             else:
                 src = female_source[job.created_female % len(female_source)]
 
-            op_from_d = job.from_date or today
-            op_to_d = job.to_date or op_from_d
-            date_span = max(1, (op_to_d - op_from_d).days + 1)
-            target_date = op_from_d + timedelta(days=(job.created_op % date_span))
+            if job.automation_date:
+                target_date = job.automation_date
+            else:
+                op_from_d = job.from_date or today
+                op_to_d = job.to_date or op_from_d
+                date_span = max(1, (op_to_d - op_from_d).days + 1)
+                target_date = op_from_d + timedelta(days=(job.created_op % date_span))
 
             record_offset_secs = int(job.created_count * step_seconds)
             rec_time = (start_dt + timedelta(seconds=record_offset_secs)).time()
@@ -383,8 +403,9 @@ def execute_combined_atc_automation(job):
         if job.stop_requested or job.status in [ATCJob.StatusChoices.STOPPED, ATCJob.StatusChoices.EMERGENCY_STOPPED]:
             job.status = ATCJob.StatusChoices.EMERGENCY_STOPPED
             job.stop_reason = "Emergency Stop clicked by user."
+            job.stopped_at = get_server_now()
             job.completed_at = get_server_now()
-            job.save(update_fields=['status', 'stop_reason', 'completed_at'])
+            job.save(update_fields=['status', 'stop_reason', 'stopped_at', 'completed_at'])
             return
 
         # Query existing D patients only (exclude O) from review_source_year
@@ -424,8 +445,9 @@ def execute_combined_atc_automation(job):
             ]:
                 job.status = ATCJob.StatusChoices.EMERGENCY_STOPPED
                 job.stop_reason = "Emergency Stop clicked by user."
+                job.stopped_at = get_server_now()
                 job.completed_at = get_server_now()
-                job.save(update_fields=['status', 'stop_reason', 'completed_at'])
+                job.save(update_fields=['status', 'stop_reason', 'stopped_at', 'completed_at'])
                 return
 
             patient = eligible_d_patients[p_idx % len(eligible_d_patients)]
@@ -438,7 +460,8 @@ def execute_combined_atc_automation(job):
                 dept_unit = dept.units.first() if (dept and dept.units.exists()) else None
 
             job.current_batch = (job.created_count // batch_size) + 1
-            rev_dt = timezone.make_aware(datetime.combine(today, time(10, 0)))
+            target_rev_date = job.automation_date or job.from_date or today
+            rev_dt = timezone.make_aware(datetime.combine(target_rev_date, time(10, 0)))
 
             try:
                 with transaction.atomic():

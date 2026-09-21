@@ -422,6 +422,104 @@
         background-color: #b91c1c !important;
         border-color: #b91c1c !important;
     }
+
+    /* Date-Level Selection & Table Status Styles */
+    .target-table tbody tr {
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+    .target-table tr.row-selected td {
+        background-color: #f0f9ff !important;
+    }
+    .target-table tr.row-selected td.sticky-date-td {
+        border-left: 3px solid #0284c7 !important;
+    }
+    .badge-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.22rem 0.6rem;
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        line-height: 1.2;
+    }
+    .badge-status-completed {
+        background-color: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+    .badge-status-running {
+        background-color: #eff6ff;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+    }
+    .badge-status-ready {
+        background-color: #f0fdf4;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+    }
+    .badge-status-pending {
+        background-color: #f8fafc;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+    }
+    .badge-status-stopped {
+        background-color: #fffbeb;
+        color: #b45309;
+        border: 1px solid #fde68a;
+    }
+    .badge-status-failed {
+        background-color: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+    }
+
+    .btn-table-action {
+        padding: 0.25rem 0.55rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 4px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        transition: all 0.15s ease-in-out;
+        white-space: nowrap;
+    }
+    .btn-action-trigger {
+        background-color: #16a34a;
+        color: #ffffff;
+    }
+    .btn-action-trigger:hover:not(:disabled) {
+        background-color: #15803d;
+    }
+    .btn-action-stop {
+        background-color: #dc2626;
+        color: #ffffff;
+    }
+    .btn-action-stop:hover {
+        background-color: #b91c1c;
+    }
+    .btn-action-view {
+        background-color: #f1f5f9;
+        color: #334155;
+        border-color: #cbd5e1;
+    }
+    .btn-action-view:hover {
+        background-color: #e2e8f0;
+    }
+    .btn-action-retry {
+        background-color: #f59e0b;
+        color: #ffffff;
+    }
+    .btn-action-retry:hover:not(:disabled) {
+        background-color: #d97706;
+    }
 </style>
 {% endblock %}
 
@@ -633,7 +731,33 @@
     </div>
 
     <!-- ================================================================= -->
-    <!-- 2. DAILY DEPARTMENT TARGETS TABLE (Dynamic Date Range Plan)       -->
+    <!-- 2. SELECTED AUTOMATION DATE STATUS BANNER                        -->
+    <!-- ================================================================= -->
+    <div class="bg-white border border-slate-200 rounded-lg p-3 mb-3 flex flex-wrap items-center justify-between gap-3 shadow-sm" id="selectedDateBanner">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold text-lg border border-sky-100">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+            <div>
+                <div class="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Active Selected Automation Date</div>
+                <div class="flex items-center gap-2">
+                    <span id="selectedDateDisplay" class="font-bold text-slate-900 text-sm">--</span>
+                    <span id="selectedDateStatusBadge" class="badge-status badge-status-pending">PENDING</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <div id="selectedDateJobInfo" class="text-xs text-slate-500 font-medium">
+                <span class="text-slate-400">No active job</span>
+            </div>
+            <button type="button" id="btnSelectedDateAction" class="btn btn-sm btn-primary px-3 py-1.5 font-bold text-xs" onclick="triggerSelectedDate()">
+                <i class="bi bi-play-circle-fill me-1"></i> Trigger This Date
+            </button>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- 3. DAILY DEPARTMENT TARGETS TABLE (Dynamic Date Range Plan)       -->
     <!-- ================================================================= -->
     <div class="table-container">
         <div class="table-header-toolbar">
@@ -733,6 +857,9 @@
     // Department list loaded from view
     let planDepartments = {{ initial_plan_departments_json|safe }};
     let dailyTargets = {{ initial_daily_targets_json|safe }};
+    let dateStatuses = {{ initial_date_statuses_json|safe }};
+    let selectedDate = "{{ today }}";
+    let statusPollTimer = null;
 
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -741,8 +868,22 @@
         calculateTargets();
         updateDepartmentDropdownState();
         onDepartmentSelectChange();
+
+        // Ensure selectedDate is valid for current range
+        const datesList = getDatesInRange(currentFromDate, currentToDate);
+        if (!datesList.includes(selectedDate) && datesList.length > 0) {
+            selectedDate = datesList[0];
+        }
+
         renderTable();
+        updateSelectedDateBanner();
         updateTriggerButtonState();
+
+        // Start polling if any job is currently RUNNING
+        const hasRunning = Object.values(dateStatuses).some(s => s && s.status === 'RUNNING');
+        if (hasRunning) {
+            startPollingDateStatuses();
+        }
     });
 
     // -----------------------------------------------------------------
@@ -848,7 +989,16 @@
         document.getElementById('op_date_display').value = displayStr;
 
         validateDateAgainstSignal();
+
+        const datesList = getDatesInRange(currentFromDate, currentToDate);
+        if (!datesList.includes(selectedDate) && datesList.length > 0) {
+            selectedDate = datesList[0];
+        }
+
         renderTable();
+        updateSelectedDateBanner();
+        updateTriggerButtonState();
+        pollDateStatuses();
     }
 
     function validateDateAgainstSignal() {
@@ -1131,25 +1281,195 @@
         saveDraftConfig(true);
     }
 
+    function renderStatusBadge(statusKey, info) {
+        info = info || {};
+        switch (statusKey) {
+            case 'COMPLETED':
+                return `<span class="badge-status badge-status-completed" title="Created ${info.created_count || 0}/${info.target_total || 0}"><i class="bi bi-check-circle-fill"></i> Completed</span>`;
+            case 'RUNNING':
+                return `<span class="badge-status badge-status-running"><span class="spinner-border spinner-border-sm" style="width: 8px; height: 8px; border-width: 1.5px;"></span> Running</span>`;
+            case 'STOPPED':
+                return `<span class="badge-status badge-status-stopped" title="${info.stop_reason || ''}"><i class="bi bi-pause-circle-fill"></i> Stopped</span>`;
+            case 'FAILED':
+                return `<span class="badge-status badge-status-failed" title="${info.error_summary || ''}"><i class="bi bi-exclamation-circle-fill"></i> Failed</span>`;
+            case 'READY':
+                return `<span class="badge-status badge-status-ready"><i class="bi bi-circle-fill text-[7px]"></i> Ready</span>`;
+            default:
+                return `<span class="badge-status badge-status-pending"><i class="bi bi-hourglass-split"></i> Pending</span>`;
+        }
+    }
+
+    function renderActionButtons(dateStr, statusKey, info) {
+        info = info || {};
+        const isPast = (dateStr < serverTodayStr);
+        const configuredDepts = planDepartments.filter(d => d.is_configured !== false);
+        const hasMinDepts = configuredDepts.length >= 5;
+
+        if (statusKey === 'RUNNING') {
+            return `<button type="button" class="btn-table-action btn-action-stop" onclick="event.stopPropagation(); emergencyStopDate('${dateStr}')"><i class="bi bi-stop-circle-fill"></i> Stop</button>`;
+        } else if (statusKey === 'COMPLETED') {
+            return `<button type="button" class="btn-table-action btn-action-view" onclick="event.stopPropagation(); viewJobDetails('${dateStr}')"><i class="bi bi-eye"></i> View</button>`;
+        } else if (statusKey === 'STOPPED') {
+            return `<button type="button" class="btn-table-action btn-action-trigger" onclick="event.stopPropagation(); triggerDate('${dateStr}')" ${!hasMinDepts ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}><i class="bi bi-arrow-repeat"></i> Restart</button>`;
+        } else if (statusKey === 'FAILED') {
+            return `<button type="button" class="btn-table-action btn-action-retry" onclick="event.stopPropagation(); triggerDate('${dateStr}')" ${!hasMinDepts ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}><i class="bi bi-arrow-repeat"></i> Retry</button>`;
+        } else {
+            // READY or PENDING
+            const canTrig = hasMinDepts && (!isPast || document.getElementById('operation_signal').value === 'REVIEW');
+            return `<button type="button" class="btn-table-action btn-action-trigger" onclick="event.stopPropagation(); triggerDate('${dateStr}')" ${!canTrig ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}><i class="bi bi-play-fill"></i> Trigger</button>`;
+        }
+    }
+
+    function selectDate(dateStr) {
+        selectedDate = dateStr;
+        document.querySelectorAll('#tableBody tr').forEach(tr => {
+            const d = tr.getAttribute('data-date');
+            const isMatch = (d === dateStr);
+            tr.classList.toggle('row-selected', isMatch);
+            const checkIcon = tr.querySelector('.sticky-date-td .bi-check2');
+            if (isMatch) {
+                if (!checkIcon) {
+                    const sp = tr.querySelector('.sticky-date-td span');
+                    if (sp) sp.insertAdjacentHTML('afterend', '<i class="bi bi-check2 text-sky-600 font-bold ms-1"></i>');
+                }
+            } else {
+                if (checkIcon) checkIcon.remove();
+            }
+        });
+
+        updateSelectedDateBanner();
+        updateTriggerButtonState();
+    }
+
+    function updateSelectedDateBanner() {
+        const disp = document.getElementById('selectedDateDisplay');
+        const badge = document.getElementById('selectedDateStatusBadge');
+        const jobInfo = document.getElementById('selectedDateJobInfo');
+        const actBtn = document.getElementById('btnSelectedDateAction');
+
+        if (!disp) return;
+
+        disp.textContent = formatDateDisplay(selectedDate);
+        const dateInfo = dateStatuses[selectedDate] || { status: 'PENDING' };
+        const status = dateInfo.status || 'PENDING';
+
+        badge.className = `badge-status badge-status-${status.toLowerCase()}`;
+        badge.innerHTML = status === 'RUNNING'
+            ? `<span class="spinner-border spinner-border-sm" style="width: 8px; height: 8px; border-width: 1.5px;"></span> RUNNING`
+            : status;
+
+        if (dateInfo.job_id) {
+            let txt = `Job #${dateInfo.job_id}`;
+            if (dateInfo.target_total > 0) {
+                txt += ` (${dateInfo.created_count || 0}/${dateInfo.target_total})`;
+            }
+            jobInfo.innerHTML = `<span class="inline-flex items-center gap-1"><i class="bi bi-gear-wide-connected text-sky-600"></i> ${txt}</span>`;
+        } else {
+            jobInfo.innerHTML = `<span class="text-slate-400">No active job</span>`;
+        }
+
+        const configuredDepts = planDepartments.filter(d => d.is_configured !== false);
+        const hasMinDepts = configuredDepts.length >= 5;
+
+        if (status === 'RUNNING') {
+            actBtn.className = 'btn btn-sm btn-emergency-stop px-3 py-1.5 font-bold text-xs';
+            actBtn.style.background = '#dc2626';
+            actBtn.innerHTML = '<i class="bi bi-stop-circle-fill me-1"></i> Emergency Stop';
+            actBtn.disabled = false;
+            actBtn.onclick = () => emergencyStopDate(selectedDate);
+        } else if (status === 'COMPLETED') {
+            actBtn.className = 'btn btn-sm btn-secondary px-3 py-1.5 font-bold text-xs';
+            actBtn.style.background = '';
+            actBtn.innerHTML = '<i class="bi bi-eye me-1"></i> View Live Details';
+            actBtn.disabled = false;
+            actBtn.onclick = () => viewJobDetails(selectedDate);
+        } else if (status === 'FAILED') {
+            actBtn.className = 'btn btn-sm btn-warning px-3 py-1.5 font-bold text-xs text-white';
+            actBtn.style.background = '#f59e0b';
+            actBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Retry Date';
+            actBtn.disabled = !hasMinDepts;
+            actBtn.onclick = () => triggerDate(selectedDate);
+        } else if (status === 'STOPPED') {
+            actBtn.className = 'btn btn-sm btn-primary px-3 py-1.5 font-bold text-xs';
+            actBtn.style.background = '#0284c7';
+            actBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Restart Date';
+            actBtn.disabled = !hasMinDepts;
+            actBtn.onclick = () => triggerDate(selectedDate);
+        } else {
+            actBtn.className = 'btn btn-sm btn-primary px-3 py-1.5 font-bold text-xs';
+            actBtn.style.background = '#16a34a';
+            actBtn.innerHTML = '<i class="bi bi-play-circle-fill me-1"></i> Trigger This Date';
+            actBtn.disabled = !hasMinDepts;
+            actBtn.onclick = () => triggerDate(selectedDate);
+        }
+    }
+
+    function triggerSelectedDate() {
+        triggerDate(selectedDate);
+    }
+
+    function updateRowStatus(dateStr) {
+        const tr = document.querySelector(`#tableBody tr[data-date="${dateStr}"]`);
+        if (!tr) return;
+        const dateInfo = dateStatuses[dateStr] || { status: 'PENDING' };
+        const statusKey = dateInfo.status || 'PENDING';
+
+        const cells = tr.querySelectorAll('td');
+        if (cells.length >= 2) {
+            const statusTd = cells[cells.length - 2];
+            const actionTd = cells[cells.length - 1];
+            statusTd.innerHTML = renderStatusBadge(statusKey, dateInfo);
+            actionTd.innerHTML = renderActionButtons(dateStr, statusKey, dateInfo);
+        }
+    }
+
     function updateTriggerButtonState() {
         const configuredDepts = planDepartments.filter(d => d.is_configured !== false);
         const count = configuredDepts.length;
         const badge = document.getElementById('deptCountBadge');
-        badge.textContent = `${count} Department${count === 1 ? '' : 's'}`;
+        if (badge) badge.textContent = `${count} Department${count === 1 ? '' : 's'}`;
 
         const triggerBtn = document.getElementById('btnSaveAndTrigger');
         const triggerBtnText = document.getElementById('triggerBtnText');
+        if (!triggerBtn || !triggerBtnText) return;
 
         if (count < 5) {
             triggerBtn.disabled = true;
             triggerBtn.style.opacity = '0.5';
             triggerBtn.style.cursor = 'not-allowed';
             triggerBtnText.textContent = `Save & Trigger (Min 5 Depts — currently ${count}/5)`;
+            return;
+        }
+
+        const dateInfo = dateStatuses[selectedDate] || { status: 'READY' };
+        const status = dateInfo.status || 'READY';
+        const dispDate = formatDateDisplay(selectedDate);
+
+        if (status === 'RUNNING') {
+            triggerBtn.disabled = true;
+            triggerBtn.style.opacity = '0.7';
+            triggerBtn.style.cursor = 'not-allowed';
+            triggerBtnText.textContent = `Automation is Running (${dispDate})`;
+        } else if (status === 'COMPLETED') {
+            triggerBtn.disabled = true;
+            triggerBtn.style.opacity = '0.7';
+            triggerBtn.style.cursor = 'not-allowed';
+            triggerBtnText.textContent = `Automation Completed (${dispDate})`;
+        } else if (status === 'STOPPED') {
+            triggerBtn.disabled = false;
+            triggerBtn.style.opacity = '1';
+            triggerBtn.style.cursor = 'pointer';
+            triggerBtnText.textContent = `Restart Automation (${dispDate})`;
+        } else if (status === 'FAILED') {
+            triggerBtn.disabled = false;
+            triggerBtn.style.opacity = '1';
+            triggerBtn.style.cursor = 'pointer';
+            triggerBtnText.textContent = `Retry Automation (${dispDate})`;
         } else {
             triggerBtn.disabled = false;
             triggerBtn.style.opacity = '1';
             triggerBtn.style.cursor = 'pointer';
-            triggerBtnText.textContent = `Save & Trigger (${count} Depts Ready)`;
+            triggerBtnText.textContent = `Trigger Automation (${dispDate})`;
         }
     }
 
@@ -1186,7 +1506,7 @@
         const thead = document.getElementById('tableHead');
         const tbody = document.getElementById('tableBody');
 
-        // Header Row 1: DATE, DAY, and Department Names (colSpan 2)
+        // Header Row 1: DATE, DAY, and Department Names (colSpan 2), Status, Action
         let headerRow1 = `<tr>
             <th rowspan="2" class="sticky-col sticky-date-th">Date</th>
             <th rowspan="2" class="sticky-col sticky-day-th">Day</th>`;
@@ -1206,7 +1526,10 @@
                     </div>
                 </th>`;
         });
-        headerRow1 += `</tr>`;
+        headerRow1 += `
+            <th rowspan="2" class="text-center" style="min-width: 110px;">Status</th>
+            <th rowspan="2" class="text-center" style="min-width: 130px;">Action</th>
+        </tr>`;
 
         // Header Row 2: MIN, MAX for each department
         let headerRow2 = `<tr>`;
@@ -1224,7 +1547,7 @@
         let rowsHtml = '';
 
         if (datesList.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="${2 + planDepartments.length * 2}" class="py-8 text-center text-slate-400">No dates in selected range.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="${4 + planDepartments.length * 2}" class="py-8 text-center text-slate-400">No dates in selected range.</td></tr>`;
             return;
         }
 
@@ -1233,9 +1556,17 @@
             const displayDate = formatDateDisplay(dateStr);
             const dayName = dayNames[dateObj.getDay()];
             const isPast = (dateStr < serverTodayStr);
+            const isSelected = (dateStr === selectedDate);
+            const dateInfo = dateStatuses[dateStr] || { status: isPast ? 'PENDING' : 'READY' };
+            const statusKey = dateInfo.status || 'PENDING';
 
-            rowsHtml += `<tr>
-                <td class="sticky-col sticky-date-td ${isPast ? 'bg-slate-50 text-slate-400' : ''}">${displayDate}</td>
+            rowsHtml += `<tr class="${isSelected ? 'row-selected' : ''}" onclick="selectDate('${dateStr}')" data-date="${dateStr}">
+                <td class="sticky-col sticky-date-td ${isPast ? 'bg-slate-50 text-slate-400' : ''}">
+                    <div class="flex items-center justify-between">
+                        <span>${displayDate}</span>
+                        ${isSelected ? '<i class="bi bi-check2 text-sky-600 font-bold ms-1"></i>' : ''}
+                    </div>
+                </td>
                 <td class="sticky-col sticky-day-td ${isPast ? 'bg-slate-50 text-slate-400' : ''}">${dayName}</td>`;
 
             planDepartments.forEach(dept => {
@@ -1267,16 +1598,20 @@
                     <td class="${isPast || !isConfigured ? 'bg-slate-50' : ''}">
                         <input type="number" class="input-sm ${isInvalid ? 'input-target-error' : ''}" min="0" value="${cellMin}"
                             data-date="${dateStr}" data-dept="${dept.department_id}" data-type="min"
-                            onchange="onCellChange(this)" ${isDisabled}>
+                            onchange="onCellChange(this)" onclick="event.stopPropagation()" ${isDisabled}>
                     </td>
                     <td class="${isPast || !isConfigured ? 'bg-slate-50' : ''}">
                         <input type="number" class="input-sm ${isInvalid ? 'input-target-error' : ''}" min="0" value="${cellMax}"
                             data-date="${dateStr}" data-dept="${dept.department_id}" data-type="max"
-                            onchange="onCellChange(this)" ${isDisabled}>
+                            onchange="onCellChange(this)" onclick="event.stopPropagation()" ${isDisabled}>
                     </td>`;
             });
 
-            rowsHtml += `</tr>`;
+            // Status Badge Column & Action Column
+            rowsHtml += `
+                <td>${renderStatusBadge(statusKey, dateInfo)}</td>
+                <td>${renderActionButtons(dateStr, statusKey, dateInfo)}</td>
+            </tr>`;
         });
 
         tbody.innerHTML = rowsHtml;
@@ -1499,6 +1834,13 @@
     }
 
     function triggerAutomation() {
+        triggerDate(selectedDate);
+    }
+
+    function triggerDate(targetDateStr) {
+        if (!targetDateStr) targetDateStr = selectedDate;
+        selectDate(targetDateStr);
+
         const configuredDepts = planDepartments.filter(d => d.is_configured !== false);
         if (configuredDepts.length < 5) {
             alert(`At least 5 different departments must be configured before triggering automation. Currently configured: ${configuredDepts.length} / 5.`);
@@ -1508,9 +1850,29 @@
         if (!validateMinMax()) return;
         if (!validateDateAgainstSignal()) return;
 
-        const btn = document.getElementById('btnSaveAndTrigger');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Starting...';
+        const currentInfo = dateStatuses[targetDateStr];
+        if (currentInfo && currentInfo.status === 'COMPLETED') {
+            alert(`Automation already completed for ${formatDateDisplay(targetDateStr)}.`);
+            return;
+        }
+        if (currentInfo && currentInfo.status === 'RUNNING') {
+            alert(`Automation is currently running for ${formatDateDisplay(targetDateStr)}.`);
+            return;
+        }
+
+        // Optimistically update status to RUNNING in-place without page reload
+        if (!dateStatuses[targetDateStr]) dateStatuses[targetDateStr] = {};
+        const previousStatus = dateStatuses[targetDateStr].status || 'READY';
+        dateStatuses[targetDateStr].status = 'RUNNING';
+        updateRowStatus(targetDateStr);
+        updateSelectedDateBanner();
+        updateTriggerButtonState();
+
+        const payload = {
+            ...getPayloadData(),
+            automation_date: targetDateStr,
+            selected_date: targetDateStr,
+        };
 
         fetch('/lab/api/atc/trigger/', {
             method: 'POST',
@@ -1518,27 +1880,81 @@
                 'Content-Type': 'application/json',
                 'X-CSRFToken': csrfToken
             },
-            body: JSON.stringify(getPayloadData())
+            body: JSON.stringify(payload)
         })
         .then(r => r.json())
         .then(res => {
             if (res.status === 'success') {
-                window.location.href = '/lab/auto-trigger/atc/status/';
+                dateStatuses[targetDateStr].job_id = res.job_id;
+                dateStatuses[targetDateStr].job_pk = res.job_pk;
+                dateStatuses[targetDateStr].target_total = res.target_total || 0;
+                dateStatuses[targetDateStr].status = 'RUNNING';
+                updateRowStatus(targetDateStr);
+                updateSelectedDateBanner();
+                updateTriggerButtonState();
+                startPollingDateStatuses();
             } else {
                 alert("Error triggering automation: " + (res.message || 'Unknown error'));
-                btn.disabled = false;
+                dateStatuses[targetDateStr].status = previousStatus;
+                updateRowStatus(targetDateStr);
+                updateSelectedDateBanner();
                 updateTriggerButtonState();
             }
         })
         .catch(err => {
             alert("Network error: " + err);
-            btn.disabled = false;
+            dateStatuses[targetDateStr].status = previousStatus;
+            updateRowStatus(targetDateStr);
+            updateSelectedDateBanner();
             updateTriggerButtonState();
         });
     }
 
+    function emergencyStopDate(targetDateStr) {
+        if (!targetDateStr) targetDateStr = selectedDate;
+        const disp = formatDateDisplay(targetDateStr);
+        if (!confirm(`Halt ATC automation for ${disp} immediately? Other dates will remain unaffected.`)) {
+            return;
+        }
+
+        const dateInfo = dateStatuses[targetDateStr];
+        const jobPk = (dateInfo && dateInfo.job_pk) ? dateInfo.job_pk : 0;
+
+        fetch(`/lab/api/atc/stop/${jobPk}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                automation_date: targetDateStr,
+                selected_date: targetDateStr,
+            })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (dateStatuses[targetDateStr]) {
+                dateStatuses[targetDateStr].status = 'STOPPED';
+                dateStatuses[targetDateStr].stop_reason = res.message || 'Emergency Stop clicked by user.';
+            }
+            updateRowStatus(targetDateStr);
+            updateSelectedDateBanner();
+            updateTriggerButtonState();
+            alert(res.message || `Automation for ${disp} stopped.`);
+        })
+        .catch(err => {
+            alert("Error stopping job: " + err);
+        });
+    }
+
     function triggerEmergencyStop() {
-        if (!confirm("Are you sure you want to send an Emergency Stop signal? This will halt all active ATC automation immediately.")) {
+        const dateInfo = dateStatuses[selectedDate];
+        if (dateInfo && dateInfo.status === 'RUNNING') {
+            emergencyStopDate(selectedDate);
+            return;
+        }
+
+        if (!confirm("Are you sure you want to send an Emergency Stop signal? This will halt active ATC automation immediately.")) {
             return;
         }
 
@@ -1547,15 +1963,60 @@
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': csrfToken
-            }
+            },
+            body: JSON.stringify({
+                automation_date: selectedDate,
+                selected_date: selectedDate,
+            })
         })
         .then(r => r.json())
         .then(res => {
             alert(res.message || "Emergency Stop signal transmitted.");
-            window.location.reload();
+            pollDateStatuses();
         })
         .catch(err => {
             alert("Error transmitting Emergency Stop: " + err);
+        });
+    }
+
+    function viewJobDetails(dateStr) {
+        const dateInfo = dateStatuses[dateStr];
+        if (dateInfo && dateInfo.job_pk) {
+            window.location.href = `/lab/auto-trigger/atc/status/?job_id=${dateInfo.job_pk}`;
+        } else {
+            window.location.href = '/lab/auto-trigger/atc/status/';
+        }
+    }
+
+    function startPollingDateStatuses() {
+        if (statusPollTimer) return;
+        statusPollTimer = setInterval(pollDateStatuses, 3000);
+    }
+
+    function pollDateStatuses() {
+        const url = `/lab/api/atc/date-statuses/?from_date=${currentFromDate}&to_date=${currentToDate}`;
+        fetch(url)
+        .then(r => r.json())
+        .then(res => {
+            if (res.status === 'success' && res.date_statuses) {
+                let hasRunning = false;
+                Object.keys(res.date_statuses).forEach(dStr => {
+                    const s = res.date_statuses[dStr];
+                    dateStatuses[dStr] = s;
+                    updateRowStatus(dStr);
+                    if (s.status === 'RUNNING') hasRunning = true;
+                });
+                updateSelectedDateBanner();
+                updateTriggerButtonState();
+
+                if (!hasRunning && statusPollTimer) {
+                    clearInterval(statusPollTimer);
+                    statusPollTimer = null;
+                }
+            }
+        })
+        .catch(() => {
+            // Polling failures silent
         });
     }
 
@@ -1571,7 +2032,7 @@
         .then(r => r.json())
         .then(res => {
             alert(res.message || "Job stopped.");
-            window.location.reload();
+            pollDateStatuses();
         })
         .catch(err => {
             alert("Error stopping job: " + err);

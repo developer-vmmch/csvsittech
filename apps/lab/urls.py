@@ -88,7 +88,7 @@ from .lab_reports import (
 from .atc_views import (
     ATCControlView, ATCLiveStatusView, ATCSettingsView,
     api_atc_trigger, api_atc_status, api_atc_stop, api_atc_active_job,
-    api_atc_preview, api_atc_save_config
+    api_atc_preview, api_atc_save_config, api_atc_date_statuses
 )
 
 app_name = 'lab'
@@ -347,4 +347,5 @@ urlpatterns = [
     path('api/atc/status/<int:job_id>/', api_atc_status, name='api_atc_status'),
     path('api/atc/stop/<int:job_id>/', api_atc_stop, name='api_atc_stop'),
     path('api/atc/active/', api_atc_active_job, name='api_atc_active_job'),
+    path('api/atc/date-statuses/', api_atc_date_statuses, name='api_atc_date_statuses'),
 ]
