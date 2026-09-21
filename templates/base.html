@@ -102,23 +102,34 @@
       .has-submenu.open .submenu-list { display: flex !important; }
       .submenu-list { display: none; flex-direction: column; }
       
-      /* Collapsed Sidebar Rules for desktop (lg:w-20 class added by JS) */
+      /* Collapsed Sidebar Rules for desktop */
+      #mainSidebar.sidebar-collapsed {
+          width: 72px !important;
+          min-width: 72px !important;
+      }
       #mainSidebar.sidebar-collapsed .brand-name,
       #mainSidebar.sidebar-collapsed .nav-section-title,
       #mainSidebar.sidebar-collapsed .nav-item a span,
-      #mainSidebar.sidebar-collapsed .submenu-chevron {
+      #mainSidebar.sidebar-collapsed .submenu-chevron,
+      #mainSidebar.sidebar-collapsed .submenu-list {
           display: none !important;
       }
+      #mainSidebar.sidebar-collapsed .sidebar-brand {
+          justify-content: center !important;
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+      }
+      #mainSidebar.sidebar-collapsed .brand-logo {
+          margin: 0 auto !important;
+      }
       #mainSidebar.sidebar-collapsed .nav-item a {
-          justify-content: center;
-          padding-left: 0; padding-right: 0;
+          justify-content: center !important;
+          padding: 0.75rem 0 !important;
+          gap: 0 !important;
       }
-      #mainSidebar.sidebar-collapsed .brand-logo-container {
-          margin: 0 auto;
-      }
-      /* Sidebar width when collapsed on desktop */
-      #mainSidebar.sidebar-collapsed {
-          width: 72px !important;
+      #mainSidebar.sidebar-collapsed .nav-item a i {
+          font-size: 1.25rem !important;
+          margin: 0 auto !important;
       }
     </style>
     

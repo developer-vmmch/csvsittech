@@ -159,36 +159,136 @@
     /* Bottom Section */
     .bottom-section {
         background: #f8fafc;
-        padding: 1rem 1.5rem;
+        padding: 1rem 1.25rem;
         display: flex;
+        flex-wrap: wrap;
         justify-content: space-between;
         align-items: flex-start;
         border-top: 1px solid var(--border-color);
-        gap: 2rem;
+        gap: 1.25rem;
     }
-    .report-details {
+
+    .bottom-col-remarks {
+        flex: 1 1 180px;
+        min-width: 170px;
+        max-width: 240px;
+    }
+
+    .bottom-col-title {
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-bottom: 0.4rem;
+        color: var(--text-main);
+    }
+
+    .remarks-textarea {
+        width: 100%;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.82rem;
+        min-height: 80px;
+        resize: vertical;
+        background: #ffffff;
+    }
+
+    .bottom-col-details {
+        flex: 1.2 1 280px;
+        min-width: 270px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .details-form-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1rem;
-        flex: 1;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.4rem 0.6rem;
     }
+
     .bottom-form-group {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.35rem;
     }
     .bottom-form-group label {
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         font-weight: 600;
         color: var(--text-muted);
-        width: 100px;
+        width: 80px;
+        flex-shrink: 0;
     }
     .bottom-form-group select {
         flex: 1;
-        padding: 0.25rem;
+        padding: 0.22rem 0.35rem;
         border: 1px solid var(--border-color);
         border-radius: 4px;
+        font-size: 0.78rem;
+        background: #ffffff;
+    }
+
+    .checkbox-row {
+        display: flex;
+        gap: 1.25rem;
+        align-items: center;
         font-size: 0.8rem;
+        margin-top: 0.2rem;
+        color: var(--text-main);
+    }
+    .checkbox-row label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        cursor: pointer;
+    }
+
+    .bottom-col-print {
+        flex: 1.5 1 360px;
+        min-width: 350px;
+    }
+
+    .format-radio-row {
+        display: flex;
+        gap: 0.85rem;
+        font-size: 0.78rem;
+        margin-bottom: 0.35rem;
+        color: var(--text-main);
+    }
+    .format-radio-row label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        cursor: pointer;
+    }
+
+    .print-actions-row {
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
+        flex-wrap: nowrap;
+        margin-top: 0.4rem;
+    }
+
+    .btn-print-action {
+        background: #ffffff;
+        color: #1e293b;
+        border: 1px solid #cbd5e1;
+        padding: 0.32rem 0.55rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 4px;
+        cursor: pointer;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        transition: all 0.15s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+    .btn-print-action:hover {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+        color: #0f172a;
     }
 
     .btn-group {
@@ -304,21 +404,21 @@
                         <td style="font-weight: 500; white-space: normal; line-height: 1.2;">{{ p.test_name }}</td>
                         <td style="color: var(--text-muted); white-space: normal; line-height: 1.2;">{{ p.reference_text }}</td>
                         <td style="text-align: center;">
-                            <input type="text" class="form-control-sm result-val" tabindex="{{ forloop.counter }}" placeholder="" {% if wo.status == 'COMPLETED' %}readonly{% endif %}>
+                            <input type="text" class="form-control-sm result-val" value="{{ p.existing_val|default:'' }}" tabindex="{{ forloop.counter }}" placeholder="">
                         </td>
                         <td style="color: var(--primary-blue); font-size: 0.8rem;">{{ p.unit|default:"-" }}</td>
                         <td>
-                            <select class="select-sm result-method" {% if wo.status == 'COMPLETED' %}disabled{% endif %}>
+                            <select class="select-sm result-method">
                                 <option>{{ p.method|default:"Not Specified" }}</option>
                             </select>
                         </td>
                         <td>
-                            <select class="select-sm result-sample" {% if wo.status == 'COMPLETED' %}disabled{% endif %}>
+                            <select class="select-sm result-sample">
                                 <option>{{ p.sample_type|default:"Not Specified" }}</option>
                             </select>
                         </td>
                         <td>
-                            <input type="text" class="form-control-sm result-rem" placeholder="" {% if wo.status == 'COMPLETED' %}readonly{% endif %}>
+                            <input type="text" class="form-control-sm result-rem" value="{{ p.existing_rem|default:'' }}" placeholder="">
                         </td>
                         <td><button type="button" class="btn-delta" onclick="alert('No previous result available')">Delta Check</button></td>
                         <td><span class="flag-badge flag-none">-</span></td>
@@ -333,51 +433,55 @@
         </div>
         
         <div class="bottom-section">
-            <div style="flex: 1;">
-                <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--text-main);">Remarks</div>
-                <textarea style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 0.5rem; font-size: 0.85rem; min-height: 80px;" placeholder="Enter remarks (optional)..." {% if wo.status == 'COMPLETED' %}readonly{% endif %}></textarea>
+            <div class="bottom-col-remarks">
+                <div class="bottom-col-title">Remarks</div>
+                <textarea class="remarks-textarea" placeholder="Enter remarks (optional)...">{{ diagnosis_text }}</textarea>
             </div>
-            <div class="report-details">
-                <div class="bottom-form-group">
-                    <label>Technician</label>
-                    <select {% if wo.status == 'COMPLETED' %}disabled{% endif %}><option>admin</option></select>
+            
+            <div class="bottom-col-details">
+                <div class="details-form-grid">
+                    <div class="bottom-form-group">
+                        <label>Technician</label>
+                        <select><option>admin</option></select>
+                    </div>
+                    <div class="bottom-form-group">
+                        <label>Report Type</label>
+                        <select><option>INTERIM REPORT</option></select>
+                    </div>
+                    <div class="bottom-form-group">
+                        <label>Released By</label>
+                        <select><option>Select</option></select>
+                    </div>
+                    <div class="bottom-form-group">
+                        <label>Report Option</label>
+                        <select><option>Select</option></select>
+                    </div>
                 </div>
-                <div class="bottom-form-group">
-                    <label>Report Type</label>
-                    <select {% if wo.status == 'COMPLETED' %}disabled{% endif %}><option>INTERIM REPORT</option></select>
-                </div>
-                <div class="bottom-form-group">
-                    <label>Report Option</label>
-                    <select {% if wo.status == 'COMPLETED' %}disabled{% endif %}><option>Select</option></select>
-                </div>
-                <div class="bottom-form-group">
-                    <label>Released By</label>
-                    <select {% if wo.status == 'COMPLETED' %}disabled{% endif %}><option>Select</option></select>
-                </div>
-                <div style="display: flex; gap: 1rem; align-items: center; grid-column: span 3; font-size: 0.8rem;">
-                    <div><input type="checkbox" {% if wo.status == 'COMPLETED' %}disabled{% endif %}> Verified By</div>
-                    <div><input type="checkbox" {% if wo.status == 'COMPLETED' %}disabled{% endif %}> Reprint</div>
+                <div class="checkbox-row">
+                    <label><input type="checkbox"> Verified By</label>
+                    <label><input type="checkbox"> Reprint</label>
                 </div>
             </div>
-            <div style="flex: 1.2; min-width: 320px;">
-                <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--text-main);">Reporting Format:</div>
-                <div style="display: flex; gap: 1rem; font-size: 0.8rem; margin-bottom: 0.5rem;">
+
+            <div class="bottom-col-print">
+                <div class="bottom-col-title">Reporting Format:</div>
+                <div class="format-radio-row">
                     <label><input type="radio" name="nabl" value="approved"> Approved by NABL</label>
                     <label><input type="radio" name="nabl" value="unapproved"> Unapproved by NABL</label>
                     <label><input type="radio" name="nabl" value="both" checked> Both</label>
                 </div>
-                <div style="display: flex; gap: 1rem; font-size: 0.8rem; margin-bottom: 0.75rem;">
+                <div class="format-radio-row">
                     <label><input type="radio" name="header" value="with" checked> With Header</label>
                     <label><input type="radio" name="header" value="without"> Without Header</label>
                 </div>
-                <div style="display: flex; gap: 0.5rem; flex-wrap: nowrap; align-items: center;">
-                    <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 0.35rem;" onclick="openPrintPreview('all')">
+                <div class="print-actions-row">
+                    <button type="button" class="btn-print-action" onclick="openPrintPreview('all')" title="Print All Investigations">
                         <i class="bi bi-printer"></i> Print All
                     </button>
-                    <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; cursor: pointer; white-space: nowrap;" onclick="openPrintPreview('sino')">
+                    <button type="button" class="btn-print-action" onclick="openPrintPreview('sino')" title="Print Sino Wise">
                         Print Sino Wise
                     </button>
-                    <button type="button" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; cursor: pointer; white-space: nowrap;" onclick="openPrintPreview('overall')">
+                    <button type="button" class="btn-print-action" onclick="openPrintPreview('overall')" title="Print Sino Wise - Overall">
                         Print Sino Wise - Overall
                     </button>
                 </div>
@@ -395,12 +499,10 @@
         <div class="btn-group">
             <button type="button" class="btn btn-outline" onclick="window.location.reload();">Reset</button>
             <a href="{% url 'lab:work_orders' %}" class="btn btn-outline">Cancel</a>
-            {% if wo.status != 'COMPLETED' %}
             <button type="button" class="btn btn-blue" id="btn-save-result">Save Result</button>
-            <button type="button" class="btn btn-green" id="btn-save-complete">Save & Complete</button>
-            {% else %}
-            <button type="button" class="btn btn-blue" disabled>Completed</button>
-            {% endif %}
+            <button type="button" class="btn btn-green" id="btn-save-complete">
+                {% if wo.status == 'COMPLETED' %}<i class="bi bi-check-circle-fill"></i> Completed{% else %}Save & Complete{% endif %}
+            </button>
         </div>
     </div>
 </div>
@@ -408,64 +510,70 @@
 
 {% block extra_js %}
 <script>
+function evaluateFlag(input) {
+    const row = input.closest('.result-row');
+    if (!row) return;
+    const badge = row.querySelector('.flag-badge');
+    const minAttr = row.getAttribute('data-min');
+    const maxAttr = row.getAttribute('data-max');
+    const valStr = input.value.trim();
+    
+    if (!valStr || minAttr === 'None' || maxAttr === 'None' || !minAttr || !maxAttr) {
+        badge.className = 'flag-badge flag-none';
+        badge.innerHTML = '-';
+        return;
+    }
+    
+    const val = parseFloat(valStr);
+    const min = parseFloat(minAttr);
+    const max = parseFloat(maxAttr);
+    
+    if (isNaN(val)) {
+        badge.className = 'flag-badge flag-none';
+        badge.innerHTML = '-';
+        return;
+    }
+    
+    if (val < min) {
+        badge.className = 'flag-badge flag-low';
+        badge.innerHTML = 'LOW';
+    } else if (val > max) {
+        badge.className = 'flag-badge flag-high';
+        badge.innerHTML = 'HIGH';
+    } else {
+        badge.className = 'flag-badge flag-normal';
+        badge.innerHTML = 'NORMAL';
+    }
+}
+
 document.querySelectorAll('.result-val').forEach(input => {
     input.addEventListener('input', function() {
-        const row = this.closest('.result-row');
-        const badge = row.querySelector('.flag-badge');
-        const minAttr = row.getAttribute('data-min');
-        const maxAttr = row.getAttribute('data-max');
-        const valStr = this.value.trim();
-        
-        if (!valStr || minAttr === 'None' || maxAttr === 'None' || !minAttr || !maxAttr) {
-            badge.className = 'flag-badge flag-none';
-            badge.innerHTML = '-';
-            return;
-        }
-        
-        const val = parseFloat(valStr);
-        const min = parseFloat(minAttr);
-        const max = parseFloat(maxAttr);
-        
-        if (isNaN(val)) {
-            badge.className = 'flag-badge flag-none';
-            badge.innerHTML = '-';
-            return;
-        }
-        
-        if (val < min) {
-            badge.className = 'flag-badge flag-low';
-            badge.innerHTML = 'LOW';
-        } else if (val > max) {
-            badge.className = 'flag-badge flag-high';
-            badge.innerHTML = 'HIGH';
-        } else {
-            badge.className = 'flag-badge flag-normal';
-            badge.innerHTML = 'NORMAL';
-        }
+        evaluateFlag(this);
     });
+    // Trigger initial evaluation if pre-filled
+    if (input.value.trim()) {
+        evaluateFlag(input);
+    }
 });
 
-function saveResults(complete) {
-    const btn = event.target;
-    const orig = btn.innerHTML;
+function saveResults(complete, btnElement) {
+    const btn = btnElement || document.getElementById(complete ? 'btn-save-complete' : 'btn-save-result');
+    const orig = btn ? btn.innerHTML : (complete ? 'Save & Complete' : 'Save Result');
     
     const results = [];
     document.querySelectorAll('.result-row').forEach(row => {
         const id = row.getAttribute('data-param-id');
-        const val = row.querySelector('.result-val').value.trim();
-        if (val) {
-            results.push({ parameter_id: id, value: val });
+        const val = row.querySelector('.result-val')?.value.trim();
+        const rem = row.querySelector('.result-rem')?.value.trim() || '';
+        if (val !== undefined && val !== '') {
+            results.push({ parameter_id: id, value: val, remarks: rem });
         }
     });
     
-    btn.innerHTML = 'Saving...';
-    btn.disabled = true;
-    
-    const url = complete ? '{% url "lab:api_work_order_save_result" wo.id %}' : '{% url "lab:api_work_order_save_result" wo.id %}';
-    
-    // Using the same endpoint for both, but the server handles completion if we send a flag
-    // We will just do a standard save since the backend might not support the complete flag yet, 
-    // but the prompt says "Respect the existing workflow... Save & Complete: Save values and move the work order/result to the next appropriate workflow status."
+    if (btn) {
+        btn.innerHTML = complete ? 'Completing...' : 'Saving...';
+        btn.disabled = true;
+    }
     
     fetch('{% url "lab:api_work_order_save_result" wo.id %}', {
         method: 'POST',
@@ -481,19 +589,25 @@ function saveResults(complete) {
             if (complete) {
                 window.location.href = '{% url "lab:work_orders" %}';
             } else {
-                btn.innerHTML = 'Saved!';
-                setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 2000);
+                if (btn) {
+                    btn.innerHTML = 'Saved!';
+                    setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 2000);
+                }
             }
         } else {
             alert('Error: ' + data.message);
-            btn.innerHTML = orig;
-            btn.disabled = false;
+            if (btn) {
+                btn.innerHTML = orig;
+                btn.disabled = false;
+            }
         }
     })
     .catch(e => {
         alert('Server error.');
-        btn.innerHTML = orig;
-        btn.disabled = false;
+        if (btn) {
+            btn.innerHTML = orig;
+            btn.disabled = false;
+        }
     });
 }
 
@@ -532,7 +646,7 @@ function openPrintPreview(printType) {
     }
 }
 
-document.getElementById('btn-save-result')?.addEventListener('click', function(e) { saveResults(false); });
-document.getElementById('btn-save-complete')?.addEventListener('click', function(e) { saveResults(true); });
+document.getElementById('btn-save-result')?.addEventListener('click', function(e) { saveResults(false, this); });
+document.getElementById('btn-save-complete')?.addEventListener('click', function(e) { saveResults(true, this); });
 </script>
 {% endblock %}
