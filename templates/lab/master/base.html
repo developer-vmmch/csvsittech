@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/lab_master.css' %}">
+{% block lab_master_extra_head %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="lab-master-container">
+    <!-- Lab Master Header -->
+    <div class="lab-header-card">
+        <div class="lab-header-info">
+            <div class="lab-header-icon">
+                <i class="bi bi-sliders2-vertical"></i>
+            </div>
+            <div>
+                <h1 class="lab-header-title">{% block lab_master_title %}Lab Master{% endblock %}</h1>
+                <p class="lab-header-desc">{% block lab_master_subtitle %}Central Laboratory Configuration, Clinical Rules & Demographic Settings{% endblock %}</p>
+            </div>
+        </div>
+        <div class="lab-header-actions">
+            {% block lab_master_actions %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Lab Master Shared Navigation -->
+    {% include "lab/master/lab_master_nav.html" %}
+
+    <!-- Page Specific Master Content -->
+    {% block master_content %}
+        {% block lab_content %}{% endblock %}
+    {% endblock %}
+</div>
+
+<script src="{% static 'js/lab_master.js' %}"></script>
+{% block lab_master_extra_js %}{% endblock %}
+{% block extra_js %}{% endblock %}
+{% endblock %}

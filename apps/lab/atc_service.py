@@ -37,6 +37,7 @@ from django.db.models import Q
 from apps.lab.models import ATCJob, ATCJobLog, ATCSetting
 from apps.patients.models import Patient, PatientVisit, Department, DepartmentUnit
 from apps.lab.synthetic_patient_generator import SyntheticPatientGenerator
+from apps.lab.services.eligibility_engine import assign_atc_lab_workflow
 
 logger = logging.getLogger('apps.lab.atc_service')
 
@@ -352,6 +353,7 @@ def execute_combined_atc_automation(job):
                         created_by=job.created_by,
                     )
                     PatientVisit.objects.filter(pk=pv.pk).update(created_at=scheduled_dt)
+                    assign_atc_lab_workflow(p, pv, job=job)
 
                     ATCJobLog.objects.create(
                         job=job,
@@ -483,6 +485,7 @@ def execute_combined_atc_automation(job):
                         created_by=job.created_by,
                     )
                     PatientVisit.objects.filter(pk=pv.pk).update(created_at=rev_dt)
+                    assign_atc_lab_workflow(patient, pv, job=job)
 
                     ATCJobLog.objects.create(
                         job=job,
@@ -740,6 +743,7 @@ def execute_op_automation(job):
                     created_by=job.created_by,
                 )
                 PatientVisit.objects.filter(pk=pv.pk).update(created_at=scheduled_dt)
+                assign_atc_lab_workflow(p, pv, job=job)
 
                 # Audit Log
                 ATCJobLog.objects.create(
@@ -912,6 +916,7 @@ def execute_review_automation(job):
                     created_by=job.created_by,
                 )
                 PatientVisit.objects.filter(pk=pv.pk).update(created_at=rev_dt)
+                assign_atc_lab_workflow(patient, pv, job=job)
 
                 ATCJobLog.objects.create(
                     job=job,
@@ -1091,6 +1096,7 @@ def execute_future_patient_automation(job):
                     clinical_notes='ATC Automated Future Patient Visit',
                     created_by=job.created_by,
                 )
+                assign_atc_lab_workflow(p, pv, job=job)
 
                 ATCJobLog.objects.create(
                     job=job,

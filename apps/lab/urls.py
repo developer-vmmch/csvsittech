@@ -90,10 +90,80 @@ from .atc_views import (
     api_atc_trigger, api_atc_status, api_atc_stop, api_atc_active_job,
     api_atc_preview, api_atc_save_config, api_atc_date_statuses
 )
+from .master_views import (
+    lab_master_hub,
+    MasterInvestigationListView, MasterInvestigationDetailView,
+    api_master_investigation_save, api_master_investigation_toggle_status,
+    MasterParameterListView, api_master_parameter_save,
+    MasterInvestigationParameterMappingView, api_master_inv_param_save, api_master_inv_param_delete,
+    MasterReferenceRangeView, api_master_reference_range_save,
+    MasterDiagnosisListView, api_master_diagnosis_save,
+    api_master_diagnosis_get_rules, api_master_diagnosis_save_rule, api_master_diagnosis_delete_rule,
+    MasterDiagnosisInvestigationMappingView, api_master_diag_inv_map_save, api_master_diag_inv_map_delete,
+    MasterDiagnosisDepartmentMappingView, api_master_diag_dept_map_save,
+    MasterAgeGroupListView, api_master_age_group_save,
+    master_validation_view,
+)
+from .result_views import (
+    lab_result_detail_view,
+    lab_result_print_view,
+)
+from .investigation_marking_views import (
+    investigation_marking_view,
+    api_marking_load,
+    api_marking_add_department,
+    api_marking_remove_department,
+    api_marking_save_configuration,
+    api_marking_trigger,
+    api_marking_clear,
+)
 
 app_name = 'lab'
 
 urlpatterns = [
+    # -----------------------------------------------------------------------
+    # DEDICATED LAB MASTER MODULE
+    # -----------------------------------------------------------------------
+    path('master/', lab_master_hub, name='lab_master_hub'),
+    path('master/investigations/', MasterInvestigationListView.as_view(), name='master_investigation_list'),
+    path('master/investigations/<int:pk>/', MasterInvestigationDetailView.as_view(), name='master_investigation_detail'),
+    path('master/api/investigations/save/', api_master_investigation_save, name='api_master_investigation_save'),
+    path('master/api/investigations/<int:pk>/toggle-status/', api_master_investigation_toggle_status, name='api_master_investigation_toggle_status'),
+
+    path('master/parameters/', MasterParameterListView.as_view(), name='master_parameter_list'),
+    path('master/api/parameters/save/', api_master_parameter_save, name='api_master_parameter_save'),
+
+    path('master/investigation-parameters/', MasterInvestigationParameterMappingView.as_view(), name='master_investigation_parameter_mapping'),
+    path('master/api/investigation-parameters/save/', api_master_inv_param_save, name='api_master_inv_param_save'),
+    path('master/api/investigation-parameters/<int:pk>/delete/', api_master_inv_param_delete, name='api_master_inv_param_delete'),
+
+    path('master/reference-ranges/', MasterReferenceRangeView.as_view(), name='master_reference_ranges'),
+    path('master/api/reference-ranges/save/', api_master_reference_range_save, name='api_master_reference_range_save'),
+
+    path('master/diagnoses/', MasterDiagnosisListView.as_view(), name='master_diagnosis_list'),
+    path('master/api/diagnoses/save/', api_master_diagnosis_save, name='api_master_diagnosis_save'),
+    path('master/api/diagnoses/<int:pk>/rules/', api_master_diagnosis_get_rules, name='api_master_diagnosis_get_rules'),
+    path('master/api/diagnoses/rules/save/', api_master_diagnosis_save_rule, name='api_master_diagnosis_save_rule'),
+    path('master/api/diagnoses/rules/<int:pk>/delete/', api_master_diagnosis_delete_rule, name='api_master_diagnosis_delete_rule'),
+
+    path('master/diagnosis-investigations/', MasterDiagnosisInvestigationMappingView.as_view(), name='master_diagnosis_investigation_mapping'),
+    path('master/api/diagnosis-investigations/save/', api_master_diag_inv_map_save, name='api_master_diag_inv_map_save'),
+    path('master/api/diagnosis-investigations/<int:pk>/delete/', api_master_diag_inv_map_delete, name='api_master_diag_inv_map_delete'),
+
+    path('master/diagnosis-departments/', MasterDiagnosisDepartmentMappingView.as_view(), name='master_diagnosis_department_mapping'),
+    path('master/api/diagnosis-departments/save/', api_master_diag_dept_map_save, name='api_master_diag_dept_map_save'),
+
+    path('master/age-groups/', MasterAgeGroupListView.as_view(), name='master_age_groups'),
+    path('master/api/age-groups/save/', api_master_age_group_save, name='api_master_age_group_save'),
+
+    path('master/validation/', master_validation_view, name='master_validation'),
+
+    # -----------------------------------------------------------------------
+    # DYNAMIC LAB RESULTS & PRINTING
+    # -----------------------------------------------------------------------
+    path('results/view/<int:pk>/', lab_result_detail_view, name='lab_result_detail'),
+    path('results/print/<int:pk>/', lab_result_print_view, name='lab_result_print'),
+
     path('api/reference-range/save/', api_referencerange_save, name='api_referencerange_save'),
     path('api/reference-range/<int:pk>/delete/', api_referencerange_delete, name='api_referencerange_delete'),
     path('api/investigation-parameter-mapping/save/', api_investigation_parameter_mapping_save, name='api_investigation_parameter_mapping_save'),
@@ -348,4 +418,13 @@ urlpatterns = [
     path('api/atc/stop/<int:job_id>/', api_atc_stop, name='api_atc_stop'),
     path('api/atc/active/', api_atc_active_job, name='api_atc_active_job'),
     path('api/atc/date-statuses/', api_atc_date_statuses, name='api_atc_date_statuses'),
+
+    # Investigation Marking Module (Under Auto Trigger)
+    path('auto-trigger/investigation-marking/', investigation_marking_view, name='investigation_marking'),
+    path('api/investigation-marking/load/', api_marking_load, name='api_marking_load'),
+    path('api/investigation-marking/add-department/', api_marking_add_department, name='api_marking_add_department'),
+    path('api/investigation-marking/remove-department/', api_marking_remove_department, name='api_marking_remove_department'),
+    path('api/investigation-marking/save-config/', api_marking_save_configuration, name='api_marking_save_configuration'),
+    path('api/investigation-marking/trigger/', api_marking_trigger, name='api_marking_trigger'),
+    path('api/investigation-marking/clear/', api_marking_clear, name='api_marking_clear'),
 ]

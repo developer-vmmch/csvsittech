@@ -1,0 +1,950 @@
+/* ==========================================================================
+   VMMC ERP - LAB MASTER UNIFIED DESIGN SYSTEM
+   Compact, consistent, responsive layout architecture for all Lab Master pages.
+   ========================================================================== */
+
+:root {
+    --lab-primary: #0d9488;          /* VMMC Teal */
+    --lab-primary-hover: #0f766e;
+    --lab-primary-light: rgba(13, 148, 136, 0.1);
+    --lab-primary-border: rgba(13, 148, 136, 0.25);
+    
+    --lab-blue: #0284c7;             /* Accent Blue */
+    --lab-blue-hover: #0369a1;
+    --lab-blue-light: rgba(2, 132, 199, 0.1);
+
+    --lab-bg-card: #ffffff;
+    --lab-bg-subtle: #f8fafc;
+    --lab-border: #e2e8f0;
+    --lab-border-dark: #cbd5e1;
+    --lab-input-border: #d1d5db;
+
+    --lab-text-main: #0f172a;
+    --lab-text-body: #334155;
+    --lab-text-muted: #64748b;
+    --lab-text-light: #94a3b8;
+
+    --lab-radius: 8px;
+    --lab-radius-lg: 10px;
+    --lab-radius-sm: 6px;
+
+    --lab-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --lab-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+    --lab-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
+
+/* --------------------------------------------------------------------------
+   1. GLOBAL WRAPPER & LAYOUT CONTAINER
+   -------------------------------------------------------------------------- */
+
+.lab-master-container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   2. LAB MASTER HEADER & BREADCRUMB
+   -------------------------------------------------------------------------- */
+
+.lab-header-card {
+    background: var(--lab-bg-card);
+    border: 1px solid var(--lab-border);
+    border-radius: var(--lab-radius-lg);
+    padding: 12px 18px;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    box-shadow: var(--lab-shadow-sm);
+}
+
+.lab-header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.lab-header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--lab-radius);
+    background: var(--lab-primary-light);
+    color: var(--lab-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.lab-header-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--lab-text-main);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.lab-header-desc {
+    font-size: 0.82rem;
+    color: var(--lab-text-muted);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.lab-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* --------------------------------------------------------------------------
+   3. LAB MASTER NAVIGATION (Tabs / Horizontal Pills)
+   -------------------------------------------------------------------------- */
+
+.lab-nav-container {
+    background: var(--lab-bg-card);
+    border: 1px solid var(--lab-border);
+    border-radius: var(--lab-radius-lg);
+    padding: 6px 8px;
+    margin-bottom: 16px;
+    box-shadow: var(--lab-shadow-sm);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.lab-nav-container::-webkit-scrollbar {
+    display: none;
+}
+
+.lab-nav-pills {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    min-width: max-content;
+}
+
+.lab-nav-pill {
+    padding: 6px 13px;
+    border-radius: var(--lab-radius-sm);
+    font-size: 0.81rem;
+    font-weight: 500;
+    color: var(--lab-text-body);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.lab-nav-pill:hover {
+    background: var(--lab-bg-subtle);
+    color: var(--lab-text-main);
+}
+
+.lab-nav-pill.active {
+    background: var(--lab-primary);
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(13, 148, 136, 0.3);
+}
+
+.lab-nav-pill.pill-danger {
+    color: #ef4444;
+}
+.lab-nav-pill.pill-danger:hover {
+    background: #fef2f2;
+}
+.lab-nav-pill.pill-danger.active {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   4. CARD COMPONENT (Compact Spacing, No Fixed Heights)
+   -------------------------------------------------------------------------- */
+
+.lab-card {
+    background: var(--lab-bg-card);
+    border: 1px solid var(--lab-border);
+    border-radius: var(--lab-radius-lg);
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--lab-shadow-sm);
+    box-sizing: border-box;
+    /* Auto height, sizing purely by content */
+    height: auto !important;
+    min-height: auto !important;
+}
+
+.lab-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--lab-border);
+}
+
+.lab-card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--lab-text-main);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lab-card-subtitle {
+    font-size: 0.8rem;
+    color: var(--lab-text-muted);
+    font-weight: normal;
+}
+
+/* --------------------------------------------------------------------------
+   5. FILTER CARD (Responsive Compact Filter Grid)
+   -------------------------------------------------------------------------- */
+
+.lab-filter-card {
+    background: var(--lab-bg-card);
+    border: 1px solid var(--lab-border);
+    border-radius: var(--lab-radius-lg);
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    box-shadow: var(--lab-shadow-sm);
+}
+
+.lab-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 10px;
+    align-items: center;
+}
+
+.lab-filter-col-4 { grid-column: span 4; }
+.lab-filter-col-3 { grid-column: span 3; }
+.lab-filter-col-2 { grid-column: span 2; }
+.lab-filter-col-auto { grid-column: span 3; }
+
+.lab-filter-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 1024px) {
+    .lab-filter-col-4 { grid-column: span 6; }
+    .lab-filter-col-3 { grid-column: span 6; }
+    .lab-filter-col-2 { grid-column: span 6; }
+    .lab-filter-col-auto { grid-column: span 12; justify-content: flex-start; }
+}
+
+@media (max-width: 640px) {
+    .lab-filter-grid { grid-template-columns: 1fr; }
+    .lab-filter-col-4,
+    .lab-filter-col-3,
+    .lab-filter-col-2,
+    .lab-filter-col-auto { grid-column: span 1; }
+    .lab-filter-actions { width: 100%; justify-content: stretch; }
+    .lab-filter-actions .lab-btn { flex: 1; text-align: center; justify-content: center; }
+}
+
+/* --------------------------------------------------------------------------
+   6. FORM CONTROLS & FORM GRID (Normalized, No Browser Defaults)
+   -------------------------------------------------------------------------- */
+
+.lab-form-group {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.lab-form-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--lab-text-body);
+    margin-bottom: 5px;
+    display: block;
+    line-height: 1.3;
+}
+
+.lab-required {
+    color: #ef4444;
+    font-weight: 600;
+    margin-left: 2px;
+}
+
+.lab-form-input,
+.lab-form-select,
+.lab-form-textarea {
+    width: 100% !important;
+    height: 40px !important;
+    padding: 8px 12px !important;
+    border: 1px solid var(--lab-input-border) !important;
+    border-radius: var(--lab-radius) !important;
+    font-size: 14px !important;
+    font-family: inherit !important;
+    background-color: #ffffff !important;
+    color: var(--lab-text-main) !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    display: block !important;
+}
+
+.lab-form-textarea {
+    height: auto !important;
+    min-height: 72px !important;
+    resize: vertical;
+    line-height: 1.4 !important;
+}
+
+.lab-form-input:focus,
+.lab-form-select:focus,
+.lab-form-textarea:focus {
+    outline: none !important;
+    border-color: var(--lab-primary) !important;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15) !important;
+}
+
+.lab-form-select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 12px center !important;
+    padding-right: 36px !important;
+    cursor: pointer;
+}
+
+/* Search input with leading icon */
+.lab-input-with-icon {
+    position: relative;
+    width: 100%;
+}
+.lab-input-with-icon i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--lab-text-muted);
+    font-size: 0.9rem;
+    pointer-events: none;
+}
+.lab-input-with-icon .lab-form-input {
+    padding-left: 36px !important;
+}
+
+/* Form Layout Grids (Responsive 2-col on desktop, 1-col on mobile) */
+.lab-form-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px 16px;
+}
+
+.lab-form-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px 16px;
+}
+
+.lab-form-col-full {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+    .lab-form-grid-2,
+    .lab-form-grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Checkbox and toggle styles */
+.lab-form-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13.5px;
+    color: var(--lab-text-body);
+}
+
+.lab-form-check input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    border-radius: 4px;
+    border: 1px solid var(--lab-input-border);
+    cursor: pointer;
+    accent-color: var(--lab-primary);
+}
+
+/* --------------------------------------------------------------------------
+   7. BUTTON SYSTEM
+   -------------------------------------------------------------------------- */
+
+.lab-btn {
+    height: 38px;
+    padding: 0 14px;
+    border-radius: var(--lab-radius);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+    line-height: 1;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.lab-btn-primary {
+    background: var(--lab-primary);
+    color: #ffffff !important;
+    border-color: var(--lab-primary);
+    box-shadow: 0 1px 2px rgba(13, 148, 136, 0.2);
+}
+.lab-btn-primary:hover {
+    background: var(--lab-primary-hover);
+    border-color: var(--lab-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(13, 148, 136, 0.3);
+}
+
+.lab-btn-secondary {
+    background: #ffffff;
+    border-color: var(--lab-input-border);
+    color: var(--lab-text-body) !important;
+}
+.lab-btn-secondary:hover {
+    background: var(--lab-bg-subtle);
+    border-color: var(--lab-border-dark);
+    color: var(--lab-text-main) !important;
+}
+
+.lab-btn-success {
+    background: #10b981;
+    color: #ffffff !important;
+    border-color: #10b981;
+}
+.lab-btn-success:hover {
+    background: #059669;
+    border-color: #059669;
+}
+
+.lab-btn-danger {
+    background: #ef4444;
+    color: #ffffff !important;
+    border-color: #ef4444;
+}
+.lab-btn-danger:hover {
+    background: #dc2626;
+    border-color: #dc2626;
+}
+
+.lab-btn-sm {
+    height: 30px;
+    padding: 0 9px;
+    font-size: 12px;
+    border-radius: var(--lab-radius-sm);
+}
+
+.lab-btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--lab-radius-sm);
+}
+
+.lab-btn-outline-primary {
+    background: transparent;
+    border-color: var(--lab-primary-border);
+    color: var(--lab-primary) !important;
+}
+.lab-btn-outline-primary:hover {
+    background: var(--lab-primary-light);
+}
+
+.lab-btn-outline-secondary {
+    background: transparent;
+    border-color: var(--lab-border-dark);
+    color: var(--lab-text-body) !important;
+}
+.lab-btn-outline-secondary:hover {
+    background: var(--lab-bg-subtle);
+}
+
+.lab-btn-group {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+}
+
+/* --------------------------------------------------------------------------
+   8. TABLE SYSTEM (Compact Rows, Standard Headers)
+   -------------------------------------------------------------------------- */
+
+.lab-table-container {
+    background: var(--lab-bg-card);
+    border: 1px solid var(--lab-border);
+    border-radius: var(--lab-radius-lg);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: var(--lab-shadow-sm);
+    margin-bottom: 16px;
+}
+
+.lab-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 13.5px;
+    color: var(--lab-text-main);
+}
+
+.lab-table thead th {
+    background: var(--lab-bg-subtle);
+    color: #475569;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--lab-border);
+    white-space: nowrap;
+}
+
+.lab-table tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    color: var(--lab-text-body);
+}
+
+.lab-table tbody tr:hover td {
+    background-color: #f8fafc;
+}
+
+.lab-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Empty State */
+.lab-empty-state {
+    padding: 36px 16px;
+    text-align: center;
+    color: var(--lab-text-muted);
+}
+.lab-empty-state i {
+    font-size: 2.2rem;
+    color: #cbd5e1;
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   9. STATUS BADGES
+   -------------------------------------------------------------------------- */
+
+.lab-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.lab-badge-active {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+.lab-badge-inactive {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.lab-badge-warning {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+.lab-badge-info {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+.lab-badge-neutral {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+/* --------------------------------------------------------------------------
+   10. REUSABLE PAGINATION COMPONENT
+   -------------------------------------------------------------------------- */
+
+.lab-pagination-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--lab-bg-card);
+    border-top: 1px solid var(--lab-border);
+}
+
+.lab-pagination-info {
+    font-size: 12.5px;
+    color: var(--lab-text-muted);
+}
+
+.lab-pagination-controls {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.lab-page-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: var(--lab-radius-sm);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--lab-text-body);
+    background: #ffffff;
+    border: 1px solid var(--lab-input-border);
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+
+.lab-page-link:hover:not(.disabled):not(.active) {
+    background: var(--lab-bg-subtle);
+    border-color: var(--lab-border-dark);
+    color: var(--lab-text-main);
+}
+
+.lab-page-link.active {
+    background: var(--lab-primary);
+    border-color: var(--lab-primary);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.lab-page-link.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   11. LIGHTWEIGHT MODAL SYSTEM (Rock Solid, Zero External Dependencies)
+   -------------------------------------------------------------------------- */
+
+body.lab-modal-open {
+    overflow: hidden !important;
+}
+
+.lab-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    display: none;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.lab-modal.show {
+    display: flex !important;
+}
+
+.lab-modal-dialog {
+    background: #ffffff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 760px;
+    max-height: calc(100vh - 40px);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    animation: labModalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    margin: auto;
+}
+
+.lab-modal-dialog.modal-sm { max-width: 460px; }
+.lab-modal-dialog.modal-lg { max-width: 860px; }
+
+@keyframes labModalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.lab-modal-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--lab-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--lab-bg-subtle);
+    flex-shrink: 0;
+}
+
+.lab-modal-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--lab-text-main);
+    margin: 0;
+}
+
+.lab-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--lab-text-muted);
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.lab-modal-close:hover {
+    background: #e2e8f0;
+    color: var(--lab-text-main);
+}
+
+.lab-modal-body {
+    padding: 18px 20px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+}
+
+.lab-modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--lab-border);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    background: var(--lab-bg-subtle);
+    flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   12. STATS & HUB DASHBOARD GRID
+   -------------------------------------------------------------------------- */
+
+.lab-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+@media (max-width: 1200px) {
+    .lab-stats-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 900px) {
+    .lab-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+    .lab-stats-grid { grid-template-columns: 1fr; }
+}
+
+.lab-stat-card {
+    background: var(--lab-bg-card);
+    border: 1px solid var(--lab-border);
+    border-radius: var(--lab-radius-lg);
+    padding: 14px 16px;
+    box-shadow: var(--lab-shadow-sm);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.lab-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--lab-shadow-md);
+}
+
+.lab-stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.lab-stat-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--lab-text-muted);
+    letter-spacing: 0.3px;
+}
+
+.lab-stat-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.lab-stat-value {
+    font-size: 1.65rem;
+    font-weight: 700;
+    color: var(--lab-text-main);
+    line-height: 1.2;
+    margin-bottom: 4px;
+}
+
+.lab-stat-subtext {
+    font-size: 0.76rem;
+    color: var(--lab-text-muted);
+}
+
+.lab-stat-footer {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.lab-stat-link {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--lab-primary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.lab-stat-link:hover {
+    color: var(--lab-primary-hover);
+    text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   13. HEALTH & VALIDATION BANNER
+   -------------------------------------------------------------------------- */
+
+.lab-health-banner {
+    border-radius: var(--lab-radius-lg);
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    border: 1px solid transparent;
+}
+
+.lab-health-banner.status-ok {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    border-left: 4px solid #10b981;
+}
+
+.lab-health-banner.status-warning {
+    background: #fffbeb;
+    border-color: #fde68a;
+    border-left: 4px solid #f59e0b;
+}
+
+.lab-health-banner.status-error {
+    background: #fef2f2;
+    border-color: #fecaca;
+    border-left: 4px solid #ef4444;
+}
+
+/* --------------------------------------------------------------------------
+   14. DETAIL VIEW SECTIONS
+   -------------------------------------------------------------------------- */
+
+.lab-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+}
+
+@media (max-width: 1024px) {
+    .lab-meta-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 540px) {
+    .lab-meta-grid { grid-template-columns: 1fr; }
+}
+
+.lab-meta-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.lab-meta-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--lab-text-muted);
+    margin-bottom: 2px;
+}
+
+.lab-meta-value {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--lab-text-main);
+}

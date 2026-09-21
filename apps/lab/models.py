@@ -15,6 +15,10 @@ class Diagnosis(TimeStampedModel):
     source = models.CharField(max_length=100, blank=True, null=True, verbose_name="Source (e.g. WHO, Import)")
     icd_version = models.CharField(max_length=50, blank=True, null=True, verbose_name="ICD Version")
     who_uri = models.URLField(blank=True, null=True, verbose_name="WHO URI")
+    department = models.ForeignKey('patients.Department', null=True, blank=True, on_delete=models.SET_NULL, related_name='primary_diagnoses')
+    gender_eligibility = models.CharField(max_length=10, choices=[('All','All'), ('Male','Male'), ('Female','Female')], default='All', verbose_name="Gender Eligibility")
+    min_age = models.PositiveIntegerField(null=True, blank=True, verbose_name="Minimum Age")
+    max_age = models.PositiveIntegerField(null=True, blank=True, verbose_name="Maximum Age")
     is_active = models.BooleanField(default=True, verbose_name="Active Status")
 
     class Meta:
@@ -166,13 +170,17 @@ class Investigation(TimeStampedModel):
     code = models.CharField(max_length=50, unique=True, verbose_name="Investigation Code")
     department = models.ForeignKey(LabDepartment, on_delete=models.SET_NULL, null=True, blank=True, related_name='investigations', verbose_name="Department")
     sample_type = models.ForeignKey(SampleType, on_delete=models.SET_NULL, null=True, blank=True, related_name='investigations', verbose_name="Sample Type")
+    category = models.CharField(max_length=100, blank=True, null=True, verbose_name="Category")
+    specimen = models.CharField(max_length=100, blank=True, null=True, verbose_name="Specimen")
+    method = models.CharField(max_length=150, blank=True, null=True, verbose_name="Method")
+    display_order = models.PositiveIntegerField(default=0, verbose_name="Display Order")
     is_panel = models.BooleanField(default=False, verbose_name="Is Panel (Multi-parameter)")
     turnaround_time_hours = models.PositiveIntegerField(null=True, blank=True, verbose_name="Turnaround Time (Hours)")
     legacy_code = models.CharField(max_length=50, blank=True, null=True, verbose_name="Legacy Code")
     is_active = models.BooleanField(default=True, verbose_name="Active Status")
 
     class Meta:
-        ordering = ['name']
+        ordering = ['display_order', 'name']
 
     def __str__(self):
         return f"{self.name} ({self.code})"
@@ -187,6 +195,8 @@ class Parameter(TimeStampedModel):
     code = models.CharField(max_length=50, unique=True, verbose_name="Parameter Code")
     default_unit = models.CharField(max_length=50, blank=True, null=True, verbose_name="Default Unit")
     data_type = models.CharField(max_length=20, choices=DataTypeChoices.choices, default=DataTypeChoices.NUMERIC, verbose_name="Data Type")
+    result_type = models.CharField(max_length=50, default='Numeric', blank=True, null=True, verbose_name="Result Type")
+    default_decimal_places = models.PositiveIntegerField(default=2, blank=True, null=True, verbose_name="Default Decimal Places")
     is_active = models.BooleanField(default=True, verbose_name="Active Status")
 
     class Meta:
@@ -243,6 +253,8 @@ class InvestigationParameter(TimeStampedModel):
     minimum_age = models.IntegerField(null=True, blank=True, verbose_name="Minimum Age")
     maximum_age = models.IntegerField(null=True, blank=True, verbose_name="Maximum Age")
     display_order = models.PositiveIntegerField(default=0, verbose_name="Display Order")
+    is_mandatory = models.BooleanField(default=False, verbose_name="Is Mandatory")
+    is_calculated = models.BooleanField(default=False, verbose_name="Is Calculated")
     is_active = models.BooleanField(default=True, verbose_name="Active Status")
 
     class Meta:
@@ -477,18 +489,50 @@ class PatientVisitDiagnosis(TimeStampedModel):
         return f"Visit #{self.visit.visit_no} - {self.diagnosis.name if self.diagnosis else self.chief_complaint.name}"
 
 class DiagnosisInvestigationMap(TimeStampedModel):
+    GENDER_CHOICES = (
+        ('All', 'All'),
+        ('Male', 'Male'),
+        ('Female', 'Female'),
+    )
     diagnosis = models.ForeignKey(Diagnosis, on_delete=models.CASCADE, related_name='investigation_mappings')
     age_group = models.ForeignKey(AgeGroup, on_delete=models.CASCADE, related_name='investigation_mappings', null=True, blank=True)
     investigation = models.ForeignKey(Investigation, on_delete=models.CASCADE)
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='All')
+    min_age = models.PositiveIntegerField(null=True, blank=True)
+    max_age = models.PositiveIntegerField(null=True, blank=True)
+    department = models.ForeignKey('patients.Department', null=True, blank=True, on_delete=models.SET_NULL, related_name='diagnosis_investigation_mappings')
+    pregnancy_required = models.BooleanField(default=False)
+    priority = models.PositiveIntegerField(default=100)
     is_default = models.BooleanField(default=False, verbose_name="Default Investigation")
     is_active = models.BooleanField(default=True, verbose_name="Active Status")
 
     class Meta:
         unique_together = ('diagnosis', 'age_group', 'investigation')
-        ordering = ['diagnosis', 'age_group', 'investigation']
+        ordering = ['priority', 'diagnosis', 'investigation']
 
     def __str__(self):
         return f"{self.diagnosis.name} -> {self.investigation.name}"
+
+class DiagnosisEligibilityRule(TimeStampedModel):
+    GENDER_CHOICES = (
+        ('All', 'All'),
+        ('Male', 'Male'),
+        ('Female', 'Female'),
+    )
+    diagnosis = models.ForeignKey(Diagnosis, on_delete=models.CASCADE, related_name='eligibility_rules')
+    department = models.ForeignKey('patients.Department', null=True, blank=True, on_delete=models.SET_NULL, related_name='diagnosis_eligibility_rules')
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='All')
+    min_age = models.PositiveIntegerField(null=True, blank=True)
+    max_age = models.PositiveIntegerField(null=True, blank=True)
+    pregnancy_required = models.BooleanField(default=False)
+    priority = models.PositiveIntegerField(default=100)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['priority', '-created_at']
+
+    def __str__(self):
+        return f"Rule: {self.diagnosis.name} ({self.gender}, age {self.min_age}-{self.max_age})"
 
 
 class DiagnosisDepartmentMapping(TimeStampedModel):
@@ -952,4 +996,74 @@ class ATCJobLog(TimeStampedModel):
 
     def __str__(self):
         return f"ATC Log [{self.job.job_id}] - {self.patient_name} ({self.status})"
+
+
+# ===========================================================================
+# INVESTIGATION MARKING MODULE MODELS
+# ===========================================================================
+
+class InvestigationMarkingConfig(TimeStampedModel):
+    class StatusChoices(models.TextChoices):
+        DRAFT = 'DRAFT', 'Draft'
+        SAVED = 'SAVED', 'Saved'
+        TRIGGERED = 'TRIGGERED', 'Triggered'
+        COMPLETED = 'COMPLETED', 'Completed'
+
+    marking_date = models.DateField(unique=True, db_index=True, verbose_name="Marking Date")
+    status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.DRAFT)
+    total_male = models.PositiveIntegerField(default=0)
+    total_female = models.PositiveIntegerField(default=0)
+    total_patients = models.PositiveIntegerField(default=0)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    triggered_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-marking_date']
+        verbose_name = "Investigation Marking Config"
+        verbose_name_plural = "Investigation Marking Configs"
+
+    def __str__(self):
+        return f"Marking Config ({self.marking_date}) - {self.status}"
+
+
+class InvestigationMarkingDepartment(TimeStampedModel):
+    config = models.ForeignKey(InvestigationMarkingConfig, on_delete=models.CASCADE, related_name='departments')
+    department = models.ForeignKey('patients.Department', on_delete=models.CASCADE)
+    department_name = models.CharField(max_length=150)
+    male_count = models.PositiveIntegerField(default=0)
+    female_count = models.PositiveIntegerField(default=0)
+    total_count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('config', 'department')
+        ordering = ['id']
+
+    def __str__(self):
+        return f"{self.config.marking_date} - {self.department_name} ({self.total_count})"
+
+
+class InvestigationMarkingPatient(TimeStampedModel):
+    config = models.ForeignKey(InvestigationMarkingConfig, on_delete=models.CASCADE, related_name='selected_patients')
+    department = models.ForeignKey('patients.Department', on_delete=models.SET_NULL, null=True, blank=True)
+    department_name = models.CharField(max_length=150)
+    patient = models.ForeignKey('patients.Patient', on_delete=models.CASCADE)
+    patient_id_str = models.CharField(max_length=50)
+    patient_name = models.CharField(max_length=150)
+    age_display = models.CharField(max_length=20)
+    gender = models.CharField(max_length=10)
+    primary_diagnosis = models.ForeignKey('lab.Diagnosis', on_delete=models.SET_NULL, null=True, blank=True)
+    primary_diagnosis_name = models.CharField(max_length=255, blank=True, default='')
+    investigations_count = models.PositiveIntegerField(default=0)
+    investigations_summary = models.CharField(max_length=255, blank=True, default='')
+    service_request = models.ForeignKey('lab.ServiceRequest', on_delete=models.SET_NULL, null=True, blank=True)
+    is_triggered = models.BooleanField(default=False)
+    triggered_at = models.DateTimeField(null=True, blank=True)
+    completion_due_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('config', 'patient')
+        ordering = ['id']
+
+    def __str__(self):
+        return f"{self.patient_id_str} - {self.patient_name} ({self.department_name})"
 

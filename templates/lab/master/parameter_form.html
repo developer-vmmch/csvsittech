@@ -1,97 +1,101 @@
-{% extends "base.html" %}
+{% extends "lab/master/base.html" %}
 
-{% block title %}{% if object %}Edit Parameter{% else %}Add Parameter{% endif %} | VMMCerp{% endblock %}
+{% block title %}{% if object %}Edit Parameter{% else %}Add Parameter{% endif %} | Lab Master{% endblock %}
 {% block page_heading %}{% if object %}Edit Parameter{% else %}Add New Parameter{% endif %}{% endblock %}
 
-{% block content %}
-<div class="panel" style="max-width: 1000px; margin: 0 auto;">
-    <div class="panel-header" style="margin-bottom: 1.5rem;">
-        <h2 class="panel-title">Parameter Information</h2>
+{% block lab_content %}
+<div style="max-width: 960px; margin: 0 auto;">
+    <div class="lab-card mb-4">
+        <div class="lab-table-card-header mb-4 pb-2 border-b border-slate-100">
+            <span class="lab-table-title">{% if object %}Edit Parameter: {{ object.name }}{% else %}New Parameter Information{% endif %}</span>
+            <span class="lab-table-subtitle">Laboratory Parameter Master</span>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="p-3 mb-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <div class="lab-form-grid-2 mb-3">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.investigation.id_for_label }}">Investigation <span class="text-rose-500">*</span></label>
+                    {{ form.investigation }}
+                    {% if form.investigation.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.investigation.errors }}</div>{% endif %}
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.result_type.id_for_label }}">Result Type <span class="text-rose-500">*</span></label>
+                    {{ form.result_type }}
+                    {% if form.result_type.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.result_type.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="lab-form-grid-3 mb-3">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.code.id_for_label }}">Parameter Code <span class="text-rose-500">*</span></label>
+                    {{ form.code }}
+                    {% if form.code.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.code.errors }}</div>{% endif %}
+                </div>
+                
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.name.id_for_label }}">Parameter Name <span class="text-rose-500">*</span></label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.name.errors }}</div>{% endif %}
+                </div>
+                
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.short_name.id_for_label }}">Short Name</label>
+                    {{ form.short_name }}
+                    {% if form.short_name.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.short_name.errors }}</div>{% endif %}
+                </div>
+            </div>
+            
+            <div class="lab-form-grid-3 mb-4">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.unit.id_for_label }}">Unit</label>
+                    {{ form.unit }}
+                    {% if form.unit.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.unit.errors }}</div>{% endif %}
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.decimal_precision.id_for_label }}">Decimal Precision</label>
+                    {{ form.decimal_precision }}
+                    {% if form.decimal_precision.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.decimal_precision.errors }}</div>{% endif %}
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.display_order.id_for_label }}">Display Order</label>
+                    {{ form.display_order }}
+                    {% if form.display_order.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.display_order.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="p-3 mb-4 rounded-lg bg-slate-50 border border-slate-200">
+                <label class="flex items-center gap-2 cursor-pointer mb-0">
+                    {{ form.is_active }}
+                    <span class="text-xs font-semibold text-slate-700">Active Status</span>
+                </label>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <a href="{% url 'lab:parameter_list' %}" class="lab-btn lab-btn-secondary">Cancel</a>
+                <button type="submit" class="lab-btn lab-btn-primary">
+                    <i class="bi bi-check-lg"></i> {% if object %}Update{% else %}Save{% endif %} Parameter
+                </button>
+            </div>
+        </form>
     </div>
-
-    <form method="post">
-        {% csrf_token %}
-        
-        {% if form.non_field_errors %}
-        <div class="alert alert-error">
-            {{ form.non_field_errors }}
-        </div>
-        {% endif %}
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-            <div>
-                <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Investigation *</label>
-                {{ form.investigation }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.investigation.errors }}</div>
-            </div>
-            <div>
-                <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Result Type *</label>
-                {{ form.result_type }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.result_type.errors }}</div>
-            </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-            <div>
-                <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Parameter Code *</label>
-                {{ form.code }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.code.errors }}</div>
-            </div>
-            
-            <div>
-                <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Parameter Name *</label>
-                {{ form.name }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.name.errors }}</div>
-            </div>
-            
-            <div>
-                <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Short Name</label>
-                {{ form.short_name }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.short_name.errors }}</div>
-            </div>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-            <div>
-                <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Unit</label>
-                {{ form.unit }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.unit.errors }}</div>
-            </div>
-            <div>
-                <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Decimal Precision</label>
-                {{ form.decimal_precision }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.decimal_precision.errors }}</div>
-            </div>
-            <div>
-                <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Display Order</label>
-                {{ form.display_order }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.display_order.errors }}</div>
-            </div>
-        </div>
-
-        <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem; background: #f8fafc; padding: 1rem; border-radius: 6px; border: 1px solid #e2e8f0;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                {{ form.is_active }}
-                <label for="{{ form.is_active.id_for_label }}" style="font-weight: 600; margin: 0; cursor: pointer;">Active Status</label>
-            </div>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
-            <a href="{% url 'lab:parameter_list' %}" class="btn btn-secondary">Cancel</a>
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-save"></i> {% if object %}Update{% else %}Save{% endif %} Parameter
-            </button>
-        </div>
-    </form>
     
     {% if object %}
-    <div style="margin-top: 3rem;">
-        <div class="panel-header" style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
-            <h3 class="panel-title">Age Group Reference Ranges</h3>
+    <div class="lab-table-container">
+        <div class="lab-table-card-header">
+            <span class="lab-table-title">Age Group Reference Ranges</span>
+            <span class="lab-table-subtitle">Demographic Reference Bounds</span>
         </div>
         
-        <div class="table-responsive">
-            <table>
+        <div class="overflow-x-auto">
+            <table class="lab-table">
                 <thead>
                     <tr>
                         <th>Age Group</th>
@@ -107,30 +111,30 @@
                 <tbody>
                     {% for rr in reference_ranges %}
                     <tr>
-                        <td><strong>{{ rr.age_group.label }}</strong></td>
+                        <td class="font-bold text-slate-800">{{ rr.age_group.label }}</td>
                         <td>{{ rr.get_gender_display }}</td>
                         <td>{{ rr.age_group.min_age_value }}-{{ rr.age_group.max_age_value }} {{ rr.age_group.min_age_unit }}</td>
-                        <td>
+                        <td class="font-medium">
                             {% if rr.min_value is not None and rr.max_value is not None %}
                                 {{ rr.min_value }} - {{ rr.max_value }}
                             {% else %}
                                 {{ rr.reference_text|default:"-" }}
                             {% endif %}
                         </td>
-                        <td style="color: #991b1b;">{{ rr.critical_low|default:"-" }}</td>
-                        <td style="color: #991b1b;">{{ rr.critical_high|default:"-" }}</td>
+                        <td class="text-rose-600 font-mono">{{ rr.critical_low|default:"-" }}</td>
+                        <td class="text-rose-600 font-mono">{{ rr.critical_high|default:"-" }}</td>
                         <td>{{ rr.unit|default:"-" }}</td>
                         <td>
                             {% if rr.is_active %}
-                                <span class="badge" style="background: #dcfce7; color: #166534;">Active</span>
+                                <span class="lab-badge lab-badge-success">Active</span>
                             {% else %}
-                                <span class="badge" style="background: #fee2e2; color: #991b1b;">Inactive</span>
+                                <span class="lab-badge lab-badge-secondary">Inactive</span>
                             {% endif %}
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No reference ranges configured.</td>
+                        <td colspan="8" class="text-center py-8 text-slate-400">No reference ranges configured.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

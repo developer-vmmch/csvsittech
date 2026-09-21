@@ -1,0 +1,491 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}Diagnosis Master & Eligibility Rules | Lab Master{% endblock %}
+{% block lab_master_title %}Diagnoses Master{% endblock %}
+{% block lab_master_subtitle %}Clinical diagnoses, ICD-11 codes, and automated patient eligibility rules engine{% endblock %}
+
+{% block lab_master_actions %}
+<button type="button" class="lab-btn lab-btn-primary lab-btn-sm" onclick="openAddDiagModal()">
+    <i class="bi bi-plus-lg"></i> Add Diagnosis
+</button>
+{% endblock %}
+
+{% block master_content %}
+<!-- Filter Card -->
+<div class="lab-filter-card">
+    <form method="get" class="lab-filter-grid">
+        <div class="lab-filter-col-4">
+            <div class="lab-input-with-icon">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" class="lab-form-input" placeholder="Search diagnosis code, name, ICD..." value="{{ request.GET.search }}">
+            </div>
+        </div>
+        <div class="lab-filter-col-3">
+            <select name="department" class="lab-form-select">
+                <option value="">-- All Departments --</option>
+                {% for d in departments %}
+                <option value="{{ d.id }}" {% if request.GET.department == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="lab-filter-col-2">
+            <select name="gender" class="lab-form-select">
+                <option value="">-- Gender --</option>
+                <option value="All" {% if request.GET.gender == 'All' %}selected{% endif %}>Universal (All)</option>
+                <option value="Male" {% if request.GET.gender == 'Male' %}selected{% endif %}>Male</option>
+                <option value="Female" {% if request.GET.gender == 'Female' %}selected{% endif %}>Female</option>
+            </select>
+        </div>
+        <div class="lab-filter-col-auto lab-filter-actions">
+            <button type="submit" class="lab-btn lab-btn-primary lab-btn-sm">
+                <i class="bi bi-funnel"></i> Apply Filter
+            </button>
+            <a href="{% url 'lab:master_diagnosis_list' %}" class="lab-btn lab-btn-secondary lab-btn-sm">
+                <i class="bi bi-x-circle"></i> Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Table Card -->
+<div class="lab-table-container">
+    <div class="lab-card-header" style="padding: 12px 16px; margin-bottom: 0; background: #ffffff;">
+        <span class="lab-card-title" style="font-size: 0.88rem;">
+            <i class="bi bi-clipboard2-pulse text-primary"></i> Diagnoses Directory ({{ page_obj.paginator.count|default:0 }})
+        </span>
+        {% if page_obj.has_other_pages %}
+        <span class="lab-card-subtitle">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% endif %}
+    </div>
+
+    <table class="lab-table">
+        <thead>
+            <tr>
+                <th style="width: 55px;">S.No</th>
+                <th style="width: 120px;">Code</th>
+                <th>Diagnosis Name</th>
+                <th>Department</th>
+                <th style="width: 120px;">Gender</th>
+                <th style="width: 85px;" class="text-center">Min Age</th>
+                <th style="width: 85px;" class="text-center">Max Age</th>
+                <th style="width: 80px;">Status</th>
+                <th style="width: 110px;" class="text-center">Rules</th>
+                <th style="width: 140px;" class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for diag in diagnoses %}
+            <tr>
+                <td style="color: var(--lab-text-muted);">{{ forloop.counter0|add:page_obj.start_index }}</td>
+                <td style="font-weight: 700; color: var(--lab-blue); font-family: monospace;">{{ diag.code|default:"—" }}</td>
+                <td style="font-weight: 600; color: var(--lab-text-main);">{{ diag.name }}</td>
+                <td>{{ diag.department.name|default:"—" }}</td>
+                <td>
+                    {% if diag.gender_eligibility == 'Male' %}
+                    <span class="lab-badge lab-badge-info">Male</span>
+                    {% elif diag.gender_eligibility == 'Female' %}
+                    <span class="lab-badge lab-badge-warning">Female</span>
+                    {% else %}
+                    <span class="lab-badge lab-badge-neutral">Universal</span>
+                    {% endif %}
+                </td>
+                <td class="text-center" style="color: var(--lab-text-body);">{{ diag.min_age|default:"0" }} Y</td>
+                <td class="text-center" style="color: var(--lab-text-body);">{{ diag.max_age|default:"Any" }} {% if diag.max_age %}Y{% endif %}</td>
+                <td>
+                    {% if diag.is_active %}
+                    <span class="lab-badge lab-badge-active">Active</span>
+                    {% else %}
+                    <span class="lab-badge lab-badge-inactive">Inactive</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    <button type="button" class="lab-btn lab-btn-secondary lab-btn-sm" style="height: 26px; font-size: 11.5px;" onclick="openRulesModal({{ diag.id }}, '{{ diag.name|escapejs }}')" title="Configure Eligibility Rules">
+                        <i class="bi bi-gear-fill"></i> {{ diag.rule_count|default:0 }} rules
+                    </button>
+                </td>
+                <td class="text-end">
+                    <div class="lab-btn-group">
+                        <button type="button" class="lab-btn lab-btn-secondary lab-btn-sm" onclick="openEditDiagModal({{ diag.id }}, '{{ diag.code|default:''|escapejs }}', '{{ diag.name|escapejs }}', '{{ diag.department_id|default:'' }}', '{{ diag.gender_eligibility|default:'All' }}', '{{ diag.min_age|default:'' }}', '{{ diag.max_age|default:'' }}', {{ diag.is_active|yesno:'true,false' }})" title="Edit Diagnosis">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <a href="{% url 'lab:master_diagnosis_investigation_mapping' %}?diagnosis={{ diag.id }}" class="lab-btn lab-btn-secondary lab-btn-sm" title="Investigations Mapping">
+                            Invs ({{ diag.inv_map_count|default:0 }})
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10">
+                    <div class="lab-empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <p style="margin: 0;">No diagnoses found matching your filter criteria.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% include "lab/master/pagination.html" %}
+</div>
+
+<!-- Modal: Add / Edit Diagnosis -->
+<div class="lab-modal" id="diagModal" tabindex="-1" role="dialog" aria-labelledby="diagModalTitle" aria-hidden="true">
+    <div class="lab-modal-dialog" role="document">
+        <div class="lab-modal-header">
+            <div>
+                <h2 class="lab-modal-title" id="diagModalTitle">Diagnosis Configuration</h2>
+                <div style="font-size: 0.78rem; color: var(--lab-text-muted); margin-top: 2px;">Manage clinical diagnosis details and eligibility defaults</div>
+            </div>
+            <button type="button" class="lab-modal-close" data-lab-dismiss="modal" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <form id="diagForm" onsubmit="submitDiagForm(event)">
+            {% csrf_token %}
+            <input type="hidden" id="diag_id">
+
+            <div class="lab-modal-body">
+                <div class="lab-form-grid-2">
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="diag_code">Diagnosis Code (ICD-11 / Internal)</label>
+                        <input type="text" class="lab-form-input" id="diag_code" placeholder="e.g. 1A00">
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="diag_name">Diagnosis Name <span class="lab-required">*</span></label>
+                        <input type="text" class="lab-form-input" id="diag_name" placeholder="e.g. Type 2 Diabetes" required>
+                    </div>
+
+                    <div class="lab-form-group lab-form-col-full">
+                        <label class="lab-form-label" for="diag_department">Default Department</label>
+                        <select class="lab-form-select" id="diag_department">
+                            <option value="">-- None (Universal) --</option>
+                            {% for d in departments %}
+                            <option value="{{ d.id }}">{{ d.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="diag_gender">Gender Eligibility</label>
+                        <select class="lab-form-select" id="diag_gender">
+                            <option value="All">Universal (All)</option>
+                            <option value="Male">Male Only</option>
+                            <option value="Female">Female Only</option>
+                        </select>
+                    </div>
+
+                    <div class="lab-form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div>
+                            <label class="lab-form-label" for="diag_min_age">Min Age (Y)</label>
+                            <input type="number" class="lab-form-input" id="diag_min_age" placeholder="0">
+                        </div>
+                        <div>
+                            <label class="lab-form-label" for="diag_max_age">Max Age (Y)</label>
+                            <input type="number" class="lab-form-input" id="diag_max_age" placeholder="120">
+                        </div>
+                    </div>
+
+                    <div class="lab-form-group lab-form-col-full">
+                        <label class="lab-form-label" for="diag_status">Status</label>
+                        <select class="lab-form-select" id="diag_status">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lab-modal-footer">
+                <button type="button" class="lab-btn lab-btn-secondary" data-lab-dismiss="modal">Cancel</button>
+                <button type="submit" class="lab-btn lab-btn-primary" id="btnSaveDiag">
+                    <i class="bi bi-check-lg"></i> Save Diagnosis
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Eligibility Rules Drawer -->
+<div class="lab-modal" id="rulesModal" tabindex="-1" role="dialog" aria-labelledby="rulesModalTitle" aria-hidden="true">
+    <div class="lab-modal-dialog modal-lg" role="document">
+        <div class="lab-modal-header">
+            <div>
+                <h2 class="lab-modal-title" id="rulesModalTitle">Diagnosis Eligibility Rules</h2>
+                <div style="font-size: 0.78rem; color: var(--lab-text-muted); margin-top: 2px;">Dynamic conditions for automatic test and diagnosis triggering</div>
+            </div>
+            <button type="button" class="lab-modal-close" data-lab-dismiss="modal" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="lab-modal-body">
+            <!-- Rules Table Container -->
+            <div class="lab-table-container" style="margin-bottom: 14px;">
+                <table class="lab-table">
+                    <thead>
+                        <tr>
+                            <th>Gender</th>
+                            <th>Age Limits</th>
+                            <th>Department</th>
+                            <th>Pregnancy Required</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rulesTableBody">
+                        <tr><td colspan="7" class="text-center py-3 text-muted">Loading rules...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Add / Edit Rule Card -->
+            <div class="lab-card" style="padding: 14px 16px; margin-bottom: 0; background: #f8fafc;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--lab-text-main); margin-bottom: 10px;">
+                    <i class="bi bi-plus-circle text-primary"></i> Add / Update Eligibility Rule
+                </div>
+
+                <form id="ruleSubForm" onsubmit="saveEligibilityRule(event)">
+                    <input type="hidden" id="sub_rule_id">
+                    <input type="hidden" id="sub_diag_id">
+
+                    <div class="lab-form-grid-3">
+                        <div class="lab-form-group">
+                            <label class="lab-form-label">Gender</label>
+                            <select class="lab-form-select" id="sub_gender">
+                                <option value="All">All</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="lab-form-group">
+                            <label class="lab-form-label">Min Age (Y)</label>
+                            <input type="number" class="lab-form-input" id="sub_min_age" placeholder="0">
+                        </div>
+                        <div class="lab-form-group">
+                            <label class="lab-form-label">Max Age (Y)</label>
+                            <input type="number" class="lab-form-input" id="sub_max_age" placeholder="120">
+                        </div>
+                        <div class="lab-form-group">
+                            <label class="lab-form-label">Department</label>
+                            <select class="lab-form-select" id="sub_dept">
+                                <option value="">-- Any Dept --</option>
+                                {% for d in departments %}
+                                <option value="{{ d.id }}">{{ d.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="lab-form-group">
+                            <label class="lab-form-label">Pregnancy Required</label>
+                            <select class="lab-form-select" id="sub_preg">
+                                <option value="false">No</option>
+                                <option value="true">Yes (Female Only)</option>
+                            </select>
+                        </div>
+                        <div class="lab-form-group">
+                            <label class="lab-form-label">Priority</label>
+                            <input type="number" class="lab-form-input" id="sub_priority" value="100">
+                        </div>
+                        <div class="lab-form-group">
+                            <label class="lab-form-label">Status</label>
+                            <select class="lab-form-select" id="sub_active">
+                                <option value="true">Active</option>
+                                <option value="false">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="lab-form-group lab-form-col-full" style="margin-bottom: 0; display: flex; flex-direction: row; justify-content: flex-end; gap: 8px;">
+                            <button type="button" class="lab-btn lab-btn-secondary lab-btn-sm" onclick="resetRuleSubForm()">Reset</button>
+                            <button type="submit" class="lab-btn lab-btn-primary lab-btn-sm" id="btnSaveSubRule">
+                                <i class="bi bi-check-lg"></i> Save Rule
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="lab-modal-footer">
+            <button type="button" class="lab-btn lab-btn-secondary" data-lab-dismiss="modal">Close</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block lab_master_extra_js %}
+<script>
+let currentDiagId = null;
+
+function openAddDiagModal() {
+    document.getElementById('diagModalTitle').innerText = 'Add Diagnosis';
+    document.getElementById('diag_id').value = '';
+    document.getElementById('diag_code').value = '';
+    document.getElementById('diag_name').value = '';
+    document.getElementById('diag_department').value = '';
+    document.getElementById('diag_gender').value = 'All';
+    document.getElementById('diag_min_age').value = '';
+    document.getElementById('diag_max_age').value = '';
+    document.getElementById('diag_status').value = 'true';
+    openLabModal('diagModal');
+}
+
+function openEditDiagModal(id, code, name, deptId, gender, minAge, maxAge, active) {
+    document.getElementById('diagModalTitle').innerText = 'Edit Diagnosis: ' + name;
+    document.getElementById('diag_id').value = id;
+    document.getElementById('diag_code').value = code || '';
+    document.getElementById('diag_name').value = name;
+    document.getElementById('diag_department').value = deptId || '';
+    document.getElementById('diag_gender').value = gender || 'All';
+    document.getElementById('diag_min_age').value = minAge || '';
+    document.getElementById('diag_max_age').value = maxAge || '';
+    document.getElementById('diag_status').value = active ? 'true' : 'false';
+    openLabModal('diagModal');
+}
+
+async function submitDiagForm(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveDiag');
+    btn.disabled = true;
+
+    const payload = {
+        id: document.getElementById('diag_id').value || null,
+        code: document.getElementById('diag_code').value.trim(),
+        name: document.getElementById('diag_name').value.trim(),
+        department_id: document.getElementById('diag_department').value || null,
+        gender_eligibility: document.getElementById('diag_gender').value,
+        min_age: document.getElementById('diag_min_age').value || null,
+        max_age: document.getElementById('diag_max_age').value || null,
+        is_active: document.getElementById('diag_status').value === 'true'
+    };
+
+    try {
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const res = await fetch("{% url 'lab:api_master_diagnosis_save' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error saving diagnosis.');
+            btn.disabled = false;
+        }
+    } catch(err) {
+        alert('Request failed: ' + err);
+        btn.disabled = false;
+    }
+}
+
+async function openRulesModal(diagId, diagName) {
+    currentDiagId = diagId;
+    document.getElementById('rulesModalTitle').innerText = 'Eligibility Rules: ' + diagName;
+    document.getElementById('sub_diag_id').value = diagId;
+    resetRuleSubForm();
+    await loadRulesList(diagId);
+    openLabModal('rulesModal');
+}
+
+async function loadRulesList(diagId) {
+    const tbody = document.getElementById('rulesTableBody');
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-2 text-muted">Loading rules...</td></tr>';
+    try {
+        const res = await fetch(`/lab/master/api/diagnoses/${diagId}/rules/`);
+        const data = await res.json();
+        if (data.success) {
+            if (data.rules.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3 text-muted">No explicit eligibility rules configured yet. Uses diagnosis default fields.</td></tr>';
+            } else {
+                tbody.innerHTML = data.rules.map(r => `
+                    <tr>
+                        <td><span class="lab-badge ${r.gender === 'Female' ? 'lab-badge-warning' : (r.gender === 'Male' ? 'lab-badge-info' : 'lab-badge-neutral')}">${r.gender}</span></td>
+                        <td>${r.min_age !== null ? r.min_age : '0'} – ${r.max_age !== null ? r.max_age : 'Any'} Y</td>
+                        <td>${r.department__name || 'Universal (Any)'}</td>
+                        <td>${r.pregnancy_required ? '<span class="lab-badge lab-badge-warning">Yes (Pregnancy Required)</span>' : '<span class="text-muted" style="font-size:12px;">No</span>'}</td>
+                        <td style="font-weight: 600;">${r.priority}</td>
+                        <td><span class="lab-badge ${r.is_active ? 'lab-badge-active' : 'lab-badge-inactive'}">${r.is_active ? 'Active' : 'Inactive'}</span></td>
+                        <td class="text-end">
+                            <button type="button" class="lab-btn lab-btn-secondary lab-btn-sm" onclick="deleteRule(${r.id})" title="Delete Rule">
+                                <i class="bi bi-trash text-danger"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+    } catch(err) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-2 text-danger">Failed to load rules.</td></tr>';
+    }
+}
+
+function resetRuleSubForm() {
+    document.getElementById('sub_rule_id').value = '';
+    document.getElementById('sub_gender').value = 'All';
+    document.getElementById('sub_min_age').value = '';
+    document.getElementById('sub_max_age').value = '';
+    document.getElementById('sub_dept').value = '';
+    document.getElementById('sub_preg').value = 'false';
+    document.getElementById('sub_priority').value = '100';
+    document.getElementById('sub_active').value = 'true';
+}
+
+async function saveEligibilityRule(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveSubRule');
+    btn.disabled = true;
+
+    const payload = {
+        rule_id: document.getElementById('sub_rule_id').value || null,
+        diagnosis_id: currentDiagId,
+        gender: document.getElementById('sub_gender').value,
+        min_age: document.getElementById('sub_min_age').value || null,
+        max_age: document.getElementById('sub_max_age').value || null,
+        department_id: document.getElementById('sub_dept').value || null,
+        pregnancy_required: document.getElementById('sub_preg').value === 'true',
+        priority: parseInt(document.getElementById('sub_priority').value) || 100,
+        is_active: document.getElementById('sub_active').value === 'true'
+    };
+
+    try {
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const res = await fetch("{% url 'lab:api_master_diagnosis_save_rule' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            resetRuleSubForm();
+            loadRulesList(currentDiagId);
+        } else {
+            alert(data.message || 'Error saving rule.');
+        }
+    } catch(err) {
+        alert('Failed: ' + err);
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function deleteRule(ruleId) {
+    if (!confirm('Are you sure you want to delete this eligibility rule?')) return;
+    const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    try {
+        const res = await fetch(`/lab/master/api/diagnoses/rules/${ruleId}/delete/`, {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrf}
+        });
+        const data = await res.json();
+        if (data.success) {
+            loadRulesList(currentDiagId);
+        }
+    } catch(err) {
+        alert('Delete failed: ' + err);
+    }
+}
+</script>
+{% endblock %}

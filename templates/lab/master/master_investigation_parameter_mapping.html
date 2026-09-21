@@ -1,0 +1,327 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}Investigation Parameter Mapping | Lab Master{% endblock %}
+{% block lab_master_title %}Investigation Parameters{% endblock %}
+{% block lab_master_subtitle %}Map clinical parameters to investigations, assign display order, units, and mandatory flags{% endblock %}
+
+{% block lab_master_actions %}
+<button type="button" class="lab-btn lab-btn-primary lab-btn-sm" onclick="openAddMappingModal()">
+    <i class="bi bi-plus-lg"></i> Add Mapping
+</button>
+{% endblock %}
+
+{% block master_content %}
+<!-- Filter Card -->
+<div class="lab-filter-card">
+    <form method="get" class="lab-filter-grid">
+        <div class="lab-filter-col-4">
+            <select name="investigation" class="lab-form-select">
+                <option value="">-- All Investigations --</option>
+                {% for inv in investigations %}
+                <option value="{{ inv.id }}" {% if selected_inv == inv.id|stringformat:"s" %}selected{% endif %}>{{ inv.code }} - {{ inv.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="lab-filter-col-3">
+            <div class="lab-input-with-icon">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" class="lab-form-input" placeholder="Search parameter, code..." value="{{ request.GET.search }}">
+            </div>
+        </div>
+        <div class="lab-filter-col-2">
+            <select name="status" class="lab-form-select">
+                <option value="">-- Status --</option>
+                <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+        <div class="lab-filter-col-auto lab-filter-actions">
+            <button type="submit" class="lab-btn lab-btn-primary lab-btn-sm">
+                <i class="bi bi-funnel"></i> Apply Filter
+            </button>
+            <a href="{% url 'lab:master_investigation_parameter_mapping' %}" class="lab-btn lab-btn-secondary lab-btn-sm">
+                <i class="bi bi-x-circle"></i> Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Table Card -->
+<div class="lab-table-container">
+    <div class="lab-card-header" style="padding: 12px 16px; margin-bottom: 0; background: #ffffff;">
+        <span class="lab-card-title" style="font-size: 0.88rem;">
+            <i class="bi bi-diagram-3 text-primary"></i> Parameter Mappings ({{ page_obj.paginator.count|default:0 }})
+        </span>
+        {% if page_obj.has_other_pages %}
+        <span class="lab-card-subtitle">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% endif %}
+    </div>
+
+    <table class="lab-table">
+        <thead>
+            <tr>
+                <th style="width: 55px;">S.No</th>
+                <th>Investigation</th>
+                <th style="width: 130px;">Param Code</th>
+                <th>Parameter Name</th>
+                <th style="width: 70px;" class="text-center">Order</th>
+                <th style="width: 85px;" class="text-center">Mandatory</th>
+                <th style="width: 85px;" class="text-center">Calculated</th>
+                <th style="width: 100px;">Data Type</th>
+                <th style="width: 80px;">Unit</th>
+                <th style="width: 80px;">Status</th>
+                <th style="width: 130px;" class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in mappings %}
+            <tr>
+                <td style="color: var(--lab-text-muted);">{{ forloop.counter0|add:page_obj.start_index }}</td>
+                <td>
+                    <div style="font-weight: 600; color: var(--lab-text-main);">{{ m.investigation.name }}</div>
+                    <small style="color: var(--lab-text-muted); font-family: monospace;">{{ m.investigation.code }}</small>
+                </td>
+                <td style="font-weight: 700; color: var(--lab-blue); font-family: monospace;">{{ m.code|default:m.parameter.code }}</td>
+                <td style="font-weight: 600; color: var(--lab-text-main);">{{ m.name|default:m.parameter.name }}</td>
+                <td class="text-center" style="font-weight: 600; color: var(--lab-text-muted);">{{ m.display_order }}</td>
+                <td class="text-center">
+                    {% if m.is_mandatory %}
+                    <span class="lab-badge lab-badge-active">Yes</span>
+                    {% else %}
+                    <span class="text-muted" style="font-size: 12px;">No</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if m.is_calculated %}
+                    <span class="lab-badge lab-badge-info">Yes</span>
+                    {% else %}
+                    <span class="text-muted" style="font-size: 12px;">No</span>
+                    {% endif %}
+                </td>
+                <td><span class="lab-badge lab-badge-neutral">{{ m.parameter.data_type|default:m.result_type }}</span></td>
+                <td>{{ m.unit|default:m.parameter.default_unit|default:"—" }}</td>
+                <td>
+                    {% if m.is_active %}
+                    <span class="lab-badge lab-badge-active">Active</span>
+                    {% else %}
+                    <span class="lab-badge lab-badge-inactive">Inactive</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <div class="lab-btn-group">
+                        <button type="button" class="lab-btn lab-btn-secondary lab-btn-sm" onclick="openEditMappingModal({{ m.id }}, {{ m.investigation_id }}, {{ m.parameter_id|default:'null' }}, '{{ m.code|default:m.parameter.code|escapejs }}', '{{ m.name|default:m.parameter.name|escapejs }}', '{{ m.unit|default:''|escapejs }}', '{{ m.result_type|default:'Numeric'|escapejs }}', {{ m.display_order|default:0 }}, {{ m.is_mandatory|yesno:'true,false' }}, {{ m.is_calculated|yesno:'true,false' }}, {{ m.is_active|yesno:'true,false' }})" title="Edit Mapping">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <button type="button" class="lab-btn lab-btn-secondary lab-btn-sm" onclick="removeMapping({{ m.id }})" title="Remove Mapping">
+                            <i class="bi bi-trash text-danger"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="11">
+                    <div class="lab-empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <p style="margin: 0;">No parameter mappings found matching your criteria.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% include "lab/master/pagination.html" %}
+</div>
+
+<!-- Modal: Add/Edit Investigation Parameter Mapping -->
+<div class="lab-modal" id="mapModal" tabindex="-1" role="dialog" aria-labelledby="mapModalTitle" aria-hidden="true">
+    <div class="lab-modal-dialog" role="document">
+        <div class="lab-modal-header">
+            <div>
+                <h2 class="lab-modal-title" id="mapModalTitle">Investigation Parameter Mapping</h2>
+                <div style="font-size: 0.78rem; color: var(--lab-text-muted); margin-top: 2px;">Link parameter to an investigation with configuration overrides</div>
+            </div>
+            <button type="button" class="lab-modal-close" data-lab-dismiss="modal" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <form id="mapForm" onsubmit="submitMapForm(event)">
+            {% csrf_token %}
+            <input type="hidden" id="map_id">
+
+            <div class="lab-modal-body">
+                <div class="lab-form-grid-2">
+                    <div class="lab-form-group lab-form-col-full">
+                        <label class="lab-form-label" for="map_inv">Investigation <span class="lab-required">*</span></label>
+                        <select class="lab-form-select" id="map_inv" required>
+                            <option value="">-- Select Investigation --</option>
+                            {% for inv in investigations %}
+                            <option value="{{ inv.id }}">{{ inv.code }} - {{ inv.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="lab-form-group lab-form-col-full">
+                        <label class="lab-form-label" for="map_param">Parameter <span class="lab-required">*</span></label>
+                        <select class="lab-form-select" id="map_param" required onchange="onParamSelected()">
+                            <option value="">-- Select Parameter --</option>
+                            {% for p in parameters %}
+                            <option value="{{ p.id }}" data-code="{{ p.code }}" data-name="{{ p.name }}" data-unit="{{ p.default_unit|default:'' }}" data-type="{{ p.result_type|default:'Numeric' }}">{{ p.code }} - {{ p.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="map_code">Display Code</label>
+                        <input type="text" class="lab-form-input" id="map_code" placeholder="Default uses parameter code">
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="map_unit">Unit</label>
+                        <input type="text" class="lab-form-input" id="map_unit" placeholder="Default uses parameter unit">
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="map_order">Display Order</label>
+                        <input type="number" class="lab-form-input" id="map_order" value="0">
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="map_mandatory">Mandatory</label>
+                        <select class="lab-form-select" id="map_mandatory">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="map_calculated">Calculated</label>
+                        <select class="lab-form-select" id="map_calculated">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="map_status">Status</label>
+                        <select class="lab-form-select" id="map_status">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lab-modal-footer">
+                <button type="button" class="lab-btn lab-btn-secondary" data-lab-dismiss="modal">Cancel</button>
+                <button type="submit" class="lab-btn lab-btn-primary" id="btnSaveMap">
+                    <i class="bi bi-check-lg"></i> Save Mapping
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block lab_master_extra_js %}
+<script>
+function onParamSelected() {
+    const sel = document.getElementById('map_param');
+    const opt = sel.options[sel.selectedIndex];
+    if (opt && opt.value) {
+        if (!document.getElementById('map_code').value) {
+            document.getElementById('map_code').value = opt.getAttribute('data-code') || '';
+        }
+        if (!document.getElementById('map_unit').value) {
+            document.getElementById('map_unit').value = opt.getAttribute('data-unit') || '';
+        }
+    }
+}
+
+function openAddMappingModal() {
+    document.getElementById('mapModalTitle').innerText = 'Add Parameter Mapping';
+    document.getElementById('map_id').value = '';
+    document.getElementById('map_inv').value = '{{ selected_inv }}' || '';
+    document.getElementById('map_param').value = '';
+    document.getElementById('map_code').value = '';
+    document.getElementById('map_unit').value = '';
+    document.getElementById('map_order').value = '0';
+    document.getElementById('map_mandatory').value = 'false';
+    document.getElementById('map_calculated').value = 'false';
+    document.getElementById('map_status').value = 'true';
+    openLabModal('mapModal');
+}
+
+function openEditMappingModal(id, invId, paramId, code, name, unit, resultType, order, mandatory, calculated, active) {
+    document.getElementById('mapModalTitle').innerText = 'Edit Parameter Mapping';
+    document.getElementById('map_id').value = id;
+    document.getElementById('map_inv').value = invId;
+    document.getElementById('map_param').value = paramId || '';
+    document.getElementById('map_code').value = code || '';
+    document.getElementById('map_unit').value = unit || '';
+    document.getElementById('map_order').value = order || 0;
+    document.getElementById('map_mandatory').value = mandatory ? 'true' : 'false';
+    document.getElementById('map_calculated').value = calculated ? 'true' : 'false';
+    document.getElementById('map_status').value = active ? 'true' : 'false';
+    openLabModal('mapModal');
+}
+
+async function submitMapForm(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveMap');
+    btn.disabled = true;
+
+    const payload = {
+        id: document.getElementById('map_id').value || null,
+        investigation_id: document.getElementById('map_inv').value,
+        parameter_id: document.getElementById('map_param').value,
+        code: document.getElementById('map_code').value.trim(),
+        unit: document.getElementById('map_unit').value.trim(),
+        display_order: parseInt(document.getElementById('map_order').value) || 0,
+        is_mandatory: document.getElementById('map_mandatory').value === 'true',
+        is_calculated: document.getElementById('map_calculated').value === 'true',
+        is_active: document.getElementById('map_status').value === 'true'
+    };
+
+    try {
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const res = await fetch("{% url 'lab:api_master_inv_param_save' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error saving mapping.');
+            btn.disabled = false;
+        }
+    } catch(err) {
+        alert('Request failed: ' + err);
+        btn.disabled = false;
+    }
+}
+
+async function removeMapping(id) {
+    if (!confirm('Are you sure you want to remove this investigation parameter mapping?')) return;
+    const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+    try {
+        const res = await fetch(`/lab/master/api/investigation-parameters/${id}/delete/`, {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrf}
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error deleting mapping.');
+        }
+    } catch(err) {
+        alert('Delete failed: ' + err);
+    }
+}
+</script>
+{% endblock %}
