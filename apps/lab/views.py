@@ -2114,7 +2114,7 @@ def api_work_orders_list(request):
             
         statuses = [inv.status for inv in invs]
         
-        if all(s == 'COMPLETED' for s in statuses):
+        if all(s == 'COMPLETED' for s in statuses) or any(s == 'COMPLETED' for s in statuses):
             sr_status = 'COMPLETED'
         elif all(s in ['RECEIVED', 'COMPLETED'] for s in statuses):
             sr_status = 'RECEIVED'
@@ -2249,6 +2249,13 @@ class WorkOrderResultEntryView(LoginRequiredMixin, GranularPermissionRequiredMix
         if not matched_age_group:
             matched_age_group = AgeGroup.objects.filter(label__icontains='Adult').first()
             
+        # Get existing saved results
+        from apps.lab.models import ServiceRequestResult
+        saved_results_map = {
+            r.investigation_parameter_id: r
+            for r in ServiceRequestResult.objects.filter(sr_investigation=wo)
+        }
+
         param_data = []
         for ip in parameters:
             ref_range = None
@@ -2296,6 +2303,10 @@ class WorkOrderResultEntryView(LoginRequiredMixin, GranularPermissionRequiredMix
             else:
                 method = 'Calculated'
             
+            existing_res = saved_results_map.get(ip.id)
+            existing_val = existing_res.result_value if existing_res else ''
+            existing_rem = existing_res.remarks if existing_res else ''
+            
             param_data.append({
                 'ip': ip,
                 'parameter': ip.parameter,
@@ -2307,7 +2318,9 @@ class WorkOrderResultEntryView(LoginRequiredMixin, GranularPermissionRequiredMix
                 'min_value': ref_range.min_value if ref_range else None,
                 'max_value': ref_range.max_value if ref_range else None,
                 'method': method,
-                'sample_type': sample_type
+                'sample_type': sample_type,
+                'existing_val': existing_val,
+                'existing_rem': existing_rem
             })
             
         # Get diagnosis from service request
@@ -2325,22 +2338,20 @@ class WorkOrderResultEntryView(LoginRequiredMixin, GranularPermissionRequiredMix
 @login_required
 @require_POST
 def api_work_order_save_result(request, pk):
-    from apps.lab.models import ServiceRequestInvestigation, ServiceRequestResult, InvestigationParameter
+    from apps.lab.models import ServiceRequestInvestigation, ServiceRequestResult, InvestigationParameter, ServiceRequest
     wo = get_object_or_404(ServiceRequestInvestigation, id=pk)
-    
-    if wo.status == ServiceRequestInvestigation.StatusChoices.COMPLETED:
-        return JsonResponse({'status': 'error', 'message': 'Work order already completed'})
         
     try:
         data = json.loads(request.body)
         results = data.get('results', [])
+        complete = data.get('complete', False)
         
         with transaction.atomic():
             for res in results:
                 param_id = res.get('parameter_id')
                 val = res.get('value')
                 remarks = res.get('remarks', '')
-                if not val:
+                if val is None or val == '':
                     continue
                     
                 ip = InvestigationParameter.objects.get(id=param_id, investigation=wo.investigation)
@@ -2355,12 +2366,17 @@ def api_work_order_save_result(request, pk):
                     }
                 )
             
-            complete = data.get('complete', False)
             if complete:
                 wo.status = ServiceRequestInvestigation.StatusChoices.COMPLETED
                 wo.completed_date = timezone.now()
                 wo.completed_by = request.user
                 wo.save()
+                
+                # Check if all active investigations for this service request are completed
+                remaining = wo.service_request.investigations.filter(is_removed=False).exclude(status=ServiceRequestInvestigation.StatusChoices.COMPLETED)
+                if not remaining.exists():
+                    wo.service_request.status = ServiceRequest.StatusChoices.COMPLETED
+                    wo.service_request.save()
             
         return JsonResponse({'status': 'success', 'order_id': wo.service_request.id})
     except Exception as e:

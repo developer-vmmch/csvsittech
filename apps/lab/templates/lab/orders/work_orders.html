@@ -229,11 +229,10 @@
                         <th>Sample Date</th>
                         <th>No. of Tests</th>
                         <th>Status</th>
-                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td colspan="12" class="text-center text-muted" style="padding: 2rem;">Loading work orders...</td></tr>
+                    <tr><td colspan="11" class="text-center text-muted" style="padding: 2rem;">Loading work orders...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -297,25 +296,24 @@ $(document).ready(function() {
                     allWorkOrders.forEach((wo) => {
 
                         const tr = $(`
-                            <tr data-id="${wo.id}">
+                            <tr data-id="${wo.id}" onclick="window.location.href='/lab/work-orders/${wo.id}/';">
                                 <td>${wo.s_no}</td>
-                                <td style="font-weight: 600;">#${wo.id}</td>
+                                <td style="font-weight: 600;"><a href="/lab/work-orders/${wo.id}/" style="color: var(--text-main); text-decoration: none;">#${wo.id}</a></td>
                                 <td style="color: var(--text-muted);">SR-${wo.id}</td>
-                                <td style="color: var(--primary-blue); font-weight: 500;">${wo.patient_id}</td>
-                                <td>${wo.patient_name}</td>
+                                <td><a href="/lab/work-orders/${wo.id}/" style="color: var(--primary-blue); font-weight: 600; text-decoration: underline;">${wo.patient_id}</a></td>
+                                <td style="font-weight: 500;">${wo.patient_name}</td>
                                 <td>${wo.patient_type === 'D' ? '<span style="color:var(--warning-text);font-weight:600;">D</span>' : 'O'}</td>
                                 <td style="font-weight: 600;">${wo.sample_id}</td>
                                 <td>${wo.request_date}</td>
                                 <td>${wo.request_date}</td>
                                 <td>${wo.test_count || '-'}</td>
                                 <td><span class="status-badge status-${wo.status}">${wo.status}</span></td>
-                                <td><a href="/lab/work-orders/${wo.id}/" class="action-btn">Select/View</a></td>
                             </tr>
                         `);
                         tbody.append(tr);
                     });
                 } else {
-                    tbody.html('<tr><td colspan="12" class="text-center text-muted" style="padding: 2rem;">No work orders found.</td></tr>');
+                    tbody.html('<tr><td colspan="11" class="text-center text-muted" style="padding: 2rem;">No work orders found.</td></tr>');
                 }
             },
             complete: function() { btn.html(orig).prop('disabled', false); }
