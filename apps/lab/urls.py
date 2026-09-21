@@ -18,7 +18,7 @@ from .views import (
     api_get_patients_for_request, api_search_diagnosis, api_suggest_investigations, api_search_investigation, api_allocate_service_request, api_save_and_trigger,
     api_diagnosis_count, api_investigation_count, api_parameter_count,
     DoctorWindowView, api_doctor_window_patients, api_doctor_window_get_diagnosis, api_doctor_window_save_diagnosis,
-    WorkOrdersView, WorkOrderDetailView, api_work_orders_list, api_work_order_receive, api_work_order_receive_multiple, WorkOrderResultEntryView, api_work_order_save_result
+    WorkOrdersView, WorkOrderDetailView, api_work_orders_list, api_work_order_receive, api_work_order_receive_multiple, WorkOrderResultEntryView, WorkOrderPrintPreviewView, api_work_order_save_result
 )
 from .import_views import (
     DiagnosisImportView, DiagnosisImportHistoryView,
@@ -340,6 +340,7 @@ urlpatterns = [
     path('work-orders/', WorkOrdersView.as_view(), name='work_orders'),
     path('work-orders/<int:pk>/', WorkOrderDetailView.as_view(), name='work_order_detail'),
     path('work-orders/result/<int:pk>/', WorkOrderResultEntryView.as_view(), name='work_order_result_entry'),
+    path('work-orders/print-preview/<int:pk>/', WorkOrderPrintPreviewView.as_view(), name='work_order_print_preview'),
     path('api/work-orders/list/', api_work_orders_list, name='api_work_orders_list'),
     path('api/work-orders/<int:pk>/receive/', api_work_order_receive, name='api_work_order_receive'),
     path('api/work-orders/receive-multiple/', api_work_order_receive_multiple, name='api_work_order_receive_multiple'),
