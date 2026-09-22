@@ -6,13 +6,14 @@
 <style>
     :root {
         --primary-blue: #0b5ed7;
-        --border-color: #e2e8f0;
+        --border-color: #cbd5e1;
         --text-main: #0f172a;
         --text-muted: #64748b;
         --btn-green: #059669;
         --btn-green-hover: #047857;
+        --tbl-header-bg: #0284c7;
     }
-    
+
     body {
         background-color: #f1f5f9 !important;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -28,7 +29,7 @@
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.25rem;
     }
     .wo-header-titles h2 {
         font-size: 1.5rem;
@@ -41,63 +42,145 @@
         color: var(--text-muted);
         margin: 0;
     }
-    
     .wo-breadcrumb {
         font-size: 0.85rem;
         color: var(--text-muted);
+    }
+    .wo-breadcrumb span {
+        margin: 0 0.35rem;
     }
 
     /* Filter Panel */
     .filter-panel {
         background-color: #fff;
         border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 1rem 1.25rem;
-        margin-bottom: 1.5rem;
+        border-radius: 6px;
+        padding: 0.65rem 0.85rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .filter-row {
         display: flex;
         align-items: flex-end;
-        gap: 1rem;
+        gap: 0.65rem;
         flex-wrap: wrap;
     }
     .filter-group {
         display: flex;
         flex-direction: column;
-        gap: 0.35rem;
+        gap: 0.2rem;
     }
     .filter-label {
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         font-weight: 600;
-        color: var(--text-muted);
+        color: #475569;
+        text-transform: capitalize;
     }
     .filter-input {
-        height: 36px;
+        height: 32px;
         border: 1px solid var(--border-color);
-        border-radius: 6px;
+        border-radius: 4px;
+        padding: 0 0.5rem;
+        font-size: 0.8125rem;
+        color: var(--text-main);
+        background-color: #fff;
+        outline: none;
+        transition: border-color 0.15s;
+    }
+    .filter-input:focus {
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 2px rgba(11, 94, 215, 0.1);
+    }
+    .btn-search-pid {
+        background-color: var(--primary-blue);
+        color: #ffffff;
+        border: 1px solid var(--primary-blue);
+        border-radius: 4px;
+        height: 32px;
         padding: 0 0.75rem;
-        font-size: 0.85rem;
+        font-weight: 600;
+        font-size: 0.8125rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        white-space: nowrap;
+        transition: all 0.15s;
+    }
+    .btn-search-pid:hover {
+        background-color: #0a58ca;
+        border-color: #0a58ca;
+    }
+    .btn-view-all {
+        background-color: var(--btn-green);
+        color: #ffffff;
+        border: 1px solid var(--btn-green);
+        border-radius: 4px;
+        height: 32px;
+        padding: 0 0.85rem;
+        font-weight: 600;
+        font-size: 0.8125rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        white-space: nowrap;
+        transition: all 0.15s;
+    }
+    .btn-view-all:hover {
+        background-color: var(--btn-green-hover);
+        border-color: var(--btn-green-hover);
+    }
+
+    /* Sort Control Compact */
+    .sort-control-wrap {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background: #fff;
+        overflow: hidden;
+        height: 32px;
+    }
+    .sort-control-wrap select {
+        border: none;
+        height: 100%;
+        padding: 0 0.5rem;
+        font-size: 0.8125rem;
         color: var(--text-main);
         outline: none;
-    }
-    .filter-input:focus { border-color: var(--primary-blue); }
-    .btn-search {
-        background-color: var(--btn-green);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        height: 36px;
-        padding: 0 1.5rem;
-        font-weight: 500;
-        font-size: 0.85rem;
+        background: transparent;
         cursor: pointer;
     }
-    .btn-search:hover { background-color: var(--btn-green-hover); }
+    .btn-sort-toggle {
+        border: none;
+        border-left: 1px solid var(--border-color);
+        background: #f8fafc;
+        height: 100%;
+        padding: 0 0.55rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #334155;
+        font-weight: 700;
+        font-size: 0.85rem;
+        transition: background-color 0.15s;
+    }
+    .btn-sort-toggle:hover {
+        background-color: #e2e8f0;
+    }
 
-    /* Work Orders Table */
+    /* Table Container & Table */
     .wo-card {
         background-color: #fff;
         border: 1px solid var(--border-color);
         border-radius: 8px;
         overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     }
     .table-responsive {
         width: 100%;
@@ -105,155 +188,358 @@
     }
     .wo-table {
         width: 100%;
-        border-collapse: collapse;
-        font-size: 0.8rem;
+        table-layout: fixed;
+        min-width: 1050px;
+        border-collapse: collapse !important;
+        font-size: 14px;
+        border: 1px solid #CBD5E1 !important;
     }
     .wo-table th {
-        background-color: #f8fafc;
-        color: var(--text-main);
-        font-weight: 600;
-        text-align: left;
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid var(--border-color);
+        background-color: var(--tbl-header-bg);
+        color: #ffffff !important;
+        font-weight: 700;
+        padding: 5px 7px !important;
+        border: 1px solid #CBD5E1 !important;
         white-space: nowrap;
+        font-size: 13.5px;
+        letter-spacing: 0.01em;
+        line-height: 1.35;
     }
     .wo-table td {
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid #f1f5f9;
-        color: var(--text-main);
+        padding: 5px 7px !important;
+        border: 1px solid #CBD5E1 !important;
         vertical-align: middle;
+        white-space: nowrap;
+        font-size: 14px;
+        line-height: 1.35;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .wo-table tbody tr {
+        cursor: default !important;
+        background-color: #ffffff;
     }
     .wo-table tbody tr:hover {
         background-color: #f8fafc;
-        cursor: pointer;
     }
-    
-    .status-badge {
-        padding: 0.25rem 0.6rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
+
+    /* Column Alignment and Specificity Rules */
+    .col-sno { width: 3.5%; text-align: center !important; }
+    .col-pid { width: 7%; text-align: center !important; white-space: nowrap !important; }
+    .col-pname { width: 17%; text-align: left !important; }
+    .col-vno { width: 3.5%; text-align: center !important; }
+    .col-age { width: 3.5%; text-align: center !important; }
+    .col-vtype { width: 5%; text-align: center !important; }
+    .col-sampleid { width: 10.5%; text-align: center !important; }
+    .col-voucher { width: 14%; text-align: center !important; }
+    .col-amount { width: 7.5%; text-align: right !important; }
+    .col-billtime { width: 13%; text-align: center !important; }
+    .col-sampledt { width: 10%; text-align: center !important; }
+    .col-ipno { width: 5.5%; text-align: center !important; }
+
+    /* Full row status colors */
+    .wo-table tbody tr.status-PENDING td {
+        color: #0f172a !important; /* Black */
+    }
+    .wo-table tbody tr.status-RECEIVED td {
+        color: #1d4ed8 !important; /* Blue */
+    }
+    .wo-table tbody tr.status-COMPLETED td {
+        color: #15803d !important; /* Green */
+    }
+    .wo-table tbody tr.status-REJECTED td {
+        color: #dc2626 !important; /* Red */
+    }
+    .wo-table tbody tr.status-DRAFT td {
+        color: #7c3aed !important; /* Purple */
+    }
+    .wo-table tbody tr.status-PROCESSING td,
+    .wo-table tbody tr.status-IN_PROGRESS td {
+        color: #ea580c !important; /* Orange */
+    }
+
+    /* Patient ID Link: MUST ALWAYS remain blue + underlined regardless of row status */
+    a.patient-id-link,
+    .patient-id-link,
+    .wo-table a.patient-id-link,
+    .wo-table td a.patient-id-link,
+    .wo-table tbody tr td a.patient-id-link,
+    .wo-table tbody tr[class*="status-"] td a.patient-id-link,
+    .wo-table tbody tr.status-PENDING td a.patient-id-link,
+    .wo-table tbody tr.status-RECEIVED td a.patient-id-link,
+    .wo-table tbody tr.status-COMPLETED td a.patient-id-link,
+    .wo-table tbody tr.status-REJECTED td a.patient-id-link,
+    .wo-table tbody tr.status-DRAFT td a.patient-id-link,
+    .wo-table tbody tr.status-PROCESSING td a.patient-id-link,
+    .wo-table tbody tr.status-IN_PROGRESS td a.patient-id-link {
+        color: #0000ee !important;
+        text-decoration: underline !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
         display: inline-block;
+        font-size: 14px;
     }
-    .status-PENDING { background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; }
-    .status-RECEIVED { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-    .status-COMPLETED { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
-    
-    .action-btn {
-        background: none;
-        border: none;
-        color: var(--primary-blue);
+    a.patient-id-link:hover,
+    .patient-id-link:hover,
+    a.patient-id-link:focus,
+    .patient-id-link:focus,
+    a.patient-id-link:active,
+    .patient-id-link:active,
+    a.patient-id-link:visited,
+    .patient-id-link:visited,
+    .wo-table td a.patient-id-link:hover,
+    .wo-table tbody tr td a.patient-id-link:hover,
+    .wo-table tbody tr[class*="status-"] td a.patient-id-link:hover {
+        color: #0000ee !important;
+        text-decoration: underline !important;
+    }
+
+    /* Bottom-Right Pagination */
+    .pagination-footer {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 1rem 0;
+        margin-top: 0.5rem;
+    }
+    .pagination-controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .per-page-select {
+        height: 34px;
+        padding: 0 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 0.85rem;
+        color: #334155;
+        background-color: #fff;
         cursor: pointer;
-        padding: 0.25rem 0.5rem;
-        font-weight: 500;
+        outline: none;
+        margin-right: 0.35rem;
     }
-    .action-btn:hover { text-decoration: underline; }
+    .per-page-select:focus {
+        border-color: var(--primary-blue);
+    }
+    .page-nav-btn, .page-num-btn {
+        min-width: 34px;
+        height: 34px;
+        padding: 0 0.55rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+        background-color: #fff;
+        color: #334155;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.15s ease;
+    }
+    .page-nav-btn:hover:not(:disabled), .page-num-btn:hover:not(.active) {
+        background-color: #f1f5f9;
+        border-color: #94a3b8;
+    }
+    .page-num-btn.active {
+        background-color: var(--primary-blue);
+        color: #ffffff;
+        border-color: var(--primary-blue);
+        font-weight: 600;
+    }
+    .page-nav-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    .page-numbers-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="wo-container">
+    <!-- Header -->
     <div class="wo-header">
         <div class="wo-header-titles">
             <h2>Work Orders</h2>
             <p>Manage all laboratory work orders and samples</p>
         </div>
         <div class="wo-breadcrumb">
-            Dashboard > Lab Orders > Work Orders
+            Lab <span>&gt;</span> Work Orders
         </div>
     </div>
 
+    <!-- Filter Panel -->
     <div class="filter-panel">
-        <div class="filter-group">
-            <span class="filter-label">From Date</span>
-            <div style="display: flex; gap: 0.25rem;">
-                <input type="date" id="f_from_date" class="filter-input" value="{{ default_from_date }}" onclick="if(this.showPicker) this.showPicker();" style="width: 130px;">
-                <button type="button" class="btn-search" id="btn-clear-from-date" title="Clear From Date" style="padding: 0.25rem 0.5rem; background: #e2e8f0; color: #334155; border: none; border-radius: 4px;"><i class="bi bi-x-circle"></i></button>
+        <!-- Row 1 -->
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="f_department" class="filter-label">Department</label>
+                <select id="f_department" class="filter-input" style="width: 160px;">
+                    <option value="ALL">All Departments</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}">{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="f_report_status" class="filter-label">Report Status</label>
+                <select id="f_report_status" class="filter-input" style="width: 120px;">
+                    <option value="ALL">All Status</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="RECEIVED">Received</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="REJECTED">Rejected</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="f_visit_type" class="filter-label">Visit Type</label>
+                <select id="f_visit_type" class="filter-input" style="width: 90px;">
+                    <option value="ALL">ALL</option>
+                    <option value="OP">OP</option>
+                    <option value="IP">IP</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="f_patient_type" class="filter-label">Patient Type</label>
+                <select id="f_patient_type" class="filter-input" style="width: 90px;">
+                    <option value="ALL">ALL</option>
+                    <option value="O">O</option>
+                    <option value="A">A</option>
+                    <option value="D">D</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="f_from_date" class="filter-label">From Date</label>
+                <input type="date" id="f_from_date" class="filter-input" style="width: 130px;">
+            </div>
+
+            <div class="filter-group">
+                <label for="f_to_date" class="filter-label">To Date</label>
+                <input type="date" id="f_to_date" class="filter-input" style="width: 130px;">
+            </div>
+
+            <div class="filter-group">
+                <label for="f_patient_id" class="filter-label">Patient ID</label>
+                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                    <input type="text" id="f_patient_id" class="filter-input" placeholder="Patient ID" style="width: 150px;">
+                    <button type="button" class="btn-search-pid" id="btn-search-pid" title="Search Patient ID">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <button type="button" class="btn-view-all" id="btn-view-all">
+                    <i class="bi bi-arrow-repeat"></i> View All
+                </button>
             </div>
         </div>
-        <div class="filter-group">
-            <span class="filter-label">To Date</span>
-            <div style="display: flex; gap: 0.25rem;">
-                <input type="date" id="f_to_date" class="filter-input" value="{{ default_to_date }}" onclick="if(this.showPicker) this.showPicker();" style="width: 130px;">
-                <button type="button" class="btn-search" id="btn-clear-to-date" title="Clear To Date" style="padding: 0.25rem 0.5rem; background: #e2e8f0; color: #334155; border: none; border-radius: 4px;"><i class="bi bi-x-circle"></i></button>
+
+        <!-- Row 2 -->
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="f_service_type" class="filter-label">Service Type</label>
+                <select id="f_service_type" class="filter-input" style="width: 100px;">
+                    <option value="Lab">Lab</option>
+                </select>
             </div>
-        </div>
-        <div class="filter-group">
-            <span class="filter-label">Department</span>
-            <select id="f_dept" class="filter-input" style="width: 160px;">
-                <option value="">All Departments</option>
-                {% for dept in departments %}
-                <option value="{{ dept.id }}">{{ dept.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="filter-group">
-            <span class="filter-label">Patient Type</span>
-            <select id="f_type" class="filter-input" style="width: 100px;">
-                <option value="A">A - All</option>
-                <option value="O">O - Original</option>
-                <option value="D">D - Dummy</option>
-            </select>
-        </div>
-        <div class="filter-group">
-            <span class="filter-label">Status</span>
-            <select id="f_status" class="filter-input" style="width: 120px;">
-                <option value="ALL">All Status</option>
-                {% for st in statuses %}
-                <option value="{{ st.0 }}">{{ st.1 }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="filter-group" style="flex-grow: 1;">
-            <span class="filter-label">Search</span>
-            <div style="display: flex; gap: 0.5rem;">
-                <input type="text" id="f_search" class="filter-input" placeholder="Search Patient ID / Name / Sample ID / Order No..." style="flex-grow: 1;">
-                <button type="button" class="btn-search" id="btn-view"><i class="bi bi-search"></i> View</button>
+
+            <div class="filter-group">
+                <label for="f_sample" class="filter-label">Sample</label>
+                <select id="f_sample" class="filter-input" style="width: 120px;">
+                    <option value="ALL">All</option>
+                    {% for st in sample_types %}
+                    <option value="{{ st.id }}">{{ st.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="f_sample_id" class="filter-label">Sample ID</label>
+                <input type="text" id="f_sample_id" class="filter-input" placeholder="Sample ID" style="width: 120px;">
+            </div>
+
+            <div class="filter-group">
+                <label for="f_search_name" class="filter-label">Search Name</label>
+                <input type="text" id="f_search_name" class="filter-input" placeholder="Patient Name" style="width: 140px;">
+            </div>
+
+            <div class="filter-group">
+                <label for="f_doctor" class="filter-label">Doctor</label>
+                <select id="f_doctor" class="filter-input" style="width: 150px;">
+                    <option value="ALL">Select Doctor</option>
+                    {% for doc in doctors %}
+                    <option value="{{ doc }}">{{ doc }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Sort By</label>
+                <div class="sort-control-wrap">
+                    <select id="f_sort_by">
+                        <option value="patient_id">Patient ID</option>
+                        <option value="patient_name">Patient Name</option>
+                        <option value="voucher_no">Voucher No</option>
+                    </select>
+                    <button type="button" id="btn-sort-dir" class="btn-sort-toggle" title="Toggle Ascending / Descending">
+                        <span id="sort-dir-icon">↑</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Work Orders Table Card -->
     <div class="wo-card">
         <div class="table-responsive">
             <table class="wo-table" id="wo-table">
                 <thead>
                     <tr>
-                        <th style="width: 40px;">S.No</th>
-                        <th>Work Order No</th>
-                        <th>Service Request</th>
-                        <th>Patient ID</th>
-                        <th>Patient Name</th>
-                        <th>Patient Type</th>
-                        <th>Sample ID</th>
-                        <th>Order Date</th>
-                        <th>Sample Date</th>
-                        <th>No. of Tests</th>
-                        <th>Status</th>
+                        <th class="col-sno" style="width: 3.5%; text-align: center;">S NO</th>
+                        <th class="col-pid" style="width: 7%; text-align: center; white-space: nowrap;">PATIENT ID</th>
+                        <th class="col-pname" style="width: 17%; text-align: left;">PATIENT NAME</th>
+                        <th class="col-vno" style="width: 3.5%; text-align: center;">VNO</th>
+                        <th class="col-age" style="width: 3.5%; text-align: center;">AGE</th>
+                        <th class="col-vtype" style="width: 5%; text-align: center;">VTYPE</th>
+                        <th class="col-sampleid" style="width: 10.5%; text-align: center;">SAMPLE ID</th>
+                        <th class="col-voucher" style="width: 14%; text-align: center;">VOUCHER NO</th>
+                        <th class="col-amount" style="width: 7.5%; text-align: right;">AMOUNT</th>
+                        <th class="col-billtime" style="width: 13%; text-align: center;">BILL TIME</th>
+                        <th class="col-sampledt" style="width: 10%; text-align: center;">SAMPLE DT</th>
+                        <th class="col-ipno" style="width: 5.5%; text-align: center;">IPNO</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td colspan="11" class="text-center text-muted" style="padding: 2rem;">Loading work orders...</td></tr>
+                    <tr><td colspan="12" class="text-center text-muted" style="padding: 2.5rem;">Loading work orders...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
-</div>
 
-<!-- Modal for details (optional if needed later, right now inline/alert or details link can be used) -->
-<div class="modal fade" id="detailsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Work Order Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <!-- Bottom-Right Pagination ONLY -->
+    <div class="pagination-footer">
+        <div class="pagination-controls">
+            <select id="per-page-select" class="per-page-select" title="Page Size">
+                <option value="100" selected>100</option>
+                <option value="500">500</option>
+                <option value="1000">1000</option>
+            </select>
+            <button type="button" class="page-nav-btn" id="btn-prev-page" title="Previous Page" disabled>&lt;</button>
+            <div id="page-numbers-group" class="page-numbers-group">
+                <!-- Dynamically populated page buttons: 1, 2, 3, 4, 5 -->
             </div>
-            <div class="modal-body" id="detailsModalBody">
-                <!-- details go here -->
-            </div>
-            <div class="modal-footer" id="detailsModalFooter" style="display: none;">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="btn-confirm-receive">Receive Sample</button>
-            </div>
+            <button type="button" class="page-nav-btn" id="btn-next-page" title="Next Page" disabled>&gt;</button>
         </div>
     </div>
 </div>
@@ -263,79 +549,247 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function() {
-    let allWorkOrders = [];
+    let currentPage = 1;
+    let currentPerPage = 100;
+    let currentSortDir = 'asc';
+    let totalPages = 1;
 
-    function loadWorkOrders() {
-        const fromDate = $('#f_from_date').val();
-        const toDate = $('#f_to_date').val();
-        if (fromDate && toDate && fromDate > toDate) {
-            alert("From date cannot be later than To date.");
+    function getFilterValues() {
+        return {
+            department: $('#f_department').val() || 'ALL',
+            status: $('#f_report_status').val() || 'ALL',
+            visit_type: $('#f_visit_type').val() || 'ALL',
+            patient_type: $('#f_patient_type').val() || 'ALL',
+            from_date: $('#f_from_date').val() || '',
+            to_date: $('#f_to_date').val() || '',
+            patient_id: $('#f_patient_id').val().trim(),
+            service_type: $('#f_service_type').val() || 'Lab',
+            sample: $('#f_sample').val() || 'ALL',
+            sample_id: $('#f_sample_id').val().trim(),
+            search_name: $('#f_search_name').val().trim(),
+            doctor: $('#f_doctor').val() || 'ALL',
+            sort_by: $('#f_sort_by').val() || 'patient_id',
+            sort_dir: currentSortDir,
+            per_page: currentPerPage,
+            page: currentPage
+        };
+    }
+
+    function syncUrl(params) {
+        const url = new URL(window.location.href);
+        Object.keys(params).forEach(key => {
+            const val = params[key];
+            if (val && val !== 'ALL' && val !== '') {
+                url.searchParams.set(key, val);
+            } else {
+                url.searchParams.delete(key);
+            }
+        });
+        if (params.page) url.searchParams.set('page', params.page);
+        if (params.per_page) url.searchParams.set('per_page', params.per_page);
+        window.history.pushState(params, '', url.pathname + url.search);
+    }
+
+    function initFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('department')) $('#f_department').val(urlParams.get('department'));
+        if (urlParams.has('status')) $('#f_report_status').val(urlParams.get('status'));
+        if (urlParams.has('visit_type')) $('#f_visit_type').val(urlParams.get('visit_type'));
+        if (urlParams.has('patient_type')) $('#f_patient_type').val(urlParams.get('patient_type'));
+        if (urlParams.has('from_date')) $('#f_from_date').val(urlParams.get('from_date'));
+        if (urlParams.has('to_date')) $('#f_to_date').val(urlParams.get('to_date'));
+        if (urlParams.has('patient_id')) $('#f_patient_id').val(urlParams.get('patient_id'));
+        if (urlParams.has('service_type')) $('#f_service_type').val(urlParams.get('service_type'));
+        if (urlParams.has('sample')) $('#f_sample').val(urlParams.get('sample'));
+        if (urlParams.has('sample_id')) $('#f_sample_id').val(urlParams.get('sample_id'));
+        if (urlParams.has('search_name')) $('#f_search_name').val(urlParams.get('search_name'));
+        if (urlParams.has('doctor')) $('#f_doctor').val(urlParams.get('doctor'));
+        if (urlParams.has('sort_by')) $('#f_sort_by').val(urlParams.get('sort_by'));
+
+        if (urlParams.has('sort_dir')) {
+            currentSortDir = urlParams.get('sort_dir').toLowerCase() === 'desc' ? 'desc' : 'asc';
+        }
+        $('#sort-dir-icon').text(currentSortDir === 'desc' ? '↓' : '↑');
+
+        if (urlParams.has('per_page')) {
+            const p = parseInt(urlParams.get('per_page'), 10);
+            if ([100, 500, 1000].includes(p)) {
+                currentPerPage = p;
+                $('#per-page-select').val(p);
+            }
+        }
+        if (urlParams.has('page')) {
+            const pg = parseInt(urlParams.get('page'), 10);
+            if (!isNaN(pg) && pg >= 1) {
+                currentPage = pg;
+            }
+        }
+    }
+
+    function renderPagination(pagination) {
+        totalPages = pagination.num_pages || 1;
+        currentPage = pagination.page || 1;
+
+        $('#btn-prev-page').prop('disabled', !pagination.has_previous);
+        $('#btn-next-page').prop('disabled', !pagination.has_next);
+
+        const group = $('#page-numbers-group');
+        group.empty();
+
+        let startPage = 1;
+        let endPage = totalPages;
+
+        if (totalPages > 5) {
+            startPage = Math.max(1, currentPage - 2);
+            endPage = Math.min(totalPages, startPage + 4);
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const btn = $('<button>', {
+                type: 'button',
+                class: 'page-num-btn' + (i === currentPage ? ' active' : ''),
+                text: i
+            });
+            btn.click(function() {
+                if (i !== currentPage) {
+                    loadWorkOrders(i);
+                }
+            });
+            group.append(btn);
+        }
+    }
+
+    function renderTable(workOrders) {
+        const tbody = $('#wo-table tbody');
+        tbody.empty();
+
+        if (!workOrders || workOrders.length === 0) {
+            tbody.html('<tr><td colspan="12" class="text-center text-muted" style="padding: 2.5rem;">No work orders found matching the criteria.</td></tr>');
             return;
         }
-        
-        const btn = $('#btn-view');
-        const orig = btn.html();
-        btn.html('<i class="spinner-border spinner-border-sm"></i>').prop('disabled', true);
-        
-        $.ajax({
-            url: "{% url 'lab:api_work_orders_list' %}",
-            data: {
-                from_date: $('#f_from_date').val(),
-                to_date: $('#f_to_date').val(),
-                department_id: $('#f_dept').val(),
-                patient_type: $('#f_type').val(),
-                status: $('#f_status').val(),
-                search: $('#f_search').val()
-            },
-            success: function(res) {
-                const tbody = $('#wo-table tbody');
-                tbody.empty();
-                allWorkOrders = res.work_orders || [];
-                
-                if(allWorkOrders.length > 0) {
-                    allWorkOrders.forEach((wo) => {
 
-                        const tr = $(`
-                            <tr data-id="${wo.id}" onclick="window.location.href='/lab/work-orders/${wo.id}/';">
-                                <td>${wo.s_no}</td>
-                                <td style="font-weight: 600;"><a href="/lab/work-orders/${wo.id}/" style="color: var(--text-main); text-decoration: none;">#${wo.id}</a></td>
-                                <td style="color: var(--text-muted);">SR-${wo.id}</td>
-                                <td><a href="/lab/work-orders/${wo.id}/" style="color: var(--primary-blue); font-weight: 600; text-decoration: underline;">${wo.patient_id}</a></td>
-                                <td style="font-weight: 500;">${wo.patient_name}</td>
-                                <td>${wo.patient_type === 'D' ? '<span style="color:var(--warning-text);font-weight:600;">D</span>' : 'O'}</td>
-                                <td style="font-weight: 600;">${wo.sample_id}</td>
-                                <td>${wo.request_date}</td>
-                                <td>${wo.request_date}</td>
-                                <td>${wo.test_count || '-'}</td>
-                                <td><span class="status-badge status-${wo.status}">${wo.status}</span></td>
-                            </tr>
-                        `);
-                        tbody.append(tr);
-                    });
-                } else {
-                    tbody.html('<tr><td colspan="11" class="text-center text-muted" style="padding: 2rem;">No work orders found.</td></tr>');
-                }
-            },
-            complete: function() { btn.html(orig).prop('disabled', false); }
+        workOrders.forEach(wo => {
+            const tr = $('<tr>', { class: 'status-' + (wo.status || 'PENDING') });
+            tr.append($('<td class="col-sno" style="text-align: center;">').text(wo.s_no));
+
+            const patientIdTd = $('<td class="col-pid" style="text-align: center; white-space: nowrap;">');
+            const patientLink = $('<a>', {
+                href: '/lab/work-orders/' + wo.id + '/',
+                class: 'patient-id-link',
+                text: wo.patient_id
+            });
+            patientIdTd.append(patientLink);
+            tr.append(patientIdTd);
+
+            tr.append($('<td class="col-pname" style="text-align: left; font-weight: 500;">').text(wo.patient_name || '-'));
+            tr.append($('<td class="col-vno" style="text-align: center;">').text(wo.v_no || '-'));
+            tr.append($('<td class="col-age" style="text-align: center;">').text(wo.age || '--'));
+            tr.append($('<td class="col-vtype" style="text-align: center;">').text(wo.v_type || 'OP'));
+            tr.append($('<td class="col-sampleid" style="text-align: center;">').text(wo.sample_id || '-'));
+            tr.append($('<td class="col-voucher" style="text-align: center;">').text(wo.voucher_no || '-'));
+            tr.append($('<td class="col-amount" style="text-align: right;">').text(wo.amount || '-'));
+            tr.append($('<td class="col-billtime" style="text-align: center;">').text(wo.bill_time || '-'));
+            tr.append($('<td class="col-sampledt" style="text-align: center;">').text(wo.sample_dt || '-'));
+            tr.append($('<td class="col-ipno" style="text-align: center;">').text(wo.ipno || '--'));
+
+            tbody.append(tr);
         });
     }
 
-    // Bind triggers
-    $('#btn-view').click(loadWorkOrders);
-    $('#f_from_date, #f_to_date, #f_dept, #f_type, #f_status').change(loadWorkOrders);
-    
-    $('#btn-clear-from-date').click(function() {
-        $('#f_from_date').val('');
-        loadWorkOrders();
-    });
-    $('#btn-clear-to-date').click(function() {
-        $('#f_to_date').val('');
-        loadWorkOrders();
-    });
-    
-    // Initial Load
-    loadWorkOrders();
+    function loadWorkOrders(pageToLoad) {
+        if (pageToLoad !== undefined) {
+            currentPage = pageToLoad;
+        }
+        const params = getFilterValues();
+        syncUrl(params);
 
+        const btn = $('#btn-view-all');
+        const origHtml = btn.html();
+        btn.html('<i class="spinner-border spinner-border-sm" style="width: 1rem; height: 1rem;"></i> View All').prop('disabled', true);
+
+        $.ajax({
+            url: "{% url 'lab:api_work_orders_list' %}",
+            data: params,
+            success: function(res) {
+                renderTable(res.work_orders);
+                if (res.pagination) {
+                    renderPagination(res.pagination);
+                }
+            },
+            error: function() {
+                $('#wo-table tbody').html('<tr><td colspan="12" class="text-center text-danger" style="padding: 2rem;">Error loading work orders. Please try again.</td></tr>');
+            },
+            complete: function() {
+                btn.html(origHtml).prop('disabled', false);
+            }
+        });
+    }
+
+    // Toggle Sort Direction
+    $('#btn-sort-dir').click(function() {
+        currentSortDir = (currentSortDir === 'asc' ? 'desc' : 'asc');
+        $('#sort-dir-icon').text(currentSortDir === 'desc' ? '↓' : '↑');
+        loadWorkOrders(1);
+    });
+
+    // Sort Field Change
+    $('#f_sort_by').change(function() {
+        loadWorkOrders(1);
+    });
+
+    // Page Size Change
+    $('#per-page-select').change(function() {
+        currentPerPage = parseInt($(this).val(), 10) || 100;
+        loadWorkOrders(1);
+    });
+
+    // Prev / Next Navigation
+    $('#btn-prev-page').click(function() {
+        if (currentPage > 1) {
+            loadWorkOrders(currentPage - 1);
+        }
+    });
+
+    $('#btn-next-page').click(function() {
+        if (currentPage < totalPages) {
+            loadWorkOrders(currentPage + 1);
+        }
+    });
+
+    // Search Patient ID button
+    $('#btn-search-pid').click(function() {
+        loadWorkOrders(1);
+    });
+
+    // View All button
+    $('#btn-view-all').click(function() {
+        loadWorkOrders(1);
+    });
+
+    // Filter changes auto-reload
+    $('#f_department, #f_report_status, #f_visit_type, #f_patient_type, #f_service_type, #f_sample, #f_doctor').change(function() {
+        loadWorkOrders(1);
+    });
+
+    // Enter key triggers load
+    $('#f_patient_id, #f_sample_id, #f_search_name, #f_from_date, #f_to_date').on('keypress', function(e) {
+        if (e.which === 13) {
+            loadWorkOrders(1);
+        }
+    });
+
+    // Popstate back/forward navigation
+    window.addEventListener('popstate', function() {
+        initFromUrl();
+        loadWorkOrders(currentPage);
+    });
+
+    // Initial Load
+    initFromUrl();
+    loadWorkOrders(currentPage);
 });
 </script>
 {% endblock %}

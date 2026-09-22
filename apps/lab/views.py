@@ -2063,41 +2063,111 @@ class WorkOrdersView(LoginRequiredMixin, GranularPermissionRequiredMixin, Templa
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         from apps.patients.models import Department
+        from apps.lab.models import SampleType, ServiceRequest
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
         context['departments'] = Department.objects.filter(is_active=True).order_by('name')
-        from apps.lab.models import ServiceRequestInvestigation
-        context['statuses'] = ServiceRequestInvestigation.StatusChoices.choices
-        from django.utils import timezone
-        from datetime import timedelta
-        context['default_from_date'] = (timezone.localdate() - timedelta(days=6)).strftime('%Y-%m-%d')
-        context['default_to_date'] = timezone.localdate().strftime('%Y-%m-%d')
+        context['sample_types'] = SampleType.objects.filter(is_active=True).order_by('name')
+
+        doctor_names = set(User.objects.filter(is_active=True).values_list('username', flat=True))
+        for name in ServiceRequest.objects.exclude(consultant_name__isnull=True).exclude(consultant_name='').values_list('consultant_name', flat=True).distinct():
+            if name:
+                doctor_names.add(name)
+        context['doctors'] = sorted(list(doctor_names))
         return context
 
 @login_required
 def api_work_orders_list(request):
-    from_date, to_date = get_default_date_range(request, 'from_date', 'to_date')
-    department_id = request.GET.get('department_id')
-    patient_type = request.GET.get('patient_type')
-    status = request.GET.get('status')
+    from apps.lab.models import ServiceRequest, ServiceRequestInvestigation
+    from django.db.models import Exists, OuterRef, Case, When, Value, CharField, Q
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+    # Pagination parameters
+    try:
+        per_page = int(request.GET.get('per_page', 100))
+        if per_page not in [100, 500, 1000]:
+            per_page = 100
+    except (ValueError, TypeError):
+        per_page = 100
+
+    try:
+        page_num = int(request.GET.get('page', 1))
+        if page_num < 1:
+            page_num = 1
+    except (ValueError, TypeError):
+        page_num = 1
+
+    # Filter parameters
+    from_date = request.GET.get('from_date', '').strip()
+    to_date = request.GET.get('to_date', '').strip()
+    department_id = request.GET.get('department_id') or request.GET.get('department')
+    patient_type = request.GET.get('patient_type', '').strip()
+    status = request.GET.get('status', '').strip()
+    visit_type = request.GET.get('visit_type', '').strip()
+    sample = request.GET.get('sample', '').strip()
+    sample_id = request.GET.get('sample_id', '').strip()
+    search_name = request.GET.get('search_name', '').strip()
+    doctor = request.GET.get('doctor', '').strip()
+    sort_by = request.GET.get('sort_by', 'patient_id').strip()
+    sort_dir = request.GET.get('sort_dir', 'asc').strip().lower()
+    patient_id = request.GET.get('patient_id', '').strip()
     search = request.GET.get('search', '').strip()
 
-    from apps.lab.models import ServiceRequest
-    from django.db.models import Prefetch, Q
-    
-    qs = ServiceRequest.objects.filter(investigations__is_removed=False).distinct().select_related(
-        'patient', 'department'
-    ).prefetch_related(
-        'investigations'
-    ).order_by('-request_date', '-id')
+    # Base query with SQL status annotation following aggregate business rule
+    sub_completed = Exists(ServiceRequestInvestigation.objects.filter(service_request=OuterRef('pk'), is_removed=False, status='COMPLETED'))
+    sub_received = Exists(ServiceRequestInvestigation.objects.filter(service_request=OuterRef('pk'), is_removed=False, status='RECEIVED'))
+    sub_rejected = Exists(ServiceRequestInvestigation.objects.filter(service_request=OuterRef('pk'), is_removed=False, status='REJECTED'))
+    sub_pending = Exists(ServiceRequestInvestigation.objects.filter(service_request=OuterRef('pk'), is_removed=False, status='PENDING'))
 
+    qs = ServiceRequest.objects.filter(investigations__is_removed=False).distinct().select_related(
+        'patient', 'department', 'consultant'
+    ).annotate(
+        has_completed=sub_completed,
+        has_received=sub_received,
+        has_rejected=sub_rejected,
+        has_pending=sub_pending,
+        computed_status=Case(
+            When(Q(has_completed=True) & Q(has_pending=False) & Q(has_received=False) & Q(has_rejected=False), then=Value('COMPLETED')),
+            When(Q(has_received=True) | Q(has_completed=True), then=Value('RECEIVED')),
+            When(has_rejected=True, then=Value('REJECTED')),
+            default=Value('PENDING'),
+            output_field=CharField()
+        )
+    )
+
+    # Apply database-level filters
     if from_date:
         qs = qs.filter(request_date__gte=from_date)
     if to_date:
         qs = qs.filter(request_date__lte=to_date)
-    if department_id:
+    if department_id and department_id != 'ALL':
         qs = qs.filter(department_id=department_id)
-    if patient_type and patient_type != 'A':
+    if patient_type and patient_type != 'ALL':
         qs = qs.filter(patient__patient_type=patient_type)
-        
+    if status and status != 'ALL':
+        qs = qs.filter(computed_status=status)
+    if visit_type and visit_type != 'ALL':
+        if visit_type == 'IP':
+            qs = qs.filter(visit_type__in=['IP', 'INPATIENT'])
+        else:
+            qs = qs.filter(visit_type=visit_type)
+    if sample and sample != 'ALL':
+        if sample.isdigit():
+            qs = qs.filter(investigations__investigation__sample_type_id=sample)
+        else:
+            qs = qs.filter(investigations__investigation__sample_type__name__iexact=sample)
+    if sample_id:
+        qs = qs.filter(sample_id__icontains=sample_id)
+    if search_name:
+        qs = qs.filter(patient__name__icontains=search_name)
+    if doctor and doctor != 'ALL':
+        if doctor.isdigit():
+            qs = qs.filter(Q(consultant_id=doctor) | Q(consultant_name__icontains=doctor) | Q(patient__unit_doctor__icontains=doctor))
+        else:
+            qs = qs.filter(Q(consultant__username__icontains=doctor) | Q(consultant_name__icontains=doctor) | Q(patient__unit_doctor__icontains=doctor))
+    if patient_id:
+        qs = qs.filter(patient__patient_id__icontains=patient_id)
     if search:
         qs = qs.filter(
             Q(patient__patient_id__icontains=search) |
@@ -2106,42 +2176,76 @@ def api_work_orders_list(request):
             Q(receipt_no__icontains=search)
         )
 
+    # Sorting
+    prefix = '-' if sort_dir == 'desc' else ''
+    if sort_by == 'patient_id':
+        qs = qs.order_by(f"{prefix}patient__patient_id", '-id')
+    elif sort_by == 'patient_name':
+        qs = qs.order_by(f"{prefix}patient__name", '-id')
+    elif sort_by == 'voucher_no':
+        qs = qs.order_by(f"{prefix}receipt_no", f"{prefix}id")
+    else:
+        qs = qs.order_by('-request_date', '-id')
+
+    # Django database pagination
+    paginator = Paginator(qs, per_page)
+    try:
+        page_obj = paginator.page(page_num)
+    except (EmptyPage, PageNotAnInteger):
+        page_obj = paginator.page(1)
+        page_num = 1
+
+    start_index = page_obj.start_index() if paginator.count > 0 else 0
     data = []
-    for sr in qs[:200]: # Reasonable limit for UI
-        invs = [inv for inv in sr.investigations.all() if not inv.is_removed]
-        if not invs:
-            continue
-            
-        statuses = [inv.status for inv in invs]
-        
-        if all(s == 'COMPLETED' for s in statuses) or any(s == 'COMPLETED' for s in statuses):
-            sr_status = 'COMPLETED'
-        elif all(s in ['RECEIVED', 'COMPLETED'] for s in statuses):
-            sr_status = 'RECEIVED'
+    for idx, sr in enumerate(page_obj.object_list):
+        voucher_no = sr.receipt_no
+        if not voucher_no:
+            date_part = sr.request_date.strftime('%y%m%d') if sr.request_date else sr.created_at.strftime('%y%m%d')
+            voucher_no = f"VCH{date_part}{sr.id:03d}"
+
+        bill_time = sr.created_at.strftime('%I:%M:%S %p') if sr.created_at else '-'
+        sample_dt = sr.request_date.strftime('%d/%b/%Y') if sr.request_date else '-'
+        ipno = sr.patient.ipno if getattr(sr.patient, 'ipno', None) else '--'
+
+        amount_val = getattr(sr, 'amount', None)
+        if amount_val is not None:
+            amount_str = f"{float(amount_val):.2f}"
         else:
-            sr_status = 'PENDING'
-            
-        if status and status != 'ALL' and sr_status != status:
-            continue
-            
+            amount_str = '-'
+
+        v_no = sr.visit_no if sr.visit_no else 1
+        age = sr.patient.age_years if sr.patient.age_years is not None else '--'
+        v_type = 'IP' if sr.visit_type in ['IP', 'INPATIENT'] else 'OP'
+
         data.append({
-            's_no': len(data) + 1,
+            's_no': start_index + idx,
             'id': sr.id,
-            'sample_id': sr.sample_id or '-',
             'patient_id': sr.patient.patient_id,
             'patient_name': sr.patient.name,
-            'patient_type': sr.patient.patient_type,
-            'age_gender': f"{sr.patient.age_years} / {sr.patient.gender}",
-            'department': sr.department.name if sr.department else '-',
-            'visit_type': sr.get_visit_type_display(),
-            'request_date': sr.request_date.strftime('%d/%b/%Y') if sr.request_date else '-',
-            'amount': '-',
-            'voucher_no': sr.receipt_no or '-',
-            'status': sr_status,
-            'test_count': len(invs),
+            'v_no': v_no,
+            'age': age,
+            'v_type': v_type,
+            'sample_id': sr.sample_id or '-',
+            'voucher_no': voucher_no,
+            'amount': amount_str,
+            'bill_time': bill_time,
+            'sample_dt': sample_dt,
+            'ipno': ipno,
+            'status': getattr(sr, 'computed_status', 'PENDING')
         })
-        
-    return JsonResponse({'work_orders': data})
+
+    return JsonResponse({
+        'status': 'success',
+        'work_orders': data,
+        'pagination': {
+            'page': page_obj.number,
+            'num_pages': paginator.num_pages,
+            'total_records': paginator.count,
+            'per_page': per_page,
+            'has_previous': page_obj.has_previous(),
+            'has_next': page_obj.has_next()
+        }
+    })
 
 class WorkOrderDetailView(LoginRequiredMixin, GranularPermissionRequiredMixin, DetailView):
     permission_required = 'lab_orders.work_orders.view'
@@ -2155,9 +2259,11 @@ class WorkOrderDetailView(LoginRequiredMixin, GranularPermissionRequiredMixin, D
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         from apps.lab.models import ServiceRequestInvestigation
+        from apps.lab.services.work_order_service import get_overall_sample_status
         context['investigations'] = self.object.investigations.filter(is_removed=False).select_related(
             'investigation', 'investigation__department', 'investigation__sample_type', 'received_by'
         )
+        context['overall_status'] = get_overall_sample_status(self.object)
         return context
 
 @login_required
@@ -2201,186 +2307,342 @@ class WorkOrderResultEntryView(LoginRequiredMixin, GranularPermissionRequiredMix
     permission_required = 'lab_orders.work_orders.view'
     template_name = 'lab/orders/work_order_result_entry.html'
     context_object_name = 'wo'
-    
+
     def get_queryset(self):
         from apps.lab.models import ServiceRequestInvestigation
         return ServiceRequestInvestigation.objects.select_related(
             'service_request',
             'service_request__patient',
             'service_request__department',
+            'service_request__consultant',
             'investigation',
-            'investigation__sample_type'
+            'investigation__sample_type',
+            'verified_by'
         )
-    
+
+    def get_object(self, queryset=None):
+        pk = self.kwargs.get(self.pk_url_kwarg)
+        from apps.lab.models import ServiceRequestInvestigation, ServiceRequest
+        inv = ServiceRequestInvestigation.objects.filter(id=pk).select_related(
+            'service_request', 'service_request__patient', 'service_request__department',
+            'service_request__consultant', 'investigation', 'investigation__sample_type', 'verified_by'
+        ).first()
+        if inv:
+            return inv
+        sr = ServiceRequest.objects.filter(id=pk).first()
+        if sr:
+            first_inv = sr.investigations.filter(is_removed=False).order_by('id').first()
+            if first_inv:
+                return first_inv
+        return super().get_object(queryset)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         wo = self.object
-        patient = wo.service_request.patient
-        
-        # Calculate patient age in days
-        patient_age_days = (patient.age_years * 365) + (patient.age_months * 30) + patient.age_days
-        
-        from apps.lab.models import InvestigationParameter, ParameterReferenceRange, AgeGroup
-        
-        parameters = InvestigationParameter.objects.filter(
-            investigation=wo.investigation,
-            is_active=True
-        ).select_related('parameter').order_by('display_order')
-        
-        age_groups = AgeGroup.objects.filter(is_active=True).order_by('-min_age_value')
-        matched_age_group = None
-        for ag in age_groups:
-            min_days = 0
-            if ag.min_age_unit == 'Years': min_days = (ag.min_age_value or 0) * 365
-            elif ag.min_age_unit == 'Months': min_days = (ag.min_age_value or 0) * 30
-            else: min_days = ag.min_age_value or 0
-            
-            max_days = float('inf')
-            if ag.max_age_value is not None:
-                if ag.max_age_unit == 'Years': max_days = ag.max_age_value * 365
-                elif ag.max_age_unit == 'Months': max_days = ag.max_age_value * 30
-                else: max_days = ag.max_age_value
-            
-            if min_days <= patient_age_days <= max_days:
-                if ag.gender == 'All' or ag.gender == patient.gender:
-                    matched_age_group = ag
-                    break
-                    
-        if not matched_age_group:
-            matched_age_group = AgeGroup.objects.filter(label__icontains='Adult').first()
-            
-        # Get existing saved results
-        from apps.lab.models import ServiceRequestResult
-        saved_results_map = {
-            r.investigation_parameter_id: r
-            for r in ServiceRequestResult.objects.filter(sr_investigation=wo)
-        }
+        service_request = wo.service_request
+        patient = service_request.patient
 
-        param_data = []
-        for ip in parameters:
-            ref_range = None
-            if matched_age_group:
-                ref_range = ParameterReferenceRange.objects.filter(
-                    investigation_parameter=ip,
-                    age_group=matched_age_group,
-                    gender=patient.gender
-                ).first()
-                if not ref_range:
-                    ref_range = ParameterReferenceRange.objects.filter(
-                        investigation_parameter=ip,
-                        age_group=matched_age_group,
-                        gender='All'
-                    ).first()
-            
-            test_code = ip.code if ip.code else (ip.parameter.code if ip.parameter else "-")
-            if test_code == "-" and wo.investigation:
-                test_code = wo.investigation.legacy_code if wo.investigation.legacy_code else wo.investigation.code
-            
-            test_name = ip.name if ip.name else (ip.parameter.name if ip.parameter else "-")
-            
-            unit = "-"
-            if ref_range and ref_range.unit: unit = ref_range.unit
-            elif ip.unit: unit = ip.unit
-            elif ip.parameter and hasattr(ip.parameter, 'default_unit') and ip.parameter.default_unit: unit = ip.parameter.default_unit
-            
-            ref_text = "Not Available"
-            if ref_range and ref_range.reference_text: ref_text = ref_range.reference_text
-            elif ip.reference_range: ref_text = ip.reference_range
-            elif ref_range and ref_range.min_value is not None and ref_range.max_value is not None:
-                ref_text = f"{ref_range.min_value} - {ref_range.max_value}"
-                
-            sample_type = "Not Specified"
-            if wo.investigation and wo.investigation.sample_type:
-                sample_type = wo.investigation.sample_type.name
-                
-            method = "Not Specified"
-            if ip.parameter and hasattr(ip.parameter, 'method') and ip.parameter.method:
-                method = ip.parameter.method
-            elif 'HGB' in str(test_code).upper() or 'HEMOGLOBIN' in str(test_name).upper():
-                method = 'Colorimetric'
-            elif 'COUNT' in str(test_name).upper() or 'WBC' in str(test_code).upper():
-                method = 'Laser Flow'
-            else:
-                method = 'Calculated'
-            
-            existing_res = saved_results_map.get(ip.id)
-            existing_val = existing_res.result_value if existing_res else ''
-            existing_rem = existing_res.remarks if existing_res else ''
-            
-            param_data.append({
-                'ip': ip,
-                'parameter': ip.parameter,
-                'test_code': test_code,
-                'test_name': test_name,
-                'ref_range': ref_range,
-                'unit': unit,
-                'reference_text': ref_text,
-                'min_value': ref_range.min_value if ref_range else None,
-                'max_value': ref_range.max_value if ref_range else None,
-                'method': method,
-                'sample_type': sample_type,
-                'existing_val': existing_val,
-                'existing_rem': existing_rem
-            })
-            
-        # Get diagnosis from service request
+        from apps.lab.services.work_order_service import (
+            get_overall_sample_status,
+            get_investigation_parameter_details
+        )
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        # All investigations for this patient / service request
+        all_invs = list(service_request.investigations.filter(is_removed=False).select_related(
+            'investigation', 'investigation__sample_type'
+        ).order_by('id'))
+
+        # Prepare parameter details for the selected investigation
+        details = get_investigation_parameter_details(wo, patient)
+
+        # Diagnoses text
         diagnosis_texts = []
-        for d in wo.service_request.diagnoses.all():
-            if d.diagnosis: diagnosis_texts.append(d.diagnosis.name)
-            elif d.chief_complaint: diagnosis_texts.append(d.chief_complaint.name)
-            
-        context['diagnosis_text'] = ", ".join(diagnosis_texts) if diagnosis_texts else "Not Added"
-        context['parameters'] = parameters
-        context['param_data'] = param_data
-        context['matched_age_group'] = matched_age_group
+        for d in service_request.diagnoses.all():
+            if d.diagnosis:
+                diagnosis_texts.append(d.diagnosis.name)
+            elif d.chief_complaint:
+                diagnosis_texts.append(d.chief_complaint.name)
+
+        completed_count = sum(1 for inv in all_invs if inv.status == 'COMPLETED')
+        received_count = sum(1 for inv in all_invs if inv.status == 'RECEIVED')
+        overall_status = get_overall_sample_status(service_request)
+
+        # Doctor display name
+        doc_name = '-'
+        if service_request.consultant:
+            doc_name = service_request.consultant.get_full_name() or service_request.consultant.username
+        elif service_request.consultant_name:
+            doc_name = service_request.consultant_name
+        elif patient.unit_doctor:
+            doc_name = patient.unit_doctor
+
+        from apps.lab.services.work_order_service import (
+            get_investigation_test_code,
+            get_investigation_grpi,
+            get_investigation_grp,
+            get_or_create_doc_no
+        )
+
+        # Enrich all_invs with display attributes for the 9-column hospital laboratory table
+        for idx, inv in enumerate(all_invs, 1):
+            inv.s_no = idx
+            # Req Status: R = Received or Completed, P = Pending
+            inv.req_status = 'R' if inv.status in ('RECEIVED', 'COMPLETED') else 'P'
+            inv.doctor_display = doc_name
+            inv.doc_no_display = get_or_create_doc_no(inv)
+            inv.test_code_display = get_investigation_test_code(inv.investigation)
+            inv.grpi_display = get_investigation_grpi(inv.investigation)
+            inv.grp_display = get_investigation_grp(inv.investigation)
+            inv.is_current = (inv.id == wo.id)
+
+        diagnosis_val = ", ".join(diagnosis_texts) if diagnosis_texts else ""
+        clinical_remarks_val = service_request.clinical_remarks or ""
+
+        context.update({
+            'service_request': service_request,
+            'patient': patient,
+            'all_investigations': all_invs,
+            'selected_inv': wo,
+            'overall_status': overall_status,
+            'completed_count': completed_count,
+            'received_count': received_count,
+            'can_print_selected': (wo.status == 'COMPLETED'),
+            'can_print_all': (completed_count > 0),
+            'diagnosis_text': diagnosis_val,
+            'clinical_remarks': clinical_remarks_val,
+            'parameters': details['parameters'],
+            'param_data': details['param_data'],
+            'matched_age_group': details['matched_age_group'],
+            'verified_by_users': User.objects.filter(is_active=True).order_by('first_name', 'username'),
+            'doctor_name': doc_name
+        })
         return context
 
 @login_required
 @require_POST
 def api_work_order_save_result(request, pk):
-    from apps.lab.models import ServiceRequestInvestigation, ServiceRequestResult, InvestigationParameter, ServiceRequest
+    from apps.lab.models import (
+        ServiceRequestInvestigation,
+        ServiceRequestResult,
+        InvestigationParameter,
+        ServiceRequest,
+        ServiceRequestResultAudit,
+        ServiceRequestDiagnosis,
+        Diagnosis
+    )
+    from apps.lab.services.work_order_service import (
+        get_overall_sample_status,
+        get_next_received_investigation,
+        get_investigation_parameter_details,
+        get_or_create_doc_no
+    )
     wo = get_object_or_404(ServiceRequestInvestigation, id=pk)
-        
+
     try:
         data = json.loads(request.body)
         results = data.get('results', [])
-        complete = data.get('complete', False)
-        
+        verified_by_id = data.get('verified_by_id')
+        new_diagnosis = data.get('diagnosis')
+        new_clinical_remarks = data.get('clinical_remarks')
+
+        # If client requests updating metadata only (Diagnosis or Clinical Remarks)
+        if data.get('only_metadata'):
+            with transaction.atomic():
+                if new_clinical_remarks is not None:
+                    wo.service_request.clinical_remarks = str(new_clinical_remarks).strip()
+                    wo.service_request.save(update_fields=['clinical_remarks'])
+                if new_diagnosis is not None:
+                    diag_str = str(new_diagnosis).strip()
+                    if diag_str:
+                        diag_obj = Diagnosis.objects.filter(name__iexact=diag_str).first()
+                        if not diag_obj:
+                            diag_obj = Diagnosis.objects.create(name=diag_str)
+                        srd = ServiceRequestDiagnosis.objects.filter(service_request=wo.service_request).first()
+                        if srd:
+                            srd.diagnosis = diag_obj
+                            srd.chief_complaint = None
+                            srd.save(update_fields=['diagnosis', 'chief_complaint'])
+                        else:
+                            ServiceRequestDiagnosis.objects.create(
+                                service_request=wo.service_request,
+                                diagnosis=diag_obj
+                            )
+                    else:
+                        ServiceRequestDiagnosis.objects.filter(service_request=wo.service_request).delete()
+            return JsonResponse({'status': 'success', 'message': 'Details updated successfully.'})
+
+        # Parameter validation: check that all actual editable parameters have entered values
+        details = get_investigation_parameter_details(wo)
+        entered_map = {
+            str(res.get('parameter_id')): (str(res.get('value', '')).strip() if res.get('value') is not None else '')
+            for res in results
+        }
+
+        missing_names = []
+        for p in details['param_data']:
+            if p['is_editable']:
+                param_id_str = str(p['ip'].id)
+                val = entered_map.get(param_id_str, '')
+                if val == '':
+                    missing_names.append(p['test_name'])
+
+        if missing_names:
+            msg = "Cannot save.\n\nPlease enter results for:\n" + "\n".join([f"• {name}" for name in missing_names])
+            return JsonResponse({
+                'status': 'error',
+                'message': msg,
+                'missing_parameters': missing_names
+            }, status=400)
+
         with transaction.atomic():
+            # Update diagnosis and clinical remarks if provided
+            if new_clinical_remarks is not None:
+                wo.service_request.clinical_remarks = str(new_clinical_remarks).strip()
+                wo.service_request.save(update_fields=['clinical_remarks'])
+            if new_diagnosis is not None:
+                diag_str = str(new_diagnosis).strip()
+                if diag_str:
+                    diag_obj = Diagnosis.objects.filter(name__iexact=diag_str).first()
+                    if not diag_obj:
+                        diag_obj = Diagnosis.objects.create(name=diag_str)
+                    srd = ServiceRequestDiagnosis.objects.filter(service_request=wo.service_request).first()
+                    if srd:
+                        srd.diagnosis = diag_obj
+                        srd.chief_complaint = None
+                        srd.save(update_fields=['diagnosis', 'chief_complaint'])
+                    else:
+                        ServiceRequestDiagnosis.objects.create(
+                            service_request=wo.service_request,
+                            diagnosis=diag_obj
+                        )
+                else:
+                    ServiceRequestDiagnosis.objects.filter(service_request=wo.service_request).delete()
+
             for res in results:
                 param_id = res.get('parameter_id')
-                val = res.get('value')
-                remarks = res.get('remarks', '')
-                if val is None or val == '':
+                val = str(res.get('value', '')).strip()
+                remarks = str(res.get('remarks', '')).strip()
+                if val == '':
                     continue
-                    
+
                 ip = InvestigationParameter.objects.get(id=param_id, investigation=wo.investigation)
-                
-                ServiceRequestResult.objects.update_or_create(
+
+                existing_res = ServiceRequestResult.objects.filter(
                     sr_investigation=wo,
-                    investigation_parameter=ip,
-                    defaults={
-                        'result_value': val,
-                        'remarks': remarks,
-                        'entered_by': request.user
-                    }
-                )
-            
-            if complete:
-                wo.status = ServiceRequestInvestigation.StatusChoices.COMPLETED
-                wo.completed_date = timezone.now()
-                wo.completed_by = request.user
-                wo.save()
-                
-                # Check if all active investigations for this service request are completed
-                remaining = wo.service_request.investigations.filter(is_removed=False).exclude(status=ServiceRequestInvestigation.StatusChoices.COMPLETED)
-                if not remaining.exists():
-                    wo.service_request.status = ServiceRequest.StatusChoices.COMPLETED
-                    wo.service_request.save()
-            
-        return JsonResponse({'status': 'success', 'order_id': wo.service_request.id})
+                    investigation_parameter=ip
+                ).first()
+
+                if existing_res:
+                    if existing_res.result_value != val:
+                        # Record modification in audit log
+                        ServiceRequestResultAudit.objects.create(
+                            service_request=wo.service_request,
+                            sr_investigation=wo,
+                            investigation_parameter=ip,
+                            old_value=existing_res.result_value,
+                            new_value=val,
+                            modified_by=request.user
+                        )
+                    existing_res.result_value = val
+                    existing_res.remarks = remarks
+                    existing_res.entered_by = request.user
+                    existing_res.save()
+                else:
+                    ServiceRequestResult.objects.create(
+                        sr_investigation=wo,
+                        investigation_parameter=ip,
+                        result_value=val,
+                        remarks=remarks,
+                        entered_by=request.user
+                    )
+
+            if verified_by_id:
+                wo.verified_by_id = verified_by_id
+
+            wo.status = ServiceRequestInvestigation.StatusChoices.COMPLETED
+            wo.completed_date = timezone.now()
+            wo.completed_by = request.user
+            # Ensure doc_no is assigned
+            if not wo.doc_no:
+                get_or_create_doc_no(wo)
+            wo.save()
+
+            # Recalculate parent service request overall status
+            overall_st = get_overall_sample_status(wo.service_request)
+            if overall_st == 'COMPLETED':
+                wo.service_request.status = ServiceRequest.StatusChoices.COMPLETED
+                wo.service_request.save()
+
+            # Identify the next RECEIVED investigation
+            next_received = get_next_received_investigation(wo.service_request, current_id=wo.id)
+
+        return JsonResponse({
+            'status': 'success',
+            'order_id': wo.service_request.id,
+            'saved_id': wo.id,
+            'saved_name': wo.investigation.name,
+            'doc_no': wo.doc_no,
+            'overall_status': overall_st,
+            'next_received_id': next_received.id if next_received else None,
+            'next_received_name': next_received.investigation.name if next_received else None,
+            'all_completed': (overall_st == 'COMPLETED'),
+            'has_next_received': (next_received is not None)
+        })
     except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)})
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@login_required
+def api_work_order_investigation_params(request, pk):
+    from apps.lab.models import ServiceRequestInvestigation
+    from apps.lab.services.work_order_service import (
+        get_investigation_parameter_details,
+        get_overall_sample_status
+    )
+    wo = get_object_or_404(ServiceRequestInvestigation, id=pk)
+    details = get_investigation_parameter_details(wo)
+
+    service_request = wo.service_request
+    completed_count = service_request.investigations.filter(is_removed=False, status='COMPLETED').count()
+
+    return JsonResponse({
+        'status': 'success',
+        'investigation': {
+            'id': wo.id,
+            'name': wo.investigation.name,
+            'code': wo.investigation.legacy_code or wo.investigation.code,
+            'status': wo.status,
+            'sample_type': wo.investigation.sample_type.name if wo.investigation.sample_type else 'Not Specified',
+            'is_completed': (wo.status == ServiceRequestInvestigation.StatusChoices.COMPLETED),
+            'verified_by_id': wo.verified_by_id,
+            'verified_by_name': wo.verified_by.get_full_name() or wo.verified_by.username if wo.verified_by else None,
+        },
+        'can_print_selected': (wo.status == ServiceRequestInvestigation.StatusChoices.COMPLETED),
+        'can_print_all': (completed_count > 0),
+        'overall_status': get_overall_sample_status(service_request),
+        'matched_age_group': details['matched_age_group'].label if details['matched_age_group'] else 'Adult',
+        'param_data': [
+            {
+                'ip_id': p['ip'].id,
+                'test_code': p['test_code'],
+                'test_name': p['test_name'],
+                'reference_text': p['reference_text'],
+                'unit': p['unit'],
+                'method': p['method'],
+                'sample_type': p['sample_type'],
+                'existing_val': p['existing_val'],
+                'existing_rem': p['existing_rem'],
+                'min_value': p['min_value'],
+                'max_value': p['max_value'],
+                'is_header': p['is_header'],
+                'is_editable': p['is_editable'],
+                'flag': p['flag']
+            }
+            for p in details['param_data']
+        ]
+    })
 
 
 class WorkOrderPrintPreviewView(LoginRequiredMixin, DetailView):
@@ -2399,6 +2661,10 @@ class WorkOrderPrintPreviewView(LoginRequiredMixin, DetailView):
         )
 
     def get_context_data(self, **kwargs):
+        from apps.lab.models import (
+            InvestigationParameter, ParameterReferenceRange, AgeGroup,
+            ServiceRequestInvestigation, ServiceRequestResult
+        )
         context = super().get_context_data(**kwargs)
         wo = self.object
         service_request = wo.service_request
@@ -2408,13 +2674,25 @@ class WorkOrderPrintPreviewView(LoginRequiredMixin, DetailView):
         header_option = self.request.GET.get('header', 'with')
         nabl_option = self.request.GET.get('nabl', 'both')
 
+        # Filter investigations based on completed-only rule
+        if print_type == 'all':
+            investigations_qs = list(service_request.investigations.filter(
+                is_removed=False,
+                status=ServiceRequestInvestigation.StatusChoices.COMPLETED
+            ).select_related('investigation', 'investigation__sample_type'))
+        else:
+            if wo.status == ServiceRequestInvestigation.StatusChoices.COMPLETED:
+                investigations_qs = [wo]
+            else:
+                investigations_qs = []
+
+        if not investigations_qs:
+            context['no_completed_investigations'] = True
+            context['reports_data'] = []
+            return context
+
         # Patient age calculation
         patient_age_days = (patient.age_years * 365) + (patient.age_months * 30) + patient.age_days
-
-        from apps.lab.models import (
-            InvestigationParameter, ParameterReferenceRange, AgeGroup,
-            ServiceRequestInvestigation, ServiceRequestResult
-        )
 
         age_groups = AgeGroup.objects.filter(is_active=True).order_by('-min_age_value')
         matched_age_group = None
@@ -2423,30 +2701,20 @@ class WorkOrderPrintPreviewView(LoginRequiredMixin, DetailView):
             if ag.min_age_unit == 'Years': min_days = (ag.min_age_value or 0) * 365
             elif ag.min_age_unit == 'Months': min_days = (ag.min_age_value or 0) * 30
             else: min_days = ag.min_age_value or 0
-            
+
             max_days = float('inf')
             if ag.max_age_value is not None:
                 if ag.max_age_unit == 'Years': max_days = ag.max_age_value * 365
                 elif ag.max_age_unit == 'Months': max_days = ag.max_age_value * 30
                 else: max_days = ag.max_age_value
-            
+
             if min_days <= patient_age_days <= max_days:
                 if ag.gender == 'All' or ag.gender == patient.gender:
                     matched_age_group = ag
                     break
-                    
+
         if not matched_age_group:
             matched_age_group = AgeGroup.objects.filter(label__icontains='Adult').first()
-
-        # Decide which investigations to include
-        if print_type == 'all':
-            investigations_qs = list(service_request.investigations.filter(is_removed=False).select_related(
-                'investigation', 'investigation__sample_type'
-            ))
-            if not investigations_qs:
-                investigations_qs = [wo]
-        else:
-            investigations_qs = [wo]
 
         reports_data = []
         overall_sno = 1

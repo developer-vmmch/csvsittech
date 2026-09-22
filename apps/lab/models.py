@@ -177,6 +177,8 @@ class Investigation(TimeStampedModel):
     is_panel = models.BooleanField(default=False, verbose_name="Is Panel (Multi-parameter)")
     turnaround_time_hours = models.PositiveIntegerField(null=True, blank=True, verbose_name="Turnaround Time (Hours)")
     legacy_code = models.CharField(max_length=50, blank=True, null=True, verbose_name="Legacy Code")
+    grpi = models.IntegerField(default=0, verbose_name="Group Index (Grpi)")
+    grp = models.CharField(max_length=10, default='I', choices=[('G', 'Group'), ('I', 'Individual')], verbose_name="Group Type (Grp)")
     is_active = models.BooleanField(default=True, verbose_name="Active Status")
 
     class Meta:
@@ -413,6 +415,7 @@ class ServiceRequest(TimeStampedModel):
     sample_id = models.CharField(max_length=50, unique=True, blank=True)
     receipt_no = models.CharField(max_length=50, blank=True, null=True)
     status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.DRAFT)
+    clinical_remarks = models.TextField(blank=True, null=True, verbose_name="Clinical Remarks")
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_service_requests')
     
     class Meta:
@@ -458,11 +461,13 @@ class ServiceRequestInvestigation(models.Model):
     # Work Order / Processing Tracking
     status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.PENDING)
     result_status = models.CharField(max_length=20, null=True, blank=True, verbose_name="Overall Result Status")
+    doc_no = models.CharField(max_length=50, blank=True, null=True, verbose_name="Doc No")
     received_date = models.DateField(null=True, blank=True)
     received_time = models.TimeField(null=True, blank=True)
     received_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='received_samples')
     completed_date = models.DateTimeField(null=True, blank=True)
     completed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='completed_samples')
+    verified_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='verified_samples')
 
 class ServiceRequestResult(TimeStampedModel):
     sr_investigation = models.ForeignKey(ServiceRequestInvestigation, on_delete=models.CASCADE, related_name='results')
@@ -475,6 +480,20 @@ class ServiceRequestResult(TimeStampedModel):
 
     class Meta:
         unique_together = ('sr_investigation', 'investigation_parameter')
+
+class ServiceRequestResultAudit(TimeStampedModel):
+    service_request = models.ForeignKey(ServiceRequest, on_delete=models.CASCADE, related_name='result_audits')
+    sr_investigation = models.ForeignKey(ServiceRequestInvestigation, on_delete=models.CASCADE, related_name='result_audits')
+    investigation_parameter = models.ForeignKey(InvestigationParameter, on_delete=models.CASCADE, related_name='result_audits')
+    old_value = models.CharField(max_length=255, null=True, blank=True)
+    new_value = models.CharField(max_length=255)
+    modified_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='lab_result_modifications')
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.sr_investigation.investigation.name} - {self.investigation_parameter.name}: {self.old_value} -> {self.new_value}"
 
 class PatientVisitDiagnosis(TimeStampedModel):
     visit = models.ForeignKey('patients.PatientVisit', on_delete=models.CASCADE, related_name='diagnoses')
