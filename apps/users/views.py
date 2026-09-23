@@ -66,12 +66,14 @@ def get_default_landing_url(user):
         ('department_list',         'department_list',          'patients'),
         # Ward
         ('ward',                    'branch_transfer',          'patients'),
-        ('ward_management',         'branch_transfer',          'patients'),
-        ('ward_allocation',         'branch_transfer',          'patients'),
+        ('ward_management',         'ward_list',                'patients'),
+        ('ward_allocation',         'ward_allocation',          'patients'),
+        ('ward_service_request',    'ward_service_request',     'patients'),
         ('ward_transfer',           'branch_transfer',          'patients'),
         # Master / Lab Master
         ('master',                  'department_list',          'patients'),
         ('master_departments',      'department_list',          'patients'),
+        ('master_wards',            'ward_list',                'patients'),
         ('master_investigations',   'investigation_list',       'lab'),
         ('master_parameters',       'parameter_list',           'lab'),
         ('lab_master',              'lab_master_dashboard',     'lab'),
@@ -79,6 +81,7 @@ def get_default_landing_url(user):
         ('lab_sub_departments',     'lab_sub_departments',      'lab'),
         ('investigation_parameter_mapping', 'investigation_parameter_mapping', 'lab'),
         ('workload_mapping_list',   'workload_mapping_list',    'lab'),
+        ('legacy_mapping',          'legacy_mapping',           'lab'),
         # Consultant
         ('consultant',              'doctor_window',            'lab'),
         ('doctor_window',           'doctor_window',            'lab'),
@@ -96,6 +99,9 @@ def get_default_landing_url(user):
         ('auto_trigger',            'auto_trigger_configuration', 'lab'),
         ('auto_trigger_configuration', 'auto_trigger_configuration', 'lab'),
         ('auto_trigger_history',    'auto_trigger_history',     'lab'),
+        ('auto_trigger_atc',        'auto_trigger_atc',         'lab'),
+        ('auto_trigger_atc_status', 'auto_trigger_atc_status',  'lab'),
+        ('auto_trigger_atc_settings', 'auto_trigger_atc_settings', 'lab'),
         # OT
         ('ot',                      'dashboard',                'ot'),
         ('ot_dashboard',            'dashboard',                'ot'),
@@ -313,6 +319,7 @@ class RoleMenuPermissionsView(LoginRequiredMixin, MenuAccessRequiredMixin, View)
             {'key': 'ward', 'label': 'Ward Module Access', 'section': 'WARD MANAGEMENT'},
             {'key': 'ward_management', 'label': 'Ward Management', 'section': 'WARD MANAGEMENT'},
             {'key': 'ward_allocation', 'label': 'Ward Allocation', 'section': 'WARD MANAGEMENT'},
+            {'key': 'ward_service_request', 'label': 'Ward Service Request', 'section': 'WARD MANAGEMENT'},
             {'key': 'ward_transfer', 'label': 'Ward Transfer (Internal)', 'section': 'WARD MANAGEMENT'},
             {'key': 'branch_transfer', 'label': 'Ward Transfer', 'section': 'WARD MANAGEMENT'},
             {'key': 'branch_transfer_report', 'label': 'Ward Transfer Report', 'section': 'WARD MANAGEMENT'},
@@ -320,6 +327,7 @@ class RoleMenuPermissionsView(LoginRequiredMixin, MenuAccessRequiredMixin, View)
             # Master Setup
             {'key': 'master', 'label': 'Master Module Access', 'section': 'MASTER MODULE'},
             {'key': 'master_departments', 'label': 'Hospital Departments', 'section': 'MASTER MODULE'},
+            {'key': 'master_wards', 'label': 'Hospital Wards', 'section': 'MASTER MODULE'},
             {'key': 'master_investigations', 'label': 'Investigations', 'section': 'MASTER MODULE'},
             {'key': 'master_parameters', 'label': 'Parameters', 'section': 'MASTER MODULE'},
             {'key': 'lab_master', 'label': 'Lab Master Access', 'section': 'MASTER MODULE'},
@@ -328,6 +336,7 @@ class RoleMenuPermissionsView(LoginRequiredMixin, MenuAccessRequiredMixin, View)
             {'key': 'investigation_parameter_mapping', 'label': 'Investigation Mapping', 'section': 'MASTER MODULE'},
             {'key': 'workload_mapping_list', 'label': 'Workload Mapping', 'section': 'MASTER MODULE'},
             {'key': 'mapping_validation', 'label': 'Mapping Validation', 'section': 'MASTER MODULE'},
+            {'key': 'legacy_mapping', 'label': 'Universal Import / Export', 'section': 'MASTER MODULE'},
             {'key': 'import_lab_workload_csv', 'label': 'Workload Import', 'section': 'MASTER MODULE'},
             {'key': 'export_lab_workload_csv', 'label': 'Workload Export', 'section': 'MASTER MODULE'},
 
@@ -362,6 +371,9 @@ class RoleMenuPermissionsView(LoginRequiredMixin, MenuAccessRequiredMixin, View)
             {'key': 'auto_trigger_monthly_census', 'label': 'Monthly Census', 'section': 'AUTO TRIGGER'},
             {'key': 'auto_trigger_automate_test', 'label': 'Automate Test', 'section': 'AUTO TRIGGER'},
             {'key': 'auto_trigger_result_view', 'label': 'Result View', 'section': 'AUTO TRIGGER'},
+            {'key': 'auto_trigger_atc', 'label': 'ATC Control', 'section': 'AUTO TRIGGER'},
+            {'key': 'auto_trigger_atc_status', 'label': 'ATC Live Status', 'section': 'AUTO TRIGGER'},
+            {'key': 'auto_trigger_atc_settings', 'label': 'ATC Settings', 'section': 'AUTO TRIGGER'},
 
             # OT
             {'key': 'ot', 'label': 'OT Module Access', 'section': 'OPERATION THEATRE (OT)'},

@@ -4,9 +4,11 @@ from .views import (
     PatientCompanyListView, PatientCompanyCreateView, PatientCompanyDeleteView,
     DepartmentListView, DepartmentCreateView, DepartmentUpdateView, DepartmentDeleteView,
     DepartmentUnitCreateView, DepartmentUnitUpdateView, DepartmentUnitDeleteView,
+    WardListView, WardCreateView, WardUpdateView, WardDeleteView, WardAllocationView,
     get_department_units, OPCensusView, PatientReviewView, PatientReviewReportView, PatientMedicalHistoryPrintView,
     PatientDischargeView, PatientDischargeSlipView, BranchTransferListView, api_patient_active_admission,
-    BranchTransferReportView, export_branch_transfers_csv
+    BranchTransferReportView, export_branch_transfers_csv, api_search_patient_for_allocation, api_available_ward_beds,
+    WardServiceRequestView, api_ward_service_request_patients, api_patient_investigations_results
 )
 from .import_views import (
     PatientImportView, PatientImportHistoryView, api_patient_download_template,
@@ -20,6 +22,12 @@ urlpatterns = [
     path('review/', PatientReviewView.as_view(), name='review'),
     path('discharge/', PatientDischargeView.as_view(), name='discharge'),
     path('discharge/<int:pk>/slip/', PatientDischargeSlipView.as_view(), name='discharge_slip'),
+    path('ward/allocation/', WardAllocationView.as_view(), name='ward_allocation'),
+    path('ward/allocation/api/search-patient/', api_search_patient_for_allocation, name='api_search_patient_allocation'),
+    path('ward/allocation/api/available-beds/', api_available_ward_beds, name='api_available_ward_beds'),
+    path('ward/allocation/api/patient-investigations/', api_patient_investigations_results, name='api_patient_investigations_results'),
+    path('ward/service-request/', WardServiceRequestView.as_view(), name='ward_service_request'),
+    path('ward/service-request/api/patients/', api_ward_service_request_patients, name='api_ward_service_request_patients'),
     path('ward/branch-transfer/', BranchTransferListView.as_view(), name='branch_transfer'),
     path('ward/branch-transfer/report/', BranchTransferReportView.as_view(), name='branch_transfer_report'),
     path('ward/branch-transfer/report/export/', export_branch_transfers_csv, name='branch_transfer_report_export'),
@@ -41,6 +49,11 @@ urlpatterns = [
     path('departments/add/', DepartmentCreateView.as_view(), name='department_add'),
     path('departments/<int:pk>/edit/', DepartmentUpdateView.as_view(), name='department_edit'),
     path('departments/<int:pk>/delete/', DepartmentDeleteView.as_view(), name='department_delete'),
+
+    path('wards/', WardListView.as_view(), name='ward_list'),
+    path('wards/add/', WardCreateView.as_view(), name='ward_add'),
+    path('wards/<int:pk>/edit/', WardUpdateView.as_view(), name='ward_edit'),
+    path('wards/<int:pk>/delete/', WardDeleteView.as_view(), name='ward_delete'),
     
     path('units/add/', DepartmentUnitCreateView.as_view(), name='unit_add'),
     path('units/<int:pk>/edit/', DepartmentUnitUpdateView.as_view(), name='unit_edit'),

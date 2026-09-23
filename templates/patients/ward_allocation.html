@@ -1,0 +1,1393 @@
+{% extends "base.html" %}
+
+{% block title %}Ward & Bed Allocation Matrix | VMMCerp{% endblock %}
+{% block page_heading %}Ward & Bed Allocation{% endblock %}
+
+{% block content %}
+<div style="max-width: 1440px; margin: 0 auto;">
+
+    <!-- Breadcrumb & Header Title -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #64748b; margin-bottom: 4px;">
+                <a href="{% url 'patients:ward_list' %}" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">
+                    <i class="bi bi-hospital"></i> Hospital Wards
+                </a>
+                <span>/</span>
+                <span style="color: #0f172a; font-weight: 700;">Ward & Bed Allocation Matrix</span>
+            </div>
+            <h1 style="font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 0.6rem;">
+                <i class="bi bi-grid-3x3-gap-fill" style="color: #0284c7;"></i> Inpatient Ward & Bed Allocation Matrix
+            </h1>
+            <p style="color: #64748b; font-size: 0.85rem; margin-top: 4px; margin-bottom: 0;">
+                Live bed availability, gender-segregated ward occupancy, instant inpatient bed allocation, and bed transfers.
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+            <button type="button" class="btn btn-primary" onclick="openAllocateModal('', '')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; padding: 0.6rem 1.4rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);">
+                <i class="bi bi-plus-circle-fill"></i> + Allocate Bed
+            </button>
+            <a href="{% url 'patients:branch_transfer' %}" class="btn btn-outline-secondary" style="display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; padding: 0.6rem 1.1rem; border-radius: 8px;">
+                <i class="bi bi-arrow-left-right"></i> Ward Transfers
+            </a>
+        </div>
+    </div>
+
+    <!-- Top KPI Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="panel" style="margin-bottom: 0; padding: 1.1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #0284c7; background: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-radius: 10px;">
+            <div>
+                <div style="font-size: 0.78rem; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">Total Hospital Beds</div>
+                <div style="font-size: 1.85rem; font-weight: 800; color: #0f172a; margin-top: 2px;">{{ total_hospital_beds }}</div>
+                <div style="font-size: 0.75rem; color: #0284c7; font-weight: 600; margin-top: 2px;">Across {{ all_wards|length }} Active Wards</div>
+            </div>
+            <div style="width: 48px; height: 48px; background: #e0f2fe; color: #0284c7; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                <i class="bi bi-door-open-fill"></i>
+            </div>
+        </div>
+
+        <div class="panel" style="margin-bottom: 0; padding: 1.1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #ef4444; background: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-radius: 10px;">
+            <div>
+                <div style="font-size: 0.78rem; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">Occupied Beds</div>
+                <div style="font-size: 1.85rem; font-weight: 800; color: #ef4444; margin-top: 2px;">{{ total_occupied_beds }}</div>
+                <div style="font-size: 0.75rem; color: #b91c1c; font-weight: 600; margin-top: 2px;">Active Admitted In-Patients</div>
+            </div>
+            <div style="width: 48px; height: 48px; background: #fee2e2; color: #ef4444; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                <i class="bi bi-person-fill-lock"></i>
+            </div>
+        </div>
+
+        <div class="panel" style="margin-bottom: 0; padding: 1.1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #10b981; background: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-radius: 10px;">
+            <div>
+                <div style="font-size: 0.78rem; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">Available Beds</div>
+                <div style="font-size: 1.85rem; font-weight: 800; color: #10b981; margin-top: 2px;">{{ total_available_beds }}</div>
+                <div style="font-size: 0.75rem; color: #047857; font-weight: 600; margin-top: 2px;">Ready for Immediate Admission</div>
+            </div>
+            <div style="width: 48px; height: 48px; background: #d1fae5; color: #10b981; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+        </div>
+
+        <div class="panel" style="margin-bottom: 0; padding: 1.1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #8b5cf6; background: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-radius: 10px;">
+            <div>
+                <div style="font-size: 0.78rem; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">Bed Occupancy Rate</div>
+                <div style="font-size: 1.85rem; font-weight: 800; color: #8b5cf6; margin-top: 2px;">{{ hospital_occupancy_rate }}%</div>
+                <div style="font-size: 0.75rem; color: #6d28d9; font-weight: 600; margin-top: 2px;">Live Hospital Capacity Index</div>
+            </div>
+            <div style="width: 48px; height: 48px; background: #ede9fe; color: #8b5cf6; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                <i class="bi bi-pie-chart-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="panel" style="margin-bottom: 1.5rem; padding: 1.15rem 1.25rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+        <form method="get" action="{% url 'patients:ward_allocation' %}">
+            <div style="display: grid; grid-template-columns: 1.8fr 1.3fr 1.1fr 1.1fr 1fr auto; gap: 0.75rem; align-items: flex-end;">
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 4px; display: block;">Search Matrix:</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background: #ffffff; border-right: none; color: #64748b;"><i class="bi bi-search"></i></span>
+                        <input type="text" name="q" value="{{ search_q }}" class="form-control" placeholder="Search patient name, OP #, IP #, UHID, bed..." style="border-left: none;">
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 4px; display: block;">Hospital Ward:</label>
+                    <select name="ward" class="form-select">
+                        <option value="">All Wards ({{ all_wards|length }})</option>
+                        {% for w in all_wards %}
+                        <option value="{{ w.id }}" {% if selected_ward_id == w.id|stringformat:"s" %}selected{% endif %}>
+                            {{ w.name }} ({{ w.code }}) - {{ w.get_gender_category_display }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 4px; display: block;">Mapped Department:</label>
+                    <select name="department" class="form-select">
+                        <option value="">All Departments</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if selected_dept_id == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 4px; display: block;">Patient Gender Category:</label>
+                    <select name="gender" class="form-select">
+                        <option value="">All Patient Genders</option>
+                        {% for g_key, g_label in gender_categories %}
+                        <option value="{{ g_key }}" {% if selected_gender == g_key %}selected{% endif %}>{{ g_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 4px; display: block;">Bed Status:</label>
+                    <select name="status" class="form-select">
+                        <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All Beds</option>
+                        <option value="available" {% if selected_status == 'available' %}selected{% endif %}>🟢 Available Only</option>
+                        <option value="occupied" {% if selected_status == 'occupied' %}selected{% endif %}>🔴 Occupied Only</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="submit" class="btn btn-primary" style="padding: 0.52rem 1.1rem; font-weight: 700; border-radius: 6px;">
+                        <i class="bi bi-funnel-fill"></i> Filter
+                    </button>
+                    {% if search_q or selected_ward_id or selected_dept_id or selected_gender or selected_status != 'all' %}
+                    <a href="{% url 'patients:ward_allocation' %}" class="btn btn-outline-secondary" style="padding: 0.52rem 0.85rem; border-radius: 6px;" title="Reset filters">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Ward & Bed Matrix -->
+    {% if ward_matrix %}
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            {% for item in ward_matrix %}
+            {% if item.has_visible_beds %}
+            <div class="panel" style="margin-bottom: 0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                
+                <!-- Ward Card Header -->
+                <div style="background: linear-gradient(to right, #f8fafc, #f1f5f9); padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                        <span style="font-family: monospace; font-weight: 800; font-size: 0.85rem; background: #e0f2fe; color: #0284c7; padding: 4px 10px; border-radius: 6px; border: 1px solid #bae6fd;">
+                            {{ item.ward.code }}
+                        </span>
+                        <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0;">
+                            {{ item.ward.name }}
+                        </h3>
+
+                        <!-- Patient Category Badge -->
+                        {% if item.ward.gender_category == 'MALE' %}
+                            <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.78rem; padding: 4px 9px; border: 1px solid #bae6fd;">
+                                <i class="bi bi-gender-male"></i> Male Patients Only
+                            </span>
+                        {% elif item.ward.gender_category == 'FEMALE' %}
+                            <span class="badge" style="background: #fdf2f8; color: #be185d; font-weight: 700; font-size: 0.78rem; padding: 4px 9px; border: 1px solid #fbcfe8;">
+                                <i class="bi bi-gender-female"></i> Female Patients Only
+                            </span>
+                        {% elif item.ward.gender_category == 'PAEDIATRIC' %}
+                            <span class="badge" style="background: #fef3c7; color: #b45309; font-weight: 700; font-size: 0.78rem; padding: 4px 9px; border: 1px solid #fde68a;">
+                                <i class="bi bi-emoji-smile-fill"></i> Paediatric
+                            </span>
+                        {% else %}
+                            <span class="badge" style="background: #f1f5f9; color: #475569; font-weight: 600; font-size: 0.78rem; padding: 4px 9px; border: 1px solid #e2e8f0;">
+                                <i class="bi bi-people-fill"></i> Unisex / All Patients
+                            </span>
+                        {% endif %}
+
+                        <!-- Mapped Department -->
+                        {% if item.ward.department %}
+                            <span style="font-size: 0.8rem; font-weight: 700; color: #0284c7; background: #ffffff; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                <i class="bi bi-building"></i> {{ item.ward.department.name }}
+                            </span>
+                        {% endif %}
+
+                        {% if item.ward.floor_building %}
+                            <span style="font-size: 0.78rem; color: #64748b; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                <i class="bi bi-geo-alt"></i> {{ item.ward.floor_building }}
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Ward Bed Stats & Capacity Bar -->
+                    <div style="display: flex; align-items: center; gap: 1.25rem;">
+                        <div style="text-align: right;">
+                            <div style="font-size: 0.85rem; font-weight: 700; color: #0f172a;">
+                                <span style="color: #ef4444;">{{ item.occupied_count }} Occupied</span> / 
+                                <span style="color: #10b981;">{{ item.available_count }} Available</span>
+                                <span style="color: #64748b; font-weight: 500;">(Total {{ item.total_beds }})</span>
+                            </div>
+                            <div style="width: 130px; height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-top: 4px;">
+                                <div style="width: {{ item.occupancy_pct }}%; height: 100%; background: {% if item.occupancy_pct > 85 %}#ef4444{% elif item.occupancy_pct > 50 %}#f59e0b{% else %}#10b981{% endif %}; border-radius: 999px;"></div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="openAllocateModal('{{ item.ward.id }}', '{{ item.ward.name|escapejs }}')" style="font-size: 0.8rem; font-weight: 700; padding: 4px 10px; border-radius: 6px;">
+                            + Allocate
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bed Grid for this Ward -->
+                <div style="padding: 1.25rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
+                        {% for bed in item.bed_slots %}
+                        {% if bed.visible %}
+                            {% if bed.is_occupied %}
+                            <!-- OCCUPIED BED CARD -->
+                            <div class="bed-card bed-occupied" style="border: 1.5px solid #fca5a5; background: #fff5f5; border-radius: 10px; padding: 0.85rem; position: relative; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.05);">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                                    <span style="font-family: monospace; font-weight: 800; font-size: 0.85rem; color: #991b1b; background: #fee2e2; padding: 2px 7px; border-radius: 4px; border: 1px solid #fca5a5;">
+                                        <i class="bi bi-door-closed-fill"></i> {{ bed.bed_number }}
+                                    </span>
+                                    <span class="badge" style="background: #fee2e2; color: #b91c1c; font-size: 0.72rem; font-weight: 700; padding: 3px 6px;">
+                                        🔴 OCCUPIED
+                                    </span>
+                                </div>
+
+                                <div style="margin-bottom: 6px;">
+                                    <strong style="color: #0f172a; font-size: 0.92rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ bed.patient.name }}">
+                                        {{ bed.patient.name }}
+                                    </strong>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; font-size: 0.75rem; color: #475569; margin-top: 3px;">
+                                        <span style="font-weight: 700; color: #0284c7;">UHID: {{ bed.patient.patient_id }}</span>
+                                        <span>•</span>
+                                        <span style="font-weight: 700; color: #7c3aed;">IP: #{{ bed.patient.ipno }}</span>
+                                        <span>•</span>
+                                        <span>{{ bed.patient.age }} / {{ bed.patient.gender|slice:":1" }}</span>
+                                    </div>
+                                </div>
+
+                                <div style="font-size: 0.75rem; color: #64748b; border-top: 1px dashed #fecaca; padding-top: 6px; margin-top: 6px; display: flex; flex-direction: column; gap: 2px;">
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <span><i class="bi bi-building"></i> {{ bed.patient.department|truncatechars:18 }}</span>
+                                        <span style="font-weight: 600; color: #7f1d1d;">Day {{ bed.patient.days_admitted }}</span>
+                                    </div>
+                                    <div><i class="bi bi-person-badge"></i> {{ bed.patient.unit_doctor|truncatechars:22 }}</div>
+                                </div>
+
+                                <!-- Action Buttons on Bed -->
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 6px; border-top: 1px solid #fee2e2; gap: 4px;">
+                                    <a href="{% url 'patients:ward_service_request' %}?patient_id={{ bed.patient.patient_pk }}&visit_id={{ bed.patient.visit_id }}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; white-space: nowrap; color: #0369a1; border-color: #bae6fd; background: #f0f9ff;" title="Create Ward Service Request">
+                                        <i class="bi bi-clipboard-plus"></i> Service Request
+                                    </a>
+                                    
+                                    <a href="{% url 'patients:review' %}?patient_id={{ bed.patient.patient_id }}" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 600;" title="View Review Details">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+
+                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="event.stopPropagation(); openPatientInvestigationsModal('{{ bed.patient.patient_pk }}', '{{ bed.patient.patient_id }}', '{{ bed.patient.visit_id }}', '{{ bed.patient.name|escapejs }}', '{{ item.ward.name|escapejs }}', '{{ bed.bed_number }}', '{{ bed.patient.op_number|default:"--" }}', '{{ bed.patient.ipno|default:"--" }}', '{{ bed.patient.age }}', '{{ bed.patient.gender }}', '{{ bed.patient.department|escapejs }}', '{{ bed.patient.unit_doctor|escapejs }}')" style="font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; color: #0369a1; border-color: #bae6fd; background: #f0f9ff;" title="View Patient Investigations & Diagnostic Results">
+                                        <i class="bi bi-flask-fill"></i> Investigation
+                                    </button>
+                                </div>
+                            </div>
+                            {% else %}
+                            <!-- AVAILABLE BED CARD -->
+                            <div class="bed-card bed-available" onclick="openAllocateModal('{{ item.ward.id }}', '{{ item.ward.name|escapejs }}', '{{ bed.bed_number }}')" style="border: 1.5px dashed #86efac; background: #f0fdf4; border-radius: 10px; padding: 0.85rem; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                        <span style="font-family: monospace; font-weight: 800; font-size: 0.85rem; color: #166534; background: #dcfce7; padding: 2px 7px; border-radius: 4px; border: 1px solid #bbf7d0;">
+                                            <i class="bi bi-door-open-fill"></i> {{ bed.bed_number }}
+                                        </span>
+                                        <span class="badge" style="background: #dcfce7; color: #15803d; font-size: 0.72rem; font-weight: 700; padding: 3px 6px;">
+                                            🟢 AVAILABLE
+                                        </span>
+                                    </div>
+
+                                    <div style="text-align: center; padding: 0.5rem 0; color: #15803d;">
+                                        <i class="bi bi-plus-circle" style="font-size: 1.4rem; display: block; margin-bottom: 2px;"></i>
+                                        <span style="font-weight: 700; font-size: 0.82rem;">Click to Allocate Bed</span>
+                                    </div>
+                                </div>
+
+                                <div style="font-size: 0.72rem; text-align: center; color: #16a34a; font-weight: 600;">
+                                    {{ item.ward.get_gender_category_display }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="panel" style="text-align: center; padding: 3rem 1rem; border-radius: 12px; background: #ffffff;">
+            <i class="bi bi-hospital" style="font-size: 3rem; color: #94a3b8; display: block; margin-bottom: 1rem;"></i>
+            <h3 style="color: #0f172a; font-weight: 700;">No Hospital Wards Found</h3>
+            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                No active hospital wards matched your filter criteria.
+            </p>
+            <a href="{% url 'patients:ward_allocation' %}" class="btn btn-primary" style="font-weight: 600;">
+                Reset All Filters
+            </a>
+        </div>
+    {% endif %}
+
+</div>
+
+<!-- ================= MODAL 1: ALLOCATE BED MODAL ================= -->
+<div id="allocateBedModal" class="custom-modal-overlay" onclick="handleBackdropClick(event, 'allocateBedModal')">
+    <div class="custom-modal-box" style="max-width: 740px;">
+        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff; border-radius: 14px 14px 0 0; padding: 1.1rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-weight: 800; font-size: 1.2rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="bi bi-person-plus-fill"></i> Inpatient Bed Allocation
+            </h3>
+            <button type="button" onclick="closeModal('allocateBedModal')" style="background: rgba(255,255,255,0.2); border: none; color: #ffffff; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem;">
+                ✕
+            </button>
+        </div>
+
+        <form method="post" id="allocateBedForm" action="{% url 'patients:ward_allocation' %}" onsubmit="return validateAllocationSubmission(event)">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="allocate_bed">
+
+            <div style="padding: 1.5rem;">
+                
+                <!-- Patient Search by OP / IP / UHID -->
+                <div class="form-group" style="margin-bottom: 1.25rem; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <label style="font-size: 0.85rem; font-weight: 700; color: #334155; margin: 0;">
+                            Search Patient by OP No / IP No / UHID <span class="text-danger">*</span>
+                        </label>
+                        <span style="font-size: 0.75rem; color: #64748b;">
+                            ⚡ Only <strong>In-Patients (IP)</strong> can be allocated
+                        </span>
+                    </div>
+                    
+                    <div class="input-group">
+                        <span class="input-group-text" style="background: #f8fafc; color: #0284c7; font-weight: 700;">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" id="patientSearchInput" class="form-control" placeholder="Search by OP No (e.g. 26100001), IP No (e.g. 600101), UHID or Name..." autocomplete="off" style="font-size: 0.92rem; padding: 0.6rem 0.85rem;">
+                        <button type="button" class="btn btn-outline-secondary" onclick="clearSelectedPatient()" title="Clear Selection" style="font-size: 0.85rem;">
+                            Clear
+                        </button>
+                    </div>
+                    <input type="hidden" name="patient_id" id="selectedPatientId" required>
+                    
+                    <!-- Autocomplete Results Dropdown -->
+                    <div id="patientSearchResults" style="display: none; max-height: 240px; overflow-y: auto; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; margin-top: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); position: absolute; z-index: 1050; width: 100%;"></div>
+                </div>
+
+                <!-- Interactive Alert Box for OP Patients (Forbidden for Bed Allocation) -->
+                <div id="opPatientAlertBanner" style="display: none; background: #fff1f2; border: 1.5px solid #f87171; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.08);">
+                    <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                        <div style="width: 38px; height: 38px; background: #fee2e2; color: #dc2626; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0; margin-top: 2px;">
+                            <i class="bi bi-exclamation-octagon-fill"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <strong style="color: #991b1b; font-size: 0.95rem; display: block; margin-bottom: 3px;">
+                                ⚠️ Bed Allocation Restricted: Out-Patient (OP) Record
+                            </strong>
+                            <p style="color: #7f1d1d; font-size: 0.85rem; margin: 0; line-height: 1.45;">
+                                Patient <strong id="alertPatientName" style="color: #450a0a;">--</strong> (OP Number: <strong id="alertOpNo" style="font-family: monospace;">--</strong>) is registered as an <strong>Out-Patient (OP)</strong>. Hospital beds can <strong>ONLY</strong> be allocated to <strong>In-Patients (IP)</strong>.
+                            </p>
+                            <div style="margin-top: 8px; background: #fee2e2; border-radius: 6px; padding: 6px 10px; font-size: 0.78rem; font-weight: 700; color: #b91c1c; display: flex; align-items: center; gap: 0.4rem;">
+                                <i class="bi bi-info-circle-fill"></i> 
+                                Please convert or register this patient as an In-Patient (IP) before assigning a physical bed.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selected Patient Profile Box -->
+                <div id="selectedPatientCard" style="display: none; border-radius: 10px; padding: 0.95rem 1.2rem; margin-bottom: 1.25rem; transition: all 0.2s ease;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <strong id="cardPatientName" style="font-size: 1.05rem;">--</strong>
+                                <span id="cardPatientGenderBadge" class="badge" style="font-size: 0.75rem;">--</span>
+                            </div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.82rem; margin-top: 4px;">
+                                <span>OP No: <strong id="cardPatientOP" style="font-family: monospace; color: #0369a1;">--</strong></span>
+                                <span>•</span>
+                                <span>IP No: <strong id="cardPatientIP" style="font-family: monospace; color: #7c3aed;">--</strong></span>
+                                <span>•</span>
+                                <span>UHID: <strong id="cardPatientUHID" style="font-family: monospace;">--</strong></span>
+                                <span>•</span>
+                                <span>Age: <strong id="cardPatientAge">--</strong></span>
+                            </div>
+                        </div>
+                        <div id="cardAdmissionStatusBadge"></div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <!-- Ward Dropdown -->
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">
+                            Destination Ward <span class="text-danger">*</span>
+                        </label>
+                        <select name="ward_id" id="allocateWardSelect" class="form-select" required onchange="loadAvailableBedsForAllocation()">
+                            <option value="">-- Select Hospital Ward --</option>
+                            {% for w in all_wards %}
+                            <option value="{{ w.id }}" data-gender="{{ w.gender_category }}" data-dept="{{ w.department_id|default:'' }}">
+                                {{ w.name }} ({{ w.code }}) - {{ w.get_gender_category_display }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Bed Dropdown -->
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">
+                            Available Physical Bed <span class="text-danger">*</span>
+                        </label>
+                        <select name="bed_number" id="allocateBedSelect" class="form-select" required>
+                            <option value="">-- Select Available Bed --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <!-- Department -->
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">
+                            Clinical Department
+                        </label>
+                        <select name="department_id" id="allocateDeptSelect" class="form-select">
+                            <option value="">-- Department (Auto-mapped) --</option>
+                            {% for d in departments %}
+                            <option value="{{ d.id }}">{{ d.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Doctor / Unit -->
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">
+                            Unit / Treating Doctor
+                        </label>
+                        <select name="unit_id" id="allocateUnitSelect" class="form-select">
+                            <option value="">-- Select Unit / Doctor --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">
+                        Clinical Admission Notes & Reasons
+                    </label>
+                    <textarea name="clinical_notes" class="form-control" rows="2" placeholder="Enter clinical condition, primary diagnosis, and admission orders..."></textarea>
+                </div>
+
+            </div>
+
+            <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; border-radius: 0 0 14px 14px; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem;">
+                <button type="button" class="btn btn-outline-secondary" onclick="closeModal('allocateBedModal')" style="font-weight: 600;">Cancel</button>
+                <button type="submit" id="confirmAllocateBtn" class="btn btn-primary" style="font-weight: 700; padding: 0.55rem 1.5rem; transition: all 0.2s ease;">
+                    <i class="bi bi-check-lg"></i> Confirm Bed Allocation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ================= MODAL 2: SHIFT BED MODAL ================= -->
+<div id="shiftBedModal" class="custom-modal-overlay" onclick="handleBackdropClick(event, 'shiftBedModal')">
+    <div class="custom-modal-box" style="max-width: 580px;">
+        <div style="background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); color: #ffffff; border-radius: 14px 14px 0 0; padding: 1.1rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-weight: 800; font-size: 1.2rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="bi bi-arrow-left-right"></i> Patient Bed / Ward Shift
+            </h3>
+            <button type="button" onclick="closeModal('shiftBedModal')" style="background: rgba(255,255,255,0.2); border: none; color: #ffffff; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem;">
+                ✕
+            </button>
+        </div>
+
+        <form method="post" action="{% url 'patients:ward_allocation' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="shift_bed">
+            <input type="hidden" name="visit_id" id="shiftVisitId">
+
+            <div style="padding: 1.5rem;">
+                
+                <div style="background: #eef2ff; border: 1.5px solid #c7d2fe; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1.25rem;">
+                    <div style="font-size: 0.78rem; color: #4338ca; text-transform: uppercase; font-weight: 700;">Currently Admitted Patient</div>
+                    <strong id="shiftPatientName" style="color: #1e1b4b; font-size: 1rem; display: block; margin-top: 2px;">--</strong>
+                    <div style="font-size: 0.82rem; color: #4f46e5; margin-top: 2px;">
+                        Current Location: <strong id="shiftCurrentLocation">--</strong>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">
+                        Destination Hospital Ward <span class="text-danger">*</span>
+                    </label>
+                    <select name="new_ward_id" id="shiftWardSelect" class="form-select" required onchange="loadAvailableBedsForShift()">
+                        <option value="">-- Select Destination Ward --</option>
+                        {% for w in all_wards %}
+                        <option value="{{ w.id }}">{{ w.name }} ({{ w.code }}) - {{ w.get_gender_category_display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">
+                        Available Bed in New Ward <span class="text-danger">*</span>
+                    </label>
+                    <select name="new_bed_number" id="shiftBedSelect" class="form-select" required>
+                        <option value="">-- Select Destination Ward First --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">
+                        Clinical Reasons for Bed Shift
+                    </label>
+                    <textarea name="shift_reason" class="form-control" rows="2" placeholder="e.g. Post-op step down, clinical condition deterioration, ICU shift..."></textarea>
+                </div>
+
+            </div>
+
+            <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; border-radius: 0 0 14px 14px; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button type="button" class="btn btn-outline-secondary" onclick="closeModal('shiftBedModal')" style="font-weight: 600;">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="font-weight: 700; padding: 0.55rem 1.5rem; background: #4f46e5; border-color: #4f46e5;">
+                    <i class="bi bi-arrow-left-right"></i> Confirm Bed Shift
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ================= MODAL 3: VACATE / DISCHARGE BED MODAL ================= -->
+<div id="vacateBedModal" class="custom-modal-overlay" onclick="handleBackdropClick(event, 'vacateBedModal')">
+    <div class="custom-modal-box" style="max-width: 540px;">
+        <div style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: #ffffff; border-radius: 14px 14px 0 0; padding: 1.1rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-weight: 800; font-size: 1.2rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="bi bi-box-arrow-right"></i> Vacate Bed / Patient Discharge
+            </h3>
+            <button type="button" onclick="closeModal('vacateBedModal')" style="background: rgba(255,255,255,0.2); border: none; color: #ffffff; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem;">
+                ✕
+            </button>
+        </div>
+
+        <form method="post" action="{% url 'patients:ward_allocation' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="vacate_bed">
+            <input type="hidden" name="visit_id" id="vacateVisitId">
+
+            <div style="padding: 1.5rem;">
+                
+                <div style="background: #fff1f2; border: 1.5px solid #fecdd3; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1.25rem;">
+                    <div style="font-size: 0.78rem; color: #9f1239; text-transform: uppercase; font-weight: 700;">Bed Location to Vacate</div>
+                    <strong id="vacateBedLocation" style="color: #881337; font-size: 1.1rem; display: block; margin-top: 2px;">--</strong>
+                    <div style="font-size: 0.82rem; color: #9f1239; margin-top: 2px;">
+                        Patient: <strong id="vacatePatientName">--</strong>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">
+                        Discharge Condition / Outcome
+                    </label>
+                    <select name="discharge_type" class="form-select">
+                        <option value="Normal / Improved" selected>Normal / Improved / Recovered</option>
+                        <option value="Cured">Cured</option>
+                        <option value="Transferred to Other Facility">Transferred to Other Facility</option>
+                        <option value="DAMA (Discharge Against Medical Advice)">DAMA (Discharge Against Medical Advice)</option>
+                        <option value="Absconded">Absconded</option>
+                        <option value="Expired">Expired</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">
+                        Discharge & Bed Vacate Summary
+                    </label>
+                    <textarea name="discharge_notes" class="form-control" rows="2" placeholder="Discharge advice, medications, and vacating authorization..."></textarea>
+                </div>
+
+            </div>
+
+            <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; border-radius: 0 0 14px 14px; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button type="button" class="btn btn-outline-secondary" onclick="closeModal('vacateBedModal')" style="font-weight: 600;">Cancel</button>
+                <button type="submit" class="btn btn-danger" style="font-weight: 700; padding: 0.55rem 1.5rem;">
+                    <i class="bi bi-box-arrow-right"></i> Confirm Bed Vacate
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ================= MODAL 4: PATIENT INVESTIGATIONS & RESULTS POPUP ================= -->
+<div id="patientInvestigationsModal" class="custom-modal-overlay" onclick="handleBackdropClick(event, 'patientInvestigationsModal')">
+    <div class="custom-modal-box" style="max-width: 920px;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff; border-radius: 14px 14px 0 0; padding: 1.1rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <div style="background: rgba(255,255,255,0.2); width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                    <i class="bi bi-flask-fill"></i>
+                </div>
+                <div>
+                    <h3 style="font-weight: 800; font-size: 1.2rem; margin: 0; color: #ffffff;">
+                        Patient Investigations & Test Results
+                    </h3>
+                    <div style="font-size: 0.78rem; color: rgba(255,255,255,0.85);">
+                        Diagnostic work orders, laboratory investigations, and observed parameter values
+                    </div>
+                </div>
+            </div>
+            <button type="button" onclick="closeModal('patientInvestigationsModal')" style="background: rgba(255,255,255,0.2); border: none; color: #ffffff; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem;">
+                ✕
+            </button>
+        </div>
+
+        <div style="padding: 1.25rem 1.5rem; max-height: calc(90vh - 140px); overflow-y: auto;">
+            
+            <!-- Patient Banner Card -->
+            <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 4px;">
+                        <strong id="invModalPatientName" style="font-size: 1.1rem; color: #0f172a;">--</strong>
+                        <span id="invModalAgeGender" class="badge" style="background: #e2e8f0; color: #334155; font-size: 0.75rem;">--</span>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.6rem; font-size: 0.8rem; color: #475569;">
+                        <span>UHID: <strong id="invModalUHID" style="color: #0284c7; font-family: monospace;">--</strong></span>
+                        <span>•</span>
+                        <span>OP No: <strong id="invModalOPNo" style="color: #0284c7; font-family: monospace;">--</strong></span>
+                        <span>•</span>
+                        <span>IP No: <strong id="invModalIPNo" style="color: #7c3aed; font-family: monospace;">--</strong></span>
+                        <span>•</span>
+                        <span>Location: <span id="invModalWardBed" class="badge" style="background: #fee2e2; color: #b91c1c; font-weight: 700;">--</span></span>
+                    </div>
+                </div>
+
+                <!-- KPI Badges -->
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 12px; text-align: center;">
+                        <div style="font-size: 0.7rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Total Tests</div>
+                        <div id="invModalTotalCount" style="font-size: 1.15rem; font-weight: 800; color: #0f172a;">0</div>
+                    </div>
+                    <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 6px 12px; text-align: center;">
+                        <div style="font-size: 0.7rem; color: #047857; font-weight: 700; text-transform: uppercase;">Completed</div>
+                        <div id="invModalCompletedCount" style="font-size: 1.15rem; font-weight: 800; color: #059669;">0</div>
+                    </div>
+                    <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 6px 12px; text-align: center;">
+                        <div style="font-size: 0.7rem; color: #b45309; font-weight: 700; text-transform: uppercase;">Pending</div>
+                        <div id="invModalPendingCount" style="font-size: 1.15rem; font-weight: 800; color: #d97706;">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toolbar / Search inside modal -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 0.75rem; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 240px; position: relative;">
+                    <input type="text" id="invModalFilterSearch" class="form-control form-control-sm" placeholder="Search by test name, code, parameter, or status..." oninput="filterModalInvestigationsList()">
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <select id="invModalStatusFilter" class="form-select form-select-sm" style="width: auto;" onchange="filterModalInvestigationsList()">
+                        <option value="ALL">All Statuses</option>
+                        <option value="COMPLETED">Completed Results Only</option>
+                        <option value="PENDING">Pending / Processing Only</option>
+                    </select>
+                    <button type="button" id="btnToggleExpandAll" class="btn btn-sm btn-outline-secondary" onclick="toggleExpandAllInvestigations()" style="font-weight: 700; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap;">
+                        <i class="bi bi-arrows-expand"></i> Expand All
+                    </button>
+                    <a id="invModalCreateServiceRequestBtn" href="#" class="btn btn-sm btn-primary" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap;">
+                        <i class="bi bi-clipboard-plus"></i> + New Service Request
+                    </a>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="invModalLoading" style="text-align: center; padding: 3rem 1rem; color: #64748b; display: none;">
+                <div class="spinner-border text-primary" style="width: 2.5rem; height: 2.5rem;" role="status"></div>
+                <div style="margin-top: 0.75rem; font-weight: 600; font-size: 0.95rem;">Fetching patient investigations and test results...</div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="invModalEmptyState" style="text-align: center; padding: 3rem 1.5rem; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 12px; display: none;">
+                <i class="bi bi-clipboard2-x" style="font-size: 3rem; color: #94a3b8; display: block; margin-bottom: 0.5rem;"></i>
+                <h4 style="font-size: 1.1rem; font-weight: 700; color: #334155; margin-bottom: 4px;">No Investigations Found</h4>
+                <p style="color: #64748b; font-size: 0.85rem; max-width: 440px; margin: 0 auto 1rem auto;">
+                    There are no laboratory investigations or clinical service requests recorded yet for this patient.
+                </p>
+                <a id="invModalEmptyCreateBtn" href="#" class="btn btn-primary" style="font-weight: 700;">
+                    <i class="bi bi-clipboard-plus"></i> Create Service Request
+                </a>
+            </div>
+
+            <!-- Investigations Results Container -->
+            <div id="invModalResultsList" style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Dynamically populated -->
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; border-radius: 0 0 14px 14px; padding: 0.85rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.8rem; color: #64748b;">
+                💡 Results are automatically synchronized with the Laboratory Diagnostic Module.
+            </span>
+            <button type="button" class="btn btn-secondary" onclick="closeModal('patientInvestigationsModal')" style="font-weight: 600;">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= JAVASCRIPT LOGIC ================= -->
+<script>
+    // State Tracking
+    let currentlySelectedPatient = null;
+
+    // Modal Utilities
+    function openModal(modalId) {
+        const m = document.getElementById(modalId);
+        if (m) {
+            m.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closeModal(modalId) {
+        const m = document.getElementById(modalId);
+        if (m) {
+            m.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    function handleBackdropClick(event, modalId) {
+        if (event.target.id === modalId) {
+            closeModal(modalId);
+        }
+    }
+
+    // 1. OPEN ALLOCATE BED MODAL
+    function openAllocateModal(wardId, wardName, bedNumber) {
+        clearSelectedPatient();
+        
+        const wardSel = document.getElementById('allocateWardSelect');
+        const bedSel = document.getElementById('allocateBedSelect');
+        
+        if (wardId && wardSel) {
+            wardSel.value = wardId;
+            loadAvailableBedsForAllocation(bedNumber);
+        } else {
+            if (wardSel) wardSel.value = '';
+            if (bedSel) bedSel.innerHTML = '<option value="">-- Select Hospital Ward First --</option>';
+        }
+
+        openModal('allocateBedModal');
+        setTimeout(() => {
+            const input = document.getElementById('patientSearchInput');
+            if (input) input.focus();
+        }, 150);
+    }
+
+    // 2. LOAD AVAILABLE BEDS FOR ALLOCATION
+    function loadAvailableBedsForAllocation(preselectedBed) {
+        const wardId = document.getElementById('allocateWardSelect').value;
+        const bedSel = document.getElementById('allocateBedSelect');
+        
+        if (!wardId) {
+            bedSel.innerHTML = '<option value="">-- Select Hospital Ward First --</option>';
+            return;
+        }
+
+        bedSel.innerHTML = '<option value="">Loading available beds...</option>';
+        fetch(`{% url "patients:api_available_ward_beds" %}?ward_id=${wardId}`)
+            .then(r => r.json())
+            .then(data => {
+                bedSel.innerHTML = '';
+                if (data.beds && data.beds.length > 0) {
+                    data.beds.forEach(b => {
+                        const opt = document.createElement('option');
+                        opt.value = b;
+                        opt.textContent = `${b} (Vacant)`;
+                        if (preselectedBed && preselectedBed === b) {
+                            opt.selected = true;
+                        }
+                        bedSel.appendChild(opt);
+                    });
+                } else {
+                    bedSel.innerHTML = '<option value="">No vacant beds in this ward</option>';
+                }
+            })
+            .catch(() => {
+                bedSel.innerHTML = '<option value="">Error loading beds</option>';
+            });
+    }
+
+    // 3. PATIENT AUTOCOMPLETE SEARCH BY OP NO / IP NO / UHID / NAME
+    const searchInput = document.getElementById('patientSearchInput');
+    const searchResults = document.getElementById('patientSearchResults');
+    let searchTimeout = null;
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            if (query.length < 2) {
+                searchResults.style.display = 'none';
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                fetch(`{% url "patients:api_search_patient_allocation" %}?q=${encodeURIComponent(query)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.patients && data.patients.length > 0) {
+                            searchResults.innerHTML = '';
+                            data.patients.forEach(p => {
+                                const row = document.createElement('div');
+                                row.style.padding = '10px 14px';
+                                row.style.cursor = 'pointer';
+                                row.style.borderBottom = '1px solid #f1f5f9';
+                                row.style.transition = 'background 0.15s ease';
+                                
+                                const isIP = p.is_ip;
+                                const statusBadge = isIP 
+                                    ? `<span class="badge" style="background:#dcfce7;color:#15803d;font-size:0.72rem;font-weight:700;">🟢 IP (In-Patient)</span>`
+                                    : `<span class="badge" style="background:#fee2e2;color:#b91c1c;font-size:0.72rem;font-weight:700;">🔴 OP (Out-Patient)</span>`;
+
+                                row.innerHTML = `
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div style="font-weight: 700; color: #0f172a; font-size: 0.92rem;">
+                                            ${p.name}
+                                        </div>
+                                        ${statusBadge}
+                                    </div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.78rem; color: #64748b; margin-top: 3px;">
+                                        <span style="background: #e0f2fe; color: #0369a1; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-family: monospace;">OP: ${p.op_number}</span>
+                                        <span style="background: #ede9fe; color: #6d28d9; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-family: monospace;">IP: ${p.ipno}</span>
+                                        <span>UHID: <strong>${p.patient_id}</strong></span>
+                                        <span>•</span>
+                                        <span>${p.gender}, ${p.age}${p.age_unit || 'Y'}</span>
+                                        <span>•</span>
+                                        <span>Mob: ${p.mobile_no || '--'}</span>
+                                    </div>
+                                    ${p.is_admitted ? `<div style="font-size: 0.75rem; color: #dc2626; font-weight: 600; margin-top: 2px;"><i class="bi bi-door-closed"></i> Currently in ${p.current_ward} (${p.current_bed})</div>` : ''}
+                                `;
+                                
+                                row.addEventListener('mouseover', () => row.style.background = isIP ? '#f0fdf4' : '#fff1f2');
+                                row.addEventListener('mouseout', () => row.style.background = '#ffffff');
+                                row.addEventListener('click', () => {
+                                    selectPatientForAllocation(p);
+                                });
+                                searchResults.appendChild(row);
+                            });
+                            searchResults.style.display = 'block';
+                        } else {
+                            searchResults.innerHTML = '<div style="padding: 12px 14px; color: #64748b; font-size: 0.85rem; text-align: center;"><i class="bi bi-info-circle"></i> No matching patients found for OP/IP/UHID query</div>';
+                            searchResults.style.display = 'block';
+                        }
+                    });
+            }, 200);
+        });
+    }
+
+    function selectPatientForAllocation(p) {
+        currentlySelectedPatient = p;
+        document.getElementById('selectedPatientId').value = p.patient_id;
+        document.getElementById('patientSearchInput').value = `${p.name} (OP: ${p.op_number} | IP: ${p.ipno})`;
+        document.getElementById('patientSearchResults').style.display = 'none';
+
+        const card = document.getElementById('selectedPatientCard');
+        const alertBanner = document.getElementById('opPatientAlertBanner');
+        const confirmBtn = document.getElementById('confirmAllocateBtn');
+
+        document.getElementById('cardPatientName').textContent = p.name;
+        document.getElementById('cardPatientOP').textContent = p.op_number;
+        document.getElementById('cardPatientIP').textContent = p.ipno;
+        document.getElementById('cardPatientUHID').textContent = p.patient_id;
+        document.getElementById('cardPatientAge').textContent = `${p.age} ${p.age_unit || 'Years'}`;
+
+        const genderBadge = document.getElementById('cardPatientGenderBadge');
+        genderBadge.textContent = p.gender;
+        if (p.gender === 'Male') {
+            genderBadge.style.background = '#e0f2fe';
+            genderBadge.style.color = '#0369a1';
+        } else if (p.gender === 'Female') {
+            genderBadge.style.background = '#fdf2f8';
+            genderBadge.style.color = '#be185d';
+        } else {
+            genderBadge.style.background = '#f1f5f9';
+            genderBadge.style.color = '#475569';
+        }
+
+        const badge = document.getElementById('cardAdmissionStatusBadge');
+
+        if (p.is_ip) {
+            // PATIENT IS AN IN-PATIENT (ALLOWED TO ALLOCATE BED)
+            alertBanner.style.display = 'none';
+            card.style.display = 'block';
+            card.style.background = '#f0fdf4';
+            card.style.border = '1.5px solid #86efac';
+            card.style.color = '#14532d';
+
+            if (p.is_admitted) {
+                badge.innerHTML = `<span class="badge" style="background:#fee2e2;color:#b91c1c;font-size:0.75rem;padding:4px 8px;">Admitted: ${p.current_ward} (${p.current_bed})</span>`;
+            } else {
+                badge.innerHTML = `<span class="badge" style="background:#dcfce7;color:#15803d;font-size:0.75rem;padding:4px 8px;">✅ IP Patient (Eligible for Bed)</span>`;
+            }
+
+            // Enable Confirm Button
+            confirmBtn.disabled = false;
+            confirmBtn.style.opacity = '1';
+            confirmBtn.style.cursor = 'pointer';
+            confirmBtn.className = 'btn btn-primary';
+            confirmBtn.innerHTML = '<i class="bi bi-check-lg"></i> Confirm Bed Allocation';
+
+            if (p.department_id) {
+                const dSel = document.getElementById('allocateDeptSelect');
+                if (dSel) dSel.value = p.department_id;
+            }
+        } else {
+            // PATIENT IS AN OUT-PATIENT (FORBIDDEN TO ALLOCATE BED)
+            document.getElementById('alertPatientName').textContent = p.name;
+            document.getElementById('alertOpNo').textContent = p.op_number;
+            alertBanner.style.display = 'block';
+
+            card.style.display = 'block';
+            card.style.background = '#fff1f2';
+            card.style.border = '1.5px solid #fecdd3';
+            card.style.color = '#881337';
+            badge.innerHTML = `<span class="badge" style="background:#fee2e2;color:#b91c1c;font-size:0.75rem;padding:4px 8px;">🚫 Out-Patient (OP)</span>`;
+
+            // Disable Confirm Button & Alert User
+            confirmBtn.disabled = true;
+            confirmBtn.style.opacity = '0.55';
+            confirmBtn.style.cursor = 'not-allowed';
+            confirmBtn.className = 'btn btn-secondary';
+            confirmBtn.innerHTML = '<i class="bi bi-slash-circle"></i> OP Patient - Bed Allocation Not Allowed';
+
+            // Show Toast Alert Notification
+            triggerNotificationAlert(`⚠️ Cannot allocate bed to Outpatient '${p.name}' (OP: ${p.op_number}). Only In-Patients (IP) can be allocated to hospital beds.`, 'warning');
+        }
+    }
+
+    function clearSelectedPatient() {
+        currentlySelectedPatient = null;
+        document.getElementById('selectedPatientId').value = '';
+        document.getElementById('patientSearchInput').value = '';
+        document.getElementById('selectedPatientCard').style.display = 'none';
+        document.getElementById('opPatientAlertBanner').style.display = 'none';
+        
+        const confirmBtn = document.getElementById('confirmAllocateBtn');
+        confirmBtn.disabled = false;
+        confirmBtn.style.opacity = '1';
+        confirmBtn.style.cursor = 'pointer';
+        confirmBtn.className = 'btn btn-primary';
+        confirmBtn.innerHTML = '<i class="bi bi-check-lg"></i> Confirm Bed Allocation';
+    }
+
+    function validateAllocationSubmission(event) {
+        if (!currentlySelectedPatient) {
+            alert('Please search and select a patient first.');
+            event.preventDefault();
+            return false;
+        }
+
+        if (!currentlySelectedPatient.is_ip) {
+            alert(`⚠️ Bed Allocation Restricted!\n\nPatient '${currentlySelectedPatient.name}' (OP No: ${currentlySelectedPatient.op_number}) is currently registered as an Out-Patient (OP).\n\nHospital beds can ONLY be allocated to In-Patients (IP).\nPlease admit/convert this patient to In-Patient in the Admission Module first.`);
+            event.preventDefault();
+            return false;
+        }
+
+        return true;
+    }
+
+    // Dynamic Toast Notification Helper
+    function triggerNotificationAlert(message, type) {
+        const existingToast = document.getElementById('dynamicWardToast');
+        if (existingToast) existingToast.remove();
+
+        const toast = document.createElement('div');
+        toast.id = 'dynamicWardToast';
+        toast.style.position = 'fixed';
+        toast.style.top = '20px';
+        toast.style.right = '20px';
+        toast.style.zIndex = '999999';
+        toast.style.background = type === 'warning' ? '#b91c1c' : '#0284c7';
+        toast.style.color = '#ffffff';
+        toast.style.padding = '12px 18px';
+        toast.style.borderRadius = '8px';
+        toast.style.boxShadow = '0 10px 30px rgba(0,0,0,0.25)';
+        toast.style.fontWeight = '600';
+        toast.style.fontSize = '0.88rem';
+        toast.style.display = 'flex';
+        toast.style.alignItems = 'center';
+        toast.style.gap = '0.6rem';
+        toast.style.maxWidth = '420px';
+        toast.style.animation = 'modalSlideIn 0.25s ease';
+
+        toast.innerHTML = `<i class="bi bi-exclamation-triangle-fill" style="font-size:1.1rem;"></i> <span>${message}</span>`;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            if (toast) {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 4500);
+    }
+
+    // 4. OPEN SHIFT BED MODAL
+    function openShiftModal(visitId, patientName, currentWard, currentBed) {
+        document.getElementById('shiftVisitId').value = visitId;
+        document.getElementById('shiftPatientName').textContent = patientName;
+        document.getElementById('shiftCurrentLocation').textContent = `${currentWard} [${currentBed}]`;
+        
+        const wardSel = document.getElementById('shiftWardSelect');
+        const bedSel = document.getElementById('shiftBedSelect');
+        if (wardSel) wardSel.value = '';
+        if (bedSel) bedSel.innerHTML = '<option value="">-- Select Ward First --</option>';
+
+        openModal('shiftBedModal');
+    }
+
+    function loadAvailableBedsForShift() {
+        const wardId = document.getElementById('shiftWardSelect').value;
+        const bedSel = document.getElementById('shiftBedSelect');
+        if (!wardId) {
+            bedSel.innerHTML = '<option value="">-- Select Ward First --</option>';
+            return;
+        }
+
+        bedSel.innerHTML = '<option value="">Loading beds...</option>';
+        fetch(`{% url "patients:api_available_ward_beds" %}?ward_id=${wardId}`)
+            .then(r => r.json())
+            .then(data => {
+                bedSel.innerHTML = '';
+                if (data.beds && data.beds.length > 0) {
+                    data.beds.forEach(b => {
+                        const opt = document.createElement('option');
+                        opt.value = b;
+                        opt.textContent = `${b} (Vacant)`;
+                        bedSel.appendChild(opt);
+                    });
+                } else {
+                    bedSel.innerHTML = '<option value="">No vacant beds in this ward</option>';
+                }
+            });
+    }
+
+    // 5. OPEN VACATE BED MODAL
+    function openVacateModal(visitId, patientName, wardName, bedNo) {
+        document.getElementById('vacateVisitId').value = visitId;
+        document.getElementById('vacatePatientName').textContent = patientName;
+        document.getElementById('vacateBedLocation').textContent = `${wardName} [${bedNo}]`;
+
+        openModal('vacateBedModal');
+    }
+
+    // 6. PATIENT INVESTIGATIONS & RESULTS MODAL CONTROLLER
+    let loadedInvestigationsData = [];
+
+    function openPatientInvestigationsModal(patientPk, patientId, visitId, patientName, wardName, bedNo, opNo, ipNo, age, gender, dept, doctor) {
+        // Set Header Demographics
+        document.getElementById('invModalPatientName').textContent = patientName;
+        document.getElementById('invModalUHID').textContent = patientId;
+        document.getElementById('invModalOPNo').textContent = opNo || '--';
+        document.getElementById('invModalIPNo').textContent = ipNo || '--';
+        document.getElementById('invModalAgeGender').textContent = `${age} / ${gender}`;
+        document.getElementById('invModalWardBed').textContent = `${wardName} [${bedNo}]`;
+
+        // Configure Create Service Request link
+        const srUrl = `{% url "patients:ward_service_request" %}?patient_id=${patientPk}&visit_id=${visitId || ''}`;
+        document.getElementById('invModalCreateServiceRequestBtn').href = srUrl;
+        document.getElementById('invModalEmptyCreateBtn').href = srUrl;
+
+        // Reset Counts & States
+        document.getElementById('invModalTotalCount').textContent = '0';
+        document.getElementById('invModalCompletedCount').textContent = '0';
+        document.getElementById('invModalPendingCount').textContent = '0';
+        document.getElementById('invModalFilterSearch').value = '';
+        document.getElementById('invModalStatusFilter').value = 'ALL';
+
+        document.getElementById('invModalLoading').style.display = 'block';
+        document.getElementById('invModalEmptyState').style.display = 'none';
+        document.getElementById('invModalResultsList').innerHTML = '';
+
+        openModal('patientInvestigationsModal');
+
+        // Fetch investigations & results from backend API
+        fetch(`{% url "patients:api_patient_investigations_results" %}?patient_id=${patientPk}`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('invModalLoading').style.display = 'none';
+                if (data.status === 'success') {
+                    loadedInvestigationsData = data.investigations || [];
+                    document.getElementById('invModalTotalCount').textContent = data.total_count || '0';
+                    document.getElementById('invModalCompletedCount').textContent = data.completed_count || '0';
+                    document.getElementById('invModalPendingCount').textContent = data.pending_count || '0';
+
+                    renderModalInvestigationsList(loadedInvestigationsData);
+                } else {
+                    document.getElementById('invModalEmptyState').style.display = 'block';
+                }
+            })
+            .catch(err => {
+                document.getElementById('invModalLoading').style.display = 'none';
+                document.getElementById('invModalEmptyState').style.display = 'block';
+            });
+    }
+
+    function filterModalInvestigationsList() {
+        const query = document.getElementById('invModalFilterSearch').value.toLowerCase().trim();
+        const statusFilter = document.getElementById('invModalStatusFilter').value;
+
+        const filtered = loadedInvestigationsData.filter(item => {
+            const matchesStatus = statusFilter === 'ALL' ||
+                (statusFilter === 'COMPLETED' && item.is_completed) ||
+                (statusFilter === 'PENDING' && !item.is_completed);
+
+            if (!matchesStatus) return false;
+
+            if (!query) return true;
+
+            const nameMatch = (item.investigation_name || '').toLowerCase().includes(query);
+            const codeMatch = (item.investigation_code || '').toLowerCase().includes(query);
+            const deptMatch = (item.department_name || '').toLowerCase().includes(query);
+            const sampleMatch = (item.sample_id || '').toLowerCase().includes(query);
+            const paramMatch = (item.results || []).some(r =>
+                (r.parameter_name || '').toLowerCase().includes(query) ||
+                (r.result_value || '').toLowerCase().includes(query)
+            );
+
+            return nameMatch || codeMatch || deptMatch || sampleMatch || paramMatch;
+        });
+
+        renderModalInvestigationsList(filtered);
+    }
+
+    let allExpandedState = false;
+
+    function toggleExpandAllInvestigations() {
+        allExpandedState = !allExpandedState;
+        const allBodies = document.querySelectorAll('.inv-accordion-body');
+        const allChevrons = document.querySelectorAll('.inv-accordion-chevron');
+        const btn = document.getElementById('btnToggleExpandAll');
+
+        allBodies.forEach(b => {
+            b.style.display = allExpandedState ? 'block' : 'none';
+        });
+
+        allChevrons.forEach(c => {
+            if (allExpandedState) {
+                c.classList.remove('bi-chevron-down');
+                c.classList.add('bi-chevron-up');
+            } else {
+                c.classList.remove('bi-chevron-up');
+                c.classList.add('bi-chevron-down');
+            }
+        });
+
+        if (btn) {
+            btn.innerHTML = allExpandedState ?
+                '<i class="bi bi-arrows-collapse"></i> Collapse All' :
+                '<i class="bi bi-arrows-expand"></i> Expand All';
+        }
+    }
+
+    function toggleInvestigationDropdown(idx) {
+        const body = document.getElementById(`invBody_${idx}`);
+        const chevron = document.getElementById(`invChevron_${idx}`);
+        const btnText = document.getElementById(`invBtnText_${idx}`);
+
+        if (!body) return;
+
+        const isCurrentlyOpen = body.style.display === 'block';
+
+        if (isCurrentlyOpen) {
+            body.style.display = 'none';
+            if (chevron) {
+                chevron.classList.remove('bi-chevron-up');
+                chevron.classList.add('bi-chevron-down');
+            }
+            if (btnText) btnText.textContent = 'View Results';
+        } else {
+            body.style.display = 'block';
+            if (chevron) {
+                chevron.classList.remove('bi-chevron-down');
+                chevron.classList.add('bi-chevron-up');
+            }
+            if (btnText) btnText.textContent = 'Hide Results';
+        }
+    }
+
+    function renderModalInvestigationsList(items) {
+        const container = document.getElementById('invModalResultsList');
+        container.innerHTML = '';
+
+        if (!items || items.length === 0) {
+            document.getElementById('invModalEmptyState').style.display = 'block';
+            return;
+        }
+
+        document.getElementById('invModalEmptyState').style.display = 'none';
+
+        items.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.style.background = '#ffffff';
+            card.style.border = '1.5px solid #e2e8f0';
+            card.style.borderRadius = '10px';
+            card.style.boxShadow = '0 2px 6px rgba(0,0,0,0.03)';
+            card.style.overflow = 'hidden';
+            card.style.transition = 'all 0.2s ease';
+
+            const statusBadgeColor = item.is_completed ? '#047857' : '#b45309';
+            const statusBadgeBg = item.is_completed ? '#d1fae5' : '#fef3c7';
+            const statusBorder = item.is_completed ? '#a7f3d0' : '#fde68a';
+            const paramCount = (item.results || []).length;
+
+            let diagnosesHtml = '';
+            if (item.diagnoses && item.diagnoses.length > 0) {
+                diagnosesHtml = `
+                    <div style="font-size: 0.78rem; color: #475569; margin-top: 6px; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                        <span style="font-weight: 700; color: #64748b;"><i class="bi bi-tag-fill"></i> Clinical Diagnosis:</span>
+                        ${item.diagnoses.map(d => `<span class="badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;font-size:0.75rem;">${d}</span>`).join(' ')}
+                    </div>
+                `;
+            }
+
+            let resultsTableHtml = '';
+            if (item.results && item.results.length > 0) {
+                const rowsHtml = item.results.map((r, rIdx) => {
+                    const isAbnormal = (r.status || '').toUpperCase().includes('ABNORMAL') || (r.status || '').toUpperCase().includes('HIGH') || (r.status || '').toUpperCase().includes('LOW') || (r.status || '').toUpperCase().includes('CRITICAL');
+                    const valStyle = isAbnormal ? 'font-weight: 800; color: #b91c1c; background: #fee2e2; padding: 3px 8px; border-radius: 4px; display: inline-block; border: 1px solid #fecaca;' : 'font-weight: 700; color: #0f172a;';
+
+                    return `
+                        <tr style="${isAbnormal ? 'background: #fff5f5;' : ''}">
+                            <td style="text-align: center; color: #64748b; font-size: 0.78rem; width: 40px; font-weight: 600;">${rIdx + 1}</td>
+                            <td>
+                                <strong style="color: #1e293b; font-size: 0.88rem;">${r.parameter_name}</strong>
+                                ${r.parameter_code ? `<span style="font-size:0.75rem;color:#64748b;font-family:monospace;margin-left:4px;">(${r.parameter_code})</span>` : ''}
+                                ${r.remarks ? `<div style="font-size:0.72rem;color:#64748b;font-style:italic;margin-top:2px;">${r.remarks}</div>` : ''}
+                            </td>
+                            <td><span style="${valStyle}">${r.result_value || '--'}</span></td>
+                            <td style="color: #475569; font-size: 0.82rem; font-weight: 600;">${r.unit || '--'}</td>
+                            <td style="color: #475569; font-size: 0.82rem; font-family: monospace;">${r.reference_range || '--'}</td>
+                            <td style="text-align: center;">
+                                <span class="badge" style="background: ${isAbnormal ? '#fee2e2' : '#dcfce7'}; color: ${isAbnormal ? '#b91c1c' : '#15803d'}; font-size: 0.75rem; font-weight: 700; padding: 4px 8px; border: 1px solid ${isAbnormal ? '#fca5a5' : '#bbf7d0'};">
+                                    ${r.status || (item.is_completed ? 'Normal' : 'Pending')}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                resultsTableHtml = `
+                    <div style="overflow-x: auto; padding: 0.75rem 1rem;">
+                        <table class="table table-sm table-bordered table-hover mb-0" style="font-size: 0.84rem; vertical-align: middle;">
+                            <thead style="background: #f1f5f9; font-size: 0.75rem; text-transform: uppercase; color: #475569; font-weight: 700; letter-spacing: 0.3px;">
+                                <tr>
+                                    <th style="text-align: center; width: 40px;">#</th>
+                                    <th>Test Component / Parameter</th>
+                                    <th>Observed Result</th>
+                                    <th>Unit</th>
+                                    <th>Reference Range</th>
+                                    <th style="text-align: center; width: 110px;">Status / Flag</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else {
+                resultsTableHtml = `
+                    <div style="padding: 1.25rem; background: #fffbeb; font-size: 0.84rem; color: #92400e; display: flex; align-items: center; gap: 0.6rem;">
+                        <i class="bi bi-hourglass-split" style="font-size: 1.3rem;"></i>
+                        <div>
+                            <strong>Order placed on ${item.request_date}.</strong>
+                            <div>Laboratory test processing is in progress. Parameter results have not been finalized yet.</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Always expand the first test by default, collapse others
+            const isDefaultOpen = index === 0;
+
+            card.innerHTML = `
+                <!-- Dropdown Header Bar -->
+                <div onclick="toggleInvestigationDropdown(${index})" style="background: #f8fafc; padding: 0.85rem 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; cursor: pointer; user-select: none; border-left: 4px solid ${item.is_completed ? '#059669' : '#0284c7'};">
+                    <div style="flex: 1; min-width: 260px;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <span style="background: #0284c7; color: #ffffff; font-weight: 800; font-size: 0.78rem; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                                ${index + 1}
+                            </span>
+                            <strong style="font-size: 1.05rem; color: #0f172a;">${item.investigation_name}</strong>
+                            <span style="font-family: monospace; font-size: 0.78rem; background: #e2e8f0; color: #334155; padding: 2px 7px; border-radius: 4px; font-weight: 700;">${item.investigation_code}</span>
+                            <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 0.75rem; font-weight: 700;">${item.department_name}</span>
+                            <span class="badge" style="background: #f1f5f9; color: #475569; font-size: 0.75rem;">${paramCount} Parameters</span>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.6rem; font-size: 0.78rem; color: #64748b; margin-top: 4px;">
+                            <span>Sample ID: <strong style="font-family: monospace; color: #0284c7;">${item.sample_id}</strong></span>
+                            <span>•</span>
+                            <span>Sample Type: <strong>${item.sample_type}</strong></span>
+                            <span>•</span>
+                            <span>Ordered Date: <strong>${item.request_date}</strong></span>
+                            <span>•</span>
+                            <span>Doctor: <strong>${item.doctor_name}</strong></span>
+                        </div>
+                        ${diagnosesHtml}
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span class="badge" style="background: ${statusBadgeBg}; color: ${statusBadgeColor}; border: 1px solid ${statusBorder}; font-size: 0.8rem; font-weight: 800; padding: 5px 10px;">
+                            ${item.is_completed ? '🟢 COMPLETED' : '🟡 ' + (item.status || 'PENDING')}
+                        </span>
+
+                        <!-- Interactive Dropdown Toggle Button -->
+                        <button type="button" class="btn btn-sm btn-outline-primary" style="font-weight: 700; font-size: 0.8rem; padding: 3px 10px; display: inline-flex; align-items: center; gap: 0.35rem; border-radius: 6px;">
+                            <span id="invBtnText_${index}">${isDefaultOpen ? 'Hide Results' : 'View Results'}</span>
+                            <i id="invChevron_${index}" class="bi inv-accordion-chevron ${isDefaultOpen ? 'bi-chevron-up' : 'bi-chevron-down'}" style="font-size: 0.85rem; font-weight: 800;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dropdown Expandable Results Content -->
+                <div id="invBody_${index}" class="inv-accordion-body" style="display: ${isDefaultOpen ? 'block' : 'none'}; border-top: 1px solid #e2e8f0; background: #ffffff;">
+                    ${resultsTableHtml}
+                </div>
+            `;
+
+            container.appendChild(card);
+        });
+    }
+
+    // Close autocomplete on click outside
+    document.addEventListener('click', function (e) {
+        if (searchResults && !searchResults.contains(e.target) && e.target !== searchInput) {
+            searchResults.style.display = 'none';
+        }
+    });
+</script>
+
+<style>
+    .custom-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(4px);
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+    .custom-modal-overlay.active {
+        display: flex !important;
+    }
+    .custom-modal-box {
+        background: #ffffff;
+        border-radius: 14px;
+        width: 100%;
+        max-height: 92vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+        animation: modalSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalSlideIn {
+        from { opacity: 0; transform: translateY(-16px) scale(0.97); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .bed-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.08) !important;
+    }
+</style>
+{% endblock %}

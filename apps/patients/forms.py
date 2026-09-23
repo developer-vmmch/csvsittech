@@ -1,6 +1,51 @@
 from django import forms
 from django.db.models import Q
-from .models import Patient, PatientCompany, Department, DepartmentUnit, PatientVisit, BranchTransferRequest
+from .models import Patient, PatientCompany, Department, DepartmentUnit, PatientVisit, BranchTransferRequest, Ward
+
+class WardForm(forms.ModelForm):
+    department = forms.ModelChoiceField(
+        queryset=Department.objects.filter(is_active=True),
+        required=False,
+        empty_label="-- Select Mapped Department (Optional) --",
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_ward_department'})
+    )
+
+    class Meta:
+        model = Ward
+        fields = ['code', 'name', 'department', 'ward_type', 'gender_category', 'total_beds', 'floor_building', 'description', 'is_active']
+        widgets = {
+            'code': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'e.g. GW-01 or ICU-01', 'required': 'required'}),
+            'name': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'e.g. General Ward or Medical ICU', 'required': 'required'}),
+            'ward_type': forms.Select(attrs={'class': 'form-select', 'required': 'required'}),
+            'gender_category': forms.Select(attrs={'class': 'form-select', 'required': 'required'}),
+            'total_beds': forms.NumberInput(attrs={'class': 'form-input', 'min': '0', 'placeholder': 'e.g. 20'}),
+            'floor_building': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'e.g. Main Block - 2nd Floor'}),
+            'description': forms.Textarea(attrs={'class': 'form-textarea', 'rows': 3, 'placeholder': 'Optional notes or ward features'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
+        }
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name:
+            name = name.strip()
+            qs = Ward.objects.filter(name__iexact=name)
+            if self.instance and self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise forms.ValidationError("Ward name already exists.")
+        return name
+
+    def clean_code(self):
+        code = self.cleaned_data.get('code')
+        if code:
+            code = code.strip()
+            qs = Ward.objects.filter(code__iexact=code)
+            if self.instance and self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise forms.ValidationError("Ward code already exists.")
+        return code
+
 
 class DepartmentForm(forms.ModelForm):
     class Meta:
@@ -262,6 +307,32 @@ class PatientRegistrationForm(forms.ModelForm):
         }
 
 
+WARD_CHOICES = [
+    ('', 'Select Ward'),
+    ('General Ward', 'General Ward'),
+    ('Male Medical Ward', 'Male Medical Ward'),
+    ('Female Medical Ward', 'Female Medical Ward'),
+    ('Male Surgical Ward', 'Male Surgical Ward'),
+    ('Female Surgical Ward', 'Female Surgical Ward'),
+    ('Casualty / Emergency Ward', 'Casualty / Emergency Ward'),
+    ('ICU (Intensive Care Unit)', 'ICU (Intensive Care Unit)'),
+    ('ICCU (Intensive Cardiac Care Unit)', 'ICCU (Intensive Cardiac Care Unit)'),
+    ('NICU (Neonatal ICU)', 'NICU (Neonatal ICU)'),
+    ('PICU (Pediatric ICU)', 'PICU (Pediatric ICU)'),
+    ('Maternity / OG Ward', 'Maternity / OG Ward'),
+    ('Paediatric Ward', 'Paediatric Ward'),
+    ('Orthopedic Ward', 'Orthopedic Ward'),
+    ('ENT Ward', 'ENT Ward'),
+    ('Ophthalmology Ward', 'Ophthalmology Ward'),
+    ('Post-Operative Ward', 'Post-Operative Ward'),
+    ('Special Ward (Single AC)', 'Special Ward (Single AC)'),
+    ('Special Ward (Non-AC)', 'Special Ward (Non-AC)'),
+    ('Semi-Special / Twin Sharing', 'Semi-Special / Twin Sharing'),
+    ('Isolation Ward', 'Isolation Ward'),
+    ('Day Care Ward', 'Day Care Ward'),
+]
+
+
 class PatientVisitForm(forms.ModelForm):
     department_obj = forms.ModelChoiceField(
         queryset=Department.objects.filter(is_active=True),
@@ -275,6 +346,11 @@ class PatientVisitForm(forms.ModelForm):
         empty_label="Select Unit / Doctor",
         widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_visit_unit'})
     )
+    ward = forms.ChoiceField(
+        choices=WARD_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_visit_ward'})
+    )
 
     class Meta:
         model = PatientVisit
@@ -286,8 +362,8 @@ class PatientVisitForm(forms.ModelForm):
             'visit_type': forms.Select(attrs={'class': 'form-select', 'id': 'id_visit_type'}),
             'centre': forms.Select(attrs={'class': 'form-select', 'id': 'id_visit_centre'}),
             'category': forms.Select(attrs={'class': 'form-select', 'id': 'id_visit_category'}),
-            'ipno': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_ipno', 'placeholder': 'IP Number'}),
-            'ward': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ward'}),
+            'ipno': forms.HiddenInput(attrs={'id': 'id_ipno'}),
+            'ward': forms.Select(choices=WARD_CHOICES, attrs={'class': 'form-select', 'id': 'id_visit_ward'}),
             'bed': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Bed'}),
             'ref_no': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ref No'}),
             'ref_by': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Referred By'}),
@@ -331,15 +407,67 @@ class PatientVisitForm(forms.ModelForm):
             self.fields['visit_type'].initial = 'IP'
             self.fields['category'].choices = [('EMERGENCY', 'Emergency'), ('CASUALTY', 'Casualty')]
             self.fields['category'].initial = 'EMERGENCY'
+            self.fields['ward'].initial = 'Casualty / Emergency Ward'
         else:
             self.fields['department_obj'].queryset = Department.objects.filter(is_active=True)
             self.fields['unit_obj'].queryset = DepartmentUnit.objects.filter(is_active=True)
 
+        Ward.seed_defaults()
+        ward_qs = Ward.objects.filter(is_active=True)
+
+        if patient:
+            gender_raw = str(patient.gender or '').strip().upper()
+            title_raw = str(patient.title or '').strip().upper()
+            age_years = patient.age_years if patient.age_years is not None else 0
+
+            is_paediatric = (0 < age_years < 13) or title_raw in ['BABY', 'MASTER'] or str(patient.category or '').upper() == 'PAEDIATRIC'
+            is_male = (gender_raw in ['MALE', 'M']) or (title_raw in ['MR', 'MASTER'] and not is_paediatric)
+            is_female = (gender_raw in ['FEMALE', 'F']) or (title_raw in ['MRS', 'MS', 'MISS'])
+
+            if is_paediatric:
+                ward_qs = ward_qs.filter(gender_category__in=[Ward.GenderCategoryChoices.PAEDIATRIC, Ward.GenderCategoryChoices.UNISEX])
+            elif is_male:
+                ward_qs = ward_qs.filter(gender_category__in=[Ward.GenderCategoryChoices.MALE, Ward.GenderCategoryChoices.UNISEX])
+            elif is_female:
+                ward_qs = ward_qs.filter(gender_category__in=[Ward.GenderCategoryChoices.FEMALE, Ward.GenderCategoryChoices.UNISEX])
+
+        active_wards = ward_qs.order_by('name').values_list('name', 'name')
+        if active_wards.exists():
+            self.fields['ward'].choices = [('', 'Select Ward')] + list(active_wards)
+        else:
+            self.fields['ward'].choices = [('', 'Select Ward')]
+
         self.fields['ipno'].required = False
+        self.fields['ward'].required = False
         self.fields['centre'].required = False
         self.fields['reg_fees'].required = False
         self.fields['coll_status'].required = False
         self.fields['category'].required = False
+
+    def clean_ward(self):
+        ward_name = (self.cleaned_data.get('ward') or '').strip()
+        if not ward_name:
+            return ward_name
+
+        if self.patient:
+            gender_raw = str(self.patient.gender or '').strip().upper()
+            title_raw = str(self.patient.title or '').strip().upper()
+            age_years = self.patient.age_years if self.patient.age_years is not None else 0
+
+            is_paediatric = (0 < age_years < 13) or title_raw in ['BABY', 'MASTER'] or str(self.patient.category or '').upper() == 'PAEDIATRIC'
+            is_male = (gender_raw in ['MALE', 'M']) or (title_raw in ['MR', 'MASTER'] and not is_paediatric)
+            is_female = (gender_raw in ['FEMALE', 'F']) or (title_raw in ['MRS', 'MS', 'MISS'])
+
+            ward_obj = Ward.objects.filter(name__iexact=ward_name, is_active=True).first()
+            if ward_obj:
+                if is_male and ward_obj.gender_category == Ward.GenderCategoryChoices.FEMALE:
+                    raise forms.ValidationError(f"Cannot assign Female ward '{ward_name}' to a Male patient.")
+                elif is_female and ward_obj.gender_category == Ward.GenderCategoryChoices.MALE:
+                    raise forms.ValidationError(f"Cannot assign Male ward '{ward_name}' to a Female patient.")
+                elif not is_paediatric and ward_obj.gender_category == Ward.GenderCategoryChoices.PAEDIATRIC:
+                    raise forms.ValidationError(f"Cannot assign Paediatric ward '{ward_name}' to an Adult patient.")
+
+        return ward_name
 
     def clean_ipno(self):
         ip = (self.cleaned_data.get('ipno') or '').strip()

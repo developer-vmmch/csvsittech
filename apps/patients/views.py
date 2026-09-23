@@ -31,8 +31,8 @@ import csv
 from django.http import HttpResponse
 from django.utils import timezone
 from datetime import datetime
-from .models import Patient, PatientCompany, Department, DepartmentUnit, PatientVisit, BranchTransferRequest
-from .forms import PatientRegistrationForm, PatientCompanyForm, DepartmentForm, DepartmentUnitForm, PatientVisitForm, BranchTransferRequestForm
+from .models import Patient, PatientCompany, Department, DepartmentUnit, PatientVisit, BranchTransferRequest, Ward
+from .forms import PatientRegistrationForm, PatientCompanyForm, DepartmentForm, DepartmentUnitForm, PatientVisitForm, BranchTransferRequestForm, WardForm
 
 from django.contrib.auth import get_user_model
 
@@ -1791,4 +1791,909 @@ def export_branch_transfers_csv(request):
     return response
 
 
+# ============================================================================
+# WARD MANAGEMENT CRUD
+# ============================================================================
 
+class WardListView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
+    menu_key = 'ward_management'
+    model = Ward
+    template_name = 'patients/ward_list.html'
+    context_object_name = 'wards'
+    paginate_by = 25
+
+    def get_queryset(self):
+        qs = Ward.objects.select_related('department').all().order_by('name')
+        q = self.request.GET.get('q', '').strip()
+        dept = self.request.GET.get('department', '').strip()
+        gender = self.request.GET.get('gender', '').strip()
+        ward_type = self.request.GET.get('ward_type', '').strip()
+        status = self.request.GET.get('status', '').strip()
+
+        if q:
+            qs = qs.filter(Q(name__icontains=q) | Q(code__icontains=q) | Q(floor_building__icontains=q))
+        if dept:
+            qs = qs.filter(department_id=dept)
+        if gender:
+            qs = qs.filter(gender_category=gender)
+        if ward_type:
+            qs = qs.filter(ward_type=ward_type)
+        if status == 'active':
+            qs = qs.filter(is_active=True)
+        elif status == 'inactive':
+            qs = qs.filter(is_active=False)
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        all_wards = Ward.objects.all()
+        context['total_wards_count'] = all_wards.count()
+        context['active_wards_count'] = all_wards.filter(is_active=True).count()
+        context['total_beds_count'] = sum(w.capacity or 0 for w in all_wards)
+        context['departments'] = Department.objects.filter(is_active=True).order_by('name')
+        context['gender_categories'] = Ward.GenderCategoryChoices.choices
+        context['ward_types'] = Ward.WardTypeChoices.choices
+        context['q'] = self.request.GET.get('q', '')
+        context['selected_dept'] = self.request.GET.get('department', '')
+        context['selected_gender'] = self.request.GET.get('gender', '')
+        context['selected_type'] = self.request.GET.get('ward_type', '')
+        context['selected_status'] = self.request.GET.get('status', '')
+        return context
+
+
+class WardCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, CreateView):
+    menu_key = 'ward_management'
+    model = Ward
+    form_class = WardForm
+    template_name = 'patients/ward_form.html'
+    success_url = reverse_lazy('patients:ward_list')
+
+    def form_valid(self, form):
+        ward = form.save()
+        messages.success(self.request, f"Ward '{ward.name}' ({ward.code}) created successfully!")
+        return super().form_valid(form)
+
+
+class WardUpdateView(LoginRequiredMixin, MenuAccessRequiredMixin, UpdateView):
+    menu_key = 'ward_management'
+    model = Ward
+    form_class = WardForm
+    template_name = 'patients/ward_form.html'
+    success_url = reverse_lazy('patients:ward_list')
+
+    def form_valid(self, form):
+        ward = form.save()
+        messages.success(self.request, f"Ward '{ward.name}' ({ward.code}) updated successfully!")
+        return super().form_valid(form)
+
+
+class WardDeleteView(LoginRequiredMixin, MenuAccessRequiredMixin, DeleteView):
+    menu_key = 'ward_management'
+    model = Ward
+    success_url = reverse_lazy('patients:ward_list')
+
+    def post(self, request, *args, **kwargs):
+        ward = self.get_object()
+        messages.success(request, f"Ward '{ward.name}' ({ward.code}) deleted successfully.")
+        return super().post(request, *args, **kwargs)
+
+
+# ============================================================================
+# WARD & BED ALLOCATION MATRIX
+# ============================================================================
+
+class WardAllocationView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
+    menu_key = 'ward_allocation'
+    template_name = 'patients/ward_allocation.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        all_wards = Ward.objects.filter(is_active=True).select_related('department').order_by('name')
+        departments = Department.objects.filter(is_active=True).order_by('name')
+
+        search_q = self.request.GET.get('q', '').strip().lower()
+        selected_ward_id = self.request.GET.get('ward', '').strip()
+        selected_dept_id = self.request.GET.get('department', '').strip()
+        selected_gender = self.request.GET.get('gender', '').strip()
+        selected_status = self.request.GET.get('status', 'all').strip()
+
+        # Fetch active IP admissions
+        active_visits = PatientVisit.objects.filter(
+            visit_type=Patient.VisitChoices.IP,
+            discharge_date__isnull=True
+        ).select_related('patient', 'department_obj', 'unit_obj').order_by('-id')
+
+        # Map active visits by ward and bed
+        visits_by_ward = {}
+        for v in active_visits:
+            w_key = (v.ward or '').strip().lower()
+            b_key = (v.bed or '').strip().upper()
+            if w_key and b_key:
+                visits_by_ward.setdefault(w_key, {})[b_key] = v
+
+        total_hospital_beds = 0
+        total_occupied_beds = 0
+        ward_matrix = []
+
+        for w in all_wards:
+            capacity = w.capacity or 20
+            total_hospital_beds += capacity
+            w_name_lower = (w.name or '').strip().lower()
+            w_code_lower = (w.code or '').strip().lower()
+
+            ward_visits = {}
+            if w_name_lower in visits_by_ward:
+                ward_visits.update(visits_by_ward[w_name_lower])
+            if w_code_lower in visits_by_ward:
+                ward_visits.update(visits_by_ward[w_code_lower])
+
+            occupied_count = len(ward_visits)
+            total_occupied_beds += occupied_count
+            available_count = max(0, capacity - occupied_count)
+            occupancy_pct = int((occupied_count / capacity) * 100) if capacity > 0 else 0
+
+            # Generate bed slots
+            bed_slots = []
+            has_matching_visible = False
+
+            for i in range(1, capacity + 1):
+                bed_num = f"B-{i:02d}"
+                is_occupied = bed_num.upper() in ward_visits
+                visit_obj = ward_visits.get(bed_num.upper())
+                p_data = None
+
+                if is_occupied and visit_obj and visit_obj.patient:
+                    p = visit_obj.patient
+                    # Calculate admission duration
+                    days_admitted = 1
+                    if visit_obj.visit_date:
+                        diff = timezone.now().date() - visit_obj.visit_date.date()
+                        days_admitted = max(1, diff.days + 1)
+
+                    p_data = {
+                        'name': f"{p.title + ' ' if p.title else ''}{p.name}".strip(),
+                        'patient_id': p.patient_id,
+                        'op_number': p.op_number or '--',
+                        'ipno': visit_obj.ipno or (p.ipno or '--'),
+                        'age': f"{p.age_years}Y" if p.age_years else (f"{p.age_months}M" if p.age_months else f"{p.age_days}D"),
+                        'gender': p.gender or 'Male',
+                        'department': visit_obj.department or (p.department or '--'),
+                        'unit_doctor': visit_obj.unit_doctor or (p.unit_doctor or '--'),
+                        'days_admitted': days_admitted,
+                        'admission_id': visit_obj.id,
+                        'visit_id': visit_obj.id,
+                        'patient_pk': p.id,
+                    }
+
+                # Filtering visibility
+                visible = True
+                if selected_status == 'available' and is_occupied:
+                    visible = False
+                elif selected_status == 'occupied' and not is_occupied:
+                    visible = False
+
+                if search_q:
+                    if not is_occupied or not p_data:
+                        if search_q not in bed_num.lower():
+                            visible = False
+                    else:
+                        match_q = (
+                            search_q in p_data['name'].lower() or
+                            search_q in str(p_data['patient_id']).lower() or
+                            search_q in str(p_data['op_number']).lower() or
+                            search_q in str(p_data['ipno']).lower() or
+                            search_q in bed_num.lower() or
+                            search_q in str(p_data['department']).lower()
+                        )
+                        if not match_q:
+                            visible = False
+
+                if visible:
+                    has_matching_visible = True
+
+                bed_slots.append({
+                    'bed_number': bed_num,
+                    'is_occupied': is_occupied,
+                    'visible': visible,
+                    'patient': p_data,
+                })
+
+            # Ward-level filter
+            ward_matches = True
+            if selected_ward_id and str(w.id) != selected_ward_id:
+                ward_matches = False
+            if selected_dept_id and (not w.department or str(w.department_id) != selected_dept_id):
+                ward_matches = False
+            if selected_gender and w.gender_category != selected_gender:
+                ward_matches = False
+
+            has_visible_beds = ward_matches and (has_matching_visible if (search_q or selected_status != 'all') else True)
+
+            ward_matrix.append({
+                'ward': w,
+                'occupied_count': occupied_count,
+                'available_count': available_count,
+                'total_beds': capacity,
+                'occupancy_pct': occupancy_pct,
+                'bed_slots': bed_slots,
+                'has_visible_beds': has_visible_beds,
+            })
+
+        total_available_beds = max(0, total_hospital_beds - total_occupied_beds)
+        hospital_occupancy_rate = int((total_occupied_beds / total_hospital_beds) * 100) if total_hospital_beds > 0 else 0
+
+        context.update({
+            'all_wards': all_wards,
+            'departments': departments,
+            'gender_categories': Ward.GenderCategoryChoices.choices,
+            'total_hospital_beds': total_hospital_beds,
+            'total_occupied_beds': total_occupied_beds,
+            'total_available_beds': total_available_beds,
+            'hospital_occupancy_rate': hospital_occupancy_rate,
+            'ward_matrix': ward_matrix,
+            'search_q': self.request.GET.get('q', ''),
+            'selected_ward_id': selected_ward_id,
+            'selected_dept_id': selected_dept_id,
+            'selected_gender': selected_gender,
+            'selected_status': selected_status,
+        })
+        return context
+
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get('action')
+
+        if action == 'allocate_bed':
+            patient_id = request.POST.get('patient_id')
+            ward_id = request.POST.get('ward_id')
+            bed_number = request.POST.get('bed_number')
+            department_id = request.POST.get('department_id')
+            doctor = request.POST.get('doctor', '').strip()
+            admission_notes = request.POST.get('admission_notes', '').strip()
+
+            try:
+                patient = Patient.objects.filter(Q(id=patient_id) | Q(patient_id=patient_id)).first()
+                if not patient:
+                    messages.error(request, "Patient not found.")
+                    return redirect('patients:ward_allocation')
+
+                # Verification: Only IP can be allocated
+                active_ip = PatientVisit.objects.filter(
+                    patient=patient,
+                    visit_type=Patient.VisitChoices.IP,
+                    discharge_date__isnull=True
+                ).order_by('-id').first()
+
+                ward_obj = Ward.objects.filter(id=ward_id).first()
+                ward_name = ward_obj.name if ward_obj else 'General Ward'
+
+                if active_ip:
+                    # Update active IP visit
+                    active_ip.ward = ward_name
+                    active_ip.bed = bed_number
+                    if department_id:
+                        dept_obj = Department.objects.filter(id=department_id).first()
+                        if dept_obj:
+                            active_ip.department_obj = dept_obj
+                            active_ip.department = dept_obj.name
+                    if doctor:
+                        active_ip.unit_doctor = doctor
+                    active_ip.save()
+                else:
+                    dept_obj = None
+                    if department_id:
+                        dept_obj = Department.objects.filter(id=department_id).first()
+                    elif patient.department_obj:
+                        dept_obj = patient.department_obj
+
+                    PatientVisit.objects.create(
+                        patient=patient,
+                        visit_type=Patient.VisitChoices.IP,
+                        visit_no=patient.visits.count() + 1,
+                        ipno=patient.ipno or f"IP{patient.patient_id}",
+                        ward=ward_name,
+                        bed=bed_number,
+                        department_obj=dept_obj,
+                        department=dept_obj.name if dept_obj else patient.department,
+                        unit_doctor=doctor or patient.unit_doctor,
+                        complaint=admission_notes or patient.complaint,
+                        visit_date=timezone.now()
+                    )
+
+                messages.success(request, f"Bed '{bed_number}' in '{ward_name}' allocated successfully to {patient.name}!")
+            except Exception as e:
+                messages.error(request, f"Error allocating bed: {str(e)}")
+
+            return redirect('patients:ward_allocation')
+
+        elif action == 'vacate_bed':
+            visit_id = request.POST.get('visit_id')
+            discharge_type = request.POST.get('discharge_type', 'Normal / Improved')
+            discharge_notes = request.POST.get('discharge_notes', '').strip()
+
+            try:
+                visit = PatientVisit.objects.filter(id=visit_id).first()
+                if visit:
+                    visit.discharge_date = timezone.now()
+                    if discharge_notes:
+                        visit.complaint = (visit.complaint or '') + f" [Discharge: {discharge_type} - {discharge_notes}]"
+                    visit.save()
+                    messages.success(request, f"Bed '{visit.bed}' vacated and patient discharged successfully.")
+                else:
+                    messages.error(request, "Active admission not found.")
+            except Exception as e:
+                messages.error(request, f"Error vacating bed: {str(e)}")
+
+            return redirect('patients:ward_allocation')
+
+        elif action == 'shift_bed':
+            visit_id = request.POST.get('visit_id')
+            new_ward_id = request.POST.get('new_ward_id')
+            new_bed_number = request.POST.get('new_bed_number')
+            shift_reason = request.POST.get('shift_reason', '').strip()
+
+            try:
+                visit = PatientVisit.objects.filter(id=visit_id).first()
+                new_ward = Ward.objects.filter(id=new_ward_id).first()
+                if visit and new_ward:
+                    old_loc = f"{visit.ward} [{visit.bed}]"
+                    visit.ward = new_ward.name
+                    visit.bed = new_bed_number
+                    if shift_reason:
+                        visit.complaint = (visit.complaint or '') + f" [Shifted from {old_loc}: {shift_reason}]"
+                    visit.save()
+                    messages.success(request, f"Patient shifted successfully to '{new_ward.name}' [{new_bed_number}].")
+                else:
+                    messages.error(request, "Invalid shift request.")
+            except Exception as e:
+                messages.error(request, f"Error shifting bed: {str(e)}")
+
+            return redirect('patients:ward_allocation')
+
+        messages.error(request, "Invalid action.")
+        return redirect('patients:ward_allocation')
+
+
+@login_required
+def api_search_patient_for_allocation(request):
+    """
+    Returns search results for bed allocation modal autocomplete.
+    Searches by name, patient_id (UHID), op_number, ipno, mobile_no.
+    Distinguishes IP patients vs OP patients.
+    """
+    q = request.GET.get('q', '').strip()
+    if not q or len(q) < 2:
+        return JsonResponse({'status': 'success', 'patients': []})
+
+    patients = Patient.objects.filter(
+        Q(patient_id__icontains=q) |
+        Q(name__icontains=q) |
+        Q(op_number__icontains=q) |
+        Q(ipno__icontains=q) |
+        Q(mobile_no__icontains=q)
+    ).select_related('department_obj', 'unit_obj')[:15]
+
+    results = []
+    for p in patients:
+        active_ip = PatientVisit.objects.filter(
+            patient=p,
+            visit_type=Patient.VisitChoices.IP,
+            discharge_date__isnull=True
+        ).order_by('-id').first()
+
+        is_ip = bool(active_ip) or (p.is_inpatient if hasattr(p, 'is_inpatient') else False) or bool(p.ipno)
+
+        results.append({
+            'id': p.id,
+            'patient_id': p.patient_id,
+            'name': f"{p.title + ' ' if p.title else ''}{p.name}".strip(),
+            'op_number': p.op_number or '--',
+            'ipno': active_ip.ipno if active_ip else (p.ipno or '--'),
+            'age': p.age_years or (p.age_months or p.age_days or '--'),
+            'age_unit': 'Y' if p.age_years else ('M' if p.age_months else 'D'),
+            'gender': p.gender or 'Male',
+            'mobile_no': p.mobile_no or '',
+            'is_ip': is_ip,
+            'is_admitted': bool(active_ip and active_ip.ward and active_ip.bed),
+            'current_ward': active_ip.ward if active_ip else '',
+            'current_bed': active_ip.bed if active_ip else '',
+            'department_id': active_ip.department_obj_id if active_ip else (p.department_obj_id or ''),
+            'department': active_ip.department if active_ip else (p.department or ''),
+            'unit_doctor': active_ip.unit_doctor if active_ip else (p.unit_doctor or ''),
+        })
+
+    return JsonResponse({'status': 'success', 'patients': results})
+
+
+@login_required
+def api_available_ward_beds(request):
+    """
+    Returns vacant bed numbers for a selected hospital ward.
+    """
+    ward_id = request.GET.get('ward_id')
+    ward = Ward.objects.filter(id=ward_id).first()
+    if not ward:
+        return JsonResponse({'status': 'error', 'message': 'Ward not found', 'beds': []})
+
+    capacity = ward.capacity or 20
+    active_beds = PatientVisit.objects.filter(
+        Q(ward__iexact=ward.name) | Q(ward__iexact=ward.code),
+        visit_type=Patient.VisitChoices.IP,
+        discharge_date__isnull=True
+    ).values_list('bed', flat=True)
+
+    occupied_set = {b.strip().upper() for b in active_beds if b}
+    available_beds = []
+
+    for i in range(1, capacity + 1):
+        bed_str = f"B-{i:02d}"
+        if bed_str.upper() not in occupied_set:
+            available_beds.append(bed_str)
+
+    return JsonResponse({'status': 'success', 'beds': available_beds, 'total_available': len(available_beds)})
+
+
+@login_required
+def api_patient_investigations_results(request):
+    """
+    Returns all laboratory investigations, diagnostic orders, and test results for a patient.
+    Accepts patient_id (PK or UHID/patient_id).
+    """
+    from apps.lab.models import (
+        ServiceRequest, ServiceRequestInvestigation, ServiceRequestResult,
+        PatientInvestigationOrder, PatientInvestigationResult, InvestigationParameter
+    )
+
+    p_param = (request.GET.get('patient_id') or request.GET.get('uhid') or '').strip()
+    if not p_param:
+        return JsonResponse({'status': 'error', 'message': 'Patient ID is required.', 'investigations': []})
+
+    patient = None
+    if p_param.isdigit():
+        patient = Patient.objects.filter(Q(id=int(p_param)) | Q(patient_id=p_param)).first()
+    else:
+        patient = Patient.objects.filter(patient_id=p_param).first()
+
+    if not patient:
+        return JsonResponse({'status': 'error', 'message': f"Patient '{p_param}' not found.", 'investigations': []})
+
+    # 1. Fetch ServiceRequests
+    sr_qs = ServiceRequest.objects.filter(patient=patient).prefetch_related(
+        'investigations__investigation__department',
+        'investigations__investigation__sample_type',
+        'investigations__investigation__parameters',
+        'investigations__results__investigation_parameter',
+        'investigations__results__applied_reference_range',
+        'investigations__received_by',
+        'investigations__completed_by',
+        'diagnoses__diagnosis',
+        'diagnoses__chief_complaint',
+        'department',
+        'created_by',
+        'consultant'
+    ).order_by('-request_date', '-id')
+
+    investigations_list = []
+    total_tests_count = 0
+    completed_tests_count = 0
+    pending_tests_count = 0
+
+    for sr in sr_qs:
+        # Diagnoses for this request
+        diag_names = []
+        for d in sr.diagnoses.all():
+            if d.diagnosis:
+                diag_names.append(d.diagnosis.name)
+            elif d.chief_complaint:
+                diag_names.append(d.chief_complaint.name)
+
+        for sr_inv in sr.investigations.filter(is_removed=False):
+            total_tests_count += 1
+            inv = sr_inv.investigation
+            
+            # Check results
+            results_data = []
+            res_map = {r.investigation_parameter_id: r for r in sr_inv.results.all()}
+            
+            all_params = list(inv.parameters.filter(is_active=True).order_by('display_order'))
+            
+            if res_map:
+                for p in all_params:
+                    res_obj = res_map.get(p.id)
+                    if res_obj:
+                        ref_range = p.reference_range or ''
+                        if res_obj.applied_reference_range:
+                            ref_range = res_obj.applied_reference_range.reference_text or ref_range
+                        results_data.append({
+                            'parameter_name': p.name or p.code or 'Result',
+                            'parameter_code': p.code or '',
+                            'result_value': res_obj.result_value,
+                            'unit': p.unit or '',
+                            'reference_range': ref_range,
+                            'status': res_obj.status or sr_inv.result_status or 'Normal',
+                            'remarks': res_obj.remarks or '',
+                        })
+                    else:
+                        results_data.append({
+                            'parameter_name': p.name or p.code or 'Result',
+                            'parameter_code': p.code or '',
+                            'result_value': '--',
+                            'unit': p.unit or '',
+                            'reference_range': p.reference_range or '',
+                            'status': 'Pending Entry',
+                            'remarks': '',
+                        })
+            else:
+                # No individual parameter results recorded yet
+                for p in all_params:
+                    results_data.append({
+                        'parameter_name': p.name or p.code or 'Result',
+                        'parameter_code': p.code or '',
+                        'result_value': '--',
+                        'unit': p.unit or '',
+                        'reference_range': p.reference_range or '',
+                        'status': 'Awaiting Test',
+                        'remarks': '',
+                    })
+
+            is_completed = bool(sr_inv.status == 'COMPLETED' or sr_inv.result_status or (res_map and all(r.result_value for r in res_map.values())))
+            if is_completed:
+                completed_tests_count += 1
+            else:
+                pending_tests_count += 1
+
+            status_display = 'Completed' if is_completed else (sr_inv.get_status_display() if hasattr(sr_inv, 'get_status_display') else sr_inv.status)
+
+            investigations_list.append({
+                'source_type': 'SERVICE_REQUEST',
+                'order_id': sr.id,
+                'sample_id': sr.sample_id or '--',
+                'receipt_no': sr.receipt_no or '--',
+                'request_date': sr.request_date.strftime('%d-%m-%Y') if sr.request_date else sr.created_at.strftime('%d-%m-%Y'),
+                'request_datetime': sr.created_at.strftime('%d-%m-%Y %H:%M') if sr.created_at else '',
+                'investigation_id': inv.id,
+                'investigation_name': inv.name,
+                'investigation_code': inv.code,
+                'department_name': inv.department.name if inv.department else (sr.department.name if sr.department else 'General Lab'),
+                'sample_type': inv.sample_type.name if inv.sample_type else '--',
+                'doctor_name': sr.consultant_name or (sr.consultant.get_full_name() if sr.consultant else '--'),
+                'status': status_display,
+                'is_completed': is_completed,
+                'diagnoses': diag_names,
+                'results': results_data,
+                'results_count': len(results_data),
+                'received_date': sr_inv.received_date.strftime('%d-%m-%Y') if sr_inv.received_date else None,
+                'completed_date': sr_inv.completed_date.strftime('%d-%m-%Y %H:%M') if sr_inv.completed_date else None,
+            })
+
+    # 2. Also check PatientInvestigationOrder records
+    pio_qs = PatientInvestigationOrder.objects.filter(patient=patient).prefetch_related(
+        'investigation__department',
+        'investigation__sample_type',
+        'investigation__parameters',
+        'results__investigation_parameter',
+        'results__applied_reference_range',
+        'ordered_by',
+        'diagnosis'
+    ).order_by('-ordered_on')
+
+    for pio in pio_qs:
+        inv = pio.investigation
+        total_tests_count += 1
+        results_data = []
+        res_map = {r.investigation_parameter_id: r for r in pio.results.all()}
+        all_params = list(inv.parameters.filter(is_active=True).order_by('display_order'))
+
+        for p in all_params:
+            res_obj = res_map.get(p.id)
+            if res_obj:
+                results_data.append({
+                    'parameter_name': p.name or p.code or 'Result',
+                    'parameter_code': p.code or '',
+                    'result_value': res_obj.result_value,
+                    'unit': p.unit or '',
+                    'reference_range': (res_obj.applied_reference_range.reference_text if res_obj.applied_reference_range else p.reference_range) or '',
+                    'status': res_obj.get_flag_display() if hasattr(res_obj, 'get_flag_display') else res_obj.flag,
+                    'remarks': '',
+                })
+            else:
+                results_data.append({
+                    'parameter_name': p.name or p.code or 'Result',
+                    'parameter_code': p.code or '',
+                    'result_value': '--',
+                    'unit': p.unit or '',
+                    'reference_range': p.reference_range or '',
+                    'status': 'Pending',
+                    'remarks': '',
+                })
+
+        is_completed = (pio.status == 'COMPLETED') or bool(res_map)
+        if is_completed:
+            completed_tests_count += 1
+        else:
+            pending_tests_count += 1
+
+        investigations_list.append({
+            'source_type': 'LAB_ORDER',
+            'order_id': pio.id,
+            'sample_id': f"ORD-{pio.id:05d}",
+            'receipt_no': '--',
+            'request_date': pio.ordered_on.strftime('%d-%m-%Y') if pio.ordered_on else '',
+            'request_datetime': pio.ordered_on.strftime('%d-%m-%Y %H:%M') if pio.ordered_on else '',
+            'investigation_id': inv.id,
+            'investigation_name': inv.name,
+            'investigation_code': inv.code,
+            'department_name': inv.department.name if inv.department else 'General Lab',
+            'sample_type': inv.sample_type.name if inv.sample_type else '--',
+            'doctor_name': pio.ordered_by.get_full_name() if pio.ordered_by else '--',
+            'status': pio.get_status_display() if hasattr(pio, 'get_status_display') else pio.status,
+            'is_completed': is_completed,
+            'diagnoses': [pio.diagnosis.name] if pio.diagnosis else [],
+            'results': results_data,
+            'results_count': len(results_data),
+            'received_date': None,
+            'completed_date': None,
+        })
+
+    patient_info = {
+        'id': patient.id,
+        'patient_id': patient.patient_id,
+        'name': f"{patient.title + ' ' if patient.title else ''}{patient.name}".strip(),
+        'op_number': patient.op_number or '--',
+        'ipno': patient.ipno or '--',
+        'gender': patient.gender or 'Male',
+        'age': f"{patient.age_years}Y" if patient.age_years else (f"{patient.age_months}M" if patient.age_months else f"{patient.age_days}D"),
+        'department': patient.department or '--',
+        'unit_doctor': patient.unit_doctor or '--',
+    }
+
+    return JsonResponse({
+        'status': 'success',
+        'patient': patient_info,
+        'investigations': investigations_list,
+        'total_count': total_tests_count,
+        'completed_count': completed_tests_count,
+        'pending_count': pending_tests_count,
+    })
+
+
+# ============================================================================
+# WARD SERVICE REQUEST VIEW & APIS
+# ============================================================================
+
+class WardServiceRequestView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
+    menu_key = 'ward_service_request'
+    template_name = 'patients/ward_service_request.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        import json
+
+        wards = Ward.objects.filter(is_active=True).order_by('name')
+        departments = Department.objects.filter(is_active=True).order_by('name')
+
+        initial_patients = PatientVisit.objects.filter(
+            visit_type=Patient.VisitChoices.IP,
+            discharge_date__isnull=True
+        ).select_related('patient', 'department_obj', 'unit_obj').order_by('-id')[:50]
+
+        patient_id_param = self.request.GET.get('patient_id')
+        visit_id_param = self.request.GET.get('visit_id')
+
+        preselected_patient = None
+        target_pv = None
+
+        if visit_id_param:
+            target_pv = PatientVisit.objects.filter(id=visit_id_param).select_related('patient', 'department_obj', 'unit_obj').first()
+        elif patient_id_param:
+            target_pv = PatientVisit.objects.filter(patient_id=patient_id_param, visit_type=Patient.VisitChoices.IP, discharge_date__isnull=True).select_related('patient', 'department_obj', 'unit_obj').order_by('-id').first()
+            if not target_pv:
+                target_p = Patient.objects.filter(id=patient_id_param).first()
+                if target_p:
+                    preselected_patient = {
+                        'patient_id': target_p.id,
+                        'uhid': target_p.patient_id,
+                        'op_number': target_p.op_number or '--',
+                        'ipno': target_p.ipno or '--',
+                        'name': f"{target_p.title + ' ' if target_p.title else ''}{target_p.name}".strip(),
+                        'gender': target_p.gender or 'Male',
+                        'age': f"{target_p.age_years}Y" if target_p.age_years else (f"{target_p.age_months}M" if target_p.age_months else f"{target_p.age_days}D"),
+                        'ward': 'General Ward',
+                        'bed': '--',
+                        'department': target_p.department or '--',
+                        'unit_doctor': target_p.unit_doctor or '--',
+                        'visit_date': timezone.now().strftime('%d-%m-%Y %H:%M'),
+                        'complaint': target_p.complaint or '',
+                    }
+
+        if target_pv and target_pv.patient:
+            tp = target_pv.patient
+            preselected_patient = {
+                'patient_id': tp.id,
+                'uhid': tp.patient_id,
+                'op_number': tp.op_number or '--',
+                'ipno': target_pv.ipno or (tp.ipno or '--'),
+                'name': f"{tp.title + ' ' if tp.title else ''}{tp.name}".strip(),
+                'gender': tp.gender or 'Male',
+                'age': f"{tp.age_years}Y" if tp.age_years else (f"{tp.age_months}M" if tp.age_months else f"{tp.age_days}D"),
+                'ward': target_pv.ward or 'General Ward',
+                'bed': target_pv.bed or '--',
+                'department': target_pv.department or (tp.department or '--'),
+                'unit_doctor': target_pv.unit_doctor or (tp.unit_doctor or '--'),
+                'visit_date': target_pv.visit_date.strftime('%d-%m-%Y %H:%M') if target_pv.visit_date else timezone.now().strftime('%d-%m-%Y %H:%M'),
+                'complaint': tp.complaint or '',
+            }
+
+        context.update({
+            'wards': wards,
+            'departments': departments,
+            'initial_patients': initial_patients,
+            'preselected_patient_json': json.dumps(preselected_patient) if preselected_patient else 'null',
+        })
+        return context
+
+    def post(self, request, *args, **kwargs):
+        import json
+        from apps.lab.models import ServiceRequest, ServiceRequestDiagnosis, ServiceRequestInvestigation
+        from django.db import transaction
+
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json':
+            try:
+                data = json.loads(request.body)
+                patient_id = data.get('patient_id')
+                if not patient_id:
+                    return JsonResponse({'status': 'error', 'message': 'Patient is required.'})
+
+                patient = Patient.objects.get(id=patient_id)
+                department_id = data.get('department_id')
+                department_obj = None
+                if department_id:
+                    department_obj = Department.objects.filter(id=department_id).first()
+                if not department_obj and patient.department_obj:
+                    department_obj = patient.department_obj
+
+                investigations_data = data.get('investigations', [])
+                if not investigations_data:
+                    return JsonResponse({'status': 'error', 'message': 'At least one investigation must be selected.'})
+
+                with transaction.atomic():
+                    sr = ServiceRequest.objects.create(
+                        patient=patient,
+                        consultant=request.user,
+                        consultant_name=data.get('consultant_name') or patient.unit_doctor or request.user.get_full_name() or request.user.username,
+                        department=department_obj,
+                        visit_type=ServiceRequest.VisitTypeChoices.INPATIENT,
+                        request_date=timezone.now().date(),
+                        receipt_no=data.get('receipt_no', ''),
+                        status=ServiceRequest.StatusChoices.SAVED,
+                        created_by=request.user
+                    )
+
+                    diagnoses_data = data.get('diagnoses', [])
+                    for idx, diag_item in enumerate(diagnoses_data):
+                        item_type = diag_item.get('type')
+                        item_id = diag_item.get('id')
+                        if item_type == 'Diagnosis' and item_id:
+                            ServiceRequestDiagnosis.objects.create(
+                                service_request=sr,
+                                diagnosis_id=item_id,
+                                sort_order=idx
+                            )
+                        elif item_type == 'ChiefComplaint' and item_id:
+                            ServiceRequestDiagnosis.objects.create(
+                                service_request=sr,
+                                chief_complaint_id=item_id,
+                                sort_order=idx
+                            )
+
+                    for inv in investigations_data:
+                        inv_id = inv.get('id')
+                        if inv_id:
+                            ServiceRequestInvestigation.objects.create(
+                                service_request=sr,
+                                investigation_id=inv_id,
+                                qty=inv.get('qty', 1),
+                                source=inv.get('source', 'MANUAL'),
+                                is_removed=inv.get('is_removed', False)
+                            )
+
+                return JsonResponse({
+                    'status': 'success',
+                    'message': f"Ward Service Request created successfully for {patient.name} ({sr.sample_id})!",
+                    'service_request_id': sr.id,
+                    'sample_id': sr.sample_id
+                })
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': str(e)})
+
+        messages.error(request, "Invalid request format.")
+        return redirect('patients:ward_service_request')
+
+
+@login_required
+def api_ward_service_request_patients(request):
+    """
+    Returns admitted in-patients for the Ward Service Request right panel.
+    Filters by: ward, department, search query, date, type.
+    """
+    q = request.GET.get('q', '').strip()
+    ward_id = request.GET.get('ward', '').strip()
+    dept_id = request.GET.get('dept', '').strip()
+    date_str = request.GET.get('date', '').strip()
+    patient_type = request.GET.get('type', 'ALL').strip().upper()
+
+    qs = PatientVisit.objects.filter(
+        visit_type=Patient.VisitChoices.IP,
+        discharge_date__isnull=True
+    ).select_related('patient', 'department_obj', 'unit_obj').order_by('-id')
+
+    if ward_id:
+        ward_obj = Ward.objects.filter(id=ward_id).first()
+        if ward_obj:
+            qs = qs.filter(Q(ward__iexact=ward_obj.name) | Q(ward__iexact=ward_obj.code))
+        else:
+            qs = qs.filter(ward__icontains=ward_id)
+
+    if dept_id:
+        try:
+            qs = qs.filter(department_obj_id=int(dept_id))
+        except ValueError:
+            qs = qs.filter(department__icontains=dept_id)
+
+    if date_str:
+        try:
+            dt = datetime.strptime(date_str, '%Y-%m-%d').date()
+            qs = qs.filter(visit_date__date=dt)
+        except ValueError:
+            pass
+
+    if patient_type and patient_type != 'ALL':
+        if patient_type in ['A', 'IP']:
+            qs = qs.filter(visit_type='IP')
+        elif patient_type == 'EMERGENCY':
+            qs = qs.filter(Q(category__icontains='EMERGENCY') | Q(department__icontains='EMERGENCY') | Q(patient__patient_id__startswith='E'))
+
+    if q:
+        matching_pids = Patient.objects.filter(
+            Q(patient_id__icontains=q) |
+            Q(name__icontains=q) |
+            Q(op_number__icontains=q) |
+            Q(ipno__icontains=q) |
+            Q(mobile_no__icontains=q)
+        ).values_list('id', flat=True)
+
+        qs = qs.filter(
+            Q(patient_id__in=matching_pids) |
+            Q(ipno__icontains=q) |
+            Q(bed__icontains=q) |
+            Q(ward__icontains=q)
+        )
+
+    results = []
+    for idx, v in enumerate(qs[:60], start=1):
+        p = v.patient
+        if not p:
+            continue
+        results.append({
+            'row_num': idx,
+            'visit_id': v.id,
+            'patient_id': p.id,
+            'uhid': p.patient_id,
+            'op_number': p.op_number or '--',
+            'ipno': v.ipno or (p.ipno or '--'),
+            'name': p.name,
+            'title': p.title or '',
+            'gender': p.gender or 'Male',
+            'age_display': f"{p.age_years}Y" if p.age_years else (f"{p.age_months}M" if p.age_months else f"{p.age_days}D"),
+            'ward': v.ward or 'Unassigned Ward',
+            'bed': v.bed or '--',
+            'department_id': v.department_obj_id or (p.department_obj_id or ''),
+            'department': v.department or (p.department or '--'),
+            'unit_doctor': v.unit_doctor or (p.unit_doctor or '--'),
+            'complaint': p.complaint or '',
+            'visit_date': v.visit_date.strftime('%d-%m-%Y %H:%M') if v.visit_date else '',
+            'mobile_no': p.mobile_no or '--',
+            'blood_group': p.blood_group or '--',
+        })
+
+    return JsonResponse({'status': 'success', 'patients': results, 'total_count': len(results)})

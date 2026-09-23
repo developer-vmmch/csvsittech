@@ -285,19 +285,27 @@
                     <i class="bi bi-chevron-down submenu-chevron"></i>
                 </a>
                 <ul class="submenu-list">
-                    {% if not user.is_authenticated or user.get_menu_mapping.ward_management %}
-                    <li>
-                        <a href="javascript:void(0);" title="Ward Management">
+                    {% if not user.is_authenticated or user.get_menu_mapping.ward_management or user.get_menu_mapping.ward %}
+                    <li class="{% if 'ward_list' in request.resolver_match.url_name or 'ward_add' in request.resolver_match.url_name or 'ward_edit' in request.resolver_match.url_name %}active{% endif %}">
+                        <a href="{% url 'patients:ward_list' %}" title="Ward Management">
                             <i class="bi bi-building"></i>
                             <span>Ward Management</span>
                         </a>
                     </li>
                     {% endif %}
                     {% if not user.is_authenticated or user.get_menu_mapping.ward_allocation %}
-                    <li>
-                        <a href="javascript:void(0);" title="Ward Allocation">
-                            <i class="bi bi-person-check"></i>
+                    <li class="{% if request.resolver_match.url_name == 'ward_allocation' %}active{% endif %}">
+                        <a href="{% url 'patients:ward_allocation' %}" title="Ward & Bed Allocation Matrix">
+                            <i class="bi bi-person-check" style="color: #10b981;"></i>
                             <span>Ward Allocation</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if not user.is_authenticated or user.get_menu_mapping.ward_service_request %}
+                    <li class="{% if request.resolver_match.url_name == 'ward_service_request' %}active{% endif %}">
+                        <a href="{% url 'patients:ward_service_request' %}" title="Ward Service Request">
+                            <i class="bi bi-clipboard-plus" style="color: #0284c7;"></i>
+                            <span>Ward Service Request</span>
                         </a>
                     </li>
                     {% endif %}
@@ -323,7 +331,9 @@
 
             <!-- MASTER Module -->
             {% if not user.is_authenticated or user.get_menu_mapping.master %}
+
             <li class="nav-item has-submenu {% if 'master' in request.resolver_match.url_name or 'lab_master' in request.resolver_match.url_name or 'parameter' in request.resolver_match.url_name or 'reference_range' in request.resolver_match.url_name or 'diagnosis' in request.resolver_match.url_name or 'age_group' in request.resolver_match.url_name or 'department_list' in request.resolver_match.url_name %}open active-parent{% endif %}">
+
                 <a href="javascript:void(0);" class="submenu-toggle" title="Master">
                     <i class="bi bi-database" style="color: #ef4444;"></i>
                     <span>Master</span>
@@ -331,10 +341,18 @@
                 </a>
                 <ul class="submenu-list">
                     {% if not user.is_authenticated or user.get_menu_mapping.master_departments %}
-                    <li>
+                    <li class="{% if 'department_' in request.resolver_match.url_name %}active{% endif %}">
                         <a href="{% url 'patients:department_list' %}">
                             <i class="bi bi-building"></i>
                             <span>Hospital Departments</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if not user.is_authenticated or user.get_menu_mapping.master_wards or user.get_menu_mapping.master %}
+                    <li class="{% if 'ward_list' in request.resolver_match.url_name or 'ward_add' in request.resolver_match.url_name or 'ward_edit' in request.resolver_match.url_name %}active{% endif %}">
+                        <a href="{% url 'patients:ward_list' %}">
+                            <i class="bi bi-hospital"></i>
+                            <span>Hospital Wards</span>
                         </a>
                     </li>
                     {% endif %}

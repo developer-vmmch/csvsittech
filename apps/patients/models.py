@@ -62,6 +62,120 @@ class DepartmentUnit(TimeStampedModel):
         return f"{self.unit_name} ({self.department.name})"
 
 
+class Ward(TimeStampedModel):
+    class GenderCategoryChoices(models.TextChoices):
+        MALE = 'MALE', 'Male Patients Only'
+        FEMALE = 'FEMALE', 'Female Patients Only'
+        UNISEX = 'UNISEX', 'Both / Unisex (Male & Female)'
+        PAEDIATRIC = 'PAEDIATRIC', 'Paediatric (Children)'
+
+    class WardTypeChoices(models.TextChoices):
+        GENERAL = 'GENERAL', 'General Ward'
+        MALE_GENERAL = 'MALE_GENERAL', 'Male General Ward'
+        FEMALE_GENERAL = 'FEMALE_GENERAL', 'Female General Ward'
+        MALE_MEDICAL = 'MALE_MEDICAL', 'Male Medical Ward'
+        FEMALE_MEDICAL = 'FEMALE_MEDICAL', 'Female Medical Ward'
+        MALE_SURGICAL = 'MALE_SURGICAL', 'Male Surgical Ward'
+        FEMALE_SURGICAL = 'FEMALE_SURGICAL', 'Female Surgical Ward'
+        SPECIAL = 'SPECIAL', 'Special Ward'
+        SEMI_SPECIAL = 'SEMI_SPECIAL', 'Semi-Special Ward'
+        ICU = 'ICU', 'ICU / Critical Care'
+        EMERGENCY = 'EMERGENCY', 'Emergency / Casualty'
+        POST_OP = 'POST_OP', 'Post-Operative Ward'
+        MATERNITY = 'MATERNITY', 'Maternity / OG Ward (Female)'
+        PAEDIATRIC = 'PAEDIATRIC', 'Paediatric Ward (Child)'
+        ISOLATION = 'ISOLATION', 'Isolation Ward'
+        DAY_CARE = 'DAY_CARE', 'Day Care Ward'
+        OTHER = 'OTHER', 'Other'
+
+    name = models.CharField(max_length=100, unique=True, verbose_name="Ward Name")
+    code = models.CharField(max_length=50, unique=True, verbose_name="Ward Code")
+    department = models.ForeignKey('Department', on_delete=models.SET_NULL, null=True, blank=True, related_name='wards', verbose_name="Mapped Department")
+    gender_category = models.CharField(
+        max_length=20,
+        choices=GenderCategoryChoices.choices,
+        default=GenderCategoryChoices.UNISEX,
+        verbose_name="Patient Gender / Category"
+    )
+    ward_type = models.CharField(max_length=30, choices=WardTypeChoices.choices, default=WardTypeChoices.GENERAL, verbose_name="Ward Type")
+    total_beds = models.PositiveIntegerField(default=10, verbose_name="Total Beds")
+    floor_building = models.CharField(max_length=100, blank=True, null=True, verbose_name="Building / Floor / Location")
+    description = models.TextField(blank=True, null=True, verbose_name="Description / Notes")
+    is_active = models.BooleanField(default=True, verbose_name="Active Status")
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = "Hospital Ward"
+        verbose_name_plural = "Hospital Wards"
+
+    def __str__(self):
+        dept_str = f" - {self.department.name}" if self.department else ""
+        gender_str = f" [{self.get_gender_category_display()}]"
+        return f"{self.name} ({self.code}){dept_str}{gender_str}"
+
+    @property
+    def capacity(self):
+        return self.total_beds or 10
+
+    @classmethod
+    def seed_defaults(cls):
+        """Ensures default hospital wards exist in DB and are mapped to departments and genders"""
+        Department.seed_defaults()
+        dept_map = {d.name.upper(): d for d in Department.objects.all()}
+
+        default_wards = [
+            {'code': 'GEN-01', 'name': 'General Ward', 'ward_type': cls.WardTypeChoices.GENERAL, 'gender_category': cls.GenderCategoryChoices.UNISEX, 'total_beds': 30, 'floor_building': 'Main Block - 1st Floor', 'dept_name': 'GENERAL MEDICINE'},
+            {'code': 'MMW-01', 'name': 'Male Medical Ward', 'ward_type': cls.WardTypeChoices.MALE_MEDICAL, 'gender_category': cls.GenderCategoryChoices.MALE, 'total_beds': 20, 'floor_building': 'Main Block - 2nd Floor', 'dept_name': 'GENERAL MEDICINE'},
+            {'code': 'FMW-01', 'name': 'Female Medical Ward', 'ward_type': cls.WardTypeChoices.FEMALE_MEDICAL, 'gender_category': cls.GenderCategoryChoices.FEMALE, 'total_beds': 20, 'floor_building': 'Main Block - 2nd Floor', 'dept_name': 'GENERAL MEDICINE'},
+            {'code': 'MSW-01', 'name': 'Male Surgical Ward', 'ward_type': cls.WardTypeChoices.MALE_SURGICAL, 'gender_category': cls.GenderCategoryChoices.MALE, 'total_beds': 20, 'floor_building': 'Surgical Block - 1st Floor', 'dept_name': 'GENERAL SURGERY'},
+            {'code': 'FSW-01', 'name': 'Female Surgical Ward', 'ward_type': cls.WardTypeChoices.FEMALE_SURGICAL, 'gender_category': cls.GenderCategoryChoices.FEMALE, 'total_beds': 20, 'floor_building': 'Surgical Block - 1st Floor', 'dept_name': 'GENERAL SURGERY'},
+            {'code': 'CAS-01', 'name': 'Casualty / Emergency Ward', 'ward_type': cls.WardTypeChoices.EMERGENCY, 'gender_category': cls.GenderCategoryChoices.UNISEX, 'total_beds': 15, 'floor_building': 'Emergency Ground Floor', 'dept_name': 'EMERGENCY MEDICINE'},
+            {'code': 'ICU-01', 'name': 'ICU (Intensive Care Unit)', 'ward_type': cls.WardTypeChoices.ICU, 'gender_category': cls.GenderCategoryChoices.UNISEX, 'total_beds': 12, 'floor_building': 'Critical Care Block - 3rd Floor', 'dept_name': 'GENERAL MEDICINE'},
+            {'code': 'ICCU-01', 'name': 'ICCU (Intensive Cardiac Care Unit)', 'ward_type': cls.WardTypeChoices.ICU, 'gender_category': cls.GenderCategoryChoices.UNISEX, 'total_beds': 8, 'floor_building': 'Cardiology Block - 3rd Floor', 'dept_name': 'GENERAL MEDICINE'},
+            {'code': 'NICU-01', 'name': 'NICU (Neonatal ICU)', 'ward_type': cls.WardTypeChoices.ICU, 'gender_category': cls.GenderCategoryChoices.PAEDIATRIC, 'total_beds': 10, 'floor_building': 'Paediatric Block - 2nd Floor', 'dept_name': 'PAEDIATRICS'},
+            {'code': 'PICU-01', 'name': 'PICU (Pediatric ICU)', 'ward_type': cls.WardTypeChoices.ICU, 'gender_category': cls.GenderCategoryChoices.PAEDIATRIC, 'total_beds': 8, 'floor_building': 'Paediatric Block - 2nd Floor', 'dept_name': 'PAEDIATRICS'},
+            {'code': 'MAT-01', 'name': 'Maternity / OG Ward', 'ward_type': cls.WardTypeChoices.MATERNITY, 'gender_category': cls.GenderCategoryChoices.FEMALE, 'total_beds': 25, 'floor_building': 'Maternity Wing - 1st Floor', 'dept_name': 'OBSTETRICS'},
+            {'code': 'PED-01', 'name': 'Paediatric Ward', 'ward_type': cls.WardTypeChoices.PAEDIATRIC, 'gender_category': cls.GenderCategoryChoices.PAEDIATRIC, 'total_beds': 20, 'floor_building': 'Paediatric Block - 1st Floor', 'dept_name': 'PAEDIATRICS'},
+            {'code': 'ORT-01', 'name': 'Orthopedic Ward', 'ward_type': cls.WardTypeChoices.GENERAL, 'gender_category': cls.GenderCategoryChoices.UNISEX, 'total_beds': 15, 'floor_building': 'Orthopedic Wing - Ground Floor', 'dept_name': 'ORTHOPAEDICS'},
+            {'code': 'ENT-01', 'name': 'ENT Ward', 'ward_type': cls.WardTypeChoices.GENERAL, 'gender_category': cls.GenderCategoryChoices.UNISEX, 'total_beds': 10, 'floor_building': 'Speciality Wing - 2nd Floor', 'dept_name': 'ENT'},
+            {'code': 'OPH-01', 'name': 'Ophthalmology Ward', 'ward_type': cls.WardTypeChoices.GENERAL, 'gender_category': cls.GenderCategoryChoices.UNISEX, 'total_beds': 10, 'floor_building': 'Eye Care Wing - 1st Floor', 'dept_name': 'OPHTHALMOLOGY'},
+            {'code': 'POP-01', 'name': 'Post-Operative Ward', 'ward_type': cls.WardTypeChoices.POST_OP, 'gender_category': cls.GenderCategoryChoices.UNISEX, 'total_beds': 16, 'floor_building': 'OT Complex - 2nd Floor', 'dept_name': 'GENERAL SURGERY'},
+            {'code': 'SP-AC-01', 'name': 'Special Ward (Single AC)', 'ward_type': cls.WardTypeChoices.SPECIAL, 'gender_category': cls.GenderCategoryChoices.UNISEX, 'total_beds': 10, 'floor_building': 'Executive Block - 4th Floor', 'dept_name': None},
+            {'code': 'SP-NAC-01', 'name': 'Special Ward (Non-AC)', 'ward_type': cls.WardTypeChoices.SPECIAL, 'gender_category': cls.GenderCategoryChoices.UNISEX, 'total_beds': 10, 'floor_building': 'Executive Block - 4th Floor', 'dept_name': None},
+            {'code': 'SEMI-01', 'name': 'Semi-Special / Twin Sharing', 'ward_type': cls.WardTypeChoices.SEMI_SPECIAL, 'gender_category': cls.GenderCategoryChoices.UNISEX, 'total_beds': 14, 'floor_building': 'Executive Block - 3rd Floor', 'dept_name': None},
+            {'code': 'ISO-01', 'name': 'Isolation Ward', 'ward_type': cls.WardTypeChoices.ISOLATION, 'gender_category': cls.GenderCategoryChoices.UNISEX, 'total_beds': 6, 'floor_building': 'Infectious Disease Wing', 'dept_name': None},
+            {'code': 'DAY-01', 'name': 'Day Care Ward', 'ward_type': cls.WardTypeChoices.DAY_CARE, 'gender_category': cls.GenderCategoryChoices.UNISEX, 'total_beds': 10, 'floor_building': 'Day Care Centre - Ground Floor', 'dept_name': None},
+        ]
+        for w in default_wards:
+            dept_target = dept_map.get(w['dept_name']) if w.get('dept_name') else None
+            ward_obj = cls.objects.filter(code__iexact=w['code']).first() or cls.objects.filter(name__iexact=w['name']).first()
+            if not ward_obj:
+                cls.objects.create(
+                    code=w['code'],
+                    name=w['name'],
+                    ward_type=w['ward_type'],
+                    gender_category=w['gender_category'],
+                    total_beds=w['total_beds'],
+                    floor_building=w['floor_building'],
+                    department=dept_target
+                )
+        # Auto-align any existing wards by name
+        for ward in cls.objects.all():
+            w_name = ward.name.lower()
+            if 'female' in w_name or 'maternity' in w_name or 'og ward' in w_name:
+                if ward.gender_category != cls.GenderCategoryChoices.FEMALE:
+                    ward.gender_category = cls.GenderCategoryChoices.FEMALE
+                    ward.save(update_fields=['gender_category'])
+            elif 'male' in w_name:
+                if ward.gender_category != cls.GenderCategoryChoices.MALE:
+                    ward.gender_category = cls.GenderCategoryChoices.MALE
+                    ward.save(update_fields=['gender_category'])
+            elif any(k in w_name for k in ['paediatric', 'pediatric', 'nicu', 'picu', 'child', 'infant']):
+                if ward.gender_category != cls.GenderCategoryChoices.PAEDIATRIC:
+                    ward.gender_category = cls.GenderCategoryChoices.PAEDIATRIC
+                    ward.save(update_fields=['gender_category'])
+
+
 class PatientCompany(TimeStampedModel):
     class CompanyCategory(models.TextChoices):
         INDIVIDUAL = 'INDIVIDUAL', 'Individual / Self Pay'
