@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('lab', '0057_remove_atcjob_date_mode_remove_atcjob_source_year_and_more'),
-        ('patients', '0017_alter_patient_guardian_relationship_and_more'),
+        ('patients', '0017_ward_alter_patient_guardian_relationship_and_more'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

@@ -10,22 +10,56 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 APPS_DIR = BASE_DIR / 'apps'
 sys.path.insert(0, str(APPS_DIR))
 
-# Load environment variables from .env file
-load_dotenv(BASE_DIR / '.env')
+# Load environment variables (.env in project root or /etc/csvsittech/.env)
+system_env = Path('/etc/csvsittech/.env')
+if system_env.exists():
+    load_dotenv(system_env)
+else:
+    load_dotenv(BASE_DIR / '.env')
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-vmmc-erp-dev-key')
-DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
-ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'vmmcerp-production.up.railway.app,127.0.0.1,localhost,*').split(',') if host.strip()]
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-vmmc-erp-dev-key'
+    else:
+        raise ValueError("SECRET_KEY environment variable is required in production.")
 
-# CSRF & Security for Production Deployments (Railway / HTTPS)
-CSRF_TRUSTED_ORIGINS = [
-    origin.strip() for origin in os.getenv(
-        'CSRF_TRUSTED_ORIGINS',
-        'https://vmmcerp-production.up.railway.app,http://vmmcerp-production.up.railway.app,http://127.0.0.1:8000,http://localhost:8000'
-    ).split(',') if origin.strip()
-]
+# Allowed Hosts & CSRF Origins for csvsittech.in
+allowed_hosts_env = os.getenv(
+    'ALLOWED_HOSTS',
+    'csvsittech.in,www.csvsittech.in,127.0.0.1,localhost'
+)
+ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(',') if host.strip()]
 
+csrf_origins_env = os.getenv(
+    'CSRF_TRUSTED_ORIGINS',
+    'https://csvsittech.in,https://www.csvsittech.in,http://127.0.0.1:8000,http://localhost:8000'
+)
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_origins_env.split(',') if origin.strip()]
+
+# Security headers & SSL
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1', 't')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+else:
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+
+# CORS Configuration
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [
+    origin for origin in CSRF_TRUSTED_ORIGINS if origin.startswith(('http://', 'https://'))
+]
 
 # Application definition
 INSTALLED_APPS = [
@@ -102,9 +136,9 @@ elif USE_POSTGRES:
     DATABASES = {
         'default': {
             'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
-            'NAME': os.getenv('DB_NAME', os.getenv('PGDATABASE', 'project3db')),
-            'USER': os.getenv('DB_USER', os.getenv('PGUSER', 'project3user')),
-            'PASSWORD': os.getenv('DB_PASSWORD', os.getenv('PGPASSWORD', 'VMMCerp@2026')),
+            'NAME': os.getenv('DB_NAME', os.getenv('PGDATABASE', 'csvsittech_db')),
+            'USER': os.getenv('DB_USER', os.getenv('PGUSER', 'csvsittech_user')),
+            'PASSWORD': os.getenv('DB_PASSWORD', os.getenv('PGPASSWORD', '')),
             'HOST': os.getenv('DB_HOST', os.getenv('PGHOST', '127.0.0.1')),
             'PORT': os.getenv('DB_PORT', os.getenv('PGPORT', '5432')),
             'CONN_MAX_AGE': 600,

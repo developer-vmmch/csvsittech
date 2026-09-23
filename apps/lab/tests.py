@@ -13,8 +13,8 @@ class ResolveReferenceRangeTests(TestCase):
             parameter=self.parameter
         )
         
-        self.age_group_newborn = AgeGroup.objects.create(label="0-1 Day", min_age_value=0, min_age_unit='DAY', max_age_value=1, max_age_unit='DAY', sort_order=1)
-        self.age_group_child = AgeGroup.objects.create(label="2-10 Years", min_age_value=2, min_age_unit='YEAR', max_age_value=10, max_age_unit='YEAR', sort_order=2)
+        self.age_group_newborn = AgeGroup.objects.create(code="NB", label="0-1 Day", min_age_value=0, min_age_unit='DAY', max_age_value=1, max_age_unit='DAY', sort_order=1)
+        self.age_group_child = AgeGroup.objects.create(code="CHD", label="2-10 Years", min_age_value=2, min_age_unit='YEAR', max_age_value=10, max_age_unit='YEAR', sort_order=2)
         
         self.diagnosis_fever = Diagnosis.objects.create(name="Fever", code="FVR")
         self.diagnosis_other = Diagnosis.objects.create(name="Other", code="OTH")

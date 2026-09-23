@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('lab', '0058_atcjob_automation_date_atcjob_plan_atcjob_stopped_at_and_more'),
-        ('patients', '0017_alter_patient_guardian_relationship_and_more'),
+        ('patients', '0017_ward_alter_patient_guardian_relationship_and_more'),
     ]
 
     operations = [
