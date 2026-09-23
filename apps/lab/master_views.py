@@ -7,7 +7,8 @@ from django.views.generic import ListView, DetailView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Subquery, OuterRef, IntegerField, Value
+from django.db.models.functions import Coalesce
 from django.contrib import messages
 
 from apps.lab.models import (
@@ -78,7 +79,7 @@ class MasterInvestigationListView(LoginRequiredMixin, ListView):
     paginate_by = 25
 
     def get_queryset(self):
-        qs = Investigation.objects.all().select_related('department', 'sample_type').annotate(
+        qs = Investigation.objects.all().select_related('department', 'sample_type').prefetch_related('departments').annotate(
             param_count=Count('parameters')
         ).order_by('display_order', 'name')
 
@@ -94,7 +95,7 @@ class MasterInvestigationListView(LoginRequiredMixin, ListView):
                 Q(specimen__icontains=search)
             )
         if dept_id:
-            qs = qs.filter(department_id=dept_id)
+            qs = qs.filter(Q(department_id=dept_id) | Q(departments__id=dept_id)).distinct()
         if status == 'active':
             qs = qs.filter(is_active=True)
         elif status == 'inactive':
@@ -104,7 +105,9 @@ class MasterInvestigationListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['departments'] = LabDepartment.objects.filter(is_active=True).order_by('name')
+        ctx['departments'] = HospitalDepartment.objects.filter(is_active=True).order_by('name')
+        ctx['hospital_departments'] = HospitalDepartment.objects.filter(is_active=True).order_by('name')
+        ctx['lab_departments'] = LabDepartment.objects.filter(is_active=True).order_by('name')
         ctx['sample_types'] = SampleType.objects.filter(is_active=True).order_by('name')
         ctx['total_count'] = self.get_queryset().count()
         return ctx
@@ -153,7 +156,17 @@ def api_master_investigation_save(request):
     if not code or not name:
         return JsonResponse({'success': False, 'message': 'Code and Name are required.'}, status=400)
 
-    dept_id = data.get('department_id') or None
+    dept_ids = data.get('department_ids') or data.get('departments') or []
+    if isinstance(dept_ids, (str, int)):
+        dept_ids = [dept_ids] if str(dept_ids).strip() else []
+    
+    # Fallback to single department_id if provided
+    single_dept_id = data.get('department_id')
+    if single_dept_id and not dept_ids:
+        dept_ids = [single_dept_id]
+
+    valid_dept_ids = [int(x) for x in dept_ids if str(x).isdigit()]
+
     sample_type_id = data.get('sample_type_id') or None
     category = str(data.get('category', '')).strip() or None
     specimen = str(data.get('specimen', '')).strip() or None
@@ -172,7 +185,7 @@ def api_master_investigation_save(request):
             return JsonResponse({'success': False, 'message': f"Investigation with code '{code}' already exists."}, status=400)
         inv = Investigation(code=code, name=name)
 
-    inv.department_id = dept_id
+    inv.department_id = valid_dept_ids[0] if valid_dept_ids else None
     inv.sample_type_id = sample_type_id
     inv.category = category
     inv.specimen = specimen
@@ -181,6 +194,9 @@ def api_master_investigation_save(request):
     inv.is_active = is_active
     inv.save()
 
+    # Save ManyToMany departments
+    inv.departments.set(valid_dept_ids)
+
     return JsonResponse({
         'success': True,
         'message': 'Investigation saved successfully.',
@@ -188,7 +204,8 @@ def api_master_investigation_save(request):
             'id': inv.id,
             'code': inv.code,
             'name': inv.name,
-            'is_active': inv.is_active
+            'is_active': inv.is_active,
+            'departments': list(inv.departments.values('id', 'name'))
         }
     })
 
@@ -905,8 +922,12 @@ class MasterLabDepartmentListView(LoginRequiredMixin, ListView):
     paginate_by = 25
 
     def get_queryset(self):
+        inv_subquery = Investigation.objects.filter(
+            category__iexact=OuterRef('name')
+        ).values('category').annotate(c=Count('id')).values('c')
+
         qs = LabDepartment.objects.annotate(
-            investigation_count=Count('investigations')
+            investigation_count=Coalesce(Subquery(inv_subquery, output_field=IntegerField()), Value(0))
         ).order_by('name')
 
         search = self.request.GET.get('search', '').strip()
@@ -976,6 +997,17 @@ def api_master_lab_department_toggle_status(request, pk):
         'success': True,
         'is_active': dept.is_active,
         'message': f"Lab Department '{dept.name}' is now {'Active' if dept.is_active else 'Inactive'}."
+    })
+
+
+@require_POST
+def api_master_lab_department_delete(request, pk):
+    dept = get_object_or_404(LabDepartment, pk=pk)
+    name = dept.name
+    dept.delete()
+    return JsonResponse({
+        'success': True,
+        'message': f"Lab Department '{name}' deleted successfully."
     })
 
 

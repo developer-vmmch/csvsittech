@@ -90,6 +90,9 @@
                     <button type="button" class="lab-btn lab-btn-secondary lab-btn-sm" onclick="toggleDeptStatus({{ d.id }})" title="Toggle Active/Inactive">
                         <i class="bi bi-arrow-repeat"></i>
                     </button>
+                    <button type="button" class="lab-btn lab-btn-danger lab-btn-sm" onclick="deleteDept({{ d.id }}, '{{ d.name|escapejs }}')" title="Delete Department" style="background: #fee2e2; color: #dc2626; border-color: #fca5a5;">
+                        <i class="bi bi-trash"></i>
+                    </button>
                 </td>
             </tr>
             {% empty %}
@@ -237,6 +240,34 @@ function toggleDeptStatus(id) {
     })
     .catch(err => {
         alert('Network error.');
+    });
+}
+
+function deleteDept(id, name) {
+    if (!confirm(`Are you sure you want to delete Lab Department "${name}"? This action cannot be undone.`)) {
+        return;
+    }
+    fetch(`/lab/master/api/lab-departments/${id}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getLabCsrfToken()
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const row = document.getElementById(`dept-row-${id}`);
+            if (row) {
+                row.remove();
+            } else {
+                window.location.reload();
+            }
+        } else {
+            alert(data.message || 'Error deleting lab department.');
+        }
+    })
+    .catch(err => {
+        alert('Network error while deleting department.');
     });
 }
 
