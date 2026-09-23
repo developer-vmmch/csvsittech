@@ -1,69 +1,72 @@
-{% extends "base.html" %}
+{% extends "lab/master/base.html" %}
 
-{% block title %}{% if object %}Edit Diagnosis{% else %}Add Diagnosis{% endif %} | VMMCerp{% endblock %}
+{% block title %}{% if object %}Edit Diagnosis{% else %}Add Diagnosis{% endif %} | Lab Master{% endblock %}
 {% block page_heading %}{% if object %}Edit Diagnosis{% else %}Add New Diagnosis{% endif %}{% endblock %}
 
-{% block content %}
-<div class="panel" style="max-width: 800px; margin: 0 auto;">
-    <div class="panel-header" style="margin-bottom: 1.5rem;">
-        <h2 class="panel-title">Diagnosis Details</h2>
-    </div>
-
-    <form method="post">
-        {% csrf_token %}
-        
-        {% if form.non_field_errors %}
-        <div class="alert alert-error">
-            {{ form.non_field_errors }}
+{% block lab_content %}
+<div style="max-width: 860px; margin: 0 auto;">
+    <div class="lab-card">
+        <div class="lab-table-card-header mb-4 pb-2 border-b border-slate-100">
+            <span class="lab-table-title">{% if object %}Edit Diagnosis: {{ object.name }}{% else %}Diagnosis Details{% endif %}</span>
+            <span class="lab-table-subtitle">Clinical Coding Master</span>
         </div>
-        {% endif %}
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-            <div>
-                <label for="{{ form.code.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">ICD-11 Code *</label>
-                {{ form.code }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.code.errors }}</div>
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="p-3 mb-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <div class="lab-form-grid-2 mb-3">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.code.id_for_label }}">ICD-11 Code <span class="text-rose-500">*</span></label>
+                    {{ form.code }}
+                    {% if form.code.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.code.errors }}</div>{% endif %}
+                </div>
+                
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.name.id_for_label }}">Diagnosis Name <span class="text-rose-500">*</span></label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.name.errors }}</div>{% endif %}
+                </div>
             </div>
             
-            <div>
-                <label for="{{ form.name.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Diagnosis Name *</label>
-                {{ form.name }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.name.errors }}</div>
+            <div class="lab-form-grid-2 mb-3">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.icd11_title.id_for_label }}">ICD-11 Title</label>
+                    {{ form.icd11_title }}
+                    {% if form.icd11_title.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.icd11_title.errors }}</div>{% endif %}
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.chapter.id_for_label }}">Chapter</label>
+                    {{ form.chapter }}
+                    {% if form.chapter.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.chapter.errors }}</div>{% endif %}
+                </div>
             </div>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-            <div>
-                <label for="{{ form.icd11_title.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">ICD-11 Title</label>
-                {{ form.icd11_title }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.icd11_title.errors }}</div>
-            </div>
-            <div>
-                <label for="{{ form.chapter.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Chapter</label>
-                {{ form.chapter }}
-                <div style="color: red; font-size: 0.8rem;">{{ form.chapter.errors }}</div>
-            </div>
-        </div>
 
-        <div style="margin-bottom: 1.5rem;">
-            <label for="{{ form.synonyms.id_for_label }}" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Synonyms</label>
-            {{ form.synonyms }}
-            <div style="color: red; font-size: 0.8rem;">{{ form.synonyms.errors }}</div>
-        </div>
-
-        <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem; background: #f8fafc; padding: 1rem; border-radius: 6px; border: 1px solid #e2e8f0;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                {{ form.is_active }}
-                <label for="{{ form.is_active.id_for_label }}" style="font-weight: 600; margin: 0; cursor: pointer;">Active Status</label>
+            <div class="lab-form-group mb-4">
+                <label class="lab-form-label" for="{{ form.synonyms.id_for_label }}">Synonyms</label>
+                {{ form.synonyms }}
+                {% if form.synonyms.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.synonyms.errors }}</div>{% endif %}
             </div>
-        </div>
 
-        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
-            <a href="{% url 'lab:lab_diagnosis_list' %}" class="btn btn-secondary">Cancel</a>
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-save"></i> {% if object %}Update{% else %}Save{% endif %} Diagnosis
-            </button>
-        </div>
-    </form>
+            <div class="p-3 mb-4 rounded-lg bg-slate-50 border border-slate-200">
+                <label class="flex items-center gap-2 cursor-pointer mb-0">
+                    {{ form.is_active }}
+                    <span class="text-xs font-semibold text-slate-700">Active Status</span>
+                </label>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <a href="{% url 'lab:lab_diagnosis_list' %}" class="lab-btn lab-btn-secondary">Cancel</a>
+                <button type="submit" class="lab-btn lab-btn-primary">
+                    <i class="bi bi-check-lg"></i> {% if object %}Update{% else %}Save{% endif %} Diagnosis
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}

@@ -1,0 +1,397 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}Reference Ranges Master | Lab Master{% endblock %}
+{% block lab_master_title %}Reference Ranges Master{% endblock %}
+{% block lab_master_subtitle %}Clinical normal ranges categorized by patient gender, demographic age cohorts, and diagnostic indications{% endblock %}
+
+{% block lab_master_actions %}
+<button type="button" class="lab-btn lab-btn-primary lab-btn-sm" onclick="openAddRangeModal()">
+    <i class="bi bi-plus-lg"></i> Add Range
+</button>
+{% endblock %}
+
+{% block master_content %}
+<!-- Filter Card -->
+<div class="lab-filter-card">
+    <form method="get" class="lab-filter-grid">
+        <div class="lab-filter-col-3">
+            <select name="investigation" class="lab-form-select">
+                <option value="">-- All Investigations --</option>
+                {% for inv in investigations %}
+                <option value="{{ inv.id }}" {% if request.GET.investigation == inv.id|stringformat:"s" %}selected{% endif %}>{{ inv.code }} - {{ inv.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="lab-filter-col-2">
+            <select name="gender" class="lab-form-select">
+                <option value="">-- All Genders --</option>
+                <option value="All" {% if request.GET.gender == 'All' %}selected{% endif %}>Universal (All)</option>
+                <option value="Male" {% if request.GET.gender == 'Male' %}selected{% endif %}>Male</option>
+                <option value="Female" {% if request.GET.gender == 'Female' %}selected{% endif %}>Female</option>
+            </select>
+        </div>
+        <div class="lab-filter-col-2">
+            <select name="age_group" class="lab-form-select">
+                <option value="">-- Age Groups --</option>
+                {% for ag in age_groups %}
+                <option value="{{ ag.id }}" {% if request.GET.age_group == ag.id|stringformat:"s" %}selected{% endif %}>{{ ag.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="lab-filter-col-2">
+            <div class="lab-input-with-icon">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" class="lab-form-input" placeholder="Search text..." value="{{ request.GET.search }}">
+            </div>
+        </div>
+        <div class="lab-filter-col-auto lab-filter-actions">
+            <button type="submit" class="lab-btn lab-btn-primary lab-btn-sm">
+                <i class="bi bi-funnel"></i> Apply Filter
+            </button>
+            <a href="{% url 'lab:master_reference_ranges' %}" class="lab-btn lab-btn-secondary lab-btn-sm">
+                <i class="bi bi-x-circle"></i> Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Table Card -->
+<div class="lab-table-container">
+    <div class="lab-card-header" style="padding: 12px 16px; margin-bottom: 0; background: #ffffff;">
+        <span class="lab-card-title" style="font-size: 0.88rem;">
+            <i class="bi bi-rulers text-primary"></i> Database Reference Ranges ({{ page_obj.paginator.count|default:0 }})
+        </span>
+        {% if page_obj.has_other_pages %}
+        <span class="lab-card-subtitle">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% endif %}
+    </div>
+
+    <table class="lab-table">
+        <thead>
+            <tr>
+                <th style="width: 50px;">S.No</th>
+                <th>Investigation</th>
+                <th>Parameter</th>
+                <th>Age Group</th>
+                <th style="width: 75px;">Gender</th>
+                <th>Diagnosis</th>
+                <th style="width: 75px;">Min</th>
+                <th style="width: 75px;">Max</th>
+                <th>Normal / Reference Text</th>
+                <th style="width: 75px;">Unit</th>
+                <th>Method</th>
+                <th style="width: 80px;">Status</th>
+                <th style="width: 80px;" class="text-end">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in reference_ranges %}
+            <tr>
+                <td style="color: var(--lab-text-muted);">{{ forloop.counter0|add:page_obj.start_index }}</td>
+                <td>
+                    <div style="font-weight: 600; color: var(--lab-text-main);">{{ r.investigation_parameter.investigation.name }}</div>
+                    <small style="color: var(--lab-text-muted); font-family: monospace;">{{ r.investigation_parameter.investigation.code }}</small>
+                </td>
+                <td>
+                    <div style="font-weight: 600; color: var(--lab-text-main);">{{ r.investigation_parameter.name|default:r.investigation_parameter.parameter.name }}</div>
+                    <small style="color: var(--lab-blue); font-family: monospace;">{{ r.investigation_parameter.code }}</small>
+                </td>
+                <td>
+                    {% if r.age_group %}
+                    <span class="lab-badge lab-badge-neutral">{{ r.age_group.label }}</span>
+                    {% else %}
+                    <span style="color: var(--lab-text-muted); font-size: 12px;">All Ages</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if r.gender == 'Male' %}
+                    <span class="lab-badge lab-badge-info">Male</span>
+                    {% elif r.gender == 'Female' %}
+                    <span class="lab-badge lab-badge-warning">Female</span>
+                    {% else %}
+                    <span class="lab-badge lab-badge-neutral">All</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if r.diagnosis %}
+                    <span style="font-weight: 600; color: var(--lab-text-main); font-size: 12.5px;">{{ r.diagnosis.name }}</span>
+                    {% else %}
+                    <span style="color: var(--lab-text-muted); font-size: 12px;">Universal</span>
+                    {% endif %}
+                </td>
+                <td style="font-weight: 700; color: var(--lab-text-main);">{{ r.min_value|default:"—" }}</td>
+                <td style="font-weight: 700; color: var(--lab-text-main);">{{ r.max_value|default:"—" }}</td>
+                <td style="color: var(--lab-primary); font-weight: 600;">{{ r.reference_text|default:"—" }}</td>
+                <td>{{ r.unit|default:r.investigation_parameter.unit|default:"—" }}</td>
+                <td style="font-size: 12px; color: var(--lab-text-muted);">{{ r.method|default:"—" }}</td>
+                <td>
+                    {% if r.is_active %}
+                    <span class="lab-badge lab-badge-active">Active</span>
+                    {% else %}
+                    <span class="lab-badge lab-badge-inactive">Inactive</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <button type="button" class="lab-btn lab-btn-secondary lab-btn-sm" onclick="openEditRangeModal({{ r.id }}, {{ r.investigation_parameter_id }}, {{ r.age_group_id|default:'null' }}, {{ r.diagnosis_id|default:'null' }}, '{{ r.gender }}', '{{ r.range_type }}', '{{ r.min_value|default:'' }}', '{{ r.max_value|default:'' }}', '{{ r.reference_text|default:''|escapejs }}', '{{ r.unit|default:''|escapejs }}', '{{ r.method|default:''|escapejs }}', '{{ r.remarks|default:''|escapejs }}', {{ r.is_active|yesno:'true,false' }})" title="Edit Reference Range">
+                        <i class="bi bi-pencil"></i> Edit
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="13">
+                    <div class="lab-empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <p style="margin: 0;">No database reference ranges found matching your criteria.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% include "lab/master/pagination.html" %}
+</div>
+
+<!-- Modal: Add/Edit Reference Range -->
+<div class="lab-modal" id="rangeModal" tabindex="-1" role="dialog" aria-labelledby="rangeModalTitle" aria-hidden="true">
+    <div class="lab-modal-dialog modal-lg" role="document">
+        <div class="lab-modal-header">
+            <div>
+                <h2 class="lab-modal-title" id="rangeModalTitle">Reference Range Configuration</h2>
+                <div style="font-size: 0.78rem; color: var(--lab-text-muted); margin-top: 2px;">Specify normal clinical thresholds by demographic cohort and diagnosis</div>
+            </div>
+            <button type="button" class="lab-modal-close" data-lab-dismiss="modal" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <form id="rangeForm" onsubmit="submitRangeForm(event)">
+            {% csrf_token %}
+            <input type="hidden" id="range_id">
+
+            <div class="lab-modal-body">
+                <div class="lab-form-grid-2">
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="range_inv">Investigation <span class="lab-required">*</span></label>
+                        <select class="lab-form-select" id="range_inv" required onchange="loadInvParams(this.value)">
+                            <option value="">-- Select Investigation --</option>
+                            {% for inv in investigations %}
+                            <option value="{{ inv.id }}">{{ inv.code }} - {{ inv.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="range_ip">Investigation Parameter <span class="lab-required">*</span></label>
+                        <select class="lab-form-select" id="range_ip" required>
+                            <option value="">-- Select Parameter --</option>
+                        </select>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="range_gender">Gender</label>
+                        <select class="lab-form-select" id="range_gender">
+                            <option value="All">Universal (All)</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="range_age_group">Age Group</label>
+                        <select class="lab-form-select" id="range_age_group">
+                            <option value="">-- All Ages --</option>
+                            {% for ag in age_groups %}
+                            <option value="{{ ag.id }}">{{ ag.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="range_diagnosis">Clinical Diagnosis (Optional)</label>
+                        <select class="lab-form-select" id="range_diagnosis">
+                            <option value="">-- Universal (None) --</option>
+                            {% for d in diagnoses %}
+                            <option value="{{ d.id }}">{{ d.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="range_type">Range Type</label>
+                        <select class="lab-form-select" id="range_type">
+                            <option value="Numeric">Numeric Range</option>
+                            <option value="Text">Text / Qualitative</option>
+                        </select>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="range_min">Minimum Value</label>
+                        <input type="number" step="any" class="lab-form-input" id="range_min" placeholder="e.g. 12.0">
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="range_max">Maximum Value</label>
+                        <input type="number" step="any" class="lab-form-input" id="range_max" placeholder="e.g. 16.0">
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="range_unit">Unit</label>
+                        <input type="text" class="lab-form-input" id="range_unit" placeholder="e.g. g/dL">
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="range_method">Method</label>
+                        <input type="text" class="lab-form-input" id="range_method" placeholder="e.g. Spectrophotometry">
+                    </div>
+
+                    <div class="lab-form-group lab-form-col-full">
+                        <label class="lab-form-label" for="range_text">Normal / Reference Text</label>
+                        <input type="text" class="lab-form-input" id="range_text" placeholder="e.g. Negative, 12.0 – 16.0, < 100">
+                    </div>
+
+                    <div class="lab-form-group lab-form-col-full">
+                        <label class="lab-form-label" for="range_remarks">Remarks / Clinical Notes</label>
+                        <textarea class="lab-form-textarea" id="range_remarks" rows="2" placeholder="Optional notes..."></textarea>
+                    </div>
+
+                    <div class="lab-form-group lab-form-col-full">
+                        <label class="lab-form-label" for="range_status">Status</label>
+                        <select class="lab-form-select" id="range_status">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lab-modal-footer">
+                <button type="button" class="lab-btn lab-btn-secondary" data-lab-dismiss="modal">Cancel</button>
+                <button type="submit" class="lab-btn lab-btn-primary" id="btnSaveRange">
+                    <i class="bi bi-check-lg"></i> Save Reference Range
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block lab_master_extra_js %}
+<script>
+async function loadInvParams(invId, selectedIpId = null) {
+    const ipSelect = document.getElementById('range_ip');
+    ipSelect.innerHTML = '<option value="">Loading parameters...</option>';
+    if (!invId) {
+        ipSelect.innerHTML = '<option value="">-- Select Parameter --</option>';
+        return;
+    }
+    try {
+        const res = await fetch(`/lab/api/get-investigation-parameters/?investigation_id=${invId}`);
+        const data = await res.json();
+        ipSelect.innerHTML = '<option value="">-- Select Parameter --</option>';
+        if (data.parameters) {
+            data.parameters.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.innerText = `${p.code} - ${p.name}`;
+                if (selectedIpId && selectedIpId == p.id) {
+                    opt.selected = true;
+                }
+                ipSelect.appendChild(opt);
+            });
+        }
+    } catch(err) {
+        ipSelect.innerHTML = '<option value="">Failed to load</option>';
+    }
+}
+
+function openAddRangeModal() {
+    document.getElementById('rangeModalTitle').innerText = 'Add Reference Range';
+    document.getElementById('range_id').value = '';
+    document.getElementById('range_inv').value = '';
+    document.getElementById('range_ip').innerHTML = '<option value="">-- Select Parameter --</option>';
+    document.getElementById('range_gender').value = 'All';
+    document.getElementById('range_age_group').value = '';
+    document.getElementById('range_diagnosis').value = '';
+    document.getElementById('range_type').value = 'Numeric';
+    document.getElementById('range_min').value = '';
+    document.getElementById('range_max').value = '';
+    document.getElementById('range_unit').value = '';
+    document.getElementById('range_text').value = '';
+    document.getElementById('range_method').value = '';
+    document.getElementById('range_remarks').value = '';
+    document.getElementById('range_status').value = 'true';
+    openLabModal('rangeModal');
+}
+
+function openEditRangeModal(id, ipId, ageGroupId, diagId, gender, rangeType, minVal, maxVal, refText, unit, method, remarks, active) {
+    document.getElementById('rangeModalTitle').innerText = 'Edit Reference Range';
+    document.getElementById('range_id').value = id;
+    document.getElementById('range_gender').value = gender;
+    document.getElementById('range_age_group').value = ageGroupId || '';
+    document.getElementById('range_diagnosis').value = diagId || '';
+    document.getElementById('range_type').value = rangeType;
+    document.getElementById('range_min').value = minVal || '';
+    document.getElementById('range_max').value = maxVal || '';
+    document.getElementById('range_unit').value = unit || '';
+    document.getElementById('range_text').value = refText || '';
+    document.getElementById('range_method').value = method || '';
+    document.getElementById('range_remarks').value = remarks || '';
+    document.getElementById('range_status').value = active ? 'true' : 'false';
+
+    fetch(`/lab/api/get-parameter-detail/${ipId}/`).then(r => r.json()).then(data => {
+        if (data.investigation_id) {
+            document.getElementById('range_inv').value = data.investigation_id;
+            loadInvParams(data.investigation_id, ipId);
+        }
+    }).catch(() => {
+        const ipSelect = document.getElementById('range_ip');
+        ipSelect.innerHTML = `<option value="${ipId}" selected>Selected Parameter #${ipId}</option>`;
+    });
+
+    openLabModal('rangeModal');
+}
+
+async function submitRangeForm(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveRange');
+    btn.disabled = true;
+
+    const payload = {
+        id: document.getElementById('range_id').value || null,
+        investigation_parameter_id: document.getElementById('range_ip').value,
+        gender: document.getElementById('range_gender').value,
+        age_group_id: document.getElementById('range_age_group').value || null,
+        diagnosis_id: document.getElementById('range_diagnosis').value || null,
+        range_type: document.getElementById('range_type').value,
+        min_value: document.getElementById('range_min').value || null,
+        max_value: document.getElementById('range_max').value || null,
+        unit: document.getElementById('range_unit').value.trim(),
+        reference_text: document.getElementById('range_text').value.trim(),
+        method: document.getElementById('range_method').value.trim(),
+        remarks: document.getElementById('range_remarks').value.trim(),
+        is_active: document.getElementById('range_status').value === 'true'
+    };
+
+    try {
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const res = await fetch("{% url 'lab:api_master_reference_range_save' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error saving reference range.');
+            btn.disabled = false;
+        }
+    } catch(err) {
+        alert('Request failed: ' + err);
+        btn.disabled = false;
+    }
+}
+</script>
+{% endblock %}

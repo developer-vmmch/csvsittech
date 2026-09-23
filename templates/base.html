@@ -331,7 +331,9 @@
 
             <!-- MASTER Module -->
             {% if not user.is_authenticated or user.get_menu_mapping.master %}
-            <li class="nav-item has-submenu {% if request.resolver_match.namespace == 'lab' or 'department_' in request.resolver_match.url_name or 'ward_' in request.resolver_match.url_name %}open active-parent{% endif %}">
+
+            <li class="nav-item has-submenu {% if 'master' in request.resolver_match.url_name or 'lab_master' in request.resolver_match.url_name or 'parameter' in request.resolver_match.url_name or 'reference_range' in request.resolver_match.url_name or 'diagnosis' in request.resolver_match.url_name or 'age_group' in request.resolver_match.url_name or 'department_list' in request.resolver_match.url_name %}open active-parent{% endif %}">
+
                 <a href="javascript:void(0);" class="submenu-toggle" title="Master">
                     <i class="bi bi-database" style="color: #ef4444;"></i>
                     <span>Master</span>
@@ -373,77 +375,79 @@
                     
                     <!-- LAB MASTER Nested Submenu -->
                     {% if not user.is_authenticated or user.get_menu_mapping.lab_master %}
-                    <li class="has-submenu {% if 'lab_master' in request.resolver_match.url_name or 'workload' in request.resolver_match.url_name or 'mapping' in request.resolver_match.url_name %}open{% endif %}" style="margin-top: 0.25rem;">
+                    <li class="has-submenu {% if 'master' in request.resolver_match.url_name or 'lab_master' in request.resolver_match.url_name or 'workload' in request.resolver_match.url_name or 'mapping' in request.resolver_match.url_name %}open{% endif %}" style="margin-top: 0.25rem;">
                         <a href="javascript:void(0);" class="submenu-toggle" style="padding-left: 2.5rem;" title="Lab Master">
-                            <i class="bi bi-droplet-fill"></i>
+                            <i class="bi bi-droplet-fill" style="color: #3b82f6;"></i>
                             <span>Lab Master</span>
                             <i class="bi bi-chevron-down submenu-chevron"></i>
                         </a>
                         <ul class="submenu-list" style="padding-left: 1rem; background-color: rgba(0,0,0,0.1); border-radius: 4px; margin: 0.25rem 0.5rem;">
-                            {% if not user.is_authenticated or user.get_menu_mapping.lab_master_dashboard %}
-                            <li class="{% if request.resolver_match.url_name == 'lab_master_dashboard' %}active{% endif %}">
-                                <a href="{% url 'lab:lab_master_dashboard' %}">
-                                    <i class="bi bi-speedometer2"></i>
-                                    <span>Lab Dashboard</span>
+                            <li class="{% if request.resolver_match.url_name == 'lab_master_hub' %}active{% endif %}">
+                                <a href="{% url 'lab:lab_master_hub' %}">
+                                    <i class="bi bi-grid-fill"></i>
+                                    <span>Master Hub</span>
                                 </a>
                             </li>
-                            {% endif %}
-                            {% if not user.is_authenticated or user.get_menu_mapping.lab_sub_departments %}
-                            <li class="{% if request.resolver_match.url_name == 'lab_sub_departments' %}active{% endif %}">
-                                <a href="{% url 'lab:lab_sub_departments' %}">
-                                    <i class="bi bi-diagram-2"></i>
-                                    <span>Lab Sub Departments</span>
+                            <li class="{% if request.resolver_match.url_name == 'master_investigation_list' or request.resolver_match.url_name == 'master_investigation_detail' %}active{% endif %}">
+                                <a href="{% url 'lab:master_investigation_list' %}">
+                                    <i class="bi bi-file-medical"></i>
+                                    <span>Investigations</span>
                                 </a>
                             </li>
-                            {% endif %}
-                            {% if not user.is_authenticated or user.get_menu_mapping.investigation_parameter_mapping %}
-                            <li class="{% if request.resolver_match.url_name == 'investigation_parameter_mapping' %}active{% endif %}">
-                                <a href="{% url 'lab:investigation_parameter_mapping' %}">
+                            <li class="{% if request.resolver_match.url_name == 'master_parameter_list' %}active{% endif %}">
+                                <a href="{% url 'lab:master_parameter_list' %}">
+                                    <i class="bi bi-list-check"></i>
+                                    <span>Parameters</span>
+                                </a>
+                            </li>
+                            <li class="{% if request.resolver_match.url_name == 'master_investigation_parameter_mapping' %}active{% endif %}">
+                                <a href="{% url 'lab:master_investigation_parameter_mapping' %}">
                                     <i class="bi bi-diagram-3"></i>
-                                    <span>Investigation Mapping</span>
+                                    <span>Investigation Parameters</span>
                                 </a>
                             </li>
-                            {% endif %}
-                            {% if not user.is_authenticated or user.get_menu_mapping.workload_mapping_list %}
-                            <li class="{% if request.resolver_match.url_name == 'workload_mapping_list' %}active{% endif %}">
-                                <a href="{% url 'lab:workload_mapping_list' %}">
-                                    <i class="bi bi-briefcase"></i>
-                                    <span>Workload Mapping</span>
+                            <li class="{% if request.resolver_match.url_name == 'master_reference_ranges' %}active{% endif %}">
+                                <a href="{% url 'lab:master_reference_ranges' %}">
+                                    <i class="bi bi-rulers"></i>
+                                    <span>Reference Ranges</span>
                                 </a>
                             </li>
-                            {% endif %}
-                            {% if not user.is_authenticated or user.get_menu_mapping.mapping_validation %}
-                            <li class="{% if request.resolver_match.url_name == 'mapping_validation' %}active{% endif %}">
-                                <a href="{% url 'lab:mapping_validation' %}">
-                                    <i class="bi bi-check-circle"></i>
-                                    <span>Mapping Validation</span>
+                            <li class="{% if request.resolver_match.url_name == 'master_diagnosis_list' %}active{% endif %}">
+                                <a href="{% url 'lab:master_diagnosis_list' %}">
+                                    <i class="bi bi-clipboard2-pulse"></i>
+                                    <span>Diagnoses</span>
                                 </a>
                             </li>
-                            {% endif %}
-                            {% if not user.is_authenticated or user.get_menu_mapping.universal_master_import_export or user.get_menu_mapping.legacy_mapping or user.get_menu_mapping.lab_master %}
+                            <li class="{% if request.resolver_match.url_name == 'master_diagnosis_investigation_mapping' %}active{% endif %}">
+                                <a href="{% url 'lab:master_diagnosis_investigation_mapping' %}">
+                                    <i class="bi bi-arrow-left-right"></i>
+                                    <span>Diagnosis → Investigation</span>
+                                </a>
+                            </li>
+                            <li class="{% if request.resolver_match.url_name == 'master_diagnosis_department_mapping' %}active{% endif %}">
+                                <a href="{% url 'lab:master_diagnosis_department_mapping' %}">
+                                    <i class="bi bi-building"></i>
+                                    <span>Diagnosis → Department</span>
+                                </a>
+                            </li>
+                            <li class="{% if request.resolver_match.url_name == 'master_age_groups' %}active{% endif %}">
+                                <a href="{% url 'lab:master_age_groups' %}">
+                                    <i class="bi bi-people"></i>
+                                    <span>Age Groups</span>
+                                </a>
+                            </li>
+                            <li class="{% if request.resolver_match.url_name == 'master_validation' %}active{% endif %}">
+                                <a href="{% url 'lab:master_validation' %}">
+                                    <i class="bi bi-shield-check" style="color: #ef4444;"></i>
+                                    <span>Master Validation</span>
+                                </a>
+                            </li>
                             <li class="{% if request.resolver_match.url_name == 'legacy_mapping' %}active{% endif %}">
                                 <a href="{% url 'lab:legacy_mapping' %}">
                                     <i class="bi bi-file-earmark-spreadsheet" style="color: #3b82f6;"></i>
                                     <span>Universal Import / Export</span>
                                 </a>
                             </li>
-                            {% endif %}
-                            {% if not user.is_authenticated or user.get_menu_mapping.import_lab_workload_csv %}
-                            <li class="{% if request.resolver_match.url_name == 'import_lab_workload_csv' %}active{% endif %}">
-                                <a href="{% url 'lab:import_lab_workload_csv' %}">
-                                    <i class="bi bi-box-arrow-in-down"></i>
-                                    <span>Import Workload</span>
-                                </a>
-                            </li>
-                            {% endif %}
-                            {% if not user.is_authenticated or user.get_menu_mapping.export_lab_workload_csv %}
-                            <li class="{% if request.resolver_match.url_name == 'export_lab_workload_csv' %}active{% endif %}">
-                                <a href="{% url 'lab:export_lab_workload_csv' %}">
-                                    <i class="bi bi-box-arrow-up"></i>
-                                    <span>Export Workload</span>
-                                </a>
-                            </li>
-                            {% endif %}
                         </ul>
                     </li>
                     {% endif %}
@@ -513,6 +517,12 @@
                         </a>
                     </li>
                     {% endif %}
+                    <li class="{% if request.resolver_match.url_name == 'lab_result_detail' %}active{% endif %}">
+                        <a href="{% url 'lab:service_request_list' %}">
+                            <i class="bi bi-file-earmark-ruled"></i>
+                            <span>Result View</span>
+                        </a>
+                    </li>
                 </ul>
             </li>
             {% endif %}
@@ -596,7 +606,7 @@
 
             <!-- Auto Trigger Module -->
             {% if not user.is_authenticated or user.get_menu_mapping.auto_trigger %}
-            <li class="nav-item has-submenu {% if 'auto_trigger' in request.resolver_match.url_name %}open active-parent{% endif %}">
+            <li class="nav-item has-submenu {% if 'auto_trigger' in request.resolver_match.url_name or request.resolver_match.url_name == 'investigation_marking' %}open active-parent{% endif %}">
                 <a href="javascript:void(0);" class="submenu-toggle" title="Auto Trigger">
                     <i class="bi bi-cpu" style="color: #f59e0b;"></i>
                     <span>Auto Trigger</span>
@@ -665,6 +675,12 @@
                         <a href="{% url 'lab:auto_trigger_atc' %}" style="color: #34d399; font-weight: 600;">
                             <i class="bi bi-play-circle-fill" style="color: #10b981;"></i>
                             <span>ATC</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.resolver_match.url_name == 'investigation_marking' %}active{% endif %}">
+                        <a href="{% url 'lab:investigation_marking' %}" style="color: #38bdf8; font-weight: 600;">
+                            <i class="bi bi-flask" style="color: #0284c7;"></i>
+                            <span>Investigation Marking</span>
                         </a>
                     </li>
                     {% endif %}

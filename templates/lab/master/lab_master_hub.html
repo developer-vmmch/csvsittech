@@ -1,0 +1,186 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}Lab Master Hub | VMMC ERP{% endblock %}
+{% block lab_master_title %}Lab Master Hub{% endblock %}
+{% block lab_master_subtitle %}Central Laboratory Configuration, Clinical Rules & Demographic Settings{% endblock %}
+
+{% block lab_master_actions %}
+<a href="{% url 'lab:master_validation' %}" class="lab-btn lab-btn-secondary lab-btn-sm">
+    <i class="bi bi-shield-check text-success"></i> Health Check
+</a>
+<a href="{% url 'lab:legacy_mapping' %}" class="lab-btn lab-btn-primary lab-btn-sm">
+    <i class="bi bi-file-earmark-spreadsheet"></i> Import / Export
+</a>
+{% endblock %}
+
+{% block master_content %}
+<!-- Health & Validation Banner -->
+<div class="lab-health-banner {% if validation_summary.overall_status == 'OK' %}status-ok{% elif validation_summary.overall_status == 'WARNING' %}status-warning{% else %}status-error{% endif %}">
+    <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="font-size: 1.85rem; line-height: 1; color: {% if validation_summary.overall_status == 'OK' %}#10b981{% elif validation_summary.overall_status == 'WARNING' %}#f59e0b{% else %}#ef4444{% endif %};">
+            {% if validation_summary.overall_status == 'OK' %}<i class="bi bi-shield-check"></i>
+            {% elif validation_summary.overall_status == 'WARNING' %}<i class="bi bi-exclamation-triangle-fill"></i>
+            {% else %}<i class="bi bi-x-circle-fill"></i>{% endif %}
+        </div>
+        <div>
+            <div style="font-weight: 700; font-size: 0.95rem; color: #0f172a; margin-bottom: 2px;">
+                Master Data Health Status:
+                <span class="lab-badge {% if validation_summary.overall_status == 'OK' %}lab-badge-active{% elif validation_summary.overall_status == 'WARNING' %}lab-badge-warning{% else %}lab-badge-inactive{% endif %}" style="font-size: 12px; margin-left: 6px;">
+                    {{ validation_summary.overall_status }}
+                </span>
+            </div>
+            <div style="font-size: 0.8rem; color: #64748b;">
+                <strong>{{ validation_summary.passed_checks }}</strong> of <strong>{{ validation_summary.total_checks }}</strong> integrity checks passed.
+                {% if validation_summary.warning_checks %} <span style="color: #b45309; font-weight: 600;">{{ validation_summary.warning_checks }} warning{{ validation_summary.warning_checks|pluralize }}.</span>{% endif %}
+                {% if validation_summary.error_checks %} <span style="color: #b91c1c; font-weight: 600;">{{ validation_summary.error_checks }} error{{ validation_summary.error_checks|pluralize }} require attention.</span>{% endif %}
+            </div>
+        </div>
+    </div>
+    <div>
+        <a href="{% url 'lab:master_validation' %}" class="lab-btn lab-btn-secondary lab-btn-sm" style="font-weight: 600;">
+            <i class="bi bi-arrow-right-circle"></i> View Full Validation Report
+        </a>
+    </div>
+</div>
+
+<!-- Quick Stats Cards Grid -->
+<div class="lab-stats-grid">
+    <!-- Investigations -->
+    <div class="lab-stat-card" style="border-top: 3px solid #0d9488;">
+        <div>
+            <div class="lab-stat-header">
+                <span class="lab-stat-label">Investigations</span>
+                <span class="lab-stat-icon" style="background: rgba(13, 148, 136, 0.1); color: #0d9488;"><i class="bi bi-file-medical"></i></span>
+            </div>
+            <div class="lab-stat-value">{{ inv_count }}</div>
+            <div class="lab-stat-subtext">Active clinical tests & panels</div>
+        </div>
+        <div class="lab-stat-footer">
+            <a href="{% url 'lab:master_investigation_list' %}" class="lab-stat-link">Manage Investigations <i class="bi bi-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <!-- Parameters -->
+    <div class="lab-stat-card" style="border-top: 3px solid #8b5cf6;">
+        <div>
+            <div class="lab-stat-header">
+                <span class="lab-stat-label">Parameters</span>
+                <span class="lab-stat-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;"><i class="bi bi-list-check"></i></span>
+            </div>
+            <div class="lab-stat-value">{{ param_count }}</div>
+            <div class="lab-stat-subtext">String codes (e.g. 00022681) preserved</div>
+        </div>
+        <div class="lab-stat-footer">
+            <a href="{% url 'lab:master_parameter_list' %}" class="lab-stat-link">Manage Parameters <i class="bi bi-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <!-- Inv Parameter Mapping -->
+    <div class="lab-stat-card" style="border-top: 3px solid #0284c7;">
+        <div>
+            <div class="lab-stat-header">
+                <span class="lab-stat-label">Parameter Mappings</span>
+                <span class="lab-stat-icon" style="background: rgba(2, 132, 199, 0.1); color: #0284c7;"><i class="bi bi-diagram-3"></i></span>
+            </div>
+            <div class="lab-stat-value">{{ inv_param_count }}</div>
+            <div class="lab-stat-subtext">Investigation + Parameter relationships</div>
+        </div>
+        <div class="lab-stat-footer">
+            <a href="{% url 'lab:master_investigation_parameter_mapping' %}" class="lab-stat-link">Manage Mappings <i class="bi bi-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <!-- Reference Ranges -->
+    <div class="lab-stat-card" style="border-top: 3px solid #10b981;">
+        <div>
+            <div class="lab-stat-header">
+                <span class="lab-stat-label">Reference Ranges</span>
+                <span class="lab-stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i class="bi bi-rulers"></i></span>
+            </div>
+            <div class="lab-stat-value">{{ range_count }}</div>
+            <div class="lab-stat-subtext">Gender, Age & Diagnosis ranges</div>
+        </div>
+        <div class="lab-stat-footer">
+            <a href="{% url 'lab:master_reference_ranges' %}" class="lab-stat-link">Manage Ranges <i class="bi bi-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <!-- Diagnoses -->
+    <div class="lab-stat-card" style="border-top: 3px solid #f59e0b;">
+        <div>
+            <div class="lab-stat-header">
+                <span class="lab-stat-label">Diagnoses</span>
+                <span class="lab-stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i class="bi bi-clipboard2-pulse"></i></span>
+            </div>
+            <div class="lab-stat-value">{{ diag_count }}</div>
+            <div class="lab-stat-subtext">Clinical diagnoses & ICD-11 codes</div>
+        </div>
+        <div class="lab-stat-footer">
+            <a href="{% url 'lab:master_diagnosis_list' %}" class="lab-stat-link">Manage Diagnoses <i class="bi bi-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <!-- Diag -> Inv Mapping -->
+    <div class="lab-stat-card" style="border-top: 3px solid #ec4899;">
+        <div>
+            <div class="lab-stat-header">
+                <span class="lab-stat-label">Diag → Inv Mapping</span>
+                <span class="lab-stat-icon" style="background: rgba(236, 72, 153, 0.1); color: #ec4899;"><i class="bi bi-arrow-left-right"></i></span>
+            </div>
+            <div class="lab-stat-value">{{ diag_inv_map_count }}</div>
+            <div class="lab-stat-subtext">Rule engine trigger configurations</div>
+        </div>
+        <div class="lab-stat-footer">
+            <a href="{% url 'lab:master_diagnosis_investigation_mapping' %}" class="lab-stat-link">Configure Rules <i class="bi bi-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <!-- Diag -> Dept Mapping -->
+    <div class="lab-stat-card" style="border-top: 3px solid #6366f1;">
+        <div>
+            <div class="lab-stat-header">
+                <span class="lab-stat-label">Diag → Dept Mapping</span>
+                <span class="lab-stat-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;"><i class="bi bi-building"></i></span>
+            </div>
+            <div class="lab-stat-value">{{ diag_dept_map_count }}</div>
+            <div class="lab-stat-subtext">Hospital department clinical links</div>
+        </div>
+        <div class="lab-stat-footer">
+            <a href="{% url 'lab:master_diagnosis_department_mapping' %}" class="lab-stat-link">Configure Dept Links <i class="bi bi-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <!-- Age Groups -->
+    <div class="lab-stat-card" style="border-top: 3px solid #64748b;">
+        <div>
+            <div class="lab-stat-header">
+                <span class="lab-stat-label">Age Groups</span>
+                <span class="lab-stat-icon" style="background: rgba(100, 116, 139, 0.1); color: #64748b;"><i class="bi bi-people"></i></span>
+            </div>
+            <div class="lab-stat-value">{{ age_group_count }}</div>
+            <div class="lab-stat-subtext">Demographic cohort boundaries</div>
+        </div>
+        <div class="lab-stat-footer">
+            <a href="{% url 'lab:master_age_groups' %}" class="lab-stat-link">Manage Cohorts <i class="bi bi-arrow-right"></i></a>
+        </div>
+    </div>
+</div>
+
+<!-- Reusable Source Architecture Card -->
+<div class="lab-card">
+    <div class="lab-card-header">
+        <h3 class="lab-card-title">
+            <i class="bi bi-info-circle text-primary"></i> Central Laboratory Architecture Principles
+        </h3>
+        <span class="lab-card-subtitle">Single source of truth for all clinical diagnostic modules</span>
+    </div>
+    <div style="font-size: 0.84rem; color: #475569; line-height: 1.6;">
+        <p style="margin-bottom: 8px;"><strong>Lab Master</strong> serves as the central, normalized repository for laboratory investigations, parameters, reference ranges, and diagnostic rules across VMMC ERP:</p>
+        <ul style="margin: 0; padding-left: 18px;">
+            <li style="margin-bottom: 4px;"><strong>No Hardcoding:</strong> ATC automated generation, doctor window lookups, work orders, and result evaluation resolve parameters and ranges dynamically.</li>
+            <li style="margin-bottom: 4px;"><strong>String Code Preservation:</strong> All codes (e.g. <code>00022681</code>) retain exact leading zeros and format.</li>
+            <li><strong>Eligibility Engine:</strong> Diagnoses and test suggestions strictly enforce patient gender, age limits, and pregnancy status.</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

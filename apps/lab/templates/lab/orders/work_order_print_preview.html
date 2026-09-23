@@ -767,6 +767,12 @@
 
         <!-- Left Sidebar Page Slider -->
         <aside class="viewer-sidebar" id="viewerSidebar">
+            {% if no_completed_investigations %}
+            <div style="color: #94a3b8; font-size: 12px; text-align: center; padding: 30px 10px;">
+                <i class="bi bi-info-circle" style="font-size: 20px; display: block; margin-bottom: 8px;"></i>
+                No completed tests to preview
+            </div>
+            {% else %}
             {% for rep in reports_data %}
             <div class="sidebar-thumb-item {% if forloop.first %}active{% endif %}" id="thumb-{{ forloop.counter }}" onclick="scrollToPage({{ forloop.counter }})">
                 <div class="thumb-sheet">
@@ -846,6 +852,7 @@
                 <div class="thumb-label">1</div>
             </div>
             {% endfor %}
+            {% endif %}
         </aside>
 
         <!-- Main Canvas Containing Full Report Pages -->
@@ -1010,6 +1017,13 @@
 
                         <!-- Investigation Results Section with Multiple Test Separators -->
                         <div class="results-table-wrap">
+                            {% if no_completed_investigations %}
+                            <div style="padding: 40px 20px; text-align: center; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 6px; margin: 30px 10px; color: #9f1239;">
+                                <i class="bi bi-exclamation-triangle-fill" style="font-size: 24px; display: block; margin-bottom: 10px;"></i>
+                                <h3 style="font-size: 16px; font-weight: bold; margin-bottom: 6px;">No Completed Investigations</h3>
+                                <p style="font-size: 13px; color: #475569;">Only completed investigations can be printed. Pending or received tests cannot be included in print reports.</p>
+                            </div>
+                            {% else %}
                             {% for rep in reports_data %}
                             <div class="test-report-block" id="testBlock-{{ forloop.counter }}">
                                 <!-- 1. Test Name at Top (Bold, visible, slightly larger) -->
@@ -1058,6 +1072,7 @@
                                 </table>
                             </div>
                             {% endfor %}
+                            {% endif %}
                         </div>
 
                         <!-- Clinical Remarks -->

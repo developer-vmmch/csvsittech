@@ -1,0 +1,317 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}Investigations Master | Lab Master{% endblock %}
+{% block lab_master_title %}Investigations Master{% endblock %}
+{% block lab_master_subtitle %}Manage laboratory investigations, panel hierarchies, and test master configurations{% endblock %}
+
+{% block lab_master_actions %}
+<button type="button" class="lab-btn lab-btn-primary lab-btn-sm" onclick="openAddModal()">
+    <i class="bi bi-plus-lg"></i> Add Investigation
+</button>
+{% endblock %}
+
+{% block master_content %}
+<!-- Compact Filter Card -->
+<div class="lab-filter-card">
+    <form method="get" class="lab-filter-grid">
+        <div class="lab-filter-col-4">
+            <div class="lab-input-with-icon">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" class="lab-form-input" placeholder="Search code, name, category, specimen..." value="{{ request.GET.search }}">
+            </div>
+        </div>
+        <div class="lab-filter-col-3">
+            <select name="department" class="lab-form-select">
+                <option value="">-- All Departments --</option>
+                {% for dept in departments %}
+                <option value="{{ dept.id }}" {% if request.GET.department == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="lab-filter-col-2">
+            <select name="status" class="lab-form-select">
+                <option value="">-- All Status --</option>
+                <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+        <div class="lab-filter-col-auto lab-filter-actions">
+            <button type="submit" class="lab-btn lab-btn-primary lab-btn-sm">
+                <i class="bi bi-funnel"></i> Apply Filter
+            </button>
+            <a href="{% url 'lab:master_investigation_list' %}" class="lab-btn lab-btn-secondary lab-btn-sm">
+                <i class="bi bi-x-circle"></i> Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Table Card -->
+<div class="lab-table-container">
+    <div class="lab-card-header" style="padding: 12px 16px; margin-bottom: 0; background: #ffffff;">
+        <span class="lab-card-title" style="font-size: 0.88rem;">
+            <i class="bi bi-list-check text-primary"></i> Investigations Directory ({{ total_count }})
+        </span>
+        {% if page_obj.has_other_pages %}
+        <span class="lab-card-subtitle">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% endif %}
+    </div>
+
+    <table class="lab-table">
+        <thead>
+            <tr>
+                <th style="width: 55px;">S.No</th>
+                <th style="width: 130px;">Code</th>
+                <th>Investigation Name</th>
+                <th>Department</th>
+                <th>Category</th>
+                <th>Sample Type</th>
+                <th>Specimen</th>
+                <th style="width: 85px;">Status</th>
+                <th style="width: 95px;" class="text-center">Params</th>
+                <th style="width: 250px;" class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for inv in investigations %}
+            <tr id="inv-row-{{ inv.id }}">
+                <td style="color: var(--lab-text-muted);">{{ forloop.counter0|add:page_obj.start_index }}</td>
+                <td style="font-weight: 700; color: var(--lab-blue); font-family: monospace;">{{ inv.code }}</td>
+                <td style="font-weight: 600; color: var(--lab-text-main);">
+                    <a href="{% url 'lab:master_investigation_detail' inv.id %}" style="color: inherit; text-decoration: none;">
+                        {{ inv.name }}
+                    </a>
+                </td>
+                <td>{{ inv.department.name|default:"—" }}</td>
+                <td>{{ inv.category|default:"—" }}</td>
+                <td>{{ inv.sample_type.name|default:"—" }}</td>
+                <td>{{ inv.specimen|default:"—" }}</td>
+                <td>
+                    {% if inv.is_active %}
+                    <span class="lab-badge lab-badge-active">Active</span>
+                    {% else %}
+                    <span class="lab-badge lab-badge-inactive">Inactive</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    <a href="{% url 'lab:master_investigation_parameter_mapping' %}?investigation={{ inv.id }}" class="lab-badge lab-badge-neutral" style="text-decoration: none;" title="View parameters">
+                        {{ inv.param_count|default:0 }} params
+                    </a>
+                </td>
+                <td class="text-end">
+                    <div class="lab-btn-group">
+                        <a href="{% url 'lab:master_investigation_detail' inv.id %}" class="lab-btn lab-btn-secondary lab-btn-sm" title="View Details">
+                            <i class="bi bi-eye"></i> View
+                        </a>
+                        <button type="button" class="lab-btn lab-btn-secondary lab-btn-sm" onclick="openEditModal({{ inv.id }}, '{{ inv.code|escapejs }}', '{{ inv.name|escapejs }}', '{{ inv.department_id|default:'' }}', '{{ inv.sample_type_id|default:'' }}', '{{ inv.category|default:''|escapejs }}', '{{ inv.specimen|default:''|escapejs }}', '{{ inv.method|default:''|escapejs }}', {{ inv.display_order|default:0 }}, {{ inv.is_active|yesno:'true,false' }})" title="Edit Investigation">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <a href="{% url 'lab:master_investigation_parameter_mapping' %}?investigation={{ inv.id }}" class="lab-btn lab-btn-secondary lab-btn-sm" title="Parameters Mapping">
+                            Params
+                        </a>
+                        <a href="{% url 'lab:master_reference_ranges' %}?investigation={{ inv.id }}" class="lab-btn lab-btn-secondary lab-btn-sm" title="Reference Ranges">
+                            Ranges
+                        </a>
+                        <button type="button" class="lab-btn lab-btn-sm {% if inv.is_active %}lab-btn-secondary{% else %}lab-btn-primary{% endif %}" onclick="toggleStatus({{ inv.id }})" title="Toggle Active/Inactive">
+                            {% if inv.is_active %}<i class="bi bi-slash-circle text-danger"></i>{% else %}<i class="bi bi-check-circle"></i>{% endif %}
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10">
+                    <div class="lab-empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <p style="margin: 0; font-weight: 500;">No investigations found matching your filter criteria.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% include "lab/master/pagination.html" %}
+</div>
+
+<!-- Modal: Add / Edit Investigation -->
+<div class="lab-modal" id="invModal" tabindex="-1" role="dialog" aria-labelledby="modalTitle" aria-hidden="true">
+    <div class="lab-modal-dialog modal-lg" role="document">
+        <div class="lab-modal-header">
+            <div>
+                <h2 class="lab-modal-title" id="modalTitle">Investigation Configuration</h2>
+                <div style="font-size: 0.78rem; color: var(--lab-text-muted); margin-top: 2px;">Manage investigation master details</div>
+            </div>
+            <button type="button" class="lab-modal-close" data-lab-dismiss="modal" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <form id="invForm" onsubmit="submitInvForm(event)">
+            {% csrf_token %}
+            <input type="hidden" id="inv_id" name="id">
+
+            <div class="lab-modal-body">
+                <div class="lab-form-grid-2">
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="inv_code">Investigation Code <span class="lab-required">*</span></label>
+                        <input type="text" class="lab-form-input" id="inv_code" placeholder="e.g. CBC001" required>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="inv_name">Investigation Name <span class="lab-required">*</span></label>
+                        <input type="text" class="lab-form-input" id="inv_name" placeholder="e.g. Complete Blood Count" required>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="inv_department">Department</label>
+                        <select class="lab-form-select" id="inv_department">
+                            <option value="">-- None --</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="inv_sample_type">Sample Type</label>
+                        <select class="lab-form-select" id="inv_sample_type">
+                            <option value="">-- None --</option>
+                            {% for st in sample_types %}
+                            <option value="{{ st.id }}">{{ st.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="inv_category">Category</label>
+                        <input type="text" class="lab-form-input" id="inv_category" placeholder="e.g. Haematology, Biochemistry">
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="inv_specimen">Specimen</label>
+                        <input type="text" class="lab-form-input" id="inv_specimen" placeholder="e.g. Whole Blood, Serum, Plasma">
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="inv_method">Method</label>
+                        <input type="text" class="lab-form-input" id="inv_method" placeholder="e.g. Automated Analyzer, Microscopy">
+                    </div>
+
+                    <div class="lab-form-group">
+                        <label class="lab-form-label" for="inv_display_order">Display Order</label>
+                        <input type="number" class="lab-form-input" id="inv_display_order" value="0">
+                    </div>
+
+                    <div class="lab-form-group lab-form-col-full">
+                        <label class="lab-form-label" for="inv_is_active">Status</label>
+                        <select class="lab-form-select" id="inv_is_active">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lab-modal-footer">
+                <button type="button" class="lab-btn lab-btn-secondary" data-lab-dismiss="modal">Cancel</button>
+                <button type="submit" class="lab-btn lab-btn-primary" id="btnSaveInv">
+                    <i class="bi bi-check-lg"></i> Save Investigation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block lab_master_extra_js %}
+<script>
+function openAddModal() {
+    document.getElementById('modalTitle').innerText = 'Add Investigation';
+    document.getElementById('inv_id').value = '';
+    document.getElementById('inv_code').value = '';
+    document.getElementById('inv_name').value = '';
+    document.getElementById('inv_department').value = '';
+    document.getElementById('inv_sample_type').value = '';
+    document.getElementById('inv_category').value = '';
+    document.getElementById('inv_specimen').value = '';
+    document.getElementById('inv_method').value = '';
+    document.getElementById('inv_display_order').value = '0';
+    document.getElementById('inv_is_active').value = 'true';
+    openLabModal('invModal');
+}
+
+function openEditModal(id, code, name, deptId, sampleTypeId, category, specimen, method, displayOrder, isActive) {
+    document.getElementById('modalTitle').innerText = 'Edit Investigation: ' + name;
+    document.getElementById('inv_id').value = id;
+    document.getElementById('inv_code').value = code;
+    document.getElementById('inv_name').value = name;
+    document.getElementById('inv_department').value = deptId || '';
+    document.getElementById('inv_sample_type').value = sampleTypeId || '';
+    document.getElementById('inv_category').value = category || '';
+    document.getElementById('inv_specimen').value = specimen || '';
+    document.getElementById('inv_method').value = method || '';
+    document.getElementById('inv_display_order').value = displayOrder || '0';
+    document.getElementById('inv_is_active').value = isActive ? 'true' : 'false';
+    openLabModal('invModal');
+}
+
+async function submitInvForm(e) {
+    e.preventDefault();
+    const btnSave = document.getElementById('btnSaveInv');
+    btnSave.disabled = true;
+    btnSave.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+
+    const payload = {
+        id: document.getElementById('inv_id').value || null,
+        code: document.getElementById('inv_code').value.trim(),
+        name: document.getElementById('inv_name').value.trim(),
+        department_id: document.getElementById('inv_department').value || null,
+        sample_type_id: document.getElementById('inv_sample_type').value || null,
+        category: document.getElementById('inv_category').value.trim(),
+        specimen: document.getElementById('inv_specimen').value.trim(),
+        method: document.getElementById('inv_method').value.trim(),
+        display_order: parseInt(document.getElementById('inv_display_order').value) || 0,
+        is_active: document.getElementById('inv_is_active').value === 'true'
+    };
+
+    try {
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const res = await fetch("{% url 'lab:api_master_investigation_save' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error saving investigation.');
+            btnSave.disabled = false;
+            btnSave.innerHTML = '<i class="bi bi-check-lg"></i> Save Investigation';
+        }
+    } catch (err) {
+        alert('Request failed: ' + err);
+        btnSave.disabled = false;
+        btnSave.innerHTML = '<i class="bi bi-check-lg"></i> Save Investigation';
+    }
+}
+
+async function toggleStatus(id) {
+    if (!confirm('Are you sure you want to toggle the active status of this investigation?')) return;
+    const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+    try {
+        const res = await fetch(`/lab/master/api/investigations/${id}/toggle-status/`, {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrf}
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.location.reload();
+        }
+    } catch(err) {
+        alert('Toggle failed: ' + err);
+    }
+}
+</script>
+{% endblock %}

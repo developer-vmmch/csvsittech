@@ -98,13 +98,13 @@ SHEET_DEFS = {
 
 SHEET_ORDER = [
     'Departments',
+    'Age Groups',
     'Diagnoses',
     'Investigations',
     'Parameters',
-    'Age Groups',
+    'Diagnosis Departments',
     'Investigation Parameters',
     'Reference Ranges',
-    'Diagnosis Departments',
     'Diagnosis Investigations',
 ]
 
@@ -113,9 +113,54 @@ SHEET_ORDER = [
 # Value Sanitation & Normalization Helpers
 # ---------------------------------------------------------------------------
 
+def clean_code(v, candidate_codes=None):
+    """
+    Cleans an identifier code (Department, Age Group, Diagnosis, Investigation, Parameter).
+    Treats codes STRICTLY as string values, preserving leading zeros (e.g. 00022681, 00020346).
+    Never coerces codes to integers.
+    """
+    if v is None:
+        return ''
+    if isinstance(v, float):
+        if v.is_integer():
+            s = str(int(v)).strip()
+        else:
+            s = str(v).strip()
+    else:
+        s = str(v).strip()
+
+    if s.endswith('.0') and s[:-2].isdigit():
+        s = s[:-2]
+
+    if not s:
+        return ''
+
+    # If candidate codes are available, match against them:
+    if candidate_codes:
+        s_lower = s.lower()
+        for cand in candidate_codes:
+            if cand and str(cand).strip().lower() == s_lower:
+                return str(cand).strip()
+        # If numeric, match against candidate_codes ignoring leading zeros
+        if s.isdigit():
+            s_lstrip = s.lstrip('0')
+            matches = [c for c in candidate_codes if c and str(c).strip().isdigit() and str(c).strip().lstrip('0') == s_lstrip]
+            if len(matches) == 1:
+                return str(matches[0]).strip()
+            # Try standard 8-digit zfill
+            z8 = s.zfill(8)
+            for cand in candidate_codes:
+                if cand and str(cand).strip() == z8:
+                    return z8
+
+    return s
+
+
 def clean_val(v):
     if v is None:
         return ''
+    if isinstance(v, str):
+        return v.strip()
     if isinstance(v, float) and v.is_integer():
         return str(int(v))
     s = str(v).strip()
@@ -191,15 +236,15 @@ class DepartmentResolver:
 
     def register(self, d):
         if d.code:
-            self.by_code[clean_val(d.code).lower()] = d
+            self.by_code[clean_code(d.code).lower()] = d
         if d.name:
             self.by_name[normalize_text(d.name).lower()] = d
 
     def register_placeholder(self, code, name):
         """Register newly resolved/created department keys so later workbook rows update it."""
-        key_c = clean_val(code).lower()
+        key_c = clean_code(code).lower()
         key_n = normalize_text(name).lower()
-        dummy = {'code': clean_val(code), 'name': normalize_text(name)}
+        dummy = {'code': clean_code(code), 'name': normalize_text(name)}
         if key_c and key_c not in self.by_code:
             self.by_code[key_c] = dummy
         if key_n and key_n not in self.by_name:
@@ -212,7 +257,7 @@ class DepartmentResolver:
             target: existing Department or dict or None
             is_duplicate: bool (True if duplicate within the current workbook)
         """
-        c_clean = clean_val(code)
+        c_clean = clean_code(code, self.by_code.keys())
         n_clean = normalize_text(name)
         key_c = c_clean.lower() if c_clean else ''
         key_n = n_clean.lower() if n_clean else ''
@@ -220,7 +265,7 @@ class DepartmentResolver:
         is_dup = False
         if key_c and key_c in self.seen_codes:
             is_dup = True
-        if key_n and key_n in self.seen_names:
+        if not key_c and key_n and key_n in self.seen_names:
             is_dup = True
 
         if key_c:
@@ -232,8 +277,8 @@ class DepartmentResolver:
         if key_c and key_c in self.by_code:
             return 'UPDATE', self.by_code[key_c], is_dup
 
-        # 2. Match by normalized name
-        if key_n and key_n in self.by_name:
+        # 2. Match by normalized name ONLY if code is not given
+        if not key_c and key_n and key_n in self.by_name:
             return 'UPDATE', self.by_name[key_n], is_dup
 
         # 3. Not found -> CREATE
@@ -241,6 +286,13 @@ class DepartmentResolver:
 
     def get_department(self, code_or_name):
         """Helper for FK lookups in subsequent sheets (e.g. Diagnosis Departments)."""
+        if not code_or_name:
+            return None
+        c_val = clean_code(code_or_name, self.by_code.keys()).lower()
+        if c_val in self.by_code:
+            obj = self.by_code[c_val]
+            if isinstance(obj, Department):
+                return obj
         key = normalize_text(code_or_name).lower()
         if key in self.by_code:
             obj = self.by_code[key]
@@ -251,7 +303,7 @@ class DepartmentResolver:
             if isinstance(obj, Department):
                 return obj
         return Department.objects.filter(
-            models.Q(code__iexact=code_or_name) | models.Q(name__iexact=normalize_text(code_or_name))
+            models.Q(code__iexact=clean_code(code_or_name)) | models.Q(name__iexact=normalize_text(code_or_name))
         ).first()
 
     def upsert(self, code, name, is_active=True, row_index=None):
@@ -259,7 +311,7 @@ class DepartmentResolver:
         Executes safe upsert in the database.
         Returns: (instance, created_bool)
         """
-        c_clean = clean_val(code)
+        c_clean = clean_code(code, self.by_code.keys())
         n_clean = normalize_text(name)
         if not c_clean or not n_clean:
             return None, False
@@ -352,21 +404,21 @@ class DiagnosisResolver:
 
     def register(self, d):
         if d.code:
-            self.by_code[clean_val(d.code).lower()] = d
+            self.by_code[clean_code(d.code).lower()] = d
         if d.name:
             self.by_name[normalize_text(d.name).lower()] = d
 
     def register_placeholder(self, code, name):
-        key_c = clean_val(code).lower()
+        key_c = clean_code(code).lower()
         key_n = normalize_text(name).lower()
-        dummy = {'code': clean_val(code), 'name': normalize_text(name)}
+        dummy = {'code': clean_code(code), 'name': normalize_text(name)}
         if key_c and key_c not in self.by_code:
             self.by_code[key_c] = dummy
         if key_n and key_n not in self.by_name:
             self.by_name[key_n] = dummy
 
     def resolve(self, code, name):
-        c_clean = clean_val(code)
+        c_clean = clean_code(code, self.by_code.keys())
         n_clean = normalize_text(name)
         key_c = c_clean.lower() if c_clean else ''
         key_n = n_clean.lower() if n_clean else ''
@@ -374,7 +426,7 @@ class DiagnosisResolver:
         is_dup = False
         if key_c and key_c in self.seen_codes:
             is_dup = True
-        if key_n and key_n in self.seen_names:
+        if not key_c and key_n and key_n in self.seen_names:
             is_dup = True
 
         if key_c:
@@ -382,25 +434,32 @@ class DiagnosisResolver:
         if key_n:
             self.seen_names.add(key_n)
 
+        # Primary: by code
         if key_c and key_c in self.by_code:
             return 'UPDATE', self.by_code[key_c], is_dup
-        if key_n and key_n in self.by_name:
+        # Secondary: by name if code not given
+        if not key_c and key_n and key_n in self.by_name:
             return 'UPDATE', self.by_name[key_n], is_dup
 
         return 'CREATE', None, is_dup
 
     def get_diagnosis(self, code_or_name):
+        if not code_or_name:
+            return None
+        c_val = clean_code(code_or_name, self.by_code.keys()).lower()
+        if c_val in self.by_code and isinstance(self.by_code[c_val], Diagnosis):
+            return self.by_code[c_val]
         key = normalize_text(code_or_name).lower()
         if key in self.by_code and isinstance(self.by_code[key], Diagnosis):
             return self.by_code[key]
         if key in self.by_name and isinstance(self.by_name[key], Diagnosis):
             return self.by_name[key]
         return Diagnosis.objects.filter(
-            models.Q(code__iexact=code_or_name) | models.Q(name__iexact=normalize_text(code_or_name))
+            models.Q(code__iexact=clean_code(code_or_name)) | models.Q(name__iexact=normalize_text(code_or_name))
         ).first()
 
     def upsert(self, code, name, is_active=True, row_index=None):
-        c_clean = clean_val(code)
+        c_clean = clean_code(code, self.by_code.keys())
         n_clean = normalize_text(name)
         if not c_clean or not n_clean:
             return None, False
@@ -422,6 +481,9 @@ class DiagnosisResolver:
         ).first()
         if existing:
             existing.name = n_clean
+            if c_clean and existing.code != c_clean:
+                if not Diagnosis.objects.filter(code__iexact=c_clean).exclude(id=existing.id).exists():
+                    existing.code = c_clean
             existing.is_active = is_active
             existing.save()
             self.register(existing)
@@ -473,21 +535,21 @@ class InvestigationResolver:
 
     def register(self, inv):
         if inv.code:
-            self.by_code[clean_val(inv.code).lower()] = inv
+            self.by_code[clean_code(inv.code).lower()] = inv
         if inv.name:
             self.by_name[normalize_text(inv.name).lower()] = inv
 
     def register_placeholder(self, code, name):
-        key_c = clean_val(code).lower()
+        key_c = clean_code(code).lower()
         key_n = normalize_text(name).lower()
-        dummy = {'code': clean_val(code), 'name': normalize_text(name)}
+        dummy = {'code': clean_code(code), 'name': normalize_text(name)}
         if key_c and key_c not in self.by_code:
             self.by_code[key_c] = dummy
         if key_n and key_n not in self.by_name:
             self.by_name[key_n] = dummy
 
     def resolve(self, code, name):
-        c_clean = clean_val(code)
+        c_clean = clean_code(code, self.by_code.keys())
         n_clean = normalize_text(name)
         key_c = c_clean.lower() if c_clean else ''
         key_n = n_clean.lower() if n_clean else ''
@@ -495,7 +557,7 @@ class InvestigationResolver:
         is_dup = False
         if key_c and key_c in self.seen_codes:
             is_dup = True
-        if key_n and key_n in self.seen_names:
+        if not key_c and key_n and key_n in self.seen_names:
             is_dup = True
 
         if key_c:
@@ -503,25 +565,32 @@ class InvestigationResolver:
         if key_n:
             self.seen_names.add(key_n)
 
+        # Primary: by code
         if key_c and key_c in self.by_code:
             return 'UPDATE', self.by_code[key_c], is_dup
-        if key_n and key_n in self.by_name:
+        # Secondary: by name if code not given
+        if not key_c and key_n and key_n in self.by_name:
             return 'UPDATE', self.by_name[key_n], is_dup
 
         return 'CREATE', None, is_dup
 
     def get_investigation(self, code_or_name):
+        if not code_or_name:
+            return None
+        c_val = clean_code(code_or_name, self.by_code.keys()).lower()
+        if c_val in self.by_code and isinstance(self.by_code[c_val], Investigation):
+            return self.by_code[c_val]
         key = normalize_text(code_or_name).lower()
         if key in self.by_code and isinstance(self.by_code[key], Investigation):
             return self.by_code[key]
         if key in self.by_name and isinstance(self.by_name[key], Investigation):
             return self.by_name[key]
         return Investigation.objects.filter(
-            models.Q(code__iexact=code_or_name) | models.Q(name__iexact=normalize_text(code_or_name))
+            models.Q(code__iexact=clean_code(code_or_name)) | models.Q(name__iexact=normalize_text(code_or_name))
         ).first()
 
     def upsert(self, code, name, dept_name='', samp_name='', is_panel=False, is_active=True, row_index=None):
-        c_clean = clean_val(code)
+        c_clean = clean_code(code, self.by_code.keys())
         n_clean = normalize_text(name)
         if not c_clean or not n_clean:
             return None, False
@@ -551,6 +620,9 @@ class InvestigationResolver:
         ).first()
         if existing:
             existing.name = n_clean
+            if c_clean and existing.code != c_clean:
+                if not Investigation.objects.filter(code__iexact=c_clean).exclude(id=existing.id).exists():
+                    existing.code = c_clean
             if ldept:
                 existing.department = ldept
             if samp:
@@ -610,21 +682,21 @@ class ParameterResolver:
 
     def register(self, p):
         if p.code:
-            self.by_code[clean_val(p.code).lower()] = p
+            self.by_code[clean_code(p.code).lower()] = p
         if p.name:
             self.by_name[normalize_text(p.name).lower()] = p
 
     def register_placeholder(self, code, name):
-        key_c = clean_val(code).lower()
+        key_c = clean_code(code).lower()
         key_n = normalize_text(name).lower()
-        dummy = {'code': clean_val(code), 'name': normalize_text(name)}
+        dummy = {'code': clean_code(code), 'name': normalize_text(name)}
         if key_c and key_c not in self.by_code:
             self.by_code[key_c] = dummy
         if key_n and key_n not in self.by_name:
             self.by_name[key_n] = dummy
 
     def resolve(self, code, name):
-        c_clean = clean_val(code)
+        c_clean = clean_code(code, self.by_code.keys())
         n_clean = normalize_text(name)
         key_c = c_clean.lower() if c_clean else ''
         key_n = n_clean.lower() if n_clean else ''
@@ -653,9 +725,12 @@ class ParameterResolver:
     def get_parameter(self, code_or_name):
         if not code_or_name:
             return None
+        c_val = clean_code(code_or_name, self.by_code.keys()).lower()
+        if c_val in self.by_code and isinstance(self.by_code[c_val], Parameter):
+            return self.by_code[c_val]
         from apps.lab.result_importer import normalize_parameter_code
         norm_code = normalize_parameter_code(code_or_name, self.by_code.keys())
-        key_c = (norm_code or clean_val(code_or_name)).lower()
+        key_c = (norm_code or clean_code(code_or_name)).lower()
         if key_c in self.by_code and isinstance(self.by_code[key_c], Parameter):
             return self.by_code[key_c]
         key = normalize_text(code_or_name).lower()
@@ -664,24 +739,26 @@ class ParameterResolver:
         if key in self.by_name and isinstance(self.by_name[key], Parameter):
             return self.by_name[key]
         return Parameter.objects.filter(
-            models.Q(code__iexact=norm_code or code_or_name) | models.Q(name__iexact=normalize_text(code_or_name))
+            models.Q(code__iexact=norm_code or clean_code(code_or_name)) | models.Q(name__iexact=normalize_text(code_or_name))
         ).first()
 
     def upsert(self, code, name, data_type='NUMERIC', default_unit='', is_active=True, row_index=None):
-        c_clean = clean_val(code)
+        c_clean = clean_code(code, self.by_code.keys())
         n_clean = normalize_text(name)
         if not c_clean or not n_clean:
             return None, False
 
         status, target, _ = self.resolve(c_clean, n_clean)
+        dtype = data_type.upper() if data_type else 'NUMERIC'
         if status == 'UPDATE' and isinstance(target, Parameter):
             param = target
             param.name = n_clean
             if c_clean and param.code != c_clean:
                 if not Parameter.objects.filter(code__iexact=c_clean).exclude(id=param.id).exists():
                     param.code = c_clean
-            param.data_type = data_type or 'NUMERIC'
-            param.default_unit = default_unit
+            param.data_type = dtype
+            if default_unit or not param.default_unit:
+                param.default_unit = default_unit
             param.is_active = is_active
             param.save()
             self.register(param)
@@ -695,8 +772,12 @@ class ParameterResolver:
 
         if existing:
             existing.name = n_clean
-            existing.data_type = data_type or 'NUMERIC'
-            existing.default_unit = default_unit
+            if c_clean and existing.code != c_clean:
+                if not Parameter.objects.filter(code__iexact=c_clean).exclude(id=existing.id).exists():
+                    existing.code = c_clean
+            existing.data_type = dtype
+            if default_unit or not existing.default_unit:
+                existing.default_unit = default_unit
             existing.is_active = is_active
             existing.save()
             self.register(existing)
@@ -706,7 +787,7 @@ class ParameterResolver:
             param = Parameter.objects.create(
                 code=c_clean,
                 name=n_clean,
-                data_type=data_type or 'NUMERIC',
+                data_type=dtype,
                 default_unit=default_unit,
                 is_active=is_active
             )
@@ -748,21 +829,21 @@ class AgeGroupResolver:
 
     def register(self, ag):
         if ag.code:
-            self.by_code[clean_val(ag.code).lower()] = ag
+            self.by_code[clean_code(ag.code).lower()] = ag
         if ag.label:
             self.by_label[normalize_text(ag.label).lower()] = ag
 
     def register_placeholder(self, code, label):
-        key_c = clean_val(code).lower()
+        key_c = clean_code(code).lower()
         key_l = normalize_text(label).lower()
-        dummy = {'code': clean_val(code), 'label': normalize_text(label)}
+        dummy = {'code': clean_code(code), 'label': normalize_text(label)}
         if key_c and key_c not in self.by_code:
             self.by_code[key_c] = dummy
         if key_l and key_l not in self.by_label:
             self.by_label[key_l] = dummy
 
     def resolve(self, code, label):
-        c_clean = clean_val(code)
+        c_clean = clean_code(code, self.by_code.keys())
         l_clean = normalize_text(label)
         key_c = c_clean.lower() if c_clean else ''
         key_l = l_clean.lower() if l_clean else ''
@@ -770,7 +851,7 @@ class AgeGroupResolver:
         is_dup = False
         if key_c and key_c in self.seen_codes:
             is_dup = True
-        if key_l and key_l in self.seen_labels:
+        if not key_c and key_l and key_l in self.seen_labels:
             is_dup = True
 
         if key_c:
@@ -778,25 +859,32 @@ class AgeGroupResolver:
         if key_l:
             self.seen_labels.add(key_l)
 
+        # Primary match: by code
         if key_c and key_c in self.by_code:
             return 'UPDATE', self.by_code[key_c], is_dup
-        if key_l and key_l in self.by_label:
+        # Secondary match: by label ONLY if code is NOT provided
+        if not key_c and key_l and key_l in self.by_label:
             return 'UPDATE', self.by_label[key_l], is_dup
 
         return 'CREATE', None, is_dup
 
     def get_age_group(self, code_or_label):
+        if not code_or_label:
+            return None
+        c_val = clean_code(code_or_label, self.by_code.keys()).lower()
+        if c_val in self.by_code and isinstance(self.by_code[c_val], AgeGroup):
+            return self.by_code[c_val]
         key = normalize_text(code_or_label).lower()
         if key in self.by_code and isinstance(self.by_code[key], AgeGroup):
             return self.by_code[key]
         if key in self.by_label and isinstance(self.by_label[key], AgeGroup):
             return self.by_label[key]
         return AgeGroup.objects.filter(
-            models.Q(code__iexact=code_or_label) | models.Q(label__iexact=normalize_text(code_or_label))
+            models.Q(code__iexact=clean_code(code_or_label)) | models.Q(label__iexact=normalize_text(code_or_label))
         ).first()
 
     def upsert(self, code, label, a_from=None, f_unit='Years', a_to=None, t_unit='Years', gender='All', is_active=True, row_index=None):
-        c_clean = clean_val(code)
+        c_clean = clean_code(code, self.by_code.keys())
         l_clean = normalize_text(label)
         if not c_clean or not l_clean:
             return None, False
@@ -821,11 +909,17 @@ class AgeGroupResolver:
             self.register(ag)
             return ag, False
 
-        existing = AgeGroup.objects.filter(
-            models.Q(code__iexact=c_clean) | models.Q(label__iexact=l_clean)
-        ).first()
+        existing = None
+        if c_clean:
+            existing = AgeGroup.objects.filter(code__iexact=c_clean).first()
+        elif l_clean:
+            existing = AgeGroup.objects.filter(label__iexact=l_clean).first()
+
         if existing:
             existing.label = l_clean
+            if c_clean and existing.code != c_clean:
+                if not AgeGroup.objects.filter(code__iexact=c_clean).exclude(id=existing.id).exists():
+                    existing.code = c_clean
             existing.min_age_value = min_val
             existing.min_age_unit = f_unit or 'Years'
             existing.max_age_value = max_val
@@ -850,9 +944,7 @@ class AgeGroupResolver:
             self.register(ag)
             return ag, True
         except Exception as e:
-            fallback = AgeGroup.objects.filter(
-                models.Q(code__iexact=c_clean) | models.Q(label__iexact=l_clean)
-            ).first()
+            fallback = AgeGroup.objects.filter(code__iexact=c_clean).first() if c_clean else AgeGroup.objects.filter(label__iexact=l_clean).first()
             if fallback:
                 fallback.is_active = is_active
                 fallback.save()
@@ -1080,24 +1172,24 @@ def validate_import(file_obj):
             return []
 
     depts      = load('Departments')
+    ages       = load('Age Groups')
     diags      = load('Diagnoses')
     invs       = load('Investigations')
     params     = load('Parameters')
-    ages       = load('Age Groups')
+    diag_depts = load('Diagnosis Departments')
     inv_params = load('Investigation Parameters')
     refs       = load('Reference Ranges')
-    diag_depts = load('Diagnosis Departments')
     diag_invs  = load('Diagnosis Investigations')
 
     # Update detected row counts
     sheet_stats['Departments']['detected_rows'] = len(depts)
+    sheet_stats['Age Groups']['detected_rows'] = len(ages)
     sheet_stats['Diagnoses']['detected_rows'] = len(diags)
     sheet_stats['Investigations']['detected_rows'] = len(invs)
     sheet_stats['Parameters']['detected_rows'] = len(params)
-    sheet_stats['Age Groups']['detected_rows'] = len(ages)
+    sheet_stats['Diagnosis Departments']['detected_rows'] = len(diag_depts)
     sheet_stats['Investigation Parameters']['detected_rows'] = len(inv_params)
     sheet_stats['Reference Ranges']['detected_rows'] = len(refs)
-    sheet_stats['Diagnosis Departments']['detected_rows'] = len(diag_depts)
     sheet_stats['Diagnosis Investigations']['detected_rows'] = len(diag_invs)
 
     # -- DB lookup sets & shared resolvers -----------------------------------
@@ -1130,10 +1222,10 @@ def validate_import(file_obj):
 
     # Working sets include DB codes + codes present in workbook (forward references)
     file_dept_codes  = set(db_dept_codes)
+    file_age_codes   = set(db_age_codes)
     file_diag_codes  = set(db_diag_codes)
     file_inv_codes   = set(db_inv_codes)
     file_param_codes = set(db_param_codes)
-    file_age_codes   = set(db_age_codes)
 
     seen_inv_param_keys = set()
     seen_ref_keys = set()
@@ -1143,7 +1235,7 @@ def validate_import(file_obj):
     # -- 1. Departments ------------------------------------------------------
     for r in depts:
         row = r['_row_index']
-        code = clean_val(r.get('department code'))
+        code = clean_code(r.get('department code'), dept_resolver.by_code.keys())
         name = clean_val(r.get('department name'))
         row_has_error = False
 
@@ -1173,114 +1265,10 @@ def validate_import(file_obj):
             if target and hasattr(target, 'code') and target.code:
                 file_dept_codes.add(target.code.lower())
 
-    # -- 2. Diagnoses --------------------------------------------------------
-    for r in diags:
-        row = r['_row_index']
-        code = clean_val(r.get('diagnosis code'))
-        name = clean_val(r.get('diagnosis name'))
-        row_has_error = False
-
-        if not code:
-            err('Diagnoses', row, 'Diagnosis Code', '', 'Diagnosis Code is required')
-            row_has_error = True
-        if not name:
-            err('Diagnoses', row, 'Diagnosis Name', '', 'Diagnosis Name is required')
-            row_has_error = True
-
-        if row_has_error:
-            sheet_stats['Diagnoses']['invalid_rows'] += 1
-        else:
-            status, target, is_dup = diag_resolver.resolve(code, name)
-            if is_dup:
-                warnings.append(f"Diagnoses (Row {row}): Duplicate Diagnosis '{code or name}' in workbook; subsequent row will update.")
-                sheet_stats['Diagnoses']['duplicates'] += 1
-
-            sheet_stats['Diagnoses']['valid_rows'] += 1
-            if status == 'UPDATE':
-                sheet_stats['Diagnoses']['existing'] += 1
-            else:
-                sheet_stats['Diagnoses']['new'] += 1
-                diag_resolver.register_placeholder(code, name)
-
-            file_diag_codes.add(code.lower())
-            if target and hasattr(target, 'code') and target.code:
-                file_diag_codes.add(target.code.lower())
-
-    # -- 3. Investigations ---------------------------------------------------
-    for r in invs:
-        row = r['_row_index']
-        code = clean_val(r.get('investigation code'))
-        name = clean_val(r.get('investigation name'))
-        row_has_error = False
-
-        if not code:
-            err('Investigations', row, 'Investigation Code', '', 'Investigation Code is required')
-            row_has_error = True
-        if not name:
-            err('Investigations', row, 'Investigation Name', '', 'Investigation Name is required')
-            row_has_error = True
-
-        if row_has_error:
-            sheet_stats['Investigations']['invalid_rows'] += 1
-        else:
-            status, target, is_dup = inv_resolver.resolve(code, name)
-            if is_dup:
-                warnings.append(f"Investigations (Row {row}): Duplicate Investigation '{code or name}' in workbook; subsequent row will update.")
-                sheet_stats['Investigations']['duplicates'] += 1
-
-            sheet_stats['Investigations']['valid_rows'] += 1
-            if status == 'UPDATE':
-                sheet_stats['Investigations']['existing'] += 1
-            else:
-                sheet_stats['Investigations']['new'] += 1
-                inv_resolver.register_placeholder(code, name)
-
-            file_inv_codes.add(code.lower())
-            if target and hasattr(target, 'code') and target.code:
-                file_inv_codes.add(target.code.lower())
-
-    # -- 4. Parameters -------------------------------------------------------
-    valid_data_types = {'NUMERIC', 'TEXT', 'CALCULATED', 'SELECT'}
-    for r in params:
-        row = r['_row_index']
-        code = clean_val(r.get('parameter code'))
-        name = clean_val(r.get('parameter name'))
-        dtype = clean_val(r.get('data type')).upper() or 'NUMERIC'
-        row_has_error = False
-
-        if not code:
-            err('Parameters', row, 'Parameter Code', '', 'Parameter Code is required')
-            row_has_error = True
-        if not name:
-            err('Parameters', row, 'Parameter Name', '', 'Parameter Name is required')
-            row_has_error = True
-
-        if dtype and dtype not in valid_data_types:
-            warnings.append(f"Parameters (Row {row}): Data type '{dtype}' is unusual, default NUMERIC will be applied if needed.")
-
-        if row_has_error:
-            sheet_stats['Parameters']['invalid_rows'] += 1
-        else:
-            status, target, is_dup = param_resolver.resolve(code, name)
-            if is_dup:
-                warnings.append(f"Parameters (Row {row}): Duplicate Parameter '{code or name}' in workbook; subsequent row will update.")
-                sheet_stats['Parameters']['duplicates'] += 1
-
-            sheet_stats['Parameters']['valid_rows'] += 1
-            if status == 'UPDATE':
-                sheet_stats['Parameters']['existing'] += 1
-            else:
-                sheet_stats['Parameters']['new'] += 1
-                param_resolver.register_placeholder(code, name)
-
-            file_param_codes.add(code.lower())
-            if target and hasattr(target, 'code') and target.code:
-                file_param_codes.add(target.code.lower())
-
-    # -- 5. Age Groups -------------------------------------------------------
+    # -- 2. Age Groups -------------------------------------------------------
     for r in ages:
         row = r['_row_index']
-        code = clean_val(r.get('age group code'))
+        code = clean_code(r.get('age group code'), age_resolver.by_code.keys())
         name = clean_val(r.get('age group name'))
         a_from = clean_val(r.get('age from'))
         a_to = clean_val(r.get('age to'))
@@ -1320,11 +1308,168 @@ def validate_import(file_obj):
             if target and hasattr(target, 'code') and target.code:
                 file_age_codes.add(target.code.lower())
 
-    # -- 6. Investigation Parameters -----------------------------------------
+    # -- 3. Diagnoses --------------------------------------------------------
+    for r in diags:
+        row = r['_row_index']
+        code = clean_code(r.get('diagnosis code'), diag_resolver.by_code.keys())
+        name = clean_val(r.get('diagnosis name'))
+        row_has_error = False
+
+        if not code:
+            err('Diagnoses', row, 'Diagnosis Code', '', 'Diagnosis Code is required')
+            row_has_error = True
+        if not name:
+            err('Diagnoses', row, 'Diagnosis Name', '', 'Diagnosis Name is required')
+            row_has_error = True
+
+        if row_has_error:
+            sheet_stats['Diagnoses']['invalid_rows'] += 1
+        else:
+            status, target, is_dup = diag_resolver.resolve(code, name)
+            if is_dup:
+                warnings.append(f"Diagnoses (Row {row}): Duplicate Diagnosis '{code or name}' in workbook; subsequent row will update.")
+                sheet_stats['Diagnoses']['duplicates'] += 1
+
+            sheet_stats['Diagnoses']['valid_rows'] += 1
+            if status == 'UPDATE':
+                sheet_stats['Diagnoses']['existing'] += 1
+            else:
+                sheet_stats['Diagnoses']['new'] += 1
+                diag_resolver.register_placeholder(code, name)
+
+            file_diag_codes.add(code.lower())
+            if target and hasattr(target, 'code') and target.code:
+                file_diag_codes.add(target.code.lower())
+
+    # -- 4. Investigations ---------------------------------------------------
+    for r in invs:
+        row = r['_row_index']
+        code = clean_code(r.get('investigation code'), inv_resolver.by_code.keys())
+        name = clean_val(r.get('investigation name'))
+        row_has_error = False
+
+        if not code:
+            err('Investigations', row, 'Investigation Code', '', 'Investigation Code is required')
+            row_has_error = True
+        if not name:
+            err('Investigations', row, 'Investigation Name', '', 'Investigation Name is required')
+            row_has_error = True
+
+        if row_has_error:
+            sheet_stats['Investigations']['invalid_rows'] += 1
+        else:
+            status, target, is_dup = inv_resolver.resolve(code, name)
+            if is_dup:
+                warnings.append(f"Investigations (Row {row}): Duplicate Investigation '{code or name}' in workbook; subsequent row will update.")
+                sheet_stats['Investigations']['duplicates'] += 1
+
+            sheet_stats['Investigations']['valid_rows'] += 1
+            if status == 'UPDATE':
+                sheet_stats['Investigations']['existing'] += 1
+            else:
+                sheet_stats['Investigations']['new'] += 1
+                inv_resolver.register_placeholder(code, name)
+
+            file_inv_codes.add(code.lower())
+            if target and hasattr(target, 'code') and target.code:
+                file_inv_codes.add(target.code.lower())
+
+    # -- 5. Parameters -------------------------------------------------------
+    valid_data_types = {'NUMERIC', 'TEXT', 'CALCULATED', 'SELECT'}
+    for r in params:
+        row = r['_row_index']
+        code = clean_code(r.get('parameter code'), param_resolver.by_code.keys())
+        name = clean_val(r.get('parameter name'))
+        dtype = clean_val(r.get('data type')).upper() or 'NUMERIC'
+        row_has_error = False
+
+        if not code:
+            err('Parameters', row, 'Parameter Code', '', 'Parameter Code is required')
+            row_has_error = True
+        if not name:
+            err('Parameters', row, 'Parameter Name', '', 'Parameter Name is required')
+            row_has_error = True
+
+        if dtype and dtype not in valid_data_types:
+            warnings.append(f"Parameters (Row {row}): Data type '{dtype}' is unusual, default NUMERIC will be applied if needed.")
+
+        if row_has_error:
+            sheet_stats['Parameters']['invalid_rows'] += 1
+        else:
+            status, target, is_dup = param_resolver.resolve(code, name)
+            if is_dup:
+                warnings.append(f"Parameters (Row {row}): Duplicate Parameter '{code or name}' in workbook; subsequent row will update.")
+                sheet_stats['Parameters']['duplicates'] += 1
+
+            sheet_stats['Parameters']['valid_rows'] += 1
+            if status == 'UPDATE':
+                sheet_stats['Parameters']['existing'] += 1
+            else:
+                sheet_stats['Parameters']['new'] += 1
+                param_resolver.register_placeholder(code, name)
+
+            file_param_codes.add(code.lower())
+            if target and hasattr(target, 'code') and target.code:
+                file_param_codes.add(target.code.lower())
+
+    # -- 6. Diagnosis Departments --------------------------------------------
+    for r in diag_depts:
+        row = r['_row_index']
+        diag_code = clean_code(r.get('diagnosis code'), file_diag_codes)
+        dept_code = clean_code(r.get('department code'), file_dept_codes)
+        age_code  = clean_code(r.get('age group code'), file_age_codes)
+        row_has_error = False
+
+        if not diag_code:
+            err('Diagnosis Departments', row, 'Diagnosis Code', '', 'Diagnosis Code is required')
+            row_has_error = True
+        elif diag_code.lower() not in file_diag_codes and diag_resolver.get_diagnosis(diag_code) is None:
+            err('Diagnosis Departments', row, 'Diagnosis Code', diag_code,
+                f"Diagnosis Code '{diag_code}' does not exist")
+            row_has_error = True
+
+        if not dept_code:
+            err('Diagnosis Departments', row, 'Department Code', '', 'Department Code is required')
+            row_has_error = True
+        elif dept_code.lower() not in file_dept_codes and dept_resolver.get_department(dept_code) is None:
+            err('Diagnosis Departments', row, 'Department Code', dept_code,
+                f"Department Code '{dept_code}' does not exist")
+            row_has_error = True
+
+        if age_code and age_code.lower() not in file_age_codes and age_resolver.get_age_group(age_code) is None:
+            err('Diagnosis Departments', row, 'Age Group Code', age_code,
+                f"Age Group Code '{age_code}' does not exist")
+            row_has_error = True
+
+        dd_key = (diag_code.lower(), dept_code.lower(), age_code.lower())
+        if dd_key in seen_diag_dept_keys:
+            warnings.append(f"Diagnosis Departments (Row {row}): Duplicate mapping for ({diag_code}, {dept_code}).")
+            sheet_stats['Diagnosis Departments']['duplicates'] += 1
+        else:
+            seen_diag_dept_keys.add(dd_key)
+
+        if row_has_error:
+            sheet_stats['Diagnosis Departments']['invalid_rows'] += 1
+        else:
+            sheet_stats['Diagnosis Departments']['valid_rows'] += 1
+            diag_obj = diag_resolver.get_diagnosis(diag_code)
+            dept_obj = dept_resolver.get_department(dept_code)
+            ag_obj   = age_resolver.get_age_group(age_code) if age_code else None
+            is_existing = False
+            if diag_obj and dept_obj:
+                is_existing = DiagnosisDepartmentMapping.objects.filter(
+                    diagnosis=diag_obj, department=dept_obj, age_group=ag_obj
+                ).exists()
+            if is_existing:
+                sheet_stats['Diagnosis Departments']['existing'] += 1
+            else:
+                sheet_stats['Diagnosis Departments']['new'] += 1
+
+    # -- 7. Investigation Parameters -----------------------------------------
     for r in inv_params:
         row = r['_row_index']
-        inv_code   = clean_val(r.get('investigation code'))
-        param_code = clean_val(r.get('parameter code'))
+        inv_code   = clean_code(r.get('investigation code'), file_inv_codes)
+        param_code = clean_code(r.get('parameter code'), file_param_codes)
         order_val  = clean_val(r.get('display order'))
         row_has_error = False
 
@@ -1359,18 +1504,31 @@ def validate_import(file_obj):
             sheet_stats['Investigation Parameters']['invalid_rows'] += 1
         else:
             sheet_stats['Investigation Parameters']['valid_rows'] += 1
-            sheet_stats['Investigation Parameters']['new'] += 1
+            inv_obj   = inv_resolver.get_investigation(inv_code)
+            param_obj = param_resolver.get_parameter(param_code)
+            is_existing = False
+            if inv_obj and param_obj:
+                is_existing = InvestigationParameter.objects.filter(
+                    investigation=inv_obj, parameter=param_obj
+                ).exists() or InvestigationParameter.objects.filter(
+                    investigation=inv_obj, code=param_obj.code
+                ).exists()
+            if is_existing:
+                sheet_stats['Investigation Parameters']['existing'] += 1
+            else:
+                sheet_stats['Investigation Parameters']['new'] += 1
 
-    # -- 7. Reference Ranges -------------------------------------------------
+    # -- 8. Reference Ranges -------------------------------------------------
     for r in refs:
         row = r['_row_index']
-        inv_code   = clean_val(r.get('investigation code'))
-        param_code = clean_val(r.get('parameter code'))
-        age_code   = clean_val(r.get('age group code'))
-        diag_code  = clean_val(r.get('diagnosis code'))
+        inv_code   = clean_code(r.get('investigation code'), file_inv_codes)
+        param_code = clean_code(r.get('parameter code'), file_param_codes)
+        age_code   = clean_code(r.get('age group code'), file_age_codes)
+        diag_code  = clean_code(r.get('diagnosis code'), file_diag_codes)
         gender     = clean_val(r.get('gender')) or 'All'
         min_v      = clean_val(r.get('min value'))
         max_v      = clean_val(r.get('max value'))
+        n_val      = clean_val(r.get('normal value'))
         row_has_error = False
 
         if not inv_code:
@@ -1422,56 +1580,33 @@ def validate_import(file_obj):
             sheet_stats['Reference Ranges']['invalid_rows'] += 1
         else:
             sheet_stats['Reference Ranges']['valid_rows'] += 1
-            sheet_stats['Reference Ranges']['new'] += 1
-
-    # -- 8. Diagnosis Departments --------------------------------------------
-    for r in diag_depts:
-        row = r['_row_index']
-        diag_code = clean_val(r.get('diagnosis code'))
-        dept_code = clean_val(r.get('department code'))
-        age_code  = clean_val(r.get('age group code'))
-        row_has_error = False
-
-        if not diag_code:
-            err('Diagnosis Departments', row, 'Diagnosis Code', '', 'Diagnosis Code is required')
-            row_has_error = True
-        elif diag_code.lower() not in file_diag_codes and diag_resolver.get_diagnosis(diag_code) is None:
-            err('Diagnosis Departments', row, 'Diagnosis Code', diag_code,
-                f"Diagnosis Code '{diag_code}' does not exist")
-            row_has_error = True
-
-        if not dept_code:
-            err('Diagnosis Departments', row, 'Department Code', '', 'Department Code is required')
-            row_has_error = True
-        elif dept_code.lower() not in file_dept_codes and dept_resolver.get_department(dept_code) is None:
-            err('Diagnosis Departments', row, 'Department Code', dept_code,
-                f"Department Code '{dept_code}' does not exist")
-            row_has_error = True
-
-        if age_code and age_code.lower() not in file_age_codes and age_resolver.get_age_group(age_code) is None:
-            err('Diagnosis Departments', row, 'Age Group Code', age_code,
-                f"Age Group Code '{age_code}' does not exist")
-            row_has_error = True
-
-        dd_key = (diag_code.lower(), dept_code.lower(), age_code.lower())
-        if dd_key in seen_diag_dept_keys:
-            warnings.append(f"Diagnosis Departments (Row {row}): Duplicate mapping for ({diag_code}, {dept_code}).")
-            sheet_stats['Diagnosis Departments']['duplicates'] += 1
-        else:
-            seen_diag_dept_keys.add(dd_key)
-
-        if row_has_error:
-            sheet_stats['Diagnosis Departments']['invalid_rows'] += 1
-        else:
-            sheet_stats['Diagnosis Departments']['valid_rows'] += 1
-            sheet_stats['Diagnosis Departments']['new'] += 1
+            inv_obj   = inv_resolver.get_investigation(inv_code)
+            param_obj = param_resolver.get_parameter(param_code)
+            ag_obj    = age_resolver.get_age_group(age_code) if age_code else None
+            diag_obj  = diag_resolver.get_diagnosis(diag_code) if diag_code else None
+            is_existing = False
+            if inv_obj and param_obj:
+                ip = InvestigationParameter.objects.filter(
+                    investigation=inv_obj, parameter=param_obj
+                ).first() or InvestigationParameter.objects.filter(
+                    investigation=inv_obj, code=param_obj.code
+                ).first()
+                if ip:
+                    is_existing = ParameterReferenceRange.objects.filter(
+                        investigation_parameter=ip, age_group=ag_obj,
+                        gender=gender, diagnosis=diag_obj
+                    ).exists()
+            if is_existing:
+                sheet_stats['Reference Ranges']['existing'] += 1
+            else:
+                sheet_stats['Reference Ranges']['new'] += 1
 
     # -- 9. Diagnosis Investigations -----------------------------------------
     for r in diag_invs:
         row = r['_row_index']
-        diag_code = clean_val(r.get('diagnosis code'))
-        inv_code  = clean_val(r.get('investigation code'))
-        age_code  = clean_val(r.get('age group code'))
+        diag_code = clean_code(r.get('diagnosis code'), file_diag_codes)
+        inv_code  = clean_code(r.get('investigation code'), file_inv_codes)
+        age_code  = clean_code(r.get('age group code'), file_age_codes)
         row_has_error = False
 
         if not diag_code:
@@ -1506,7 +1641,18 @@ def validate_import(file_obj):
             sheet_stats['Diagnosis Investigations']['invalid_rows'] += 1
         else:
             sheet_stats['Diagnosis Investigations']['valid_rows'] += 1
-            sheet_stats['Diagnosis Investigations']['new'] += 1
+            diag_obj = diag_resolver.get_diagnosis(diag_code)
+            inv_obj  = inv_resolver.get_investigation(inv_code)
+            ag_obj   = age_resolver.get_age_group(age_code) if age_code else None
+            is_existing = False
+            if diag_obj and inv_obj:
+                is_existing = DiagnosisInvestigationMap.objects.filter(
+                    diagnosis=diag_obj, investigation=inv_obj, age_group=ag_obj
+                ).exists()
+            if is_existing:
+                sheet_stats['Diagnosis Investigations']['existing'] += 1
+            else:
+                sheet_stats['Diagnosis Investigations']['new'] += 1
 
     # Aggregate overall stats
     total_stats = {
@@ -1521,14 +1667,14 @@ def validate_import(file_obj):
     # Legacy stats dict key mapping for backward-compatibility with UI
     compat_stats = {
         'departments': {'existing': sheet_stats['Departments']['existing'], 'new': sheet_stats['Departments']['new']},
+        'age_groups': {'existing': sheet_stats['Age Groups']['existing'], 'new': sheet_stats['Age Groups']['new']},
         'diagnoses': {'existing': sheet_stats['Diagnoses']['existing'], 'new': sheet_stats['Diagnoses']['new']},
         'investigations': {'existing': sheet_stats['Investigations']['existing'], 'new': sheet_stats['Investigations']['new']},
         'parameters': {'existing': sheet_stats['Parameters']['existing'], 'new': sheet_stats['Parameters']['new']},
-        'age_groups': {'existing': sheet_stats['Age Groups']['existing'], 'new': sheet_stats['Age Groups']['new']},
-        'reference_ranges': {'new': sheet_stats['Reference Ranges']['new'], 'updates': sheet_stats['Reference Ranges']['existing']},
-        'inv_param_mappings': {'existing': 0, 'new': sheet_stats['Investigation Parameters']['new']},
-        'diag_inv_mappings': {'existing': 0, 'new': sheet_stats['Diagnosis Investigations']['new']},
-        'diag_dept_mappings': {'existing': 0, 'new': sheet_stats['Diagnosis Departments']['new']},
+        'diag_dept_mappings': {'existing': sheet_stats['Diagnosis Departments']['existing'], 'new': sheet_stats['Diagnosis Departments']['new']},
+        'inv_param_mappings': {'existing': sheet_stats['Investigation Parameters']['existing'], 'new': sheet_stats['Investigation Parameters']['new']},
+        'reference_ranges': {'existing': sheet_stats['Reference Ranges']['existing'], 'new': sheet_stats['Reference Ranges']['new']},
+        'diag_inv_mappings': {'existing': sheet_stats['Diagnosis Investigations']['existing'], 'new': sheet_stats['Diagnosis Investigations']['new']},
     }
 
     valid = len(errors) == 0
@@ -1571,24 +1717,24 @@ def import_universal_master(file_obj, admin_user=None):
         return parse_sheet(ws)
 
     depts      = load('Departments')
+    ages       = load('Age Groups')
     diags      = load('Diagnoses')
     invs       = load('Investigations')
     params     = load('Parameters')
-    ages       = load('Age Groups')
+    diag_depts = load('Diagnosis Departments')
     inv_params = load('Investigation Parameters')
     refs       = load('Reference Ranges')
-    diag_depts = load('Diagnosis Departments')
     diag_invs  = load('Diagnosis Investigations')
 
     counts = {
         'departments_created': 0,        'departments_updated': 0,        'departments_skipped': 0,
+        'age_groups_created': 0,         'age_groups_updated': 0,         'age_groups_skipped': 0,
         'diagnoses_created': 0,          'diagnoses_updated': 0,          'diagnoses_skipped': 0,
         'investigations_created': 0,     'investigations_updated': 0,     'investigations_skipped': 0,
         'parameters_created': 0,         'parameters_updated': 0,         'parameters_skipped': 0,
-        'age_groups_created': 0,         'age_groups_updated': 0,         'age_groups_skipped': 0,
+        'diag_dept_mappings_created': 0, 'diag_dept_mappings_updated': 0, 'diag_dept_mappings_skipped': 0,
         'inv_params_created': 0,         'inv_params_updated': 0,         'inv_params_skipped': 0,
         'ref_ranges_created': 0,         'ref_ranges_updated': 0,         'ref_ranges_skipped': 0,
-        'diag_dept_mappings_created': 0, 'diag_dept_mappings_updated': 0, 'diag_dept_mappings_skipped': 0,
         'diag_inv_mappings_created': 0,  'diag_inv_mappings_updated': 0,  'diag_inv_mappings_skipped': 0,
         'mappings_created': 0,           'mappings_updated': 0,
         'skipped': 0,
@@ -1606,7 +1752,7 @@ def import_universal_master(file_obj, admin_user=None):
             # 1. Departments
             for r in depts:
                 row_idx = r.get('_row_index', 0)
-                code   = clean_val(r.get('department code'))
+                code   = clean_code(r.get('department code'), dept_resolver.by_code.keys())
                 name   = clean_val(r.get('department name'))
                 status = is_active_bool(r.get('status'))
                 if code and name:
@@ -1619,69 +1765,10 @@ def import_universal_master(file_obj, admin_user=None):
                     counts['departments_skipped'] += 1
                     counts['skipped'] += 1
 
-            # 2. Diagnoses
-            for r in diags:
-                row_idx = r.get('_row_index', 0)
-                code   = clean_val(r.get('diagnosis code'))
-                name   = clean_val(r.get('diagnosis name'))
-                status = is_active_bool(r.get('status'))
-                if code and name:
-                    diag, created = diag_resolver.upsert(code, name, is_active=status, row_index=row_idx)
-                    if created:
-                        counts['diagnoses_created'] += 1
-                    else:
-                        counts['diagnoses_updated'] += 1
-                else:
-                    counts['diagnoses_skipped'] += 1
-                    counts['skipped'] += 1
-
-            # 3. Investigations
-            for r in invs:
-                row_idx   = r.get('_row_index', 0)
-                code      = clean_val(r.get('investigation code'))
-                name      = clean_val(r.get('investigation name'))
-                dept_name = clean_val(r.get('department'))
-                samp_name = clean_val(r.get('sample type'))
-                is_panel  = clean_val(r.get('is panel')).lower() in ['yes', 'true', '1', 'y']
-                status    = is_active_bool(r.get('status'))
-                if code and name:
-                    inv, created = inv_resolver.upsert(
-                        code, name, dept_name=dept_name, samp_name=samp_name,
-                        is_panel=is_panel, is_active=status, row_index=row_idx
-                    )
-                    if created:
-                        counts['investigations_created'] += 1
-                    else:
-                        counts['investigations_updated'] += 1
-                else:
-                    counts['investigations_skipped'] += 1
-                    counts['skipped'] += 1
-
-            # 4. Parameters
-            for r in params:
-                row_idx = r.get('_row_index', 0)
-                code   = clean_val(r.get('parameter code'))
-                name   = clean_val(r.get('parameter name'))
-                dtype  = clean_val(r.get('data type')).upper() or 'NUMERIC'
-                unit   = clean_val(r.get('default unit'))
-                status = is_active_bool(r.get('status'))
-                if code and name:
-                    param, created = param_resolver.upsert(
-                        code, name, data_type=dtype, default_unit=unit,
-                        is_active=status, row_index=row_idx
-                    )
-                    if created:
-                        counts['parameters_created'] += 1
-                    else:
-                        counts['parameters_updated'] += 1
-                else:
-                    counts['parameters_skipped'] += 1
-                    counts['skipped'] += 1
-
-            # 5. Age Groups
+            # 2. Age Groups
             for r in ages:
                 row_idx = r.get('_row_index', 0)
-                code    = clean_val(r.get('age group code'))
+                code    = clean_code(r.get('age group code'), age_resolver.by_code.keys())
                 ag_name = clean_val(r.get('age group name'))
                 a_from  = clean_val(r.get('age from'))
                 f_unit  = clean_val(r.get('age from unit')) or 'Years'
@@ -1703,115 +1790,71 @@ def import_universal_master(file_obj, admin_user=None):
                     counts['age_groups_skipped'] += 1
                     counts['skipped'] += 1
 
-            # 6. Investigation Parameters
-            for r in inv_params:
-                row_idx    = r.get('_row_index', 0)
-                inv_code   = clean_val(r.get('investigation code'))
-                param_code = clean_val(r.get('parameter code'))
-                order      = clean_val(r.get('display order'))
-                status     = is_active_bool(r.get('status'))
-                if inv_code and param_code:
-                    inv   = inv_resolver.get_investigation(inv_code)
-                    param = param_resolver.get_parameter(param_code)
-                    if inv and param:
-                        existing = (
-                            InvestigationParameter.objects.filter(investigation=inv, parameter=param).first() or
-                            InvestigationParameter.objects.filter(investigation=inv, code=param.code).first()
-                        )
-                        disp_order = int(order) if order and order.isdigit() else 0
-                        if existing:
-                            existing.parameter = param
-                            existing.name = param.name
-                            existing.code = param.code
-                            existing.display_order = disp_order
-                            existing.is_active = status
-                            existing.save()
-                            counts['inv_params_updated'] += 1
-                            counts['mappings_updated'] += 1
-                        else:
-                            InvestigationParameter.objects.create(
-                                investigation=inv, parameter=param,
-                                name=param.name, code=param.code,
-                                display_order=disp_order, is_active=status
-                            )
-                            counts['inv_params_created'] += 1
-                            counts['mappings_created'] += 1
-                    else:
-                        counts['inv_params_skipped'] += 1
-                        counts['skipped'] += 1
-                else:
-                    counts['inv_params_skipped'] += 1
-                    counts['skipped'] += 1
-
-            # 7. Reference Ranges
-            for r in refs:
-                row_idx    = r.get('_row_index', 0)
-                inv_code   = clean_val(r.get('investigation code'))
-                param_code = clean_val(r.get('parameter code'))
-                age_code   = clean_val(r.get('age group code'))
-                gender     = clean_val(r.get('gender')) or 'All'
-                diag_code  = clean_val(r.get('diagnosis code'))
-                min_v  = get_decimal(r.get('min value'))
-                max_v  = get_decimal(r.get('max value'))
-                n_val  = clean_val(r.get('normal value'))
-                unit   = clean_val(r.get('unit'))
-                meth   = clean_val(r.get('method'))
-                rem    = clean_val(r.get('remarks'))
+            # 3. Diagnoses
+            for r in diags:
+                row_idx = r.get('_row_index', 0)
+                code   = clean_code(r.get('diagnosis code'), diag_resolver.by_code.keys())
+                name   = clean_val(r.get('diagnosis name'))
                 status = is_active_bool(r.get('status'))
-                if inv_code and param_code:
-                    inv = inv_resolver.get_investigation(inv_code)
-                    param = param_resolver.get_parameter(param_code)
-                    if inv and param:
-                        ip = (
-                            InvestigationParameter.objects.filter(investigation=inv, parameter=param).first() or
-                            InvestigationParameter.objects.filter(investigation=inv, code=param.code).first()
-                        )
-                        if not ip:
-                            ip = InvestigationParameter.objects.create(
-                                investigation=inv, parameter=param,
-                                name=param.name, code=param.code, is_active=True
-                            )
-                        ag   = age_resolver.get_age_group(age_code) if age_code else None
-                        diag = diag_resolver.get_diagnosis(diag_code) if diag_code else None
-
-                        defaults = {
-                            'min_value': min_v, 'max_value': max_v,
-                            'reference_text': n_val,
-                            'unit': unit, 'method': meth, 'remarks': rem,
-                            'is_active': status,
-                            'range_type': 'Text' if (n_val and not (min_v or max_v)) else 'Numeric',
-                        }
-                        existing = ParameterReferenceRange.objects.filter(
-                            investigation_parameter=ip, age_group=ag,
-                            gender=gender, diagnosis=diag
-                        )
-                        if existing.exists():
-                            first = existing.first()
-                            for k, v in defaults.items():
-                                setattr(first, k, v)
-                            first.save()
-                            if existing.count() > 1:
-                                existing.exclude(id=first.id).delete()
-                            counts['ref_ranges_updated'] += 1
-                        else:
-                            ParameterReferenceRange.objects.create(
-                                investigation_parameter=ip, age_group=ag,
-                                gender=gender, diagnosis=diag, **defaults
-                            )
-                            counts['ref_ranges_created'] += 1
+                if code and name:
+                    diag, created = diag_resolver.upsert(code, name, is_active=status, row_index=row_idx)
+                    if created:
+                        counts['diagnoses_created'] += 1
                     else:
-                        counts['ref_ranges_skipped'] += 1
-                        counts['skipped'] += 1
+                        counts['diagnoses_updated'] += 1
                 else:
-                    counts['ref_ranges_skipped'] += 1
+                    counts['diagnoses_skipped'] += 1
                     counts['skipped'] += 1
 
-            # 8. Diagnosis Departments
+            # 4. Investigations
+            for r in invs:
+                row_idx   = r.get('_row_index', 0)
+                code      = clean_code(r.get('investigation code'), inv_resolver.by_code.keys())
+                name      = clean_val(r.get('investigation name'))
+                dept_name = clean_val(r.get('department'))
+                samp_name = clean_val(r.get('sample type'))
+                is_panel  = clean_val(r.get('is panel')).lower() in ['yes', 'true', '1', 'y']
+                status    = is_active_bool(r.get('status'))
+                if code and name:
+                    inv, created = inv_resolver.upsert(
+                        code, name, dept_name=dept_name, samp_name=samp_name,
+                        is_panel=is_panel, is_active=status, row_index=row_idx
+                    )
+                    if created:
+                        counts['investigations_created'] += 1
+                    else:
+                        counts['investigations_updated'] += 1
+                else:
+                    counts['investigations_skipped'] += 1
+                    counts['skipped'] += 1
+
+            # 5. Parameters
+            for r in params:
+                row_idx = r.get('_row_index', 0)
+                code   = clean_code(r.get('parameter code'), param_resolver.by_code.keys())
+                name   = clean_val(r.get('parameter name'))
+                dtype  = clean_val(r.get('data type')).upper() or 'NUMERIC'
+                unit   = clean_val(r.get('default unit'))
+                status = is_active_bool(r.get('status'))
+                if code and name:
+                    param, created = param_resolver.upsert(
+                        code, name, data_type=dtype, default_unit=unit,
+                        is_active=status, row_index=row_idx
+                    )
+                    if created:
+                        counts['parameters_created'] += 1
+                    else:
+                        counts['parameters_updated'] += 1
+                else:
+                    counts['parameters_skipped'] += 1
+                    counts['skipped'] += 1
+
+            # 6. Diagnosis Departments
             for r in diag_depts:
                 row_idx   = r.get('_row_index', 0)
-                diag_code = clean_val(r.get('diagnosis code'))
-                dept_code = clean_val(r.get('department code'))
-                age_code  = clean_val(r.get('age group code'))
+                diag_code = clean_code(r.get('diagnosis code'), diag_resolver.by_code.keys())
+                dept_code = clean_code(r.get('department code'), dept_resolver.by_code.keys())
+                age_code  = clean_code(r.get('age group code'), age_resolver.by_code.keys())
                 status_val = 'Active' if is_active_bool(r.get('status')) else 'Inactive'
                 if diag_code and dept_code:
                     diag = diag_resolver.get_diagnosis(diag_code)
@@ -1840,12 +1883,161 @@ def import_universal_master(file_obj, admin_user=None):
                     counts['diag_dept_mappings_skipped'] += 1
                     counts['skipped'] += 1
 
+            # 7. Investigation Parameters
+            for r in inv_params:
+                row_idx    = r.get('_row_index', 0)
+                inv_code   = clean_code(r.get('investigation code'), inv_resolver.by_code.keys())
+                param_code = clean_code(r.get('parameter code'), param_resolver.by_code.keys())
+                order      = clean_val(r.get('display order'))
+                status     = is_active_bool(r.get('status'))
+                if inv_code and param_code:
+                    inv   = inv_resolver.get_investigation(inv_code)
+                    param = param_resolver.get_parameter(param_code)
+                    if inv and param:
+                        existing = (
+                            InvestigationParameter.objects.filter(investigation=inv, parameter=param).first() or
+                            InvestigationParameter.objects.filter(investigation=inv, code=param.code).first()
+                        )
+                        disp_order = int(order) if order and order.isdigit() else 0
+                        res_type = 'Numeric' if param.data_type == 'NUMERIC' else 'Text'
+                        if existing:
+                            existing.parameter = param
+                            existing.name = param.name
+                            existing.code = param.code
+                            existing.result_type = res_type
+                            if param.default_unit and not existing.unit:
+                                existing.unit = param.default_unit
+                            existing.display_order = disp_order
+                            existing.is_active = status
+                            existing.save()
+                            counts['inv_params_updated'] += 1
+                            counts['mappings_updated'] += 1
+                        else:
+                            InvestigationParameter.objects.create(
+                                investigation=inv, parameter=param,
+                                name=param.name, code=param.code,
+                                result_type=res_type,
+                                unit=param.default_unit or '',
+                                display_order=disp_order, is_active=status
+                            )
+                            counts['inv_params_created'] += 1
+                            counts['mappings_created'] += 1
+                    else:
+                        counts['inv_params_skipped'] += 1
+                        counts['skipped'] += 1
+                else:
+                    counts['inv_params_skipped'] += 1
+                    counts['skipped'] += 1
+
+            # 8. Reference Ranges
+            for r in refs:
+                row_idx    = r.get('_row_index', 0)
+                inv_code   = clean_code(r.get('investigation code'), inv_resolver.by_code.keys())
+                param_code = clean_code(r.get('parameter code'), param_resolver.by_code.keys())
+                age_code   = clean_code(r.get('age group code'), age_resolver.by_code.keys())
+                gender     = clean_val(r.get('gender')) or 'All'
+                diag_code  = clean_code(r.get('diagnosis code'), diag_resolver.by_code.keys())
+                min_v  = get_decimal(r.get('min value'))
+                max_v  = get_decimal(r.get('max value'))
+                n_val  = clean_val(r.get('normal value'))
+                unit   = clean_val(r.get('unit'))
+                meth   = clean_val(r.get('method'))
+                rem    = clean_val(r.get('remarks'))
+                status = is_active_bool(r.get('status'))
+                if inv_code and param_code:
+                    inv = inv_resolver.get_investigation(inv_code)
+                    param = param_resolver.get_parameter(param_code)
+                    if inv and param:
+                        ip = (
+                            InvestigationParameter.objects.filter(investigation=inv, parameter=param).first() or
+                            InvestigationParameter.objects.filter(investigation=inv, code=param.code).first()
+                        )
+                        if not ip:
+                            res_type = 'Numeric' if param.data_type == 'NUMERIC' else 'Text'
+                            ip = InvestigationParameter.objects.create(
+                                investigation=inv, parameter=param,
+                                name=param.name, code=param.code,
+                                result_type=res_type,
+                                unit=unit or param.default_unit or '',
+                                is_active=True
+                            )
+                        ag   = age_resolver.get_age_group(age_code) if age_code else None
+                        diag = diag_resolver.get_diagnosis(diag_code) if diag_code else None
+
+                        range_type = 'Numeric' if (min_v is not None or max_v is not None) else ('Text' if n_val else 'None')
+
+                        defaults = {
+                            'min_value': min_v,
+                            'max_value': max_v,
+                            'reference_text': n_val or None,
+                            'unit': unit,
+                            'method': meth,
+                            'remarks': rem,
+                            'is_active': status,
+                            'range_type': range_type,
+                        }
+                        existing = ParameterReferenceRange.objects.filter(
+                            investigation_parameter=ip, age_group=ag,
+                            gender=gender, diagnosis=diag
+                        )
+                        if existing.exists():
+                            first = existing.first()
+                            for k, v in defaults.items():
+                                setattr(first, k, v)
+                            first.save()
+                            if existing.count() > 1:
+                                existing.exclude(id=first.id).delete()
+                            counts['ref_ranges_updated'] += 1
+                        else:
+                            ParameterReferenceRange.objects.create(
+                                investigation_parameter=ip, age_group=ag,
+                                gender=gender, diagnosis=diag, **defaults
+                            )
+                            counts['ref_ranges_created'] += 1
+
+                        # Sync fallback strings and unit to InvestigationParameter
+                        ref_str = ''
+                        if min_v is not None and max_v is not None:
+                            ref_str = f"{min_v} - {max_v}"
+                        elif min_v is not None:
+                            ref_str = f">= {min_v}"
+                        elif max_v is not None:
+                            ref_str = f"<= {max_v}"
+                        elif n_val:
+                            ref_str = n_val
+
+                        ip_updated = False
+                        if ref_str:
+                            if gender == 'Male':
+                                if not ip.male_reference_range:
+                                    ip.male_reference_range = ref_str
+                                    ip_updated = True
+                            elif gender == 'Female':
+                                if not ip.female_reference_range:
+                                    ip.female_reference_range = ref_str
+                                    ip_updated = True
+                            else:
+                                if not ip.reference_range:
+                                    ip.reference_range = ref_str
+                                    ip_updated = True
+                        if unit and not ip.unit:
+                            ip.unit = unit
+                            ip_updated = True
+                        if ip_updated:
+                            ip.save()
+                    else:
+                        counts['ref_ranges_skipped'] += 1
+                        counts['skipped'] += 1
+                else:
+                    counts['ref_ranges_skipped'] += 1
+                    counts['skipped'] += 1
+
             # 9. Diagnosis Investigations
             for r in diag_invs:
                 row_idx   = r.get('_row_index', 0)
-                diag_code = clean_val(r.get('diagnosis code'))
-                inv_code  = clean_val(r.get('investigation code'))
-                age_code  = clean_val(r.get('age group code'))
+                diag_code = clean_code(r.get('diagnosis code'), diag_resolver.by_code.keys())
+                inv_code  = clean_code(r.get('investigation code'), inv_resolver.by_code.keys())
+                age_code  = clean_code(r.get('age group code'), age_resolver.by_code.keys())
                 status    = is_active_bool(r.get('status'))
                 if diag_code and inv_code:
                     diag = diag_resolver.get_diagnosis(diag_code)
