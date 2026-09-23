@@ -3,6 +3,9 @@
         <a href="{% url 'lab:lab_master_hub' %}" class="lab-nav-pill {% if request.resolver_match.url_name == 'lab_master_hub' %}active{% endif %}">
             <i class="bi bi-grid-fill"></i> Hub
         </a>
+        <a href="{% url 'lab:master_lab_department_list' %}" class="lab-nav-pill {% if request.resolver_match.url_name == 'master_lab_department_list' %}active{% endif %}">
+            <i class="bi bi-building"></i> Lab Departments
+        </a>
         <a href="{% url 'lab:master_investigation_list' %}" class="lab-nav-pill {% if request.resolver_match.url_name == 'master_investigation_list' or request.resolver_match.url_name == 'master_investigation_detail' %}active{% endif %}">
             <i class="bi bi-file-medical"></i> Investigations
         </a>

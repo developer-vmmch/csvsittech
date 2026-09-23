@@ -1,0 +1,273 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}Lab Departments Master | Lab Master{% endblock %}
+{% block lab_master_title %}Lab Departments Master{% endblock %}
+{% block lab_master_subtitle %}Laboratory sub-departments, diagnostic divisions, and test categorization dictionary{% endblock %}
+
+{% block lab_master_actions %}
+<button type="button" class="lab-btn lab-btn-primary lab-btn-sm" onclick="openAddDeptModal()">
+    <i class="bi bi-plus-lg"></i> Add Lab Department
+</button>
+{% endblock %}
+
+{% block master_content %}
+<!-- Filter Card -->
+<div class="lab-filter-card">
+    <form method="get" class="lab-filter-grid">
+        <div class="lab-filter-col-6">
+            <div class="lab-input-with-icon">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" class="lab-form-input" placeholder="Search lab department name..." value="{{ request.GET.search }}">
+            </div>
+        </div>
+        <div class="lab-filter-col-3">
+            <select name="status" class="lab-form-select">
+                <option value="">-- All Status --</option>
+                <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+        <div class="lab-filter-col-auto lab-filter-actions">
+            <button type="submit" class="lab-btn lab-btn-primary lab-btn-sm">
+                <i class="bi bi-funnel"></i> Apply Filter
+            </button>
+            <a href="{% url 'lab:master_lab_department_list' %}" class="lab-btn lab-btn-secondary lab-btn-sm">
+                <i class="bi bi-x-circle"></i> Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Table Card -->
+<div class="lab-table-container">
+    <div class="lab-card-header" style="padding: 12px 16px; margin-bottom: 0; background: #ffffff;">
+        <span class="lab-card-title" style="font-size: 0.88rem;">
+            <i class="bi bi-building text-primary"></i> Master Lab Departments Dictionary ({{ total_count }})
+        </span>
+        {% if page_obj.has_other_pages %}
+        <span class="lab-card-subtitle">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% endif %}
+    </div>
+
+    <table class="lab-table">
+        <thead>
+            <tr>
+                <th style="width: 55px;">S.No</th>
+                <th>Department Name</th>
+                <th style="width: 180px;" class="text-center">Associated Investigations</th>
+                <th style="width: 100px;">Status</th>
+                <th style="width: 140px;" class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in departments %}
+            <tr id="dept-row-{{ d.id }}">
+                <td style="color: var(--lab-text-muted);">{{ forloop.counter0|add:page_obj.start_index }}</td>
+                <td style="font-weight: 700; color: var(--lab-text-main);">
+                    <i class="bi bi-folder-fill text-primary" style="margin-right: 6px;"></i>
+                    <span id="dept-name-{{ d.id }}">{{ d.name }}</span>
+                </td>
+                <td class="text-center">
+                    {% if d.investigation_count > 0 %}
+                    <span class="lab-badge lab-badge-neutral" style="font-weight: 700;">
+                        <i class="bi bi-file-medical"></i> {{ d.investigation_count }} Test{{ d.investigation_count|pluralize }}
+                    </span>
+                    {% else %}
+                    <span style="color: var(--lab-text-muted); font-size: 0.8rem;">0 Tests</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if d.is_active %}
+                    <span id="dept-status-badge-{{ d.id }}" class="lab-badge lab-badge-active">Active</span>
+                    {% else %}
+                    <span id="dept-status-badge-{{ d.id }}" class="lab-badge lab-badge-inactive">Inactive</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <button type="button" class="lab-btn lab-btn-secondary lab-btn-sm" onclick="openEditDeptModal({{ d.id }}, '{{ d.name|escapejs }}', {{ d.is_active|yesno:'true,false' }})" title="Edit Department">
+                        <i class="bi bi-pencil"></i> Edit
+                    </button>
+                    <button type="button" class="lab-btn lab-btn-secondary lab-btn-sm" onclick="toggleDeptStatus({{ d.id }})" title="Toggle Active/Inactive">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">
+                    <div class="lab-empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <p style="margin: 0;">No lab departments found matching your criteria.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% include "lab/master/pagination.html" %}
+</div>
+
+<!-- Modal: Add / Edit Lab Department -->
+<div class="lab-modal" id="deptModal" tabindex="-1" role="dialog" aria-labelledby="deptModalTitle" aria-hidden="true">
+    <div class="lab-modal-dialog" role="document">
+        <div class="lab-modal-header">
+            <div>
+                <h2 class="lab-modal-title" id="deptModalTitle">Lab Department Configuration</h2>
+                <div style="font-size: 0.78rem; color: var(--lab-text-muted); margin-top: 2px;">Manage master laboratory division name and status</div>
+            </div>
+            <button type="button" class="lab-modal-close" data-lab-dismiss="modal" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <form id="deptForm" onsubmit="submitDeptForm(event)">
+            {% csrf_token %}
+            <input type="hidden" id="dept_id">
+
+            <div class="lab-modal-body">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="dept_name">Department Name <span class="lab-required">*</span></label>
+                    <input type="text" class="lab-form-input" id="dept_name" placeholder="e.g. Clinical Biochemistry, Hematology, Microbiology..." required>
+                    <span style="font-size: 11px; color: var(--lab-text-muted); margin-top: 2px;">Unique name for the clinical laboratory department</span>
+                </div>
+
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="dept_is_active">Status</label>
+                    <select class="lab-form-select" id="dept_is_active">
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="lab-modal-footer">
+                <button type="button" class="lab-btn lab-btn-secondary" data-lab-dismiss="modal">Cancel</button>
+                <button type="submit" class="lab-btn lab-btn-primary" id="btnSaveDept">
+                    <i class="bi bi-check-lg"></i> Save Department
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openAddDeptModal() {
+    document.getElementById('deptModalTitle').textContent = 'Add Lab Department';
+    document.getElementById('dept_id').value = '';
+    document.getElementById('dept_name').value = '';
+    document.getElementById('dept_is_active').value = 'true';
+    openLabModal('deptModal');
+    setTimeout(() => document.getElementById('dept_name').focus(), 150);
+}
+
+function openEditDeptModal(id, name, isActive) {
+    document.getElementById('deptModalTitle').textContent = 'Edit Lab Department';
+    document.getElementById('dept_id').value = id;
+    document.getElementById('dept_name').value = name;
+    document.getElementById('dept_is_active').value = isActive ? 'true' : 'false';
+    openLabModal('deptModal');
+    setTimeout(() => document.getElementById('dept_name').focus(), 150);
+}
+
+function submitDeptForm(e) {
+    e.preventDefault();
+    const id = document.getElementById('dept_id').value;
+    const name = document.getElementById('dept_name').value.trim();
+    const is_active = document.getElementById('dept_is_active').value === 'true';
+
+    if (!name) {
+        alert('Please enter a department name.');
+        return;
+    }
+
+    const payload = { id: id ? parseInt(id) : null, name, is_active };
+    const btn = document.getElementById('btnSaveDept');
+    btn.disabled = true;
+
+    fetch("{% url 'lab:api_master_lab_department_save' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getLabCsrfToken()
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) {
+            closeLabModal('deptModal');
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error saving lab department.');
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        alert('Network or server error while saving.');
+    });
+}
+
+function toggleDeptStatus(id) {
+    if (!confirm('Are you sure you want to toggle the status of this lab department?')) return;
+
+    fetch(`/lab/master/api/lab-departments/${id}/toggle-status/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getLabCsrfToken()
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const badge = document.getElementById(`dept-status-badge-${id}`);
+            if (badge) {
+                if (data.is_active) {
+                    badge.className = 'lab-badge lab-badge-active';
+                    badge.textContent = 'Active';
+                } else {
+                    badge.className = 'lab-badge lab-badge-inactive';
+                    badge.textContent = 'Inactive';
+                }
+            }
+        } else {
+            alert(data.message || 'Error toggling status.');
+        }
+    })
+    .catch(err => {
+        alert('Network error.');
+    });
+}
+
+function getLabCsrfToken() {
+    const input = document.querySelector('[name=csrfmiddlewaretoken]');
+    return input ? input.value : '';
+}
+
+function openLabModal(modalId) {
+    const el = document.getElementById(modalId);
+    if (el) {
+        el.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeLabModal(modalId) {
+    const el = document.getElementById(modalId);
+    if (el) {
+        el.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-lab-dismiss="modal"]').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const modal = this.closest('.lab-modal');
+            if (modal) closeLabModal(modal.id);
+        });
+    });
+});
+</script>
+{% endblock %}

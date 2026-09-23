@@ -45,6 +45,21 @@
 
 <!-- Quick Stats Cards Grid -->
 <div class="lab-stats-grid">
+    <!-- Lab Departments -->
+    <div class="lab-stat-card" style="border-top: 3px solid #0284c7;">
+        <div>
+            <div class="lab-stat-header">
+                <span class="lab-stat-label">Lab Departments</span>
+                <span class="lab-stat-icon" style="background: rgba(2, 132, 199, 0.1); color: #0284c7;"><i class="bi bi-building"></i></span>
+            </div>
+            <div class="lab-stat-value">{{ lab_dept_count }}</div>
+            <div class="lab-stat-subtext">Active clinical laboratory divisions</div>
+        </div>
+        <div class="lab-stat-footer">
+            <a href="{% url 'lab:master_lab_department_list' %}" class="lab-stat-link">Manage Departments <i class="bi bi-arrow-right"></i></a>
+        </div>
+    </div>
+
     <!-- Investigations -->
     <div class="lab-stat-card" style="border-top: 3px solid #0d9488;">
         <div>
