@@ -1,0 +1,770 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Investigation Marking | Auto Trigger | VMMCerp{% endblock %}
+{% block page_heading %}Investigation Marking{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ==========================================================================
+       Investigation Marking Design Tokens & Compact Operational Layout
+       ========================================================================== */
+    :root {
+        --im-teal: #0d9488;
+        --im-teal-hover: #0f766e;
+        --im-blue: #0284c7;
+        --im-slate-dark: #1e293b;
+        --im-slate-navy: #334155;
+        --im-slate-navy-hover: #1e293b;
+        --im-border: #e2e8f0;
+        --im-bg-slate: #f8fafc;
+        --im-bg-card: #ffffff;
+        --im-text-dark: #0f172a;
+        --im-text-muted: #64748b;
+    }
+
+    .im-container {
+        width: 100%;
+        max-width: 100%;
+        margin: 0 auto;
+        padding-bottom: 2rem;
+    }
+
+    /* Breadcrumbs */
+    .im-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--im-text-muted);
+        margin-bottom: 0.75rem;
+    }
+    .im-breadcrumb a {
+        color: var(--im-text-muted);
+        text-decoration: none;
+    }
+    .im-breadcrumb a:hover {
+        color: var(--im-teal);
+        text-decoration: underline;
+    }
+
+    /* Header Banner Card */
+    .im-header-card {
+        background: var(--im-bg-card);
+        border-radius: 8px;
+        border: 1px solid var(--im-border);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        padding: 0.85rem 1.25rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .im-header-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        background: #0284c7;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+    .im-header-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1e3a8a;
+        margin: 0 0 2px 0;
+        line-height: 1.2;
+    }
+    .im-header-subtitle {
+        font-size: 0.8rem;
+        color: var(--im-text-muted);
+        margin: 0;
+    }
+
+    /* Input & Table Cards */
+    .im-card {
+        background: var(--im-bg-card);
+        border-radius: 8px;
+        border: 1px solid var(--im-border);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        margin-bottom: 1rem;
+    }
+    .im-card-body {
+        padding: 1rem 1.25rem;
+    }
+    .im-card-header {
+        padding: 0.75rem 1.25rem;
+        border-bottom: 1px solid var(--im-border);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .im-card-header-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1e3a8a;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Form Controls */
+    .im-form-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 0.85rem;
+    }
+    .im-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+    .im-form-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--im-slate-dark);
+        margin: 0;
+    }
+    .im-input {
+        height: 40px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        padding: 0 0.75rem;
+        font-size: 0.875rem;
+        color: var(--im-text-dark);
+        background-color: #ffffff;
+        outline: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .im-input:focus {
+        border-color: var(--im-teal);
+        box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15);
+    }
+    .im-input-readonly {
+        background-color: #f1f5f9;
+        color: #475569;
+        font-weight: 600;
+        cursor: not-allowed;
+    }
+
+    /* Buttons */
+    .im-btn {
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 0 1.25rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        border: none;
+        text-decoration: none;
+    }
+    .im-btn-teal {
+        background: var(--im-teal);
+        color: #ffffff;
+    }
+    .im-btn-teal:hover {
+        background: var(--im-teal-hover);
+        color: #ffffff;
+    }
+    .im-btn-navy {
+        background: var(--im-slate-navy);
+        color: #ffffff;
+    }
+    .im-btn-navy:hover {
+        background: var(--im-slate-navy-hover);
+        color: #ffffff;
+    }
+    .im-btn-outline-danger {
+        height: 30px;
+        padding: 0 0.65rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: 1px solid #fca5a5;
+        background: #fef2f2;
+        color: #dc2626;
+        border-radius: 4px;
+    }
+    .im-btn-outline-danger:hover {
+        background: #fee2e2;
+        border-color: #f87171;
+        color: #b91c1c;
+    }
+    .im-btn-light {
+        background: #ffffff;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+    }
+    .im-btn-light:hover {
+        background: #f8fafc;
+        color: #1e293b;
+        border-color: #94a3b8;
+    }
+
+    /* Tables */
+    .im-table-wrapper {
+        overflow-x: auto;
+    }
+    .im-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+        text-align: left;
+    }
+    .im-table thead th {
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        padding: 0.65rem 1rem;
+        border-bottom: 1px solid var(--im-border);
+        white-space: nowrap;
+    }
+    .im-table tbody td {
+        padding: 0.65rem 1rem;
+        border-bottom: 1px solid var(--im-border);
+        color: #1e293b;
+        vertical-align: middle;
+    }
+    .im-table tbody tr:hover td {
+        background-color: #f8fafc;
+    }
+    .im-table tfoot td {
+        padding: 0.75rem 1rem;
+        font-weight: 700;
+        background: #ecfdf5;
+        color: #065f46;
+        border-top: 2px solid #a7f3d0;
+    }
+
+    /* Toast Notification */
+    .im-toast {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        padding: 0.75rem 1.25rem;
+        border-radius: 6px;
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.85rem;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .im-toast.show {
+        display: flex;
+    }
+    .im-toast-success {
+        background: #0f766e;
+    }
+    .im-toast-error {
+        background: #b91c1c;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="im-container">
+    <!-- Breadcrumbs -->
+    <div class="im-breadcrumb">
+        <i class="bi bi-house-door"></i>
+        <a href="{% url 'core:dashboard' %}">Lab</a>
+        <span>&rsaquo;</span>
+        <span>Auto Trigger</span>
+        <span>&rsaquo;</span>
+        <span class="font-semibold text-slate-800">Investigation Marking</span>
+    </div>
+
+    <!-- Title Card -->
+    <div class="im-header-card">
+        <div class="im-header-icon">
+            <i class="bi bi-flask"></i>
+        </div>
+        <div>
+            <h2 class="im-header-title">Investigation Marking</h2>
+            <p class="im-header-subtitle">Select date and department-wise patient count to create and trigger investigations for D patients.</p>
+        </div>
+    </div>
+
+    <!-- Top Input Section (Compact Card) -->
+    <div class="im-card">
+        <div class="im-card-body">
+            <form id="imAddDeptForm" onsubmit="handleAddDepartment(event)">
+                {% csrf_token %}
+                <div class="im-form-row">
+                    <div class="im-form-group" style="flex: 1 1 180px;">
+                        <label class="im-form-label" for="markingDate">Date *</label>
+                        <input type="date" id="markingDate" class="im-input" value="{{ selected_date }}" onchange="handleDateChange()">
+                    </div>
+
+                    <div class="im-form-group" style="flex: 2 1 240px;">
+                        <label class="im-form-label" for="departmentSelect">Department *</label>
+                        <select id="departmentSelect" class="im-input" required>
+                            <option value="">-- Select Department --</option>
+                            {% for d in departments %}
+                            <option value="{{ d.id }}" {% if d.id in added_dept_ids %}disabled{% endif %}>{{ d.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="im-form-group" style="flex: 1 1 120px;">
+                        <label class="im-form-label" for="maleCount">Male Count *</label>
+                        <input type="number" id="maleCount" class="im-input" min="0" placeholder="100" required oninput="calculateTotal()">
+                    </div>
+
+                    <div class="im-form-group" style="flex: 1 1 120px;">
+                        <label class="im-form-label" for="femaleCount">Female Count *</label>
+                        <input type="number" id="femaleCount" class="im-input" min="0" placeholder="50" required oninput="calculateTotal()">
+                    </div>
+
+                    <div class="im-form-group" style="flex: 1 1 120px;">
+                        <label class="im-form-label" for="totalCount">Total</label>
+                        <input type="number" id="totalCount" class="im-input im-input-readonly" readonly placeholder="150">
+                    </div>
+
+                    <div class="im-form-group" style="flex: 0 0 auto;">
+                        <button type="submit" class="im-btn im-btn-teal" id="btnAddDept">
+                            <i class="bi bi-plus-lg"></i> Add Department
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Department List Table Card -->
+    <div class="im-card">
+        <div class="im-card-header">
+            <h3 class="im-card-header-title">
+                <i class="bi bi-list-task text-blue-600"></i> Department List
+            </h3>
+        </div>
+        <div class="im-table-wrapper">
+            <table class="im-table" id="deptTable">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>DEPARTMENT</th>
+                        <th style="width: 140px;" class="text-center">MALE COUNT</th>
+                        <th style="width: 140px;" class="text-center">FEMALE COUNT</th>
+                        <th style="width: 140px;" class="text-center">TOTAL</th>
+                        <th style="width: 100px;" class="text-end">ACTION</th>
+                    </tr>
+                </thead>
+                <tbody id="deptTableBody">
+                    {% for d in config_departments %}
+                    <tr id="dept-row-{{ d.department_id }}">
+                        <td class="text-muted">{{ forloop.counter }}</td>
+                        <td class="font-semibold text-slate-800">{{ d.department_name }}</td>
+                        <td class="text-center font-medium">{{ d.male_count }}</td>
+                        <td class="text-center font-medium">{{ d.female_count }}</td>
+                        <td class="text-center font-bold text-slate-800">{{ d.total_count }}</td>
+                        <td class="text-end">
+                            <button type="button" class="im-btn-outline-danger" onclick="handleRemoveDepartment({{ d.department_id }})">
+                                <i class="bi bi-trash"></i> Remove
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr id="deptEmptyRow">
+                        <td colspan="6" class="text-center py-6 text-slate-400">
+                            No departments added yet. Select date, department, and patient counts above to add.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot id="deptTableFoot" style="{% if not config_departments %}display: none;{% endif %}">
+                    <tr>
+                        <td colspan="2" class="font-bold">Grand Total</td>
+                        <td class="text-center font-bold" id="grandMale">{{ grand_totals.male }}</td>
+                        <td class="text-center font-bold" id="grandFemale">{{ grand_totals.female }}</td>
+                        <td class="text-center font-bold" id="grandTotal">{{ grand_totals.total }}</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- Preview Patients Table Card -->
+    <div class="im-card">
+        <div class="im-card-header">
+            <h3 class="im-card-header-title">
+                <i class="bi bi-people-fill text-blue-600"></i> Preview Patients
+            </h3>
+        </div>
+        <div class="im-table-wrapper">
+            <table class="im-table" id="patientsTable">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th style="width: 140px;">PATIENT ID</th>
+                        <th>PATIENT NAME</th>
+                        <th style="width: 80px;">AGE</th>
+                        <th style="width: 90px;">GENDER</th>
+                        <th>DEPARTMENT</th>
+                        <th>PRIMARY DIAGNOSIS</th>
+                        <th style="width: 180px;" class="text-center">INVESTIGATIONS (COUNT)</th>
+                    </tr>
+                </thead>
+                <tbody id="patientsTableBody">
+                    {% for p in preview_patients %}
+                    <tr>
+                        <td class="text-muted">{{ forloop.counter }}</td>
+                        <td class="font-mono font-bold text-slate-800">{{ p.patient_id_str }}</td>
+                        <td class="font-medium text-slate-800">{{ p.patient_name }}</td>
+                        <td>{{ p.age_display }}</td>
+                        <td>
+                            {% if p.gender == 'Male' %}
+                            <span class="text-blue-600 font-medium">Male</span>
+                            {% elif p.gender == 'Female' %}
+                            <span class="text-rose-600 font-medium">Female</span>
+                            {% else %}
+                            <span>{{ p.gender }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ p.department_name }}</td>
+                        <td class="font-medium">{{ p.primary_diagnosis_name }}</td>
+                        <td class="text-center font-bold text-slate-800">{{ p.investigations_count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr id="patientsEmptyRow">
+                        <td colspan="8" class="text-center py-6 text-slate-400">
+                            No patients previewed yet. Add a department above to preview randomly sampled D-patients.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Bottom Actions Bar -->
+    <div class="flex items-center justify-between mt-4">
+        <div>
+            <button type="button" class="im-btn im-btn-light" onclick="handleClearAll()">
+                <i class="bi bi-arrow-clockwise"></i> Clear All
+            </button>
+        </div>
+        <div class="flex items-center gap-3">
+            <button type="button" class="im-btn im-btn-navy" id="btnTrigger" onclick="handleSaveAndTrigger()">
+                <i class="bi bi-play-fill"></i> Save & Trigger
+            </button>
+            <button type="button" class="im-btn im-btn-teal" id="btnSaveConfig" onclick="handleSaveConfiguration()">
+                <i class="bi bi-floppy"></i> Save Configuration
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Toast Notification -->
+<div id="imToast" class="im-toast">
+    <i class="bi bi-info-circle-fill"></i>
+    <span id="imToastText">Action completed successfully.</span>
+</div>
+
+<script>
+function showToast(message, isError = false) {
+    const toast = document.getElementById('imToast');
+    const text = document.getElementById('imToastText');
+    text.innerText = message;
+    toast.className = 'im-toast show ' + (isError ? 'im-toast-error' : 'im-toast-success');
+    setTimeout(() => {
+        toast.className = 'im-toast';
+    }, 4000);
+}
+
+function calculateTotal() {
+    const m = parseInt(document.getElementById('maleCount').value) || 0;
+    const f = parseInt(document.getElementById('femaleCount').value) || 0;
+    document.getElementById('totalCount').value = m + f;
+}
+
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+async function handleDateChange() {
+    const dateVal = document.getElementById('markingDate').value;
+    if (!dateVal) return;
+    try {
+        const res = await fetch(`{% url 'lab:api_marking_load' %}?date=${dateVal}`);
+        const data = await res.json();
+        if (data.success) {
+            renderData(data);
+        } else {
+            showToast(data.message || 'Error loading date configuration', true);
+        }
+    } catch (e) {
+        showToast('Failed to load date: ' + e, true);
+    }
+}
+
+function renderData(data) {
+    // 1. Render Department Rows
+    const deptTbody = document.getElementById('deptTableBody');
+    const deptTfoot = document.getElementById('deptTableFoot');
+    deptTbody.innerHTML = '';
+
+    if (!data.departments || data.departments.length === 0) {
+        deptTbody.innerHTML = `
+            <tr id="deptEmptyRow">
+                <td colspan="6" class="text-center py-6 text-slate-400">
+                    No departments added yet. Select date, department, and patient counts above to add.
+                </td>
+            </tr>
+        `;
+        deptTfoot.style.display = 'none';
+    } else {
+        data.departments.forEach((d, idx) => {
+            const tr = document.createElement('tr');
+            tr.id = `dept-row-${d.id}`;
+            tr.innerHTML = `
+                <td class="text-muted">${idx + 1}</td>
+                <td class="font-semibold text-slate-800">${d.name}</td>
+                <td class="text-center font-medium">${d.male}</td>
+                <td class="text-center font-medium">${d.female}</td>
+                <td class="text-center font-bold text-slate-800">${d.total}</td>
+                <td class="text-end">
+                    <button type="button" class="im-btn-outline-danger" onclick="handleRemoveDepartment(${d.id})">
+                        <i class="bi bi-trash"></i> Remove
+                    </button>
+                </td>
+            `;
+            deptTbody.appendChild(tr);
+        });
+
+        document.getElementById('grandMale').innerText = data.grand_totals.male;
+        document.getElementById('grandFemale').innerText = data.grand_totals.female;
+        document.getElementById('grandTotal').innerText = data.grand_totals.total;
+        deptTfoot.style.display = '';
+    }
+
+    // 2. Render Preview Patients
+    const patTbody = document.getElementById('patientsTableBody');
+    patTbody.innerHTML = '';
+
+    if (!data.patients || data.patients.length === 0) {
+        patTbody.innerHTML = `
+            <tr id="patientsEmptyRow">
+                <td colspan="8" class="text-center py-6 text-slate-400">
+                    No patients previewed yet. Add a department above to preview randomly sampled D-patients.
+                </td>
+            </tr>
+        `;
+    } else {
+        data.patients.forEach((p, idx) => {
+            const genderBadge = p.gender === 'Male'
+                ? '<span class="text-blue-600 font-medium">Male</span>'
+                : (p.gender === 'Female' ? '<span class="text-rose-600 font-medium">Female</span>' : `<span>${p.gender}</span>`);
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-muted">${idx + 1}</td>
+                <td class="font-mono font-bold text-slate-800">${p.patient_id}</td>
+                <td class="font-medium text-slate-800">${p.name}</td>
+                <td>${p.age}</td>
+                <td>${genderBadge}</td>
+                <td>${p.department}</td>
+                <td class="font-medium">${p.diagnosis || 'Clinical Evaluation'}</td>
+                <td class="text-center font-bold text-slate-800">${p.investigations_count}</td>
+            `;
+            patTbody.appendChild(tr);
+        });
+    }
+
+    // 3. Update Disabled Options in Department Dropdown
+    const addedDeptIds = data.added_dept_ids || [];
+    const deptSelect = document.getElementById('departmentSelect');
+    Array.from(deptSelect.options).forEach(opt => {
+        if (!opt.value) return;
+        opt.disabled = addedDeptIds.includes(parseInt(opt.value));
+    });
+}
+
+async function handleAddDepartment(e) {
+    e.preventDefault();
+    const dateVal = document.getElementById('markingDate').value;
+    const deptSelect = document.getElementById('departmentSelect');
+    const deptId = deptSelect.value;
+    const maleCount = parseInt(document.getElementById('maleCount').value) || 0;
+    const femaleCount = parseInt(document.getElementById('femaleCount').value) || 0;
+
+    if (!deptId) {
+        alert('Please select a department.');
+        return;
+    }
+    if ((maleCount + femaleCount) <= 0) {
+        alert('Please enter a valid count of male or female patients.');
+        return;
+    }
+
+    const btn = document.getElementById('btnAddDept');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Adding...';
+
+    try {
+        const res = await fetch("{% url 'lab:api_marking_add_department' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                date: dateVal,
+                department_id: deptId,
+                male_count: maleCount,
+                female_count: femaleCount
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            renderData(data);
+            deptSelect.value = '';
+            document.getElementById('maleCount').value = '';
+            document.getElementById('femaleCount').value = '';
+            document.getElementById('totalCount').value = '';
+            showToast('Department added and random D-patients sampled successfully.');
+        } else {
+            showToast(data.message || 'Failed to add department', true);
+        }
+    } catch (err) {
+        showToast('Error adding department: ' + err, true);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-plus-lg"></i> Add Department';
+    }
+}
+
+async function handleRemoveDepartment(deptId) {
+    if (!confirm('Remove this department and its sampled patients from the configuration?')) return;
+    const dateVal = document.getElementById('markingDate').value;
+
+    try {
+        const res = await fetch("{% url 'lab:api_marking_remove_department' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                date: dateVal,
+                department_id: deptId
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            renderData(data);
+            showToast('Department removed.');
+        } else {
+            showToast(data.message || 'Failed to remove department', true);
+        }
+    } catch (err) {
+        showToast('Error removing department: ' + err, true);
+    }
+}
+
+async function handleSaveConfiguration() {
+    const dateVal = document.getElementById('markingDate').value;
+    const btn = document.getElementById('btnSaveConfig');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+
+    try {
+        const res = await fetch("{% url 'lab:api_marking_save_configuration' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({ date: dateVal })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message || 'Configuration saved successfully.');
+        } else {
+            showToast(data.message || 'Failed to save configuration', true);
+        }
+    } catch (err) {
+        showToast('Save error: ' + err, true);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-floppy"></i> Save Configuration';
+    }
+}
+
+async function handleSaveAndTrigger() {
+    const dateVal = document.getElementById('markingDate').value;
+    if (!confirm(`Trigger investigations for all persisted patients on ${dateVal}? This will create Service Requests, Lab Orders, Work Orders, and Results.`)) {
+        return;
+    }
+
+    const btn = document.getElementById('btnTrigger');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Triggering...';
+
+    try {
+        const res = await fetch("{% url 'lab:api_marking_trigger' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({ date: dateVal })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message || 'Investigations triggered successfully!');
+            handleDateChange();
+        } else {
+            showToast(data.message || 'Failed to trigger investigations', true);
+        }
+    } catch (err) {
+        showToast('Trigger error: ' + err, true);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-play-fill"></i> Save & Trigger';
+    }
+}
+
+async function handleClearAll() {
+    if (!confirm('Clear all departments and selected patients for this date?')) return;
+    const dateVal = document.getElementById('markingDate').value;
+
+    try {
+        const res = await fetch("{% url 'lab:api_marking_clear' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({ date: dateVal })
+        });
+        const data = await res.json();
+        if (data.success) {
+            handleDateChange();
+            showToast('Configuration cleared.');
+        } else {
+            showToast(data.message || 'Failed to clear configuration', true);
+        }
+    } catch (err) {
+        showToast('Clear error: ' + err, true);
+    }
+}
+</script>
+{% endblock %}

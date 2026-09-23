@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Result Entry | VMMCerp{% endblock %}
+{% block page_heading %}Pending Result Entry{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header-action" style="margin-bottom: 1.5rem;">
+        <div>
+            <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">Pending Lab Orders</h2>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="messages mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if orders %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Patient</th>
+                    <th>Investigation</th>
+                    <th>Ordered By</th>
+                    <th>Ordered On</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order.id }}</td>
+                    <td><strong>{{ order.patient.name }}</strong><br><small>{{ order.patient.mr_number }}</small></td>
+                    <td>{{ order.investigation.name }}</td>
+                    <td>{{ order.ordered_by.username|default:"System" }}</td>
+                    <td>{{ order.ordered_on|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        <a href="{% url 'lab:result_entry_detail' order.id %}" class="btn btn-primary btn-sm">Enter Results</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        <i class="bi bi-clipboard2-check" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+        <p style="font-size: 1.1rem;">No pending orders.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

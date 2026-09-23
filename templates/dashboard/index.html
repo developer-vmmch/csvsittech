@@ -1,0 +1,452 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard | VMMC ERP{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .trend-line-svg {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 40px;
+    }
+    /* Mobile: reduce wave height so it doesn't dominate the card */
+    @media (max-width: 639px) {
+        .trend-line-svg { height: 24px; }
+    }
+    /* Charts must never overflow their container */
+    canvas { max-width: 100%; }
+</style>
+{% endblock %}
+
+{% block page_heading %}Dashboard{% endblock %}
+
+{% block page_header %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+    <div>
+        <h2 class="text-xl font-bold text-slate-800">{{ page_title }}</h2>
+        <p class="text-sm text-slate-500">Hospital Laboratory & Automation Overview</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="w-full min-w-0 max-w-full">
+    
+    <!-- Top Statistics Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 mb-6">
+        <!-- Card 1 -->
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-4 sm:p-5 flex flex-col relative overflow-hidden">
+            <div class="flex items-start">
+                <div class="w-11 h-11 rounded-lg flex items-center justify-center text-xl mb-3 bg-blue-50 text-blue-500">
+                    <i class="bi bi-droplet-fill"></i>
+                </div>
+            </div>
+            <div class="text-sm font-semibold text-slate-600 mb-1">Total Investigations</div>
+            <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-none mb-1">{{ total_investigations }}</div>
+            <div class="text-xs text-slate-500 mb-5">Configured investigations</div>
+            <svg class="trend-line-svg" viewBox="0 0 100 20" preserveAspectRatio="none">
+                <path d="M0,15 Q10,5 20,15 T40,15 T60,5 T80,15 T100,10 L100,20 L0,20 Z" fill="rgba(59, 130, 246, 0.1)" stroke="#3b82f6" stroke-width="2"/>
+            </svg>
+        </div>
+        
+        <!-- Card 2 -->
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-4 sm:p-5 flex flex-col relative overflow-hidden">
+            <div class="flex items-start">
+                <div class="w-11 h-11 rounded-lg flex items-center justify-center text-xl mb-3 bg-green-50 text-green-500">
+                    <i class="bi bi-list-check"></i>
+                </div>
+            </div>
+            <div class="text-sm font-semibold text-slate-600 mb-1">Investigation Parameters</div>
+            <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-none mb-1">{{ total_parameters }}</div>
+            <div class="text-xs text-slate-500 mb-5">Configured parameters</div>
+            <svg class="trend-line-svg" viewBox="0 0 100 20" preserveAspectRatio="none">
+                <path d="M0,10 Q15,0 30,10 T60,5 T90,15 T100,5 L100,20 L0,20 Z" fill="rgba(34, 197, 94, 0.1)" stroke="#22c55e" stroke-width="2"/>
+            </svg>
+        </div>
+        
+        <!-- Card 3 -->
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-4 sm:p-5 flex flex-col relative overflow-hidden">
+            <div class="flex items-start">
+                <div class="w-11 h-11 rounded-lg flex items-center justify-center text-xl mb-3 bg-purple-50 text-purple-600">
+                    <i class="bi bi-database"></i>
+                </div>
+            </div>
+            <div class="text-sm font-semibold text-slate-600 mb-1">Auto Trigger Results</div>
+            <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-none mb-1">{{ total_dummy_results|default:"0" }}</div>
+            <div class="text-xs text-slate-500 mb-5">Saved dummy results</div>
+            <svg class="trend-line-svg" viewBox="0 0 100 20" preserveAspectRatio="none">
+                <path d="M0,15 Q12,5 25,12 T50,15 T75,8 T100,15 L100,20 L0,20 Z" fill="rgba(147, 51, 234, 0.1)" stroke="#9333ea" stroke-width="2"/>
+            </svg>
+        </div>
+        
+        <!-- Card 4 -->
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-4 sm:p-5 flex flex-col relative overflow-hidden">
+            <div class="flex items-start">
+                <div class="w-11 h-11 rounded-lg flex items-center justify-center text-xl mb-3 bg-orange-50 text-orange-500">
+                    <i class="bi bi-check2-circle"></i>
+                </div>
+            </div>
+            <div class="text-sm font-semibold text-slate-600 mb-1">Results Today</div>
+            <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-none mb-1">{{ results_today|default:"0" }}</div>
+            <div class="text-xs text-slate-500 mb-5">Generated today</div>
+            <svg class="trend-line-svg" viewBox="0 0 100 20" preserveAspectRatio="none">
+                <path d="M0,10 Q10,15 20,5 T40,15 T60,10 T80,15 T100,5 L100,20 L0,20 Z" fill="rgba(249, 115, 22, 0.1)" stroke="#f97316" stroke-width="2"/>
+            </svg>
+        </div>
+        
+        <!-- Card 5 -->
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-4 sm:p-5 flex flex-col relative overflow-hidden">
+            <div class="flex items-start">
+                <div class="w-11 h-11 rounded-lg flex items-center justify-center text-xl mb-3 bg-cyan-50 text-cyan-500">
+                    <i class="bi bi-lightning-charge"></i>
+                </div>
+            </div>
+            <div class="text-sm font-semibold text-slate-600 mb-1">Automated Tests</div>
+            <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-none mb-1">{{ monthly_tests|default:"0" }}</div>
+            <div class="text-xs text-slate-500 mb-5">This month</div>
+            <svg class="trend-line-svg" viewBox="0 0 100 20" preserveAspectRatio="none">
+                <path d="M0,15 Q20,5 40,15 T70,5 T100,10 L100,20 L0,20 Z" fill="rgba(6, 182, 212, 0.1)" stroke="#06b6d4" stroke-width="2"/>
+            </svg>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="flex flex-wrap items-center gap-3 mb-6">
+        <a href="{% url 'lab:auto_trigger_automate_test' %}" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm py-2.5 px-4 rounded-lg flex items-center shadow-sm transition-colors border border-teal-600">
+            <i class="bi bi-plus-lg mr-2 text-base"></i> Create Dummy Result
+        </a>
+        <a href="{% url 'lab:auto_trigger_result_view' %}" class="bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm py-2.5 px-4 rounded-lg flex items-center shadow-sm transition-colors border border-slate-300">
+            <i class="bi bi-grid mr-2 text-base"></i> View Saved Results
+        </a>
+        <a href="{% url 'lab:auto_trigger_configuration' %}" class="bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm py-2.5 px-4 rounded-lg flex items-center shadow-sm transition-colors border border-slate-300">
+            <i class="bi bi-sliders mr-2 text-base"></i> Auto Trigger Configuration
+        </a>
+        <a href="{% url 'lab:auto_trigger_history' %}" class="bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm py-2.5 px-4 rounded-lg flex items-center shadow-sm transition-colors border border-slate-300">
+            <i class="bi bi-clock-history mr-2 text-base"></i> Auto Trigger History
+        </a>
+    </div>
+    
+    <!-- Middle Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- Donut Chart -->
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-6 w-full min-w-0 flex flex-col">
+            <div class="text-sm font-bold text-blue-900 uppercase mb-5 flex justify-between items-center">
+                INVESTIGATION RESULTS OVERVIEW
+            </div>
+            <div class="flex-grow flex items-center justify-center relative h-[260px]">
+                <canvas id="donutChart"></canvas>
+                <!-- Center Text -->
+                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <div class="text-3xl font-extrabold text-slate-900">{{ total_dummy_results }}</div>
+                    <div class="text-sm font-semibold text-slate-500">Total Results</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Line Chart -->
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-6 w-full min-w-0 flex flex-col lg:col-span-2">
+            <div class="text-sm font-bold text-blue-900 uppercase mb-5 flex justify-between items-center">
+                RESULTS TREND
+                <select class="form-select form-select-sm w-auto text-sm text-slate-600 border-slate-300 rounded-md font-medium bg-white">
+                    <option>Last 7 Days</option>
+                </select>
+            </div>
+            <div class="h-[220px] w-full relative">
+                <canvas id="lineChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bottom Grid Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- Recent Dummy Results -->
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-0 w-full min-w-0 flex flex-col lg:col-span-2">
+            <div class="p-6 pb-4 flex justify-between items-center">
+                <div class="text-sm font-bold text-blue-900 uppercase">
+                    RECENT SAVED RESULTS
+                </div>
+                <a href="{% url 'lab:auto_trigger_result_view' %}" class="bg-slate-50 text-teal-600 font-semibold border border-slate-200 rounded-md px-3 py-1.5 text-sm hover:bg-slate-100 transition-colors">View All Results</a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-white text-slate-500 font-semibold border-b border-slate-200">
+                        <tr>
+                            <th class="px-5 py-3 font-semibold">Investigation</th>
+                            <th class="px-5 py-3 font-semibold">Result Name</th>
+                            <th class="px-5 py-3 font-semibold">Result ID</th>
+                            <th class="px-5 py-3 font-semibold">Created On</th>
+                            <th class="px-5 py-3 font-semibold">Parameters</th>
+                            <th class="px-5 py-3 font-semibold">Status</th>
+                            <th class="px-5 py-3 font-semibold">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for r in recent_results %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-5 py-4 align-middle">
+                                <div class="inline-flex items-center justify-center w-8 h-8 bg-purple-50 text-purple-700 rounded-md mr-3">
+                                    <i class="bi bi-capsule"></i>
+                                </div>
+                                <span class="font-bold text-blue-900">{{ r.inv_short }}</span>
+                            </td>
+                            <td class="px-5 py-4 font-semibold text-slate-700 align-middle">{{ r.name }}</td>
+                            <td class="px-5 py-4 text-slate-500 text-sm align-middle">{{ r.result_id }}</td>
+                            <td class="px-5 py-4 text-slate-500 text-sm align-middle">{{ r.created_on }}</td>
+                            <td class="px-5 py-4 font-semibold align-middle">{{ r.param_count }}</td>
+                            <td class="px-5 py-4 align-middle">
+                                <span class="bg-green-100 text-green-800 font-semibold text-xs px-2.5 py-1 rounded-full">Saved</span>
+                            </td>
+                            <td class="px-5 py-4 align-middle">
+                                <a href="{% url 'lab:auto_trigger_result_view' %}?investigation_id={{ r.id }}" class="bg-white border border-slate-300 text-slate-600 font-semibold rounded-md px-3 py-1 inline-flex items-center hover:bg-slate-50 transition-colors">
+                                    <i class="bi bi-eye mr-1"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-slate-500 py-12">No saved dummy results available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Automation Summary -->
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-6 w-full min-w-0 flex flex-col">
+            <div class="text-sm font-bold text-blue-900 uppercase mb-4">
+                AUTO TRIGGER SUMMARY
+            </div>
+            
+            <div class="flex-grow flex flex-col justify-center">
+                <div class="flex justify-between items-center py-4 border-b border-slate-100">
+                    <div>
+                        <div class="font-semibold text-slate-800 text-base flex items-center">
+                            <div class="w-3 h-3 rounded-full bg-emerald-500 text-white flex items-center justify-center mr-3 text-[8px]"><i class="bi bi-check"></i></div>
+                            Successful Triggers
+                        </div>
+                        <div class="text-slate-500 text-xs ml-6">Completed without errors</div>
+                    </div>
+                    <div class="font-extrabold text-2xl text-slate-900">{{ successful_triggers|default:"0" }}</div>
+                </div>
+                
+                <div class="flex justify-between items-center py-4 border-b border-slate-100">
+                    <div>
+                        <div class="font-semibold text-slate-800 text-base flex items-center">
+                            <div class="w-3 h-3 rounded-full bg-amber-500 text-white flex items-center justify-center mr-3 text-[8px]"><i class="bi bi-exclamation"></i></div>
+                            Pending Triggers
+                        </div>
+                        <div class="text-slate-500 text-xs ml-6">Waiting to be executed</div>
+                    </div>
+                    <div class="font-extrabold text-2xl text-slate-900">{{ pending_triggers|default:"0" }}</div>
+                </div>
+                
+                <div class="flex justify-between items-center py-4 border-b border-slate-100">
+                    <div>
+                        <div class="font-semibold text-slate-800 text-base flex items-center">
+                            <div class="w-3 h-3 rounded-full bg-red-500 text-white flex items-center justify-center mr-3 text-[8px]"><i class="bi bi-x"></i></div>
+                            Failed Triggers
+                        </div>
+                        <div class="text-slate-500 text-xs ml-6">Execution failed</div>
+                    </div>
+                    <div class="font-extrabold text-2xl text-slate-900">{{ failed_triggers|default:"0" }}</div>
+                </div>
+                
+                <div class="flex justify-between items-center py-4">
+                    <div>
+                        <div class="font-semibold text-slate-800 text-sm flex items-center">
+                            <div class="w-3 h-3 inline-flex items-center justify-center mr-3 text-blue-500"><i class="bi bi-arrow-repeat"></i></div>
+                            Last Trigger Run
+                        </div>
+                    </div>
+                    <div class="font-semibold text-sm text-slate-600">{{ last_trigger_run }}</div>
+                </div>
+            </div>
+            
+            <div class="mt-4 pt-4 border-t border-slate-200 text-center">
+                <a href="{% url 'lab:auto_trigger_configuration' %}" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold border-none w-full rounded-lg py-3 px-4 shadow-sm inline-block transition-colors">
+                    Run Now
+                </a>
+            </div>
+        </div>
+    </div>
+    
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Prepare Data
+        const donutLabels = {{ donut_labels_json|safe|default:"[]" }};
+        const donutData = {{ donut_data_json|safe|default:"[]" }};
+        const trendLabels = {{ trend_labels_json|safe|default:"[]" }};
+        const trendData = {{ trend_data_json|safe|default:"[]" }};
+        
+        // Define colors
+        const colors = [
+            '#3b82f6', // blue
+            '#10b981', // green
+            '#f59e0b', // orange
+            '#ef4444', // red
+            '#8b5cf6', // purple
+            '#06b6d4', // cyan
+            '#64748b'  // slate
+        ];
+
+        // 1. Donut Chart Initialization
+        const ctxDonut = document.getElementById('donutChart');
+        if (ctxDonut) {
+            new Chart(ctxDonut, {
+                type: 'doughnut',
+                data: {
+                    labels: donutLabels.length ? donutLabels : ['No Data'],
+                    datasets: [{
+                        data: donutData.length ? donutData : [1],
+                        backgroundColor: donutData.length ? colors.slice(0, donutData.length) : ['#e2e8f0'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%', 
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'right',
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 8,
+                                padding: 24,
+                                color: '#334155',
+                                font: {
+                                    size: 13,
+                                    family: "'Inter', sans-serif",
+                                    weight: '500'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            padding: 12,
+                            bodyFont: {
+                                size: 14,
+                                weight: 'bold',
+                                family: "'Inter', sans-serif"
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += '  ';
+                                    }
+                                    if (context.parsed !== null && donutData.length) {
+                                        label += context.parsed;
+                                    } else {
+                                        label += '0';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            left: 0,
+                            right: 40,
+                            top: 10,
+                            bottom: 10
+                        }
+                    }
+                }
+            });
+        }
+
+        // 2. Line Chart Initialization
+        const ctxLine = document.getElementById('lineChart');
+        if (ctxLine) {
+            new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: trendLabels.length ? trendLabels : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Results',
+                        data: trendData.length ? trendData : [0, 0, 0, 0, 0, 0, 0],
+                        borderColor: '#10b981',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#10b981',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: false,
+                        tension: 0.2 // Curve the line slightly
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            displayColors: false,
+                            backgroundColor: '#1e293b',
+                            padding: 10,
+                            titleFont: {
+                                size: 13,
+                                family: "'Inter', sans-serif"
+                            },
+                            bodyFont: {
+                                size: 14,
+                                weight: 'bold',
+                                family: "'Inter', sans-serif"
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#64748b',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#f1f5f9',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#64748b',
+                                font: {
+                                    size: 12
+                                },
+                                maxTicksLimit: 5
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

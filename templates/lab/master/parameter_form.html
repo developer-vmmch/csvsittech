@@ -1,0 +1,146 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}{% if object %}Edit Parameter{% else %}Add Parameter{% endif %} | Lab Master{% endblock %}
+{% block page_heading %}{% if object %}Edit Parameter{% else %}Add New Parameter{% endif %}{% endblock %}
+
+{% block lab_content %}
+<div style="max-width: 960px; margin: 0 auto;">
+    <div class="lab-card mb-4">
+        <div class="lab-table-card-header mb-4 pb-2 border-b border-slate-100">
+            <span class="lab-table-title">{% if object %}Edit Parameter: {{ object.name }}{% else %}New Parameter Information{% endif %}</span>
+            <span class="lab-table-subtitle">Laboratory Parameter Master</span>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="p-3 mb-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <div class="lab-form-grid-2 mb-3">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.investigation.id_for_label }}">Investigation <span class="text-rose-500">*</span></label>
+                    {{ form.investigation }}
+                    {% if form.investigation.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.investigation.errors }}</div>{% endif %}
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.result_type.id_for_label }}">Result Type <span class="text-rose-500">*</span></label>
+                    {{ form.result_type }}
+                    {% if form.result_type.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.result_type.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="lab-form-grid-3 mb-3">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.code.id_for_label }}">Parameter Code <span class="text-rose-500">*</span></label>
+                    {{ form.code }}
+                    {% if form.code.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.code.errors }}</div>{% endif %}
+                </div>
+                
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.name.id_for_label }}">Parameter Name <span class="text-rose-500">*</span></label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.name.errors }}</div>{% endif %}
+                </div>
+                
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.short_name.id_for_label }}">Short Name</label>
+                    {{ form.short_name }}
+                    {% if form.short_name.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.short_name.errors }}</div>{% endif %}
+                </div>
+            </div>
+            
+            <div class="lab-form-grid-3 mb-4">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.unit.id_for_label }}">Unit</label>
+                    {{ form.unit }}
+                    {% if form.unit.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.unit.errors }}</div>{% endif %}
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.decimal_precision.id_for_label }}">Decimal Precision</label>
+                    {{ form.decimal_precision }}
+                    {% if form.decimal_precision.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.decimal_precision.errors }}</div>{% endif %}
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.display_order.id_for_label }}">Display Order</label>
+                    {{ form.display_order }}
+                    {% if form.display_order.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.display_order.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="p-3 mb-4 rounded-lg bg-slate-50 border border-slate-200">
+                <label class="flex items-center gap-2 cursor-pointer mb-0">
+                    {{ form.is_active }}
+                    <span class="text-xs font-semibold text-slate-700">Active Status</span>
+                </label>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <a href="{% url 'lab:parameter_list' %}" class="lab-btn lab-btn-secondary">Cancel</a>
+                <button type="submit" class="lab-btn lab-btn-primary">
+                    <i class="bi bi-check-lg"></i> {% if object %}Update{% else %}Save{% endif %} Parameter
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    {% if object %}
+    <div class="lab-table-container">
+        <div class="lab-table-card-header">
+            <span class="lab-table-title">Age Group Reference Ranges</span>
+            <span class="lab-table-subtitle">Demographic Reference Bounds</span>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="lab-table">
+                <thead>
+                    <tr>
+                        <th>Age Group</th>
+                        <th>Gender</th>
+                        <th>Age Range</th>
+                        <th>Reference Range</th>
+                        <th>Critical Low</th>
+                        <th>Critical High</th>
+                        <th>Unit</th>
+                        <th>Active</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rr in reference_ranges %}
+                    <tr>
+                        <td class="font-bold text-slate-800">{{ rr.age_group.label }}</td>
+                        <td>{{ rr.get_gender_display }}</td>
+                        <td>{{ rr.age_group.min_age_value }}-{{ rr.age_group.max_age_value }} {{ rr.age_group.min_age_unit }}</td>
+                        <td class="font-medium">
+                            {% if rr.min_value is not None and rr.max_value is not None %}
+                                {{ rr.min_value }} - {{ rr.max_value }}
+                            {% else %}
+                                {{ rr.reference_text|default:"-" }}
+                            {% endif %}
+                        </td>
+                        <td class="text-rose-600 font-mono">{{ rr.critical_low|default:"-" }}</td>
+                        <td class="text-rose-600 font-mono">{{ rr.critical_high|default:"-" }}</td>
+                        <td>{{ rr.unit|default:"-" }}</td>
+                        <td>
+                            {% if rr.is_active %}
+                                <span class="lab-badge lab-badge-success">Active</span>
+                            {% else %}
+                                <span class="lab-badge lab-badge-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-8 text-slate-400">No reference ranges configured.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+
+{% block title %}Import Reference Ranges | VMMCerp{% endblock %}
+{% block page_heading %}Import Reference Ranges{% endblock %}
+
+{% block extra_head %}
+<style>
+    .upload-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 3rem;
+        text-align: center;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .upload-area:hover, .upload-area.dragover {
+        border-color: var(--accent-blue);
+        background: #eff6ff;
+    }
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 99px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+    .status-Valid { background: #dcfce7; color: #166534; }
+    .status-Error { background: #fee2e2; color: #991b1b; }
+    .status-Duplicate { background: #fef9c3; color: #854d0e; }
+    
+    .hidden { display: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header-action" style="margin-bottom: 1.5rem; display:flex; justify-content: space-between; align-items:center;">
+        <div>
+            <h2 class="panel-title">Import Reference Ranges (Excel / CSV)</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Upload bulk configurations for parameters, age groups, and genders.</p>
+        </div>
+        <div>
+            <a href="{% url 'lab:api_referencerange_import_template' %}" class="btn btn-secondary">
+                <i class="bi bi-download"></i> Download Template
+            </a>
+            <a href="{% url 'lab:reference_range_import_history' %}" class="btn btn-secondary">
+                <i class="bi bi-clock-history"></i> Import History
+            </a>
+        </div>
+    </div>
+
+    <div id="step-upload">
+        <div class="upload-area" id="drop-zone">
+            <div id="drop-zone-content">
+                <i class="bi bi-cloud-arrow-up" style="font-size: 3rem; color: var(--accent-blue);"></i>
+                <h3 style="margin-top: 1rem;">Drag and drop file here</h3>
+                <p style="color: var(--text-muted);">or click to browse (.xlsx, .csv)</p>
+            </div>
+        </div>
+        <input type="file" id="file-input" style="display: none;" accept=".xlsx,.csv">
+        
+        <div id="upload-error-container" class="hidden" style="margin-top: 1rem; background: #fee2e2; border: 1px solid #fecaca; border-radius: 6px; padding: 1rem; color: #991b1b;">
+            <div style="font-weight: bold; margin-bottom: 0.5rem;"><i class="bi bi-exclamation-triangle-fill"></i> Upload Error</div>
+            <div id="upload-error-message"></div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 1rem;">
+            <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+                <i class="bi bi-file-earmark-excel"></i> Select File
+            </button>
+        </div>
+    </div>
+
+    <!-- Step 2: Preview & Validation -->
+    <div id="step-preview" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; background: #f8fafc; padding: 1rem; border-radius: 8px;">
+            <div>
+                <h3 style="margin: 0;">Validation Preview</h3>
+                <p style="margin: 0; font-size: 0.9rem; color: #64748b;" id="preview-filename"></p>
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <label>Filter:</label>
+                <select id="preview-filter" class="form-select" onchange="filterPreview()">
+                    <option value="All">All</option>
+                    <option value="Valid">Valid</option>
+                    <option value="Error">Errors</option>
+                    <option value="Duplicate">Duplicates</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+            <div style="flex:1; padding: 1rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; text-align: center;">
+                <div style="font-size: 2rem; font-weight: bold; color: var(--accent-blue);" id="count-total">0</div>
+                <div style="font-size: 0.85rem; color: #64748b; text-transform: uppercase;">Total Rows</div>
+            </div>
+            <div style="flex:1; padding: 1rem; background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 6px; text-align: center;">
+                <div style="font-size: 2rem; font-weight: bold; color: #166534;" id="count-valid">0</div>
+                <div style="font-size: 0.85rem; color: #166534; text-transform: uppercase;">Valid to Import</div>
+            </div>
+            <div style="flex:1; padding: 1rem; background: #fee2e2; border: 1px solid #fecaca; border-radius: 6px; text-align: center;">
+                <div style="font-size: 2rem; font-weight: bold; color: #991b1b;" id="count-error">0</div>
+                <div style="font-size: 0.85rem; color: #991b1b; text-transform: uppercase;">Errors</div>
+            </div>
+            <div style="flex:1; padding: 1rem; background: #fef9c3; border: 1px solid #fef08a; border-radius: 6px; text-align: center;">
+                <div style="font-size: 2rem; font-weight: bold; color: #854d0e;" id="count-duplicate">0</div>
+                <div style="font-size: 0.85rem; color: #854d0e; text-transform: uppercase;">Duplicates</div>
+            </div>
+        </div>
+
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto; margin-bottom: 1.5rem;">
+            <table id="preview-table">
+                <thead>
+                    <tr>
+                        <th>Row</th>
+                        <th>Inv Code</th>
+                        <th>Param Code</th>
+                        <th>Age Group</th>
+                        <th>Gender</th>
+                        <th>Range Type</th>
+                        <th>Min/Max/Text</th>
+                        <th>Status</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody id="preview-tbody">
+                </tbody>
+            </table>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 1.5rem;">
+            <div>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: bold; cursor: pointer;">
+                    <input type="checkbox" id="update-duplicates" style="width: 18px; height: 18px;">
+                    Update existing duplicate records
+                </label>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn btn-secondary" onclick="resetUpload()">Cancel</button>
+                <button class="btn btn-primary" id="btn-import" onclick="confirmImport()">
+                    <i class="bi bi-upload"></i> Import Valid Data
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 3: Summary -->
+    <div id="step-summary" class="hidden">
+        <div style="text-align: center; padding: 3rem;">
+            <i class="bi bi-check-circle-fill" style="font-size: 4rem; color: #166534; margin-bottom: 1rem; display: block;"></i>
+            <h2 style="margin-bottom: 0.5rem;">Import Completed</h2>
+            
+            <div style="display: flex; justify-content: center; margin-bottom: 2rem; margin-top: 1rem;">
+                <div style="text-align: left; background: #f8fafc; padding: 2rem; border-radius: 8px; border: 1px solid #e2e8f0; min-width: 300px;">
+                    <h4 style="margin-top:0; border-bottom:1px solid #cbd5e1; padding-bottom:0.5rem;">Results</h4>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>Total Rows Processed:</span> <strong id="sum-total">0</strong></div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>Imported:</span> <strong id="sum-imported" style="color: #166534;">0</strong></div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>Updated:</span> <strong id="sum-updated" style="color: var(--accent-blue);">0</strong></div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; border-top:1px solid #cbd5e1; padding-top:0.5rem;"><span>Failed/Skipped:</span> <strong id="sum-failed" style="color: #991b1b;">0</strong></div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 1rem;">
+                <a href="{% url 'lab:reference_range_grid' %}" class="btn btn-primary">Go to Reference Ranges</a>
+                <a href="{% url 'lab:reference_range_import_history' %}" class="btn btn-secondary">View History</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentData = [];
+    let currentFilename = '';
+    let currentImportId = null;
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            handleFileSelect();
+        }
+    });
+    fileInput.addEventListener('change', handleFileSelect);
+    
+    function handleFileSelect() {
+        if (!fileInput.files.length) return;
+        const file = fileInput.files[0];
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // Show loading state
+        const dropContent = document.getElementById('drop-zone-content');
+        if (dropContent) {
+            dropContent.innerHTML = '<div class="spinner-border text-primary" role="status"></div><p class="mt-2">Processing file...</p>';
+        }
+        
+        fetch('{% url "lab:api_referencerange_preview" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {'X-CSRFToken': getCookie('csrftoken')}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('upload-error-container').classList.add('hidden');
+                currentData = data.data; // max 100 rows
+                currentFilename = data.filename;
+                currentImportId = data.import_id;
+                showPreview(data.total_rows, data.valid_rows, data.invalid_rows, data.duplicate_rows);
+            } else {
+                showUploadError(data.message || 'Validation failed');
+                resetUploadUI();
+            }
+        })
+        .catch(error => {
+            showUploadError('Error connecting to server');
+            resetUploadUI();
+        });
+    }
+    
+    function showUploadError(message) {
+        const container = document.getElementById('upload-error-container');
+        const msgDiv = document.getElementById('upload-error-message');
+        msgDiv.innerHTML = message.replace(/\n/g, '<br>');
+        container.classList.remove('hidden');
+    }
+    
+    function resetUploadUI() {
+        fileInput.value = '';
+        currentData = [];
+        
+        const dropContent = document.getElementById('drop-zone-content');
+        if (dropContent) {
+            dropContent.innerHTML = `
+                <i class="bi bi-cloud-arrow-up" style="font-size: 3rem; color: var(--accent-blue);"></i>
+                <h3 style="margin-top: 1rem;">Drag and drop file here</h3>
+                <p style="color: var(--text-muted);">or click to browse (.xlsx, .csv)</p>
+            `;
+        }
+    }
+    
+    function resetUpload() {
+        document.getElementById('step-upload').classList.remove('hidden');
+        document.getElementById('step-preview').classList.add('hidden');
+        document.getElementById('step-summary').classList.add('hidden');
+        document.getElementById('upload-error-container').classList.add('hidden');
+        resetUploadUI();
+    }
+    
+    function showPreview(totalRows, validRows, invalidRows, duplicateRows) {
+        document.getElementById('step-upload').classList.add('hidden');
+        document.getElementById('step-preview').classList.remove('hidden');
+        document.getElementById('preview-filename').textContent = `File: ${currentFilename}`;
+        
+        const tbody = document.getElementById('preview-tbody');
+        tbody.innerHTML = '';
+        
+        currentData.forEach(row => {
+            const tr = document.createElement('tr');
+            const statusClass = `status-${row.status}`;
+            
+            let rangeDetails = '';
+            if (row.range_type === 'NUMERIC') {
+                rangeDetails = `${row.min_value} - ${row.max_value} ${row.unit}`;
+            } else if (row.range_type === 'TEXT') {
+                rangeDetails = row.reference_range_text;
+            } else {
+                rangeDetails = 'None';
+            }
+            
+            tr.innerHTML = `
+                <td>${row.row_num}</td>
+                <td>${row.investigation_code || ''}</td>
+                <td>${row.parameter_code || ''}</td>
+                <td>${row.age_group_code || ''}</td>
+                <td>${row.gender || ''}</td>
+                <td>${row.range_type || ''}</td>
+                <td>${rangeDetails}</td>
+                <td><span class="status-badge ${statusClass}">${row.status}</span></td>
+                <td><small style="color: #64748b;">${row.error || ''}</small></td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        if (totalRows > 100) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td colspan="9" style="text-align: center; color: #64748b; font-style: italic;">Showing first 100 of ${totalRows} rows...</td>`;
+            tbody.appendChild(tr);
+        }
+        
+        document.getElementById('count-total').textContent = totalRows;
+        document.getElementById('count-valid').textContent = validRows;
+        document.getElementById('count-error').textContent = invalidRows;
+        document.getElementById('count-duplicate').textContent = duplicateRows;
+    }
+    
+    function filterPreview() {
+        const filter = document.getElementById('preview-filter').val();
+        const rows = document.getElementById('preview-tbody').querySelectorAll('tr');
+        
+        rows.forEach(row => {
+            if (filter === 'All' || row.querySelector('.status-badge').textContent === filter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    function confirmImport() {
+        if (!currentImportId) {
+            alert("No valid import ID found.");
+            return;
+        }
+        
+        const updateDups = document.getElementById('update-duplicates').checked;
+        
+        const btn = document.getElementById('btn-import');
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Importing (This may take a moment)...';
+        btn.disabled = true;
+        
+        fetch('{% url "lab:api_referencerange_import" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                import_id: currentImportId,
+                update_existing: updateDups
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 413) {
+                    throw new Error("Payload Too Large");
+                }
+                return response.text().then(text => { throw new Error(text) });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                showSummary(data);
+            } else {
+                alert(data.message || 'Import failed');
+                btn.innerHTML = '<i class="bi bi-upload"></i> Import Valid Data';
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            alert(error.message || 'Error connecting to server');
+            btn.innerHTML = '<i class="bi bi-upload"></i> Import Valid Data';
+            btn.disabled = false;
+        });
+    }
+    
+    function showSummary(data) {
+        document.getElementById('step-preview').classList.add('hidden');
+        document.getElementById('step-summary').classList.remove('hidden');
+        
+        document.getElementById('sum-total').textContent = document.getElementById('count-total').textContent;
+        document.getElementById('sum-imported').textContent = data.imported;
+        document.getElementById('sum-updated').textContent = data.updated;
+        document.getElementById('sum-failed').textContent = data.failed + data.skipped;
+    }
+</script>
+{% endblock %}

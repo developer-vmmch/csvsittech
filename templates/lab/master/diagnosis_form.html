@@ -1,0 +1,72 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}{% if object %}Edit Diagnosis{% else %}Add Diagnosis{% endif %} | Lab Master{% endblock %}
+{% block page_heading %}{% if object %}Edit Diagnosis{% else %}Add New Diagnosis{% endif %}{% endblock %}
+
+{% block lab_content %}
+<div style="max-width: 860px; margin: 0 auto;">
+    <div class="lab-card">
+        <div class="lab-table-card-header mb-4 pb-2 border-b border-slate-100">
+            <span class="lab-table-title">{% if object %}Edit Diagnosis: {{ object.name }}{% else %}Diagnosis Details{% endif %}</span>
+            <span class="lab-table-subtitle">Clinical Coding Master</span>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="p-3 mb-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <div class="lab-form-grid-2 mb-3">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.code.id_for_label }}">ICD-11 Code <span class="text-rose-500">*</span></label>
+                    {{ form.code }}
+                    {% if form.code.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.code.errors }}</div>{% endif %}
+                </div>
+                
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.name.id_for_label }}">Diagnosis Name <span class="text-rose-500">*</span></label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.name.errors }}</div>{% endif %}
+                </div>
+            </div>
+            
+            <div class="lab-form-grid-2 mb-3">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.icd11_title.id_for_label }}">ICD-11 Title</label>
+                    {{ form.icd11_title }}
+                    {% if form.icd11_title.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.icd11_title.errors }}</div>{% endif %}
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.chapter.id_for_label }}">Chapter</label>
+                    {{ form.chapter }}
+                    {% if form.chapter.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.chapter.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="lab-form-group mb-4">
+                <label class="lab-form-label" for="{{ form.synonyms.id_for_label }}">Synonyms</label>
+                {{ form.synonyms }}
+                {% if form.synonyms.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.synonyms.errors }}</div>{% endif %}
+            </div>
+
+            <div class="p-3 mb-4 rounded-lg bg-slate-50 border border-slate-200">
+                <label class="flex items-center gap-2 cursor-pointer mb-0">
+                    {{ form.is_active }}
+                    <span class="text-xs font-semibold text-slate-700">Active Status</span>
+                </label>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <a href="{% url 'lab:diagnosis_list' %}" class="lab-btn lab-btn-secondary">Cancel</a>
+                <button type="submit" class="lab-btn lab-btn-primary">
+                    <i class="bi bi-check-lg"></i> {% if object %}Update{% else %}Save{% endif %} Diagnosis
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

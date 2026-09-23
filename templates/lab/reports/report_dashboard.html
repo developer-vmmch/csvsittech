@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Lab Reports Dashboard | VMMCerp{% endblock %}
+{% block page_heading %}Lab Reports Dashboard{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h2 class="text-2xl font-bold text-slate-800">Lab Reports</h2>
+    <p class="text-slate-500">Overview of available laboratory analytics and reports.</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <a href="{% url 'lab:report_daily' %}" class="block bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow hover:border-blue-300">
+        <i class="bi bi-calendar-day text-3xl text-blue-500 mb-3 block"></i>
+        <h3 class="font-bold text-slate-800">Daily Report</h3>
+        <p class="text-sm text-slate-500 mt-1">Summary of day-to-day laboratory operations and sample intake.</p>
+    </a>
+    
+    <a href="{% url 'lab:report_monthly' %}" class="block bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow hover:border-blue-300">
+        <i class="bi bi-calendar-month text-3xl text-indigo-500 mb-3 block"></i>
+        <h3 class="font-bold text-slate-800">Monthly Report</h3>
+        <p class="text-sm text-slate-500 mt-1">Aggregated statistics over the month.</p>
+    </a>
+
+    <a href="{% url 'lab:report_sub_department' %}" class="block bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow hover:border-blue-300">
+        <i class="bi bi-diagram-2 text-3xl text-teal-500 mb-3 block"></i>
+        <h3 class="font-bold text-slate-800">Sub Department Report</h3>
+        <p class="text-sm text-slate-500 mt-1">Breakdown by internal lab departments.</p>
+    </a>
+    
+    <a href="{% url 'lab:report_investigation' %}" class="block bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow hover:border-blue-300">
+        <i class="bi bi-file-medical text-3xl text-emerald-500 mb-3 block"></i>
+        <h3 class="font-bold text-slate-800">Investigation Report</h3>
+        <p class="text-sm text-slate-500 mt-1">Detailed stats on specific investigations performed.</p>
+    </a>
+
+    <a href="{% url 'lab:report_hospital_department' %}" class="block bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow hover:border-blue-300">
+        <i class="bi bi-building text-3xl text-orange-500 mb-3 block"></i>
+        <h3 class="font-bold text-slate-800">Hospital Department-wise</h3>
+        <p class="text-sm text-slate-500 mt-1">Workload originated by different hospital units.</p>
+    </a>
+    
+    <a href="{% url 'lab:report_benchmark' %}" class="block bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow hover:border-blue-300">
+        <i class="bi bi-graph-up-arrow text-3xl text-purple-500 mb-3 block"></i>
+        <h3 class="font-bold text-slate-800">Benchmark Report</h3>
+        <p class="text-sm text-slate-500 mt-1">Compare actual processing against targeted benchmarks.</p>
+    </a>
+    
+    <a href="{% url 'lab:report_abnormal' %}" class="block bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow hover:border-red-300">
+        <i class="bi bi-exclamation-triangle text-3xl text-red-500 mb-3 block"></i>
+        <h3 class="font-bold text-slate-800">Abnormal Result Report</h3>
+        <p class="text-sm text-slate-500 mt-1">List of tests yielding critical or abnormal flags.</p>
+    </a>
+</div>
+{% endblock %}

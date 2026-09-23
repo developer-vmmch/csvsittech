@@ -1,0 +1,2042 @@
+{% extends "base.html" %}
+
+{% block title %}ATC — Auto Trigger Control | VMMCerp{% endblock %}
+{% block page_heading %}ATC — Auto Trigger Control{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ==========================================================================
+       VMMC ERP Design Tokens & Layout — Matches Monthly Trigger Plan Reference
+       ========================================================================== */
+    .atc-wrapper {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+    .page-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        letter-spacing: -0.01em;
+    }
+    
+    /* Configuration Card Container */
+    .config-card {
+        background: #ffffff;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 8px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 1.25rem;
+    }
+    .config-card-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.65rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+
+    /* Responsive 4-Column Form Grid System */
+    .atc-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 1rem;
+    }
+    @media (max-width: 1024px) {
+        .atc-grid-4 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+        }
+    }
+    @media (max-width: 640px) {
+        .atc-grid-4 {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0.75rem;
+        }
+    }
+
+    /* Standard ERP Form Elements */
+    .form-group {
+        margin-bottom: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    .form-label {
+        display: block;
+        font-size: 0.83rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.35rem;
+    }
+    .form-label.required::after {
+        content: " *";
+        color: #dc2626;
+        font-weight: bold;
+    }
+    .form-control {
+        width: 100%;
+        height: 40px;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.88rem;
+        color: #1e293b;
+        background-color: #ffffff;
+        box-sizing: border-box;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .form-control:focus {
+        border-color: #0284c7;
+        outline: 0;
+        box-shadow: 0 0 0 0.15rem rgba(2, 132, 199, 0.2);
+    }
+    .form-control[readonly] {
+        background-color: #f8fafc;
+        color: #1e293b;
+        cursor: default;
+    }
+
+    /* Circular Automation Signal Toggles */
+    .signal-container {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        height: 40px;
+    }
+    .btn-signal {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.4rem 0.65rem;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 6px;
+        background: #ffffff;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+        user-select: none;
+        height: 38px;
+        box-sizing: border-box;
+    }
+    .btn-signal:hover {
+        border-color: #94a3b8;
+        background: #f8fafc;
+    }
+    .signal-circle {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+    .circle-review { background-color: #16a34a; }
+    .circle-op { background-color: #eab308; }
+    .circle-all { background-color: #dc2626; }
+
+    .btn-signal.active[data-signal="REVIEW"] {
+        border-color: #16a34a;
+        background-color: #f0fdf4;
+        color: #15803d;
+        box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+    }
+    .btn-signal.active[data-signal="OP"] {
+        border-color: #d97706;
+        background-color: #fffbeb;
+        color: #b45309;
+        box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2);
+    }
+    .btn-signal.active[data-signal="ALL"] {
+        border-color: #dc2626;
+        background-color: #fef2f2;
+        color: #b91c1c;
+        box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+    }
+
+    /* Date Quick Selector Popover */
+    .date-wrapper {
+        position: relative;
+    }
+    .date-wrapper i.calendar-icon {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #64748b;
+        cursor: pointer;
+    }
+    .date-popover {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 1050;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+        padding: 0.65rem;
+        min-width: 250px;
+        display: none;
+        margin-top: 4px;
+    }
+    .date-popover.show {
+        display: block;
+    }
+    .date-quick-btn {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 0.4rem 0.65rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #334155;
+        border: none;
+        background: transparent;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.15s;
+    }
+    .date-quick-btn:hover {
+        background: #f1f5f9;
+        color: #0284c7;
+    }
+
+    /* Percentage & Target Colors */
+    .input-pct-wrapper {
+        position: relative;
+    }
+    .input-pct-wrapper span.pct-symbol {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #64748b;
+        font-weight: 700;
+        font-size: 0.85rem;
+        pointer-events: none;
+    }
+    .input-op-target {
+        background-color: #ecfdf5 !important;
+        color: #065f46 !important;
+        font-weight: 700 !important;
+        border-color: #a7f3d0 !important;
+    }
+    .input-review-target {
+        background-color: #eff6ff !important;
+        color: #1e40af !important;
+        font-weight: 700 !important;
+        border-color: #bfdbfe !important;
+    }
+
+    /* Target Table Container — Matches Monthly Trigger Reference */
+    .table-container {
+        background: #ffffff;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 1.25rem;
+    }
+    .table-header-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.85rem 1.25rem;
+        border-bottom: 1px solid #e2e8f0;
+        background: #ffffff;
+    }
+    .table-header-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+        letter-spacing: 0.01em;
+    }
+    .month-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.2rem 0.4rem;
+    }
+    .month-nav button {
+        background: transparent;
+        border: none;
+        color: #64748b;
+        padding: 0.2rem 0.45rem;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .month-nav button:hover {
+        background: #e2e8f0;
+        color: #0f172a;
+    }
+    .month-nav span {
+        font-weight: 600;
+        font-size: 0.88rem;
+        color: #334155;
+        min-width: 130px;
+        text-align: center;
+    }
+
+    .table-scroll {
+        max-height: 52vh;
+        overflow-x: auto;
+        overflow-y: auto;
+    }
+    .target-table {
+        min-width: max-content;
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+        margin-bottom: 0;
+    }
+    .target-table th {
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 0.6rem 0.8rem;
+        border-bottom: 1px solid #cbd5e1;
+        border-right: 1px solid #e2e8f0;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        white-space: nowrap;
+    }
+    .target-table th.dept-header {
+        border-left: 1px solid #e2e8f0;
+        color: #0f172a;
+    }
+    .target-table td {
+        padding: 0.4rem 0.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        border-right: 1px solid #f1f5f9;
+        vertical-align: middle;
+        text-align: center;
+        background: #ffffff;
+    }
+    .target-table tr:hover td {
+        background: #f8fafc;
+    }
+
+    /* Sticky columns */
+    .target-table th.sticky-col, .sticky-date-th, .sticky-day-th {
+        position: sticky;
+        background: #f8fafc;
+        z-index: 12;
+        border-right: 2px solid #cbd5e1;
+    }
+    .target-table th.sticky-col:first-child, .sticky-date-th {
+        left: 0;
+        min-width: 100px;
+    }
+    .target-table th.sticky-col:nth-child(2), .sticky-day-th {
+        left: 100px;
+        min-width: 90px;
+    }
+
+    .target-table td.sticky-col, .sticky-date-td, .sticky-day-td {
+        position: sticky;
+        background: #ffffff;
+        z-index: 5;
+        border-right: 2px solid #cbd5e1;
+    }
+    .target-table td.sticky-col:first-child, .sticky-date-td {
+        left: 0;
+        font-weight: 600;
+        color: #1e293b;
+    }
+    .target-table td.sticky-col:nth-child(2), .sticky-day-td {
+        left: 100px;
+        color: #64748b;
+    }
+
+    .input-sm {
+        width: 65px;
+        padding: 0.3rem 0.4rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        text-align: center;
+        font-size: 0.82rem;
+        outline: none;
+        transition: border-color 0.15s;
+    }
+    .input-sm:focus {
+        border-color: #0284c7;
+        background: #f0f9ff;
+    }
+    .input-sm:disabled {
+        background-color: #f1f5f9 !important;
+        color: #94a3b8 !important;
+        border-color: #e2e8f0 !important;
+        cursor: not-allowed !important;
+    }
+
+    .input-target-error {
+        border-color: #dc2626 !important;
+        background-color: #fef2f2 !important;
+        color: #b91c1c !important;
+    }
+
+    /* Bottom Action Bar */
+    .bottom-action-bar {
+        background: #ffffff;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 8px;
+        padding: 0.85rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-top: 1.25rem;
+    }
+    .btn-emergency-stop {
+        background-color: #dc2626 !important;
+        border-color: #dc2626 !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);
+    }
+    .btn-emergency-stop:hover {
+        background-color: #b91c1c !important;
+        border-color: #b91c1c !important;
+    }
+
+    /* Date-Level Selection & Table Status Styles */
+    .target-table tbody tr {
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+    .target-table tr.row-selected td {
+        background-color: #f0f9ff !important;
+    }
+    .target-table tr.row-selected td.sticky-date-td {
+        border-left: 3px solid #0284c7 !important;
+    }
+    .badge-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.22rem 0.6rem;
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        line-height: 1.2;
+    }
+    .badge-status-completed {
+        background-color: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+    .badge-status-running {
+        background-color: #eff6ff;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+    }
+    .badge-status-ready {
+        background-color: #f0fdf4;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+    }
+    .badge-status-pending {
+        background-color: #f8fafc;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+    }
+    .badge-status-stopped {
+        background-color: #fffbeb;
+        color: #b45309;
+        border: 1px solid #fde68a;
+    }
+    .badge-status-failed {
+        background-color: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+    }
+
+    .btn-table-action {
+        padding: 0.25rem 0.55rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 4px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        transition: all 0.15s ease-in-out;
+        white-space: nowrap;
+    }
+    .btn-action-trigger {
+        background-color: #16a34a;
+        color: #ffffff;
+    }
+    .btn-action-trigger:hover:not(:disabled) {
+        background-color: #15803d;
+    }
+    .btn-action-stop {
+        background-color: #dc2626;
+        color: #ffffff;
+    }
+    .btn-action-stop:hover {
+        background-color: #b91c1c;
+    }
+    .btn-action-view {
+        background-color: #f1f5f9;
+        color: #334155;
+        border-color: #cbd5e1;
+    }
+    .btn-action-view:hover {
+        background-color: #e2e8f0;
+    }
+    .btn-action-retry {
+        background-color: #f59e0b;
+        color: #ffffff;
+    }
+    .btn-action-retry:hover:not(:disabled) {
+        background-color: #d97706;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="atc-wrapper">
+
+    <!-- Page Header & Breadcrumbs -->
+    <div class="page-header">
+        <div>
+            <div class="text-xs text-slate-500 mb-1 flex items-center gap-1.5 font-medium">
+                <span>Home</span> <i class="bi bi-chevron-right text-[10px]"></i>
+                <span>Auto Trigger</span> <i class="bi bi-chevron-right text-[10px]"></i>
+                <span class="text-slate-900 font-semibold">ATC</span>
+            </div>
+            <h1 class="page-title">ATC — AUTO TRIGGER CONTROL</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-800 text-xs font-semibold rounded-md border border-green-200 shadow-sm">
+                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                System Date: {{ today_display }}
+            </span>
+            <a href="{% url 'lab:auto_trigger_atc_status' %}" class="btn btn-secondary text-xs font-semibold">
+                <i class="bi bi-activity me-1"></i> ATC Live Status
+            </a>
+            <a href="{% url 'lab:auto_trigger_atc_settings' %}" class="btn btn-secondary text-xs font-semibold">
+                <i class="bi bi-sliders me-1"></i> ATC Settings
+            </a>
+        </div>
+    </div>
+
+    <!-- Active Job Notification Banner -->
+    {% if active_job and active_job.status in 'STARTING,RUNNING,STOP_REQUESTED' %}
+    <div class="p-3 mb-3 bg-sky-50 border border-sky-200 text-sky-900 rounded-md text-xs flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-2">
+            <span class="inline-block w-3 h-3 border-2 border-sky-600 border-t-transparent rounded-full animate-spin"></span>
+            <span>ATC Job <strong>#{{ active_job.job_id }}</strong> is currently <strong>{{ active_job.status }}</strong> ({{ active_job.created_count }}/{{ active_job.target_total }} completed).</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{% url 'lab:auto_trigger_atc_status' %}" class="btn btn-primary text-xs py-1 px-3 font-semibold">View Live Status</a>
+            <button type="button" class="btn btn-emergency-stop text-xs py-1 px-3 font-semibold" onclick="emergencyStopActive({{ active_job.id }})">Emergency Stop</button>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Locked Plan Alert for Normal Users -->
+    {% if is_locked %}
+    <div class="p-2.5 mb-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-md text-xs flex items-center gap-2">
+        <i class="bi bi-lock-fill text-amber-700 text-sm"></i>
+        <span>This plan has been triggered and is locked in read-only mode. Users with <strong>ATC_EDIT</strong> permission may modify target cells.</span>
+    </div>
+    {% endif %}
+
+    <!-- Hidden CSRF and Compatibility Inputs -->
+    <form id="csrfHelper">{% csrf_token %}</form>
+    <input type="hidden" id="review_source_year" value="2024">
+
+    <!-- ================================================================= -->
+    <!-- 1. CONFIGURATION CARD — Responsive 4-Column Layout                -->
+    <!-- ================================================================= -->
+    <div class="config-card">
+        <h2 class="config-card-title">
+            <span>Plan Configuration</span>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                Combined Architecture
+            </span>
+        </h2>
+
+        <!-- Row 1: Department, Source Data Period, OP Registration Date, Automation Signal -->
+        <div class="atc-grid-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div class="form-group">
+                <label class="form-label required">Department</label>
+                <select class="form-control" id="department_select" onchange="onDepartmentSelectChange()">
+                    <option value="" disabled selected>-- Select Department --</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}" data-name="{{ dept.name }}">{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required">Source Data Period</label>
+                <select class="form-control" id="source_data_period">
+                    {% for period in source_data_periods %}
+                    <option value="{{ period }}" {% if period == default_source_data_period %}selected{% endif %}>{{ period }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required">OP Registration Date</label>
+                <div class="date-wrapper">
+                    <input type="text" class="form-control font-semibold" id="op_date_display" value="{{ initial_date_display }}" readonly onclick="toggleDatePopover()" style="cursor: pointer; background: #fff;">
+                    <input type="hidden" id="op_from_date" value="{{ initial_from_date }}">
+                    <input type="hidden" id="op_to_date" value="{{ initial_to_date }}">
+                    <input type="hidden" id="op_date_iso" value="{{ initial_from_date }}">
+                    <i class="bi bi-calendar3 calendar-icon" onclick="toggleDatePopover()"></i>
+
+                    <!-- Quick Date & Custom Range Popover -->
+                    <div class="date-popover" id="dateQuickPopover">
+                        <div class="text-[11px] font-bold text-slate-500 mb-1 px-1">QUICK SELECT</div>
+                        <button type="button" class="date-quick-btn" onclick="setDateOption('current')"><i class="bi bi-calendar-check me-1.5 text-emerald-600"></i> Current Date</button>
+                        <button type="button" class="date-quick-btn" onclick="setDateOption('7days')"><i class="bi bi-calendar-week me-1.5 text-blue-600"></i> Coming 7 Days</button>
+                        <button type="button" class="date-quick-btn" onclick="setDateOption('month')"><i class="bi bi-calendar-month me-1.5 text-indigo-600"></i> Coming Month</button>
+                        <hr class="my-1.5 border-slate-200">
+                        <div class="px-1 py-0.5">
+                            <div class="text-[11px] font-bold text-slate-700 mb-1.5">CUSTOM RANGE</div>
+                            <div class="mb-1.5">
+                                <label class="text-[11px] text-slate-500 block mb-0.5">From Date:</label>
+                                <input type="date" class="form-control h-8 text-xs" id="custom_from_date" value="{{ initial_from_date }}">
+                            </div>
+                            <div class="mb-2">
+                                <label class="text-[11px] text-slate-500 block mb-0.5">To Date:</label>
+                                <input type="date" class="form-control h-8 text-xs" id="custom_to_date" value="{{ initial_to_date }}">
+                            </div>
+                            <button type="button" class="btn btn-primary text-xs py-1 px-2.5 w-full font-semibold" onclick="applyCustomRange()">
+                                Apply Custom Range
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required">Automation Signal</label>
+                <div class="signal-container">
+                    <button type="button" class="btn-signal" data-signal="REVIEW" onclick="setSignal('REVIEW')">
+                        <span class="signal-circle circle-review"></span> Review
+                    </button>
+                    <button type="button" class="btn-signal" data-signal="OP" onclick="setSignal('OP')">
+                        <span class="signal-circle circle-op"></span> OP
+                    </button>
+                    <button type="button" class="btn-signal active" data-signal="ALL" onclick="setSignal('ALL')">
+                        <span class="signal-circle circle-all"></span> All
+                    </button>
+                </div>
+                <input type="hidden" id="operation_signal" value="ALL">
+            </div>
+        </div>
+
+        <!-- Row 2: Male Patients, Female Patients, Child Patients, Total Patients -->
+        <div class="atc-grid-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div class="form-group">
+                <label class="form-label required">Male Patients</label>
+                <input type="number" class="form-control" id="male_count" value="120" min="0" oninput="calculateTargets()">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required">Female Patients</label>
+                <input type="number" class="form-control" id="female_count" value="50" min="0" oninput="calculateTargets()">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required">Child Patients</label>
+                <input type="number" class="form-control" id="child_count" value="30" min="0" oninput="calculateTargets()">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Total Patients</label>
+                <input type="number" class="form-control font-bold" id="total_count" value="200" readonly style="background-color: #f1f5f9; color: #0f172a;">
+            </div>
+        </div>
+
+        <!-- Row 3: OP Daily %, Review %, OP Target, Review Target -->
+        <div class="atc-grid-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div class="form-group">
+                <label class="form-label required">OP Daily %</label>
+                <div class="input-pct-wrapper">
+                    <input type="number" class="form-control font-bold" id="op_daily_pct" value="75" min="0" max="100" oninput="onOpPctChange()">
+                    <span class="pct-symbol">%</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required">Review %</label>
+                <div class="input-pct-wrapper">
+                    <input type="number" class="form-control font-bold" id="review_pct" value="25" min="0" max="100" oninput="onReviewPctChange()">
+                    <span class="pct-symbol">%</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">OP Target</label>
+                <input type="number" class="form-control input-op-target" id="op_target" value="150" readonly>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Review Target</label>
+                <input type="number" class="form-control input-review-target" id="review_target" value="50" readonly>
+            </div>
+        </div>
+
+        <!-- Department Action Bar -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-3">
+            <div class="flex items-center gap-3">
+                <button type="button" class="btn btn-primary" id="btnAddDept" onclick="addOrUpdateDepartment()">
+                    <i class="bi bi-plus-circle me-1"></i> <span id="addDeptBtnText">+ Add Department &amp; Save</span>
+                </button>
+                <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded text-xs">
+                    <span class="text-slate-600 font-semibold">Daily Target:</span>
+                    <input type="number" id="dept_min" class="form-control text-center font-semibold" style="width: 65px; height: 28px; font-size: 0.82rem; padding: 2px;" value="100" min="0" placeholder="MIN" title="Default Daily Minimum">
+                    <span class="text-slate-400 font-bold">/</span>
+                    <input type="number" id="dept_max" class="form-control text-center font-semibold" style="width: 65px; height: 28px; font-size: 0.82rem; padding: 2px;" value="200" min="0" placeholder="MAX" title="Default Daily Maximum">
+                </div>
+            </div>
+            <div id="validationAlert" class="text-xs text-red-600 font-semibold" style="display: none;">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> <span id="validationAlertMsg"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- 2. SELECTED AUTOMATION DATE STATUS BANNER                        -->
+    <!-- ================================================================= -->
+    <div class="bg-white border border-slate-200 rounded-lg p-3 mb-3 flex flex-wrap items-center justify-between gap-3 shadow-sm" id="selectedDateBanner">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold text-lg border border-sky-100">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+            <div>
+                <div class="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Active Selected Automation Date</div>
+                <div class="flex items-center gap-2">
+                    <span id="selectedDateDisplay" class="font-bold text-slate-900 text-sm">--</span>
+                    <span id="selectedDateStatusBadge" class="badge-status badge-status-pending">PENDING</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <div id="selectedDateJobInfo" class="text-xs text-slate-500 font-medium">
+                <span class="text-slate-400">No active job</span>
+            </div>
+            <button type="button" id="btnSelectedDateAction" class="btn btn-sm btn-primary px-3 py-1.5 font-bold text-xs" onclick="triggerSelectedDate()">
+                <i class="bi bi-play-circle-fill me-1"></i> Trigger This Date
+            </button>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- 3. DAILY DEPARTMENT TARGETS TABLE (Dynamic Date Range Plan)       -->
+    <!-- ================================================================= -->
+    <div class="table-container">
+        <div class="table-header-toolbar">
+            <div class="flex items-center gap-2">
+                <h3 class="table-header-title">DAILY DEPARTMENT TARGETS</h3>
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200" id="deptCountBadge">5 Departments</span>
+            </div>
+            <!-- Month / Range Navigator -->
+            <div class="month-nav">
+                <button type="button" onclick="changeMonth(-1)" title="Previous Month">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <span id="currentMonthLabel">{{ current_month_name }}</span>
+                <button type="button" onclick="changeMonth(1)" title="Next Month">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Scrollable Table Container -->
+        <div class="table-scroll">
+            <table class="table target-table daily-target-table" id="dailyTargetsTable">
+                <thead id="tableHead">
+                    <!-- Dynamically Rendered via JS -->
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Dynamically Rendered via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- 3. BOTTOM ACTION BAR (At Very Bottom After Table)                  -->
+    <!-- ================================================================= -->
+    <div class="bottom-action-bar">
+        <div class="flex items-center gap-2">
+            <button type="button" class="btn btn-secondary text-sm font-semibold" onclick="openPreviewModal()">
+                <i class="bi bi-eye me-1"></i> Preview Plan
+            </button>
+            <button type="button" class="btn btn-secondary text-sm font-semibold" onclick="saveDraftConfig()">
+                <i class="bi bi-save me-1"></i> Save Configuration (Draft)
+            </button>
+            <button type="button" class="btn btn-primary text-sm font-bold px-4" id="btnSaveAndTrigger" onclick="triggerAutomation()" style="background: #16a34a; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);">
+                <i class="bi bi-play-circle-fill me-1"></i> <span id="triggerBtnText">Save &amp; Trigger (Min 5 Depts)</span>
+            </button>
+        </div>
+        <div>
+            <button type="button" class="btn btn-emergency-stop text-sm px-4" onclick="triggerEmergencyStop()">
+                <i class="bi bi-stop-circle-fill me-1"></i> Emergency Stop
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<!-- ================================================================= -->
+<!-- PREVIEW MODAL                                                     -->
+<!-- ================================================================= -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 680px; margin: 1.75rem auto;">
+        <div class="modal-content border-0 shadow-lg rounded-lg overflow-hidden bg-white">
+            <div class="flex justify-between items-center bg-slate-50 border-b border-slate-200 px-4 py-3">
+                <h5 class="text-sm font-bold text-slate-900 m-0">ATC Plan Preview &amp; Breakdown</h5>
+                <button type="button" class="text-slate-400 hover:text-slate-700 text-lg font-bold border-0 bg-transparent cursor-pointer" data-bs-dismiss="modal" onclick="closePreviewModal()">&times;</button>
+            </div>
+            <div class="p-4" id="previewModalBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-primary me-2"></div> Calculating preview across departments...
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 bg-slate-50 border-t border-slate-200 px-4 py-2.5">
+                <button type="button" class="btn btn-secondary text-xs font-semibold" onclick="closePreviewModal()">Close</button>
+                <button type="button" class="btn btn-primary text-xs font-bold" id="btnModalTrigger" onclick="confirmTriggerFromModal()" style="background: #16a34a;">
+                    <i class="bi bi-play-circle-fill me-1"></i> Confirm &amp; Trigger
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================= -->
+<!-- JAVASCRIPT STATE MANAGEMENT & CLIENT-SIDE LOGIC                   -->
+<!-- ================================================================= -->
+<script>
+    const csrfToken = document.querySelector('#csrfHelper [name=csrfmiddlewaretoken]').value;
+    const serverTodayStr = "{{ today }}";               // e.g. "2026-09-20"
+    const serverTodayDisplay = "{{ today_display }}";   // e.g. "20-09-2026"
+    const isLockedByUser = {% if is_locked %}true{% else %}false{% endif %};
+    const canEditPlan = {% if can_edit %}true{% else %}false{% endif %};
+    const canTriggerPlan = {% if can_trigger %}true{% else %}false{% endif %};
+
+    // Active Date Range State
+    let currentFromDate = "{{ initial_from_date|default:today }}";
+    let currentToDate = "{{ initial_to_date|default:today }}";
+
+    // Department list loaded from view
+    let planDepartments = {{ initial_plan_departments_json|safe }};
+    let dailyTargets = {{ initial_daily_targets_json|safe }};
+    let dateStatuses = {{ initial_date_statuses_json|safe }};
+    let selectedDate = "{{ today }}";
+    let statusPollTimer = null;
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        calculateTargets();
+        updateDepartmentDropdownState();
+        onDepartmentSelectChange();
+
+        // Ensure selectedDate is valid for current range
+        const datesList = getDatesInRange(currentFromDate, currentToDate);
+        if (!datesList.includes(selectedDate) && datesList.length > 0) {
+            selectedDate = datesList[0];
+        }
+
+        renderTable();
+        updateSelectedDateBanner();
+        updateTriggerButtonState();
+
+        // Start polling if any job is currently RUNNING
+        const hasRunning = Object.values(dateStatuses).some(s => s && s.status === 'RUNNING');
+        if (hasRunning) {
+            startPollingDateStatuses();
+        }
+    });
+
+    // -----------------------------------------------------------------
+    // 1. SIGNAL TOGGLES & DATE RANGE SELECTION
+    // -----------------------------------------------------------------
+    function setSignal(sig) {
+        document.getElementById('operation_signal').value = sig;
+        document.querySelectorAll('.btn-signal').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.signal === sig);
+        });
+        validateDateAgainstSignal();
+    }
+
+    function toggleDatePopover() {
+        const pop = document.getElementById('dateQuickPopover');
+        pop.classList.toggle('show');
+    }
+
+    document.addEventListener('click', (e) => {
+        const pop = document.getElementById('dateQuickPopover');
+        if (!pop) return;
+        if (!e.target.closest('.date-wrapper')) {
+            pop.classList.remove('show');
+        }
+    });
+
+    function formatIsoDate(dateObj) {
+        const y = dateObj.getFullYear();
+        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const d = String(dateObj.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
+    function formatDateDisplay(isoStr) {
+        const parts = isoStr.split('-');
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+
+    function setDateOption(option) {
+        const today = new Date(serverTodayStr + 'T00:00:00');
+        let fromDate = new Date(today);
+        let toDate = new Date(today);
+
+        if (option === 'current') {
+            fromDate = today;
+            toDate = today;
+        } else if (option === '7days') {
+            fromDate = today;
+            toDate.setDate(today.getDate() + 6);
+        } else if (option === 'month') {
+            fromDate = today;
+            // End of current month
+            toDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        }
+
+        const fromIso = formatIsoDate(fromDate);
+        const toIso = formatIsoDate(toDate);
+        setDateRange(fromIso, toIso);
+        document.getElementById('dateQuickPopover').classList.remove('show');
+    }
+
+    function applyCustomRange() {
+        const fromVal = document.getElementById('custom_from_date').value;
+        const toVal = document.getElementById('custom_to_date').value;
+
+        if (!fromVal || !toVal) {
+            alert("Please select both From Date and To Date.");
+            return;
+        }
+
+        if (fromVal > toVal) {
+            alert("From Date cannot be after To Date.");
+            return;
+        }
+
+        const sig = document.getElementById('operation_signal').value;
+        if ((sig === 'OP' || sig === 'ALL') && fromVal < serverTodayStr) {
+            alert("OP automation can only create records for today's application date or future dates. Backdated OP registration is blocked.");
+            return;
+        }
+
+        setDateRange(fromVal, toVal);
+        document.getElementById('dateQuickPopover').classList.remove('show');
+    }
+
+    function setDateRange(fromIso, toIso) {
+        currentFromDate = fromIso;
+        currentToDate = toIso;
+
+        document.getElementById('op_from_date').value = fromIso;
+        document.getElementById('op_to_date').value = toIso;
+        document.getElementById('op_date_iso').value = fromIso;
+        document.getElementById('custom_from_date').value = fromIso;
+        document.getElementById('custom_to_date').value = toIso;
+
+        // Format compact display
+        let displayStr = '';
+        if (fromIso === toIso) {
+            displayStr = formatDateDisplay(fromIso);
+        } else {
+            displayStr = `${formatDateDisplay(fromIso)} → ${formatDateDisplay(toIso)}`;
+        }
+        document.getElementById('op_date_display').value = displayStr;
+
+        validateDateAgainstSignal();
+
+        const datesList = getDatesInRange(currentFromDate, currentToDate);
+        if (!datesList.includes(selectedDate) && datesList.length > 0) {
+            selectedDate = datesList[0];
+        }
+
+        renderTable();
+        updateSelectedDateBanner();
+        updateTriggerButtonState();
+        pollDateStatuses();
+    }
+
+    function validateDateAgainstSignal() {
+        const sig = document.getElementById('operation_signal').value;
+        const alertBox = document.getElementById('validationAlert');
+        const alertMsg = document.getElementById('validationAlertMsg');
+
+        // OP signal strictly blocks backdated dates
+        if ((sig === 'OP' || sig === 'ALL') && currentFromDate < serverTodayStr) {
+            alertBox.style.display = 'block';
+            alertMsg.textContent = "OP automation can only create records for today's application date or future dates. Backdated OP registration is blocked.";
+            return false;
+        }
+
+        alertBox.style.display = 'none';
+        return true;
+    }
+
+    // -----------------------------------------------------------------
+    // 2. PATIENT QUOTA & PERCENTAGE CALCULATIONS
+    // -----------------------------------------------------------------
+    function calculateTargets() {
+        const m = parseInt(document.getElementById('male_count').value) || 0;
+        const f = parseInt(document.getElementById('female_count').value) || 0;
+        const c = parseInt(document.getElementById('child_count').value) || 0;
+        const total = m + f + c;
+        document.getElementById('total_count').value = total;
+
+        const opPct = parseInt(document.getElementById('op_daily_pct').value) || 0;
+        const revPct = parseInt(document.getElementById('review_pct').value) || 0;
+
+        const alertBox = document.getElementById('validationAlert');
+        const alertMsg = document.getElementById('validationAlertMsg');
+
+        if ((opPct + revPct) !== 100) {
+            alertBox.style.display = 'block';
+            alertMsg.textContent = `OP Daily % and Review % must total 100% (currently ${opPct + revPct}%).`;
+            return false;
+        } else {
+            alertBox.style.display = 'none';
+        }
+
+        const opTarget = Math.round(total * (opPct / 100.0));
+        const revTarget = total - opTarget;
+
+        document.getElementById('op_target').value = opTarget;
+        document.getElementById('review_target').value = revTarget;
+        return true;
+    }
+
+    function onOpPctChange() {
+        const opVal = parseInt(document.getElementById('op_daily_pct').value) || 0;
+        document.getElementById('review_pct').value = Math.max(0, 100 - opVal);
+        calculateTargets();
+    }
+
+    function onReviewPctChange() {
+        const revVal = parseInt(document.getElementById('review_pct').value) || 0;
+        document.getElementById('op_daily_pct').value = Math.max(0, 100 - revVal);
+        calculateTargets();
+    }
+
+    // -----------------------------------------------------------------
+    // 3. DEPARTMENT WORKFLOW & DUPLICATE PREVENTION
+    // -----------------------------------------------------------------
+    // -----------------------------------------------------------------
+    // 3. DEPARTMENT WORKFLOW & DUPLICATE PREVENTION
+    // -----------------------------------------------------------------
+    function onDepartmentSelectChange() {
+        const deptSelect = document.getElementById('department_select');
+        if (!deptSelect.value) return;
+        const deptId = parseInt(deptSelect.value);
+        const existing = planDepartments.find(d => d.department_id === deptId && d.is_configured !== false);
+
+        const btnText = document.getElementById('addDeptBtnText');
+        if (existing) {
+            btnText.textContent = "Update Department & Save";
+            if (existing.source_data_period) {
+                document.getElementById('source_data_period').value = existing.source_data_period;
+            }
+            if (existing.signal) {
+                setSignal(existing.signal);
+            }
+            if (existing.male !== undefined) document.getElementById('male_count').value = existing.male;
+            if (existing.female !== undefined) document.getElementById('female_count').value = existing.female;
+            if (existing.child !== undefined) document.getElementById('child_count').value = existing.child;
+            if (existing.op_daily_pct !== undefined) document.getElementById('op_daily_pct').value = existing.op_daily_pct;
+            if (existing.review_pct !== undefined) document.getElementById('review_pct').value = existing.review_pct;
+            if (existing.min !== undefined && document.getElementById('dept_min')) document.getElementById('dept_min').value = existing.min;
+            if (existing.max !== undefined && document.getElementById('dept_max')) document.getElementById('dept_max').value = existing.max;
+            calculateTargets();
+        } else {
+            btnText.textContent = "+ Add Department & Save";
+            const mInp = document.getElementById('male_count');
+            if (mInp.value === "" || mInp.value === "0") mInp.value = 120;
+            const fInp = document.getElementById('female_count');
+            if (fInp.value === "" || fInp.value === "0") fInp.value = 50;
+            const cInp = document.getElementById('child_count');
+            if (cInp.value === "" || cInp.value === "0") cInp.value = 30;
+            if (document.getElementById('dept_min') && !document.getElementById('dept_min').value) document.getElementById('dept_min').value = 100;
+            if (document.getElementById('dept_max') && !document.getElementById('dept_max').value) document.getElementById('dept_max').value = 200;
+            calculateTargets();
+        }
+    }
+
+    function addOrUpdateDepartment() {
+        const deptSelect = document.getElementById('department_select');
+        if (!deptSelect.value) {
+            alert("Please select a department to configure.");
+            return;
+        }
+
+        if (!validateDateAgainstSignal()) return;
+        if (!calculateTargets()) return;
+
+        const deptId = parseInt(deptSelect.value);
+        const deptName = deptSelect.options[deptSelect.selectedIndex].getAttribute('data-name') || deptSelect.options[deptSelect.selectedIndex].textContent.replace(/\s*—\s*\(Already Added\)/, '').trim();
+        const period = document.getElementById('source_data_period').value;
+        const signal = document.getElementById('operation_signal').value;
+        const m = parseInt(document.getElementById('male_count').value) || 0;
+        const f = parseInt(document.getElementById('female_count').value) || 0;
+        const c = parseInt(document.getElementById('child_count').value) || 0;
+        const total = m + f + c;
+        const opPct = parseInt(document.getElementById('op_daily_pct').value) || 75;
+        const revPct = parseInt(document.getElementById('review_pct').value) || 25;
+        const opTarget = parseInt(document.getElementById('op_target').value) || 0;
+        const revTarget = parseInt(document.getElementById('review_target').value) || 0;
+
+        let deptMin = 100;
+        let deptMax = 200;
+        const minInp = document.getElementById('dept_min');
+        const maxInp = document.getElementById('dept_max');
+        if (minInp && minInp.value !== "") {
+            deptMin = parseInt(minInp.value) || 0;
+        }
+        if (maxInp && maxInp.value !== "") {
+            deptMax = parseInt(maxInp.value) || 0;
+        }
+
+        if (deptMin > deptMax) {
+            alert("Minimum target cannot be greater than maximum target.");
+            return;
+        }
+
+        const deptObj = {
+            department_id: deptId,
+            name: deptName,
+            source_data_period: period,
+            signal: signal,
+            male: m,
+            female: f,
+            child: c,
+            total: total,
+            op_daily_pct: opPct,
+            review_pct: revPct,
+            op_target: opTarget,
+            review_target: revTarget,
+            min: deptMin,
+            max: deptMax,
+            is_configured: true,
+        };
+
+        const existingIdx = planDepartments.findIndex(d => d.department_id === deptId);
+        if (existingIdx >= 0) {
+            planDepartments[existingIdx] = deptObj;
+        } else {
+            planDepartments.push(deptObj);
+        }
+
+        // Populate dailyTargets for this department across the active date range
+        const datesList = getDatesInRange(currentFromDate, currentToDate);
+        datesList.forEach(dateStr => {
+            if (!dailyTargets[dateStr]) dailyTargets[dateStr] = {};
+            const isPast = (dateStr < serverTodayStr);
+            if (isPast) {
+                dailyTargets[dateStr][deptId] = { min: 0, max: 0 };
+            } else {
+                if (dailyTargets[dateStr][deptId] && dailyTargets[dateStr][deptId].is_manual) {
+                    // preserve manual override
+                } else {
+                    dailyTargets[dateStr][deptId] = { min: deptMin, max: deptMax, is_manual: false };
+                }
+            }
+        });
+
+        renderTable();
+        updateTriggerButtonState();
+        saveDraftConfig(true);
+
+        // Reset form for next department (Requirements 10, 11, 12)
+        resetConfigForm();
+    }
+
+    function resetConfigForm() {
+        const deptSelect = document.getElementById('department_select');
+        deptSelect.value = "";
+        document.getElementById('male_count').value = "";
+        document.getElementById('female_count').value = "";
+        document.getElementById('child_count').value = "";
+        document.getElementById('total_count').value = 0;
+        document.getElementById('op_daily_pct').value = 75;
+        document.getElementById('review_pct').value = 25;
+        document.getElementById('op_target').value = 0;
+        document.getElementById('review_target').value = 0;
+        if (document.getElementById('dept_min')) document.getElementById('dept_min').value = 100;
+        if (document.getElementById('dept_max')) document.getElementById('dept_max').value = 200;
+        document.getElementById('addDeptBtnText').textContent = "+ Add Department & Save";
+        updateDepartmentDropdownState();
+    }
+
+    function updateDepartmentDropdownState() {
+        const select = document.getElementById('department_select');
+        if (!select) return;
+        const configuredDeptIds = planDepartments.filter(d => d.is_configured !== false).map(d => d.department_id);
+
+        Array.from(select.options).forEach(opt => {
+            if (!opt.value) return;
+            const id = parseInt(opt.value);
+            let origName = opt.getAttribute('data-name');
+            if (!origName) {
+                origName = opt.textContent.replace(/\s*—\s*\(Already Added\)/, '').trim();
+                opt.setAttribute('data-name', origName);
+            }
+            if (configuredDeptIds.includes(id)) {
+                opt.disabled = true;
+                opt.textContent = `${origName} — (Already Added)`;
+            } else {
+                opt.disabled = false;
+                opt.textContent = origName;
+            }
+        });
+    }
+
+    function editDepartment(deptId) {
+        if (isLockedByUser && !canEditPlan) {
+            alert("Plan is locked. You cannot edit departments.");
+            return;
+        }
+        const dept = planDepartments.find(d => d.department_id === deptId);
+        if (!dept) return;
+
+        const select = document.getElementById('department_select');
+        const opt = select.querySelector(`option[value="${deptId}"]`);
+        if (opt) {
+            opt.disabled = false;
+            select.value = deptId;
+        }
+
+        document.getElementById('source_data_period').value = dept.source_data_period || '2024 – 2025';
+        if (dept.signal) setSignal(dept.signal);
+        document.getElementById('male_count').value = (dept.male !== undefined && dept.male !== null) ? dept.male : "";
+        document.getElementById('female_count').value = (dept.female !== undefined && dept.female !== null) ? dept.female : "";
+        document.getElementById('child_count').value = (dept.child !== undefined && dept.child !== null) ? dept.child : "";
+        document.getElementById('op_daily_pct').value = dept.op_daily_pct !== undefined ? dept.op_daily_pct : 75;
+        document.getElementById('review_pct').value = dept.review_pct !== undefined ? dept.review_pct : 25;
+        if (document.getElementById('dept_min')) document.getElementById('dept_min').value = dept.min !== undefined ? dept.min : 100;
+        if (document.getElementById('dept_max')) document.getElementById('dept_max').value = dept.max !== undefined ? dept.max : 200;
+        calculateTargets();
+
+        document.getElementById('addDeptBtnText').textContent = "Update Department & Save";
+        document.querySelector('.config-card').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function removeDepartment(deptId) {
+        if (isLockedByUser && !canEditPlan) {
+            alert("Plan is locked. You cannot remove departments.");
+            return;
+        }
+        planDepartments = planDepartments.filter(d => d.department_id !== deptId);
+        Object.keys(dailyTargets).forEach(dateStr => {
+            if (dailyTargets[dateStr]) {
+                delete dailyTargets[dateStr][deptId];
+                delete dailyTargets[dateStr][String(deptId)];
+            }
+        });
+        renderTable();
+        updateDepartmentDropdownState();
+        updateTriggerButtonState();
+        onDepartmentSelectChange();
+        saveDraftConfig(true);
+    }
+
+    function renderStatusBadge(statusKey, info) {
+        info = info || {};
+        switch (statusKey) {
+            case 'COMPLETED':
+                return `<span class="badge-status badge-status-completed" title="Created ${info.created_count || 0}/${info.target_total || 0}"><i class="bi bi-check-circle-fill"></i> Completed</span>`;
+            case 'RUNNING':
+                return `<span class="badge-status badge-status-running"><span class="spinner-border spinner-border-sm" style="width: 8px; height: 8px; border-width: 1.5px;"></span> Running</span>`;
+            case 'STOPPED':
+                return `<span class="badge-status badge-status-stopped" title="${info.stop_reason || ''}"><i class="bi bi-pause-circle-fill"></i> Stopped</span>`;
+            case 'FAILED':
+                return `<span class="badge-status badge-status-failed" title="${info.error_summary || ''}"><i class="bi bi-exclamation-circle-fill"></i> Failed</span>`;
+            case 'READY':
+                return `<span class="badge-status badge-status-ready"><i class="bi bi-circle-fill text-[7px]"></i> Ready</span>`;
+            default:
+                return `<span class="badge-status badge-status-pending"><i class="bi bi-hourglass-split"></i> Pending</span>`;
+        }
+    }
+
+    function renderActionButtons(dateStr, statusKey, info) {
+        info = info || {};
+        const isPast = (dateStr < serverTodayStr);
+        const configuredDepts = planDepartments.filter(d => d.is_configured !== false);
+        const hasMinDepts = configuredDepts.length >= 5;
+
+        if (statusKey === 'RUNNING') {
+            return `<button type="button" class="btn-table-action btn-action-stop" onclick="event.stopPropagation(); emergencyStopDate('${dateStr}')"><i class="bi bi-stop-circle-fill"></i> Stop</button>`;
+        } else if (statusKey === 'COMPLETED') {
+            return `<button type="button" class="btn-table-action btn-action-view" onclick="event.stopPropagation(); viewJobDetails('${dateStr}')"><i class="bi bi-eye"></i> View</button>`;
+        } else if (statusKey === 'STOPPED') {
+            return `<button type="button" class="btn-table-action btn-action-trigger" onclick="event.stopPropagation(); triggerDate('${dateStr}')" ${!hasMinDepts ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}><i class="bi bi-arrow-repeat"></i> Restart</button>`;
+        } else if (statusKey === 'FAILED') {
+            return `<button type="button" class="btn-table-action btn-action-retry" onclick="event.stopPropagation(); triggerDate('${dateStr}')" ${!hasMinDepts ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}><i class="bi bi-arrow-repeat"></i> Retry</button>`;
+        } else {
+            // READY or PENDING
+            const canTrig = hasMinDepts && (!isPast || document.getElementById('operation_signal').value === 'REVIEW');
+            return `<button type="button" class="btn-table-action btn-action-trigger" onclick="event.stopPropagation(); triggerDate('${dateStr}')" ${!canTrig ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}><i class="bi bi-play-fill"></i> Trigger</button>`;
+        }
+    }
+
+    function selectDate(dateStr) {
+        selectedDate = dateStr;
+        document.querySelectorAll('#tableBody tr').forEach(tr => {
+            const d = tr.getAttribute('data-date');
+            const isMatch = (d === dateStr);
+            tr.classList.toggle('row-selected', isMatch);
+            const checkIcon = tr.querySelector('.sticky-date-td .bi-check2');
+            if (isMatch) {
+                if (!checkIcon) {
+                    const sp = tr.querySelector('.sticky-date-td span');
+                    if (sp) sp.insertAdjacentHTML('afterend', '<i class="bi bi-check2 text-sky-600 font-bold ms-1"></i>');
+                }
+            } else {
+                if (checkIcon) checkIcon.remove();
+            }
+        });
+
+        updateSelectedDateBanner();
+        updateTriggerButtonState();
+    }
+
+    function updateSelectedDateBanner() {
+        const disp = document.getElementById('selectedDateDisplay');
+        const badge = document.getElementById('selectedDateStatusBadge');
+        const jobInfo = document.getElementById('selectedDateJobInfo');
+        const actBtn = document.getElementById('btnSelectedDateAction');
+
+        if (!disp) return;
+
+        disp.textContent = formatDateDisplay(selectedDate);
+        const dateInfo = dateStatuses[selectedDate] || { status: 'PENDING' };
+        const status = dateInfo.status || 'PENDING';
+
+        badge.className = `badge-status badge-status-${status.toLowerCase()}`;
+        badge.innerHTML = status === 'RUNNING'
+            ? `<span class="spinner-border spinner-border-sm" style="width: 8px; height: 8px; border-width: 1.5px;"></span> RUNNING`
+            : status;
+
+        if (dateInfo.job_id) {
+            let txt = `Job #${dateInfo.job_id}`;
+            if (dateInfo.target_total > 0) {
+                txt += ` (${dateInfo.created_count || 0}/${dateInfo.target_total})`;
+            }
+            jobInfo.innerHTML = `<span class="inline-flex items-center gap-1"><i class="bi bi-gear-wide-connected text-sky-600"></i> ${txt}</span>`;
+        } else {
+            jobInfo.innerHTML = `<span class="text-slate-400">No active job</span>`;
+        }
+
+        const configuredDepts = planDepartments.filter(d => d.is_configured !== false);
+        const hasMinDepts = configuredDepts.length >= 5;
+
+        if (status === 'RUNNING') {
+            actBtn.className = 'btn btn-sm btn-emergency-stop px-3 py-1.5 font-bold text-xs';
+            actBtn.style.background = '#dc2626';
+            actBtn.innerHTML = '<i class="bi bi-stop-circle-fill me-1"></i> Emergency Stop';
+            actBtn.disabled = false;
+            actBtn.onclick = () => emergencyStopDate(selectedDate);
+        } else if (status === 'COMPLETED') {
+            actBtn.className = 'btn btn-sm btn-secondary px-3 py-1.5 font-bold text-xs';
+            actBtn.style.background = '';
+            actBtn.innerHTML = '<i class="bi bi-eye me-1"></i> View Live Details';
+            actBtn.disabled = false;
+            actBtn.onclick = () => viewJobDetails(selectedDate);
+        } else if (status === 'FAILED') {
+            actBtn.className = 'btn btn-sm btn-warning px-3 py-1.5 font-bold text-xs text-white';
+            actBtn.style.background = '#f59e0b';
+            actBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Retry Date';
+            actBtn.disabled = !hasMinDepts;
+            actBtn.onclick = () => triggerDate(selectedDate);
+        } else if (status === 'STOPPED') {
+            actBtn.className = 'btn btn-sm btn-primary px-3 py-1.5 font-bold text-xs';
+            actBtn.style.background = '#0284c7';
+            actBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Restart Date';
+            actBtn.disabled = !hasMinDepts;
+            actBtn.onclick = () => triggerDate(selectedDate);
+        } else {
+            actBtn.className = 'btn btn-sm btn-primary px-3 py-1.5 font-bold text-xs';
+            actBtn.style.background = '#16a34a';
+            actBtn.innerHTML = '<i class="bi bi-play-circle-fill me-1"></i> Trigger This Date';
+            actBtn.disabled = !hasMinDepts;
+            actBtn.onclick = () => triggerDate(selectedDate);
+        }
+    }
+
+    function triggerSelectedDate() {
+        triggerDate(selectedDate);
+    }
+
+    function updateRowStatus(dateStr) {
+        const tr = document.querySelector(`#tableBody tr[data-date="${dateStr}"]`);
+        if (!tr) return;
+        const dateInfo = dateStatuses[dateStr] || { status: 'PENDING' };
+        const statusKey = dateInfo.status || 'PENDING';
+
+        const cells = tr.querySelectorAll('td');
+        if (cells.length >= 2) {
+            const statusTd = cells[cells.length - 2];
+            const actionTd = cells[cells.length - 1];
+            statusTd.innerHTML = renderStatusBadge(statusKey, dateInfo);
+            actionTd.innerHTML = renderActionButtons(dateStr, statusKey, dateInfo);
+        }
+    }
+
+    function updateTriggerButtonState() {
+        const configuredDepts = planDepartments.filter(d => d.is_configured !== false);
+        const count = configuredDepts.length;
+        const badge = document.getElementById('deptCountBadge');
+        if (badge) badge.textContent = `${count} Department${count === 1 ? '' : 's'}`;
+
+        const triggerBtn = document.getElementById('btnSaveAndTrigger');
+        const triggerBtnText = document.getElementById('triggerBtnText');
+        if (!triggerBtn || !triggerBtnText) return;
+
+        if (count < 5) {
+            triggerBtn.disabled = true;
+            triggerBtn.style.opacity = '0.5';
+            triggerBtn.style.cursor = 'not-allowed';
+            triggerBtnText.textContent = `Save & Trigger (Min 5 Depts — currently ${count}/5)`;
+            return;
+        }
+
+        const dateInfo = dateStatuses[selectedDate] || { status: 'READY' };
+        const status = dateInfo.status || 'READY';
+        const dispDate = formatDateDisplay(selectedDate);
+
+        if (status === 'RUNNING') {
+            triggerBtn.disabled = true;
+            triggerBtn.style.opacity = '0.7';
+            triggerBtn.style.cursor = 'not-allowed';
+            triggerBtnText.textContent = `Automation is Running (${dispDate})`;
+        } else if (status === 'COMPLETED') {
+            triggerBtn.disabled = true;
+            triggerBtn.style.opacity = '0.7';
+            triggerBtn.style.cursor = 'not-allowed';
+            triggerBtnText.textContent = `Automation Completed (${dispDate})`;
+        } else if (status === 'STOPPED') {
+            triggerBtn.disabled = false;
+            triggerBtn.style.opacity = '1';
+            triggerBtn.style.cursor = 'pointer';
+            triggerBtnText.textContent = `Restart Automation (${dispDate})`;
+        } else if (status === 'FAILED') {
+            triggerBtn.disabled = false;
+            triggerBtn.style.opacity = '1';
+            triggerBtn.style.cursor = 'pointer';
+            triggerBtnText.textContent = `Retry Automation (${dispDate})`;
+        } else {
+            triggerBtn.disabled = false;
+            triggerBtn.style.opacity = '1';
+            triggerBtn.style.cursor = 'pointer';
+            triggerBtnText.textContent = `Trigger Automation (${dispDate})`;
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // 4. DYNAMIC DAILY DEPARTMENT TARGETS TABLE RENDERING & EDITING
+    // -----------------------------------------------------------------
+    function changeMonth(delta) {
+        let d = new Date(currentFromDate + 'T00:00:00');
+        d.setMonth(d.getMonth() + delta);
+        const y = d.getFullYear();
+        const m = d.getMonth() + 1;
+        const daysInM = new Date(y, m, 0).getDate();
+        const fromStr = `${y}-${String(m).padStart(2, '0')}-01`;
+        const toStr = `${y}-${String(m).padStart(2, '0')}-${String(daysInM).padStart(2, '0')}`;
+        setDateRange(fromStr, toStr);
+    }
+
+    function getDatesInRange(startStr, endStr) {
+        const dates = [];
+        let cur = new Date(startStr + 'T00:00:00');
+        const end = new Date(endStr + 'T00:00:00');
+        while (cur <= end) {
+            dates.push(formatIsoDate(cur));
+            cur.setDate(cur.getDate() + 1);
+        }
+        return dates;
+    }
+
+    function renderTable() {
+        // Update header month label
+        const dObj = new Date(currentFromDate + 'T00:00:00');
+        document.getElementById('currentMonthLabel').textContent = `${monthNames[dObj.getMonth()]} ${dObj.getFullYear()}`;
+
+        const thead = document.getElementById('tableHead');
+        const tbody = document.getElementById('tableBody');
+
+        // Header Row 1: DATE, DAY, and Department Names (colSpan 2), Status, Action
+        let headerRow1 = `<tr>
+            <th rowspan="2" class="sticky-col sticky-date-th">Date</th>
+            <th rowspan="2" class="sticky-col sticky-day-th">Day</th>`;
+        
+        planDepartments.forEach(dept => {
+            const isConfigured = (dept.is_configured !== false);
+            headerRow1 += `
+                <th colspan="2" class="dept-header">
+                    <div class="flex items-center justify-center gap-1.5">
+                        <span class="${isConfigured ? 'font-bold text-slate-900' : 'text-slate-400 font-normal'}">${dept.name}</span>
+                        ${(!isLockedByUser || canEditPlan) ? `
+                            <button type="button" class="text-sky-600 hover:text-sky-800 border-0 bg-transparent cursor-pointer p-0 text-xs" onclick="editDepartment(${dept.department_id})" title="Edit ${dept.name} configuration">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            <button type="button" class="text-red-500 hover:text-red-700 font-bold border-0 bg-transparent cursor-pointer p-0 text-xs" onclick="removeDepartment(${dept.department_id})" title="Remove department">&times;</button>
+                        ` : ''}
+                    </div>
+                </th>`;
+        });
+        headerRow1 += `
+            <th rowspan="2" class="text-center" style="min-width: 110px;">Status</th>
+            <th rowspan="2" class="text-center" style="min-width: 130px;">Action</th>
+        </tr>`;
+
+        // Header Row 2: MIN, MAX for each department
+        let headerRow2 = `<tr>`;
+        planDepartments.forEach(() => {
+            headerRow2 += `
+                <th class="dept-header text-xs">MIN</th>
+                <th class="text-xs">MAX</th>`;
+        });
+        headerRow2 += `</tr>`;
+
+        thead.innerHTML = headerRow1 + headerRow2;
+
+        // Generate rows ONLY for selected date range
+        const datesList = getDatesInRange(currentFromDate, currentToDate);
+        let rowsHtml = '';
+
+        if (datesList.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="${4 + planDepartments.length * 2}" class="py-8 text-center text-slate-400">No dates in selected range.</td></tr>`;
+            return;
+        }
+
+        datesList.forEach(dateStr => {
+            const dateObj = new Date(dateStr + 'T00:00:00');
+            const displayDate = formatDateDisplay(dateStr);
+            const dayName = dayNames[dateObj.getDay()];
+            const isPast = (dateStr < serverTodayStr);
+            const isSelected = (dateStr === selectedDate);
+            const dateInfo = dateStatuses[dateStr] || { status: isPast ? 'PENDING' : 'READY' };
+            const statusKey = dateInfo.status || 'PENDING';
+
+            rowsHtml += `<tr class="${isSelected ? 'row-selected' : ''}" onclick="selectDate('${dateStr}')" data-date="${dateStr}">
+                <td class="sticky-col sticky-date-td ${isPast ? 'bg-slate-50 text-slate-400' : ''}">
+                    <div class="flex items-center justify-between">
+                        <span>${displayDate}</span>
+                        ${isSelected ? '<i class="bi bi-check2 text-sky-600 font-bold ms-1"></i>' : ''}
+                    </div>
+                </td>
+                <td class="sticky-col sticky-day-td ${isPast ? 'bg-slate-50 text-slate-400' : ''}">${dayName}</td>`;
+
+            planDepartments.forEach(dept => {
+                let cellMin = 0;
+                let cellMax = 0;
+                const isConfigured = (dept.is_configured !== false);
+
+                if (isPast) {
+                    cellMin = 0;
+                    cellMax = 0;
+                } else if (!isConfigured) {
+                    cellMin = 0;
+                    cellMax = 0;
+                } else {
+                    const deptTarget = dailyTargets[dateStr] ? (dailyTargets[dateStr][dept.department_id] || dailyTargets[dateStr][String(dept.department_id)]) : null;
+                    if (deptTarget) {
+                        cellMin = (deptTarget.min !== undefined) ? deptTarget.min : (dept.min !== undefined ? dept.min : 100);
+                        cellMax = (deptTarget.max !== undefined) ? deptTarget.max : (dept.max !== undefined ? dept.max : 200);
+                    } else {
+                        cellMin = dept.min !== undefined ? dept.min : 100;
+                        cellMax = dept.max !== undefined ? dept.max : 200;
+                    }
+                }
+
+                const isDisabled = (isPast || !isConfigured || (isLockedByUser && !canEditPlan)) ? 'disabled' : '';
+                const isInvalid = (!isPast && isConfigured && cellMin > cellMax);
+
+                rowsHtml += `
+                    <td class="${isPast || !isConfigured ? 'bg-slate-50' : ''}">
+                        <input type="number" class="input-sm ${isInvalid ? 'input-target-error' : ''}" min="0" value="${cellMin}"
+                            data-date="${dateStr}" data-dept="${dept.department_id}" data-type="min"
+                            onchange="onCellChange(this)" onclick="event.stopPropagation()" ${isDisabled}>
+                    </td>
+                    <td class="${isPast || !isConfigured ? 'bg-slate-50' : ''}">
+                        <input type="number" class="input-sm ${isInvalid ? 'input-target-error' : ''}" min="0" value="${cellMax}"
+                            data-date="${dateStr}" data-dept="${dept.department_id}" data-type="max"
+                            onchange="onCellChange(this)" onclick="event.stopPropagation()" ${isDisabled}>
+                    </td>`;
+            });
+
+            // Status Badge Column & Action Column
+            rowsHtml += `
+                <td>${renderStatusBadge(statusKey, dateInfo)}</td>
+                <td>${renderActionButtons(dateStr, statusKey, dateInfo)}</td>
+            </tr>`;
+        });
+
+        tbody.innerHTML = rowsHtml;
+        validateMinMax();
+    }
+
+    function onCellChange(input) {
+        const dateStr = input.dataset.date;
+        const deptId = input.dataset.dept;
+        const type = input.dataset.type;
+        const val = parseInt(input.value) || 0;
+
+        if (!dailyTargets[dateStr]) dailyTargets[dateStr] = {};
+        if (!dailyTargets[dateStr][deptId]) {
+            const dept = planDepartments.find(d => String(d.department_id) === String(deptId));
+            dailyTargets[dateStr][deptId] = {
+                min: dept && dept.min !== undefined ? dept.min : 100,
+                max: dept && dept.max !== undefined ? dept.max : 200,
+            };
+        }
+        dailyTargets[dateStr][deptId][type] = val;
+        dailyTargets[dateStr][deptId].is_manual = true;
+
+        validateMinMax();
+    }
+
+    function validateMinMax() {
+        let hasError = false;
+        const alertBox = document.getElementById('validationAlert');
+        const alertMsg = document.getElementById('validationAlertMsg');
+
+        document.querySelectorAll('.input-sm').forEach(inp => {
+            if (inp.disabled) return;
+            const dateStr = inp.dataset.date;
+            const deptId = inp.dataset.dept;
+            const type = inp.dataset.type;
+            if (type === 'min') {
+                const minVal = parseInt(inp.value) || 0;
+                const maxInput = document.querySelector(`.input-sm[data-date="${dateStr}"][data-dept="${deptId}"][data-type="max"]`);
+                const maxVal = maxInput ? (parseInt(maxInput.value) || 0) : 0;
+                if (minVal > maxVal) {
+                    hasError = true;
+                    inp.classList.add('input-target-error');
+                    if (maxInput) maxInput.classList.add('input-target-error');
+                } else {
+                    inp.classList.remove('input-target-error');
+                    if (maxInput) maxInput.classList.remove('input-target-error');
+                }
+            }
+        });
+
+        if (hasError) {
+            alertBox.style.display = 'block';
+            alertMsg.textContent = "Minimum target cannot be greater than maximum target.";
+            document.getElementById('btnSaveAndTrigger').disabled = true;
+            return false;
+        } else {
+            if (calculateTargets() && validateDateAgainstSignal()) {
+                alertBox.style.display = 'none';
+            }
+            updateTriggerButtonState();
+            return true;
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // 5. PREVIEW, DRAFT SAVE, TRIGGER & EMERGENCY STOP
+    // -----------------------------------------------------------------
+    function getPayloadData() {
+        const deptSelect = document.getElementById('department_select');
+        const configuredDepts = planDepartments.filter(d => d.is_configured !== false);
+
+        // Ensure dailyTargets has entries for all configured departments across current date range
+        const datesList = getDatesInRange(currentFromDate, currentToDate);
+        datesList.forEach(dateStr => {
+            if (!dailyTargets[dateStr]) dailyTargets[dateStr] = {};
+            const isPast = (dateStr < serverTodayStr);
+            configuredDepts.forEach(dept => {
+                if (isPast) {
+                    dailyTargets[dateStr][dept.department_id] = { min: 0, max: 0 };
+                } else if (!dailyTargets[dateStr][dept.department_id]) {
+                    dailyTargets[dateStr][dept.department_id] = {
+                        min: (dept.min !== undefined ? dept.min : 100),
+                        max: (dept.max !== undefined ? dept.max : 200),
+                        is_manual: false
+                    };
+                }
+            });
+        });
+
+        let mVal = document.getElementById('male_count').value;
+        let fVal = document.getElementById('female_count').value;
+        let cVal = document.getElementById('child_count').value;
+        let opPct = document.getElementById('op_daily_pct').value;
+        let revPct = document.getElementById('review_pct').value;
+
+        // If form is reset, aggregate from configured departments
+        if ((!mVal && !fVal && !cVal) && configuredDepts.length > 0) {
+            mVal = configuredDepts.reduce((sum, d) => sum + (parseInt(d.male) || 0), 0);
+            fVal = configuredDepts.reduce((sum, d) => sum + (parseInt(d.female) || 0), 0);
+            cVal = configuredDepts.reduce((sum, d) => sum + (parseInt(d.child) || 0), 0);
+            opPct = configuredDepts[0].op_daily_pct || 75;
+            revPct = configuredDepts[0].review_pct || 25;
+        }
+
+        return {
+            csrfmiddlewaretoken: csrfToken,
+            department_id: (deptSelect && deptSelect.value) ? deptSelect.value : (configuredDepts.length > 0 ? configuredDepts[0].department_id : null),
+            source_data_period: document.getElementById('source_data_period').value,
+            operation_signal: document.getElementById('operation_signal').value,
+            from_date: currentFromDate,
+            to_date: currentToDate,
+            op_date: currentFromDate,
+            male_count: mVal,
+            female_count: fVal,
+            child_count: cVal,
+            op_daily_pct: opPct,
+            review_pct: revPct,
+            plan_departments: planDepartments,
+            daily_targets: dailyTargets,
+        };
+    }
+
+    function openPreviewModal() {
+        if (!validateMinMax()) return;
+        const configuredDepts = planDepartments.filter(d => d.is_configured !== false);
+        if (configuredDepts.length === 0 && !calculateTargets()) return;
+        const modalEl = document.getElementById('previewModal');
+        modalEl.style.display = 'block';
+        modalEl.classList.add('show');
+        const body = document.getElementById('previewModalBody');
+        body.innerHTML = '<div class="text-center py-4 text-xs"><div class="spinner-border spinner-border-sm text-primary me-2"></div> Calculating preview across departments...</div>';
+
+        fetch('/lab/api/atc/preview/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(getPayloadData())
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.status === 'success') {
+                const p = res.preview;
+                let deptListHtml = '';
+                (configuredDepts.length > 0 ? configuredDepts : planDepartments).forEach(d => {
+                    deptListHtml += `<span class="inline-block bg-slate-100 text-slate-800 border border-slate-200 text-xs px-2 py-1 rounded me-1 mb-1 font-medium">${d.name}: ${d.total} (${d.op_daily_pct}% OP / ${d.review_pct}% Rev)</span>`;
+                });
+
+                body.innerHTML = `
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <div class="p-3 bg-slate-50 rounded border border-slate-200 text-xs">
+                            <div class="font-bold text-slate-800 mb-2 border-b border-slate-200 pb-1 uppercase tracking-wide">Overall Target Summary</div>
+                            <div class="flex justify-between py-1"><span>Total Patients:</span><strong class="text-slate-900">${p.target_total}</strong></div>
+                            <div class="flex justify-between py-1"><span>Male / Female / Child:</span><span>${p.target_male} / ${p.target_female} / ${p.target_child}</span></div>
+                            <div class="flex justify-between py-1"><span class="text-emerald-700 font-semibold">OP Target:</span><strong class="text-emerald-800">${p.target_op} (${p.op_daily_pct}%)</strong></div>
+                            <div class="flex justify-between py-1"><span class="text-blue-700 font-semibold">Review Target:</span><strong class="text-blue-800">${p.target_review} (${p.review_pct}%)</strong></div>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded border border-slate-200 text-xs">
+                            <div class="font-bold text-slate-800 mb-2 border-b border-slate-200 pb-1 uppercase tracking-wide">Configured Departments (${(configuredDepts.length > 0 ? configuredDepts : planDepartments).length})</div>
+                            <div class="py-1">${deptListHtml}</div>
+                            <div class="mt-2 text-slate-500">Date Range: <strong class="text-slate-700">${formatDateDisplay(currentFromDate)} → ${formatDateDisplay(currentToDate)}</strong></div>
+                            <div class="text-slate-500">Eligible Reviews in DB: <strong class="text-slate-700">${p.eligible_d_patients}</strong></div>
+                        </div>
+                    </div>
+                    <div class="p-2.5 bg-blue-50 border border-blue-200 text-blue-800 text-xs rounded">
+                        <i class="bi bi-info-circle me-1"></i> ${p.notes}
+                    </div>
+                `;
+            } else {
+                body.innerHTML = `<div class="p-2.5 bg-red-50 border border-red-200 text-red-800 text-xs rounded">${res.message || 'Error generating preview.'}</div>`;
+            }
+        })
+        .catch(err => {
+            body.innerHTML = `<div class="p-2.5 bg-red-50 border border-red-200 text-red-800 text-xs rounded">Error: ${err}</div>`;
+        });
+    }
+
+    function closePreviewModal() {
+        const modalEl = document.getElementById('previewModal');
+        modalEl.style.display = 'none';
+        modalEl.classList.remove('show');
+    }
+
+    function confirmTriggerFromModal() {
+        closePreviewModal();
+        triggerAutomation();
+    }
+
+    function saveDraftConfig(silent = false) {
+        if (!validateMinMax()) return;
+        if (!validateDateAgainstSignal()) return;
+        const configuredDepts = planDepartments.filter(d => d.is_configured !== false);
+        if (configuredDepts.length === 0 && !calculateTargets()) return;
+
+        fetch('/lab/api/atc/save-config/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(getPayloadData())
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.status === 'success') {
+                if (!silent) {
+                    alert("ATC configuration saved as draft successfully.");
+                }
+            } else {
+                if (!silent) {
+                    alert("Error saving configuration: " + (res.message || 'Failed to save.'));
+                }
+            }
+        })
+        .catch(err => {
+            if (!silent) alert("Network error while saving: " + err);
+        });
+    }
+
+    function triggerAutomation() {
+        triggerDate(selectedDate);
+    }
+
+    function triggerDate(targetDateStr) {
+        if (!targetDateStr) targetDateStr = selectedDate;
+        selectDate(targetDateStr);
+
+        const configuredDepts = planDepartments.filter(d => d.is_configured !== false);
+        if (configuredDepts.length < 5) {
+            alert(`At least 5 different departments must be configured before triggering automation. Currently configured: ${configuredDepts.length} / 5.`);
+            return;
+        }
+
+        if (!validateMinMax()) return;
+        if (!validateDateAgainstSignal()) return;
+
+        const currentInfo = dateStatuses[targetDateStr];
+        if (currentInfo && currentInfo.status === 'COMPLETED') {
+            alert(`Automation already completed for ${formatDateDisplay(targetDateStr)}.`);
+            return;
+        }
+        if (currentInfo && currentInfo.status === 'RUNNING') {
+            alert(`Automation is currently running for ${formatDateDisplay(targetDateStr)}.`);
+            return;
+        }
+
+        // Optimistically update status to RUNNING in-place without page reload
+        if (!dateStatuses[targetDateStr]) dateStatuses[targetDateStr] = {};
+        const previousStatus = dateStatuses[targetDateStr].status || 'READY';
+        dateStatuses[targetDateStr].status = 'RUNNING';
+        updateRowStatus(targetDateStr);
+        updateSelectedDateBanner();
+        updateTriggerButtonState();
+
+        const payload = {
+            ...getPayloadData(),
+            automation_date: targetDateStr,
+            selected_date: targetDateStr,
+        };
+
+        fetch('/lab/api/atc/trigger/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.status === 'success') {
+                dateStatuses[targetDateStr].job_id = res.job_id;
+                dateStatuses[targetDateStr].job_pk = res.job_pk;
+                dateStatuses[targetDateStr].target_total = res.target_total || 0;
+                dateStatuses[targetDateStr].status = 'RUNNING';
+                updateRowStatus(targetDateStr);
+                updateSelectedDateBanner();
+                updateTriggerButtonState();
+                startPollingDateStatuses();
+            } else {
+                alert("Error triggering automation: " + (res.message || 'Unknown error'));
+                dateStatuses[targetDateStr].status = previousStatus;
+                updateRowStatus(targetDateStr);
+                updateSelectedDateBanner();
+                updateTriggerButtonState();
+            }
+        })
+        .catch(err => {
+            alert("Network error: " + err);
+            dateStatuses[targetDateStr].status = previousStatus;
+            updateRowStatus(targetDateStr);
+            updateSelectedDateBanner();
+            updateTriggerButtonState();
+        });
+    }
+
+    function emergencyStopDate(targetDateStr) {
+        if (!targetDateStr) targetDateStr = selectedDate;
+        const disp = formatDateDisplay(targetDateStr);
+        if (!confirm(`Halt ATC automation for ${disp} immediately? Other dates will remain unaffected.`)) {
+            return;
+        }
+
+        const dateInfo = dateStatuses[targetDateStr];
+        const jobPk = (dateInfo && dateInfo.job_pk) ? dateInfo.job_pk : 0;
+
+        fetch(`/lab/api/atc/stop/${jobPk}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                automation_date: targetDateStr,
+                selected_date: targetDateStr,
+            })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (dateStatuses[targetDateStr]) {
+                dateStatuses[targetDateStr].status = 'STOPPED';
+                dateStatuses[targetDateStr].stop_reason = res.message || 'Emergency Stop clicked by user.';
+            }
+            updateRowStatus(targetDateStr);
+            updateSelectedDateBanner();
+            updateTriggerButtonState();
+            alert(res.message || `Automation for ${disp} stopped.`);
+        })
+        .catch(err => {
+            alert("Error stopping job: " + err);
+        });
+    }
+
+    function triggerEmergencyStop() {
+        const dateInfo = dateStatuses[selectedDate];
+        if (dateInfo && dateInfo.status === 'RUNNING') {
+            emergencyStopDate(selectedDate);
+            return;
+        }
+
+        if (!confirm("Are you sure you want to send an Emergency Stop signal? This will halt active ATC automation immediately.")) {
+            return;
+        }
+
+        fetch('/lab/api/atc/stop/0/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                automation_date: selectedDate,
+                selected_date: selectedDate,
+            })
+        })
+        .then(r => r.json())
+        .then(res => {
+            alert(res.message || "Emergency Stop signal transmitted.");
+            pollDateStatuses();
+        })
+        .catch(err => {
+            alert("Error transmitting Emergency Stop: " + err);
+        });
+    }
+
+    function viewJobDetails(dateStr) {
+        const dateInfo = dateStatuses[dateStr];
+        if (dateInfo && dateInfo.job_pk) {
+            window.location.href = `/lab/auto-trigger/atc/status/?job_id=${dateInfo.job_pk}`;
+        } else {
+            window.location.href = '/lab/auto-trigger/atc/status/';
+        }
+    }
+
+    function startPollingDateStatuses() {
+        if (statusPollTimer) return;
+        statusPollTimer = setInterval(pollDateStatuses, 3000);
+    }
+
+    function pollDateStatuses() {
+        const url = `/lab/api/atc/date-statuses/?from_date=${currentFromDate}&to_date=${currentToDate}`;
+        fetch(url)
+        .then(r => r.json())
+        .then(res => {
+            if (res.status === 'success' && res.date_statuses) {
+                let hasRunning = false;
+                Object.keys(res.date_statuses).forEach(dStr => {
+                    const s = res.date_statuses[dStr];
+                    dateStatuses[dStr] = s;
+                    updateRowStatus(dStr);
+                    if (s.status === 'RUNNING') hasRunning = true;
+                });
+                updateSelectedDateBanner();
+                updateTriggerButtonState();
+
+                if (!hasRunning && statusPollTimer) {
+                    clearInterval(statusPollTimer);
+                    statusPollTimer = null;
+                }
+            }
+        })
+        .catch(() => {
+            // Polling failures silent
+        });
+    }
+
+    function emergencyStopActive(jobId) {
+        if (!confirm("Halt active job #" + jobId + " immediately?")) return;
+        fetch(`/lab/api/atc/stop/${jobId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(r => r.json())
+        .then(res => {
+            alert(res.message || "Job stopped.");
+            pollDateStatuses();
+        })
+        .catch(err => {
+            alert("Error stopping job: " + err);
+        });
+    }
+</script>
+{% endblock %}

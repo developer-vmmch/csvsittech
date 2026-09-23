@@ -1,0 +1,748 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Review & Re-Registration | VMMCerp{% endblock %}
+{% block page_heading %}REVIEW - Re-Registration & Visit History{% endblock %}
+
+{% block content %}
+<style>
+    .patient-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.25rem 1.5rem;
+        align-items: end;
+    }
+    .form-label {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #475569;
+        margin-bottom: 0.35rem;
+        display: block;
+    }
+    .form-control, .form-select {
+        width: 100%;
+        padding: 0.45rem 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        color: #0f172a;
+        background-color: #ffffff;
+        box-sizing: border-box;
+    }
+    .form-control[readonly], .form-select[disabled] {
+        background-color: #f8fafc;
+        color: #475569;
+        cursor: not-allowed;
+    }
+    .btn-go-black {
+        background: #0f172a;
+        color: white;
+        border: none;
+        padding: 0 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        border-radius: 0 6px 6px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .input-group {
+        display: flex;
+        width: 100%;
+    }
+    .input-group .form-control {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        flex: 1;
+    }
+    .input-group .btn {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+    .age-group {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    .age-group input {
+        width: 3.5rem;
+        text-align: center;
+    }
+    .age-group span {
+        font-weight: 700;
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+    .tab-nav {
+        display: flex;
+        gap: 0.25rem;
+        border-bottom: 2px solid #e2e8f0;
+        margin-bottom: 1.5rem;
+        overflow-x: auto;
+        padding-bottom: 0;
+    }
+    .tab-btn {
+        padding: 0.65rem 1.25rem;
+        border: 1px solid transparent;
+        background: #f1f5f9;
+        color: #64748b;
+        font-weight: 700;
+        border-radius: 8px 8px 0 0;
+        cursor: pointer;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        transition: all 0.2s;
+    }
+    .tab-btn.active {
+        background: #0d9488;
+        color: #ffffff;
+        border-color: #0d9488;
+    }
+    .tab-btn:not(.active):hover {
+        background: #e2e8f0;
+        color: #334155;
+    }
+    @media (max-width: 1024px) {
+        .patient-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+        .patient-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="hims-wrapper">
+
+    <!-- Review Patient Top Info Card -->
+    <div class="hims-card" style="margin-bottom: 1.5rem; padding: 1.5rem; background: #ffffff; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="bi bi-clock-history" style="color: #0d9488;"></i> REVIEW - PATIENT RECORD LOG
+            </h3>
+
+            <!-- Quick Search Form -->
+            <form method="get" action="{% url 'patients:review' %}" style="display: flex; align-items: center; gap: 0.5rem; margin: 0;" onsubmit="return validateSearch(this);">
+                <label style="font-size: 0.85rem; font-weight: 700; color: #334155; white-space: nowrap;">Patient ID / IPNO:</label>
+                <input type="text" name="patient_id" id="top_search_input"
+                    value="{% if search_id %}{{ search_id }}{% elif patient %}{{ patient.patient_id }}{% endif %}"
+                    class="form-control" placeholder="e.g. 26148644"
+                    style="width: 200px; padding: 0.4rem 0.75rem; font-weight: 600;">
+                <button type="submit" class="btn btn-primary" style="background: #0d9488; border-color: #0d9488; color: white; padding: 0.4rem 0.9rem; font-size: 0.84rem;">
+                    <i class="bi bi-search"></i> Go
+                </button>
+            </form>
+        </div>
+        
+        <script>
+            function validateSearch(form) {
+                const input = form.querySelector('input[name="patient_id"]');
+                if (!input.value.trim()) {
+                    alert("Please enter a valid Patient ID or IP Number.");
+                    input.focus();
+                    return false;
+                }
+                return true;
+            }
+        </script>
+
+        <!-- Pre-filled Form Grid Displaying Patient Data -->
+        <div class="patient-grid">
+            <!-- Row 1 -->
+            <div>
+                <label class="form-label">Centre:</label>
+                <select class="form-select" disabled>
+                    <option>{% if patient %}{{ patient.get_centre_display }}{% else %}Select{% endif %}</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">IPNO</label>
+                <input type="text" class="form-control" value="{% if last_visit %}{{ last_visit.ipno|default:'' }}{% elif patient %}{{ patient.ipno|default:'' }}{% endif %}" readonly>
+            </div>
+            <div>
+                <label class="form-label">Name:</label>
+                <input type="text" class="form-control" value="{% if patient %}{{ patient.name }}{% endif %}" readonly>
+            </div>
+            <div style="display: flex; align-items: center; padding-bottom: 0.45rem;">
+                <label class="form-label" style="margin-bottom: 0; margin-right: 1rem; color: #334155;">Last Patient Id:</label>
+                <span style="color: #64748b; font-weight: 700;">--</span>
+            </div>
+
+            <!-- Row 2 -->
+            <div>
+                <label class="form-label">Patient Id:</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" value="{% if patient %}{{ patient.patient_id }}{% endif %}" readonly>
+                    <button type="button" class="btn-go-black" onclick="document.getElementById('top_search_input').focus()">Go</button>
+                </div>
+            </div>
+            <div>
+                <label class="form-label">Title:<span class="text-danger">*</span></label>
+                <select class="form-select" disabled>
+                    <option>{% if patient %}{{ patient.get_title_display }}{% else %}Select{% endif %}</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Category:<span class="text-danger">*</span></label>
+                <select class="form-select" disabled>
+                    <option>{% if patient %}{{ patient.get_category_display }}{% else %}Select{% endif %}</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Gender:<span class="text-danger">*</span></label>
+                <select class="form-select" disabled>
+                    <option>{% if patient %}{{ patient.get_gender_display }}{% else %}Select{% endif %}</option>
+                </select>
+            </div>
+
+            <!-- Row 3 -->
+            <div>
+                <label class="form-label">DOB:</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="dd/mm/yyyy" value="{% if patient and patient.dob %}{{ patient.dob|date:'d/m/Y' }}{% endif %}" readonly>
+                    <button type="button" class="btn btn-outline-secondary" style="border: 1px solid #cbd5e1; background: #f8fafc; color: #475569;" disabled>
+                        <i class="bi bi-arrow-repeat"></i>
+                    </button>
+                </div>
+            </div>
+            <div>
+                <label class="form-label">Age:<span class="text-danger">*</span></label>
+                <div class="age-group">
+                    <input type="text" class="form-control" placeholder="" value="{% if patient %}{{ patient.age_years }}{% endif %}" readonly> <span>Y</span>
+                    <input type="text" class="form-control" placeholder="" value="{% if patient %}{{ patient.age_months }}{% endif %}" readonly> <span>M</span>
+                    <input type="text" class="form-control" placeholder="" value="{% if patient %}{{ patient.age_days }}{% endif %}" readonly> <span>D</span>
+                </div>
+            </div>
+            <div>
+                <label class="form-label">Last visit Dt:</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="dd/mm/yyyy / --:--" value="{% if last_visit %}{{ last_visit.visit_date|date:'d/M/Y H:i:s' }}{% elif patient %}{{ patient.created_at|date:'d/M/Y H:i:s' }}{% endif %}" readonly>
+                    <button type="button" class="btn btn-outline-secondary" style="border: 1px solid #cbd5e1; background: #f8fafc; color: #475569;" disabled>
+                        <i class="bi bi-calendar"></i>
+                    </button>
+                </div>
+            </div>
+            <div>
+                <label class="form-label">Visit Through:</label>
+                <select class="form-select" disabled>
+                    <option>{% if last_visit %}{{ last_visit.get_visit_type_display }}{% elif patient %}{{ patient.get_visit_through_display }}{% else %}Select{% endif %}</option>
+                </select>
+            </div>
+
+            <!-- Row 4: Department & IP Department Info -->
+            <div>
+                <label class="form-label">Primary Dept:</label>
+                <input type="text" class="form-control" value="{% if patient %}{{ patient.department_obj.name|default:patient.department }}{% endif %}" readonly style="font-weight: 600;">
+            </div>
+            <div>
+                <label class="form-label" style="color: #0369a1;">Current IP Dept:</label>
+                <input type="text" class="form-control" value="{% if active_ip_admission %}{{ active_ip_admission.department }}{% elif is_admitted_inpatient %}{{ patient.department }}{% else %}--{% endif %}" readonly style="font-weight: 700; color: #0284c7; background: #f0f9ff; border-color: #bae6fd;">
+            </div>
+            <div>
+                <label class="form-label">Assigned Doctor:</label>
+                <input type="text" class="form-control" value="{% if active_ip_admission %}{{ active_ip_admission.unit_doctor }}{% elif patient %}{{ patient.unit_doctor }}{% endif %}" readonly>
+            </div>
+            <div>
+                <label class="form-label">Patient Status:</label>
+                <div style="height: 38px; display: flex; align-items: center;">
+                    {% if is_admitted_inpatient %}
+                    <span class="badge bg-danger" style="font-size: 0.82rem; padding: 6px 10px;">
+                        <i class="bi bi-hospital-fill"></i> Inpatient (IP #{{ patient.ipno }})
+                    </span>
+                    {% else %}
+                    <span class="badge bg-success" style="font-size: 0.82rem; padding: 6px 10px;">
+                        <i class="bi bi-check-circle-fill"></i> Outpatient / Discharged
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if not patient %}
+    <!-- Empty State -->
+    <div style="text-align: center; padding: 4rem 2rem; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 12px; margin-top: 1.5rem; box-shadow: var(--shadow-sm);">
+        <div style="width: 72px; height: 72px; background: #f0fdfa; color: #0d9488; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 2rem; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);">
+            <i class="bi bi-search"></i>
+        </div>
+        <h4 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem;">Search & Retrieve Patient Record</h4>
+        <p style="font-size: 0.95rem; color: #64748b; max-width: 550px; margin: 0 auto; line-height: 1.6;">
+            Enter a <strong>Patient ID</strong> or <strong>IP Number</strong> in the search field above and click <strong>Go</strong> to load their complete medical history, previous visits, and log re-consultations.
+        </p>
+    </div>
+    {% endif %}
+
+    {% if patient %}
+    <!-- Tabbed Navigation Bar -->
+    <div class="tab-nav">
+        <button type="button" class="tab-btn active" onclick="switchTab(event, 'tab-visit-details')" id="defaultTab">Visit Details</button>
+        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-branch-transfer')">
+            <i class="bi bi-arrow-left-right text-primary"></i> Ward Transfer ({{ branch_transfers|length }})
+        </button>
+        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-personal')">Personal Details</button>
+        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-company')">Company Details</button>
+        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-contact')">Contact Address</button>
+        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-office')">Office Address</button>
+        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-insurance')">Insurance Details</button>
+        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-reference')">Reference</button>
+        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-casualty')">Casualty</button>
+        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-allergy')">Allergy</button>
+        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-print')">Print</button>
+    </div>
+
+    <!-- Forms and Tabs Container -->
+    <form method="post" action="{% url 'patients:review' %}" id="review_visit_form">
+        {% csrf_token %}
+        <input type="hidden" name="patient_id_hidden" value="{{ patient.id }}">
+
+        <div style="background: #ffffff; padding: 1.5rem; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0; border-top: none; box-shadow: var(--shadow-sm); margin-bottom: 2rem;">
+            
+            {% if is_admitted_inpatient %}
+            <!-- ALERT: PATIENT IS CURRENTLY ADMITTED AS INPATIENT -->
+            <div style="background: #fff1f2; border: 1.5px solid #f43f5e; border-radius: 8px; padding: 0.85rem 1.25rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+                <i class="bi bi-exclamation-octagon-fill" style="color: #e11d48; font-size: 1.4rem; flex-shrink: 0;"></i>
+                <div>
+                    <div style="font-size: 0.98rem; font-weight: 800; color: #881337;">The patient is already admitted as an inpatient.</div>
+                    <div style="font-size: 0.84rem; font-weight: 500; color: #be123c; margin-top: 2px;">
+                        New OP or IP registrations cannot be made until the patient is discharged.
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- TAB CONTENT: VISIT DETAILS -->
+            <div id="tab-visit-details" class="tab-content" style="display: block;">
+                {% if is_emergency_patient %}
+                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 0.75rem 1.25rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; color: #991b1b; font-weight: 700; font-size: 0.88rem;">
+                        <i class="bi bi-exclamation-triangle-fill" style="color: #dc2626; font-size: 1.1rem;"></i>
+                        <span>EMERGENCY PATIENT RECORD: Review is restricted to Emergency Medicine and In-Patient (IP) admission only.</span>
+                    </div>
+                    <span class="badge" style="background: #dc2626; color: white; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 0.78rem;">
+                        IP REVIEW ONLY
+                    </span>
+                </div>
+                {% endif %}
+
+                <div class="patient-grid" style="grid-template-columns: repeat(4, 1fr); gap: 1.25rem 1rem;">
+                    <div>
+                        <label class="form-label">Department:<span class="text-danger">*</span></label>
+                        {{ visit_form.department_obj }}
+                    </div>
+                    <div>
+                        <label class="form-label">Doctor:<span class="text-danger">*</span></label>
+                        {{ visit_form.unit_obj }}
+                    </div>
+                    <div>
+                        <label class="form-label">Visit Type:</label>
+                        {{ visit_form.visit_type }}
+                    </div>
+                    <div>
+                        <label class="form-label">Ward:</label>
+                        {{ visit_form.ward }}
+                    </div>
+                    <div>
+                        <label class="form-label">Review Date:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="{{ now|date:'d/m/Y' }}" readonly>
+                            <button type="button" class="btn btn-outline-secondary" style="border: 1px solid #cbd5e1; background: #f8fafc; color: #475569;" disabled>
+                                <i class="bi bi-calendar"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">Time:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="{{ now|date:'H:i' }}" readonly>
+                            <button type="button" class="btn btn-outline-secondary" style="border: 1px solid #cbd5e1; background: #f8fafc; color: #475569;" disabled>
+                                <i class="bi bi-clock"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">Reg Fees:</label>
+                        {{ visit_form.reg_fees }}
+                    </div>
+                    <div style="display: none;">
+                        {{ visit_form.ipno }}
+                        {{ visit_form.coll_status }}
+                        {{ visit_form.clinical_notes }}
+                        {{ visit_form.centre }}
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 1.5rem; margin-bottom: 2rem;">
+                    <button type="button" class="btn" style="background: #0d9488; color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 6px; font-weight: 600;" onclick="toggleHistory()">
+                        View All Visit & Transfer Details
+                    </button>
+                </div>
+
+                <!-- Hidden History Table -->
+                <div id="visit_history_table" style="display: none; margin-top: 1.5rem; border-top: 1px dashed #cbd5e1; padding-top: 1.5rem;">
+                    <h5 style="font-weight: 700; color: #334155; margin-bottom: 1rem;"><i class="bi bi-clock-history text-primary"></i> Past Visit Logs</h5>
+                    {% if visits %}
+                    <div class="table-responsive" style="margin-bottom: 2rem;">
+                        <table class="table table-bordered table-striped align-middle" style="font-size: 0.85rem;">
+                            <thead style="background-color: #f8fafc;">
+                                <tr>
+                                    <th>IpNo</th>
+                                    <th>Visit No</th>
+                                    <th>Visit Date</th>
+                                    <th>Department</th>
+                                    <th>IP Dept</th>
+                                    <th>Doctor</th>
+                                    <th>Visit Type</th>
+                                    <th>Coll Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for v in visits %}
+                                <tr>
+                                    <td>
+                                        {% if v.ipno %}
+                                            <strong style="color: #0284c7;">{{ v.ipno }}</strong>
+                                        {% else %}
+                                            <span style="color: #94a3b8;">--</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><strong>#{{ v.visit_no }}</strong></td>
+                                    <td>{{ v.visit_date|date:"d/M/Y H:i" }}</td>
+                                    <td>
+                                        <span class="badge" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; font-size: 0.8rem;">
+                                            {{ v.initial_department_name }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if v.visit_type == 'IP' or v.ipno %}
+                                            <span class="badge" style="background: #eff6ff; color: #1d4ed8; font-weight: 700; border: 1px solid #bfdbfe; font-size: 0.82rem;">
+                                                {{ v.department }}
+                                            </span>
+                                            {% if v.is_transferred %}
+                                            <div style="font-size: 0.72rem; color: #15803d; font-weight: 600; margin-top: 2px;">
+                                                <i class="bi bi-arrow-right-circle-fill"></i> Transferred to {{ v.department }}
+                                            </div>
+                                            {% endif %}
+                                        {% else %}
+                                            <span style="color: #94a3b8; font-size: 0.8rem;">--</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ v.unit_doctor }}</td>
+                                    <td>
+                                        <span class="badge {% if v.visit_type == 'IP' %}bg-primary{% else %}bg-secondary{% endif %}" style="font-size: 0.76rem;">
+                                            {{ v.visit_type }}
+                                        </span>
+                                    </td>
+                                    <td>{{ v.coll_status }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p style="color: #64748b; text-align: center;">No visit records logged yet.</p>
+                    {% endif %}
+
+                    <!-- Ward Transfer History in dropdown log -->
+                    <h5 style="font-weight: 700; color: #334155; margin-bottom: 1rem; margin-top: 1.5rem;"><i class="bi bi-arrow-left-right text-info"></i> Ward Transfer Records</h5>
+                    {% if branch_transfers %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" style="font-size: 0.85rem;">
+                            <thead style="background-color: #f0f9ff;">
+                                <tr>
+                                    <th>Request #</th>
+                                    <th>Request Date</th>
+                                    <th>From Department</th>
+                                    <th>To Department</th>
+                                    <th>Status</th>
+                                    <th>Requested By</th>
+                                    <th>Approved / Reviewed By</th>
+                                    <th>Reason / Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bt in branch_transfers %}
+                                <tr>
+                                    <td><strong style="color: #0284c7;">{{ bt.transfer_request_number }}</strong></td>
+                                    <td>{{ bt.requested_at|date:"d/M/Y H:i" }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ bt.from_department.name }}</span></td>
+                                    <td><span class="badge" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">{{ bt.to_department.name }}</span> {% if bt.to_unit %}<div style="font-size: 0.72rem; color: #64748b;">{{ bt.to_unit.unit_name }}</div>{% endif %}</td>
+                                    <td>
+                                        {% if bt.status == 'PENDING' %}<span class="badge bg-warning text-dark">Pending</span>
+                                        {% elif bt.status == 'ACCEPTED' %}<span class="badge bg-success">Accepted</span>
+                                        {% elif bt.status == 'REJECTED' %}<span class="badge bg-danger">Rejected</span>
+                                        {% elif bt.status == 'CANCELLED' %}<span class="badge bg-secondary">Cancelled</span>{% endif %}
+                                    </td>
+                                    <td>{{ bt.requested_by.username|default:"Staff" }}</td>
+                                    <td>{{ bt.reviewed_by.username|default:"--" }} {% if bt.reviewed_at %}<div style="font-size: 0.72rem; color: #64748b;">{{ bt.reviewed_at|date:"d/M/Y H:i" }}</div>{% endif %}</td>
+                                    <td>
+                                        <div>{{ bt.transfer_reason }}</div>
+                                        {% if bt.review_notes %}<div style="font-size: 0.74rem; color: #15803d; margin-top: 2px;">Acceptance Notes: {{ bt.review_notes }}</div>{% endif %}
+                                        {% if bt.rejection_reason %}<div style="font-size: 0.74rem; color: #b91c1c; margin-top: 2px;">Rejection Reason: {{ bt.rejection_reason }}</div>{% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p style="color: #64748b; font-size: 0.85rem; font-style: italic;">No ward transfer records recorded for this patient.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- TAB CONTENT: WARD TRANSFER DETAILS -->
+            <div id="tab-branch-transfer" class="tab-content" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem;">
+                    <div>
+                        <h4 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">
+                            <i class="bi bi-arrow-left-right text-primary"></i> Inter-Department Ward Transfer History
+                        </h4>
+                        <p style="font-size: 0.84rem; color: #64748b; margin: 4px 0 0 0;">
+                            Complete chronological audit trail of all patient transfer requests between hospital departments.
+                        </p>
+                    </div>
+                    <a href="{% url 'patients:branch_transfer' %}?q={{ patient.patient_id }}" class="btn btn-sm btn-outline-primary" style="font-weight: 600;">
+                        <i class="bi bi-box-arrow-up-right"></i> Open Ward Transfer Module
+                    </a>
+                </div>
+
+                {% if branch_transfers %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered align-middle" style="font-size: 0.88rem;">
+                        <thead style="background: #f8fafc; font-weight: 700; color: #334155;">
+                            <tr>
+                                <th>Transfer Request #</th>
+                                <th>Requested Date & Time</th>
+                                <th>Current / From Dept</th>
+                                <th>Requested / Destination Dept</th>
+                                <th>Status</th>
+                                <th>Requested By</th>
+                                <th>Approved / Reviewed By</th>
+                                <th>Transfer Reason & Clinical Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bt in branch_transfers %}
+                            <tr>
+                                <td>
+                                    <strong style="color: #0284c7; font-size: 0.9rem;">{{ bt.transfer_request_number }}</strong>
+                                    <div style="font-size: 0.72rem; color: #64748b;">IP #{{ bt.admission.ipno|default:bt.admission.visit_no }}</div>
+                                </td>
+                                <td>
+                                    <div style="font-weight: 600;">{{ bt.requested_at|date:"d/M/Y" }}</div>
+                                    <div style="font-size: 0.74rem; color: #64748b;">{{ bt.requested_at|date:"H:i" }}</div>
+                                </td>
+                                <td>
+                                    <span class="badge" style="background: #f1f5f9; color: #334155; font-size: 0.82rem; border: 1px solid #cbd5e1;">
+                                        {{ bt.from_department.name }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge" style="background: #eff6ff; color: #1d4ed8; font-size: 0.82rem; border: 1px solid #bfdbfe;">
+                                        <i class="bi bi-arrow-right"></i> {{ bt.to_department.name }}
+                                    </span>
+                                    {% if bt.to_unit %}
+                                    <div style="font-size: 0.75rem; color: #475569; margin-top: 3px;"><strong>Unit:</strong> {{ bt.to_unit.unit_name }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if bt.status == 'PENDING' %}
+                                    <span class="badge bg-warning text-dark" style="font-size: 0.8rem; padding: 5px 8px;"><i class="bi bi-hourglass-split"></i> Pending Approval</span>
+                                    {% elif bt.status == 'ACCEPTED' %}
+                                    <span class="badge bg-success" style="font-size: 0.8rem; padding: 5px 8px;"><i class="bi bi-check-circle-fill"></i> Accepted / Transferred</span>
+                                    {% elif bt.status == 'REJECTED' %}
+                                    <span class="badge bg-danger" style="font-size: 0.8rem; padding: 5px 8px;"><i class="bi bi-x-circle-fill"></i> Rejected</span>
+                                    {% elif bt.status == 'CANCELLED' %}
+                                    <span class="badge bg-secondary" style="font-size: 0.8rem; padding: 5px 8px;"><i class="bi bi-slash-circle"></i> Cancelled</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div style="font-weight: 600; color: #334155;">{{ bt.requested_by.username|default:"Staff" }}</div>
+                                    <div style="font-size: 0.74rem; color: #64748b;">{{ bt.requested_by.get_role_display }}</div>
+                                </td>
+                                <td>
+                                    {% if bt.reviewed_by %}
+                                    <div style="font-weight: 600; color: #166534;">{{ bt.reviewed_by.username }}</div>
+                                    <div style="font-size: 0.74rem; color: #64748b;">{{ bt.reviewed_at|date:"d/M/Y H:i" }}</div>
+                                    {% else %}
+                                    <span style="color: #94a3b8; font-style: italic;">Awaiting Review</span>
+                                    {% endif %}
+                                </td>
+                                <td style="max-width: 250px;">
+                                    <div><strong>Reason:</strong> {{ bt.transfer_reason }}</div>
+                                    {% if bt.review_notes %}
+                                    <div style="background: #f0fdf4; border-left: 3px solid #22c55e; padding: 3px 6px; margin-top: 4px; font-size: 0.78rem; color: #166534;">
+                                        <strong>Acceptance Notes:</strong> {{ bt.review_notes }}
+                                    </div>
+                                    {% endif %}
+                                    {% if bt.rejection_reason %}
+                                    <div style="background: #fef2f2; border-left: 3px solid #ef4444; padding: 3px 6px; margin-top: 4px; font-size: 0.78rem; color: #991b1b;">
+                                        <strong>Rejection Reason:</strong> {{ bt.rejection_reason }}
+                                    </div>
+                                    {% endif %}
+                                    {% if bt.cancellation_reason %}
+                                    <div style="background: #f8fafc; border-left: 3px solid #64748b; padding: 3px 6px; margin-top: 4px; font-size: 0.78rem; color: #475569;">
+                                        <strong>Cancellation Reason:</strong> {{ bt.cancellation_reason }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 3rem 1rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">
+                    <div style="font-size: 2rem; color: #94a3b8; margin-bottom: 0.5rem;"><i class="bi bi-arrow-left-right"></i></div>
+                    <h6 style="font-weight: 700; color: #475569;">No Ward Transfer Records Found</h6>
+                    <p style="font-size: 0.85rem; color: #64748b; margin: 0;">This patient has not been transferred between hospital departments.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- OTHER TABS -->
+            <div id="tab-personal" class="tab-content" style="display: none;">
+                <p style="color: #64748b;"><strong>Full Name:</strong> {{ patient.title }} {{ patient.name }}</p>
+                <p style="color: #64748b;"><strong>Mobile:</strong> {{ patient.mobile_no }}</p>
+            </div>
+            <div id="tab-company" class="tab-content" style="display: none;">
+                <p style="color: #64748b;">Company / Scheme information goes here.</p>
+            </div>
+            <div id="tab-contact" class="tab-content" style="display: none;">
+                <p style="color: #64748b;"><strong>Address:</strong> {{ patient.street|default:"--" }}, {{ patient.city }}, {{ patient.state }}</p>
+            </div>
+            <div id="tab-office" class="tab-content" style="display: none;">
+                <p style="color: #64748b;">Office Address details.</p>
+            </div>
+            <div id="tab-insurance" class="tab-content" style="display: none;">
+                <p style="color: #64748b;">Insurance records.</p>
+            </div>
+            <div id="tab-reference" class="tab-content" style="display: none;">
+                <p style="color: #64748b;">Reference details.</p>
+            </div>
+            <div id="tab-casualty" class="tab-content" style="display: none;">
+                <p style="color: #64748b;">Casualty logs.</p>
+            </div>
+            <div id="tab-allergy" class="tab-content" style="display: none;">
+                <p style="color: #64748b;">Allergy information.</p>
+            </div>
+            <div id="tab-print" class="tab-content" style="display: none;">
+                <p style="color: #64748b;">Print options.</p>
+                <a href="{% url 'patients:medical_history_print' patient.id %}" target="_blank" class="btn btn-primary"><i class="bi bi-printer"></i> Print Medical History</a>
+            </div>
+
+            <!-- Bottom Action Buttons -->
+            <div style="display: flex; gap: 0.75rem; justify-content: center; margin-top: 3rem;">
+                <button type="submit" class="btn" {% if is_admitted_inpatient %}disabled style="background: #94a3b8; color: white; border: none; padding: 0.5rem 1.5rem; font-weight: 600; border-radius: 6px; cursor: not-allowed;" title="Cannot save: Patient is currently admitted as an inpatient"{% else %}style="background: #22c55e; color: white; border: none; padding: 0.5rem 1.5rem; font-weight: 600; border-radius: 6px;"{% endif %}>
+                    <i class="bi bi-save" style="margin-right: 4px;"></i> Save
+                </button>
+                <button type="reset" class="btn" style="background: #f97316; color: white; border: none; padding: 0.5rem 1.5rem; font-weight: 600; border-radius: 6px;">
+                    <i class="bi bi-arrow-counterclockwise" style="margin-right: 4px;"></i> Reset
+                </button>
+                <button type="button" class="btn" style="background: #2563eb; color: white; border: none; padding: 0.5rem 1.5rem; font-weight: 600; border-radius: 6px;">
+                    <i class="bi bi-printer" style="margin-right: 4px;"></i> Print
+                </button>
+                <button type="button" class="btn" style="background: #2563eb; color: white; border: none; padding: 0.5rem 1.5rem; font-weight: 600; border-radius: 6px;">
+                    <i class="bi bi-tags" style="margin-right: 4px;"></i> Label - I
+                </button>
+                <button type="button" class="btn" style="background: #2563eb; color: white; border: none; padding: 0.5rem 1.5rem; font-weight: 600; border-radius: 6px;">
+                    <i class="bi bi-printer" style="margin-right: 4px;"></i> Print - OP
+                </button>
+                <button type="button" class="btn" style="background: #2563eb; color: white; border: none; padding: 0.5rem 1.5rem; font-weight: 600; border-radius: 6px;">
+                    <i class="bi bi-file-earmark-text" style="margin-right: 4px;"></i> Label - A4
+                </button>
+            </div>
+        </div>
+    </form>
+    {% endif %}
+
+</div>
+
+<script>
+    function switchTab(evt, tabId) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tab-content");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+        tablinks = document.getElementsByClassName("tab-btn");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        document.getElementById(tabId).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+
+    function toggleHistory() {
+        var hist = document.getElementById("visit_history_table");
+        if (hist.style.display === "none") {
+            hist.style.display = "block";
+        } else {
+            hist.style.display = "none";
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Add form-control class to all django rendered fields in visit details
+        const visitFormInputs = document.querySelectorAll('#tab-visit-details input, #tab-visit-details select, #tab-visit-details textarea');
+        visitFormInputs.forEach(el => {
+            if (!el.classList.contains('form-control') && !el.classList.contains('form-select')) {
+                if (el.tagName === 'SELECT') {
+                    el.classList.add('form-select');
+                } else {
+                    el.classList.add('form-control');
+                }
+            }
+        });
+
+        // Handle Visit Type and Ward interactions
+        const ipInput = document.getElementById('id_ipno');
+        const visitTypeSel = document.getElementById('id_visit_type');
+        const wardSel = document.getElementById('id_visit_ward');
+        
+        function handleVisitTypeChange() {
+            if (visitTypeSel && wardSel) {
+                if (visitTypeSel.value === 'IP' && (!wardSel.value || wardSel.value === '')) {
+                    wardSel.value = 'General Ward';
+                }
+            }
+        }
+
+        if (visitTypeSel) {
+            visitTypeSel.addEventListener('change', handleVisitTypeChange);
+        }
+
+        const deptSel = document.getElementById('id_visit_department') || document.getElementById('id_department_obj');
+        const unitSel = document.getElementById('id_visit_unit') || document.getElementById('id_unit_obj');
+        if (deptSel && unitSel) {
+            deptSel.addEventListener('change', function () {
+                const dId = this.value;
+                unitSel.innerHTML = '<option value="">Loading doctors...</option>';
+                if (!dId) {
+                    unitSel.innerHTML = '<option value="">Select Unit / Doctor</option>';
+                    return;
+                }
+                fetch(`{% url "patients:api_units" %}?department_id=${dId}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        unitSel.innerHTML = '<option value="">Select Unit / Doctor</option>';
+                        if (data.units && data.units.length > 0) {
+                            data.units.forEach(u => {
+                                const opt = document.createElement('option');
+                                opt.value = u.id;
+                                opt.textContent = u.unit_name;
+                                unitSel.appendChild(opt);
+                            });
+                        }
+                    });
+            });
+        }
+
+        {% if is_emergency_patient %}
+        if (visitTypeSel) {
+            visitTypeSel.value = 'IP';
+        }
+        if (ipInput && (!ipInput.value || ipInput.value.trim() === '')) {
+            ipInput.value = "{{ next_ipno|default:'600000' }}";
+        }
+        {% endif %}
+    });
+</script>
+{% endblock %}

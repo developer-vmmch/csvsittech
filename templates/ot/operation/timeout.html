@@ -1,0 +1,62 @@
+﻿{% extends "base.html" %}
+{% load static ot_tags %}
+{% block title %}Time Out â€” {{ case.ot_number }}{% endblock %}
+{% block extra_head %}<style>
+.checklist-item{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;border-radius:8px;border:1px solid #e2e8f0;background:white;cursor:pointer;transition:.15s;}
+.checklist-item:hover{background:#f0f9ff;border-color:#bae6fd;}
+.checklist-item input[type=checkbox]{width:20px;height:20px;cursor:pointer;}
+.checklist-item.checked{background:#f0fdf4;border-color:#86efac;}
+.checklist-item label{font-size:.9rem;font-weight:500;color:#334155;cursor:pointer;}
+</style>{% endblock %}
+{% block content %}
+<div class="p-4 sm:p-6 max-w-3xl mx-auto">
+  <div class="flex items-center gap-3 mb-6">
+    <a href="{% url 'ot:case_detail' case.pk %}" class="text-slate-400 hover:text-slate-600"><i class="bi bi-arrow-left text-xl"></i></a>
+    <div>
+      <h1 class="text-xl font-bold text-slate-800">â¸ Time Out Checklist</h1>
+      <p class="text-sm text-slate-500">{{ case.ot_number }} â€” {{ case.patient.name }} | Before skin incision</p>
+    </div>
+  </div>
+  {% if messages %}{% for msg in messages %}<div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium {% if msg.tags == 'error' %}bg-amber-50 text-amber-700 border border-amber-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">{{ msg }}</div>{% endfor %}{% endif %}
+
+  <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+    <p class="text-sm font-semibold text-amber-800">WHO Surgical Safety Checklist â€” Time Out</p>
+    <p class="text-xs text-amber-600 mt-1">All items must be confirmed by the entire team before skin incision. Check each item to confirm.</p>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="space-y-2 mb-6">
+      {% for key, label in items %}
+      <div class="checklist-item {% if existing_data and existing_data|get_item:key %}checked{% endif %}" id="wrap_{{ key }}" onclick="toggleCheck('{{ key }}')">
+        <input type="checkbox" name="{{ key }}" id="{{ key }}"
+          {% if existing_data and existing_data|get_item:key %}checked{% endif %}
+          {% if post_data and post_data|get_item:key %}checked{% endif %}
+          onchange="updateStyle('{{ key }}', this.checked)">
+        <label for="{{ key }}">{{ label }}</label>
+        <i class="bi bi-check-circle-fill text-green-500 ml-auto" id="icon_{{ key }}" style="display:{% if existing_data and existing_data|get_item:key %}block{% else %}none{% endif %}"></i>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="flex gap-3">
+      <button type="submit" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-xl font-bold text-base transition-colors flex items-center justify-center gap-2">
+        <i class="bi bi-pause-circle"></i> Complete Time Out
+      </button>
+      <a href="{% url 'ot:case_detail' case.pk %}" class="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition-colors">Back</a>
+    </div>
+  </form>
+</div>
+<script>
+function toggleCheck(key) {
+  const cb = document.getElementById(key);
+  cb.checked = !cb.checked;
+  updateStyle(key, cb.checked);
+}
+function updateStyle(key, checked) {
+  const wrap = document.getElementById('wrap_' + key);
+  const icon = document.getElementById('icon_' + key);
+  if (checked) { wrap.classList.add('checked'); icon.style.display='block'; }
+  else { wrap.classList.remove('checked'); icon.style.display='none'; }
+}
+</script>
+{% endblock %}

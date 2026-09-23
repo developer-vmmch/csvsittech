@@ -1,0 +1,198 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}Diagnosis → Department Mapping | Lab Master{% endblock %}
+{% block page_heading %}Diagnosis → Department Mapping{% endblock %}
+
+{% block lab_content %}
+<!-- Filter Card -->
+<div class="lab-filter-card">
+    <form method="get" class="lab-filter-grid">
+        <div class="lab-filter-col">
+            <label class="lab-form-label">Hospital Department</label>
+            <select name="department" class="lab-form-select">
+                <option value="">-- All Departments --</option>
+                {% for dept in departments %}
+                <option value="{{ dept.id }}" {% if request.GET.department == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="lab-filter-col">
+            <label class="lab-form-label">Search</label>
+            <input type="text" name="search" class="lab-form-input" placeholder="Search diagnosis or department..." value="{{ request.GET.search }}">
+        </div>
+        <div class="lab-filter-col">
+            <label class="lab-form-label">Status</label>
+            <select name="status" class="lab-form-select">
+                <option value="">-- Status --</option>
+                <option value="Active" {% if request.GET.status == 'Active' %}selected{% endif %}>Active</option>
+                <option value="Inactive" {% if request.GET.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+        <div class="lab-filter-actions">
+            <button type="submit" class="lab-btn lab-btn-primary"><i class="bi bi-funnel"></i>Filter</button>
+            <a href="{% url 'lab:master_diagnosis_department_mapping' %}" class="lab-btn lab-btn-light"><i class="bi bi-x-circle"></i>Reset</a>
+            <button type="button" class="lab-btn lab-btn-success" onclick="openAddDeptMapModal()"><i class="bi bi-plus-lg"></i>Add Mapping</button>
+        </div>
+    </form>
+</div>
+
+<!-- Table Card -->
+<div class="lab-table-container">
+    <div class="lab-table-card-header">
+        <span class="lab-table-title">Department Diagnoses ({{ page_obj.paginator.count|default:0 }})</span>
+        <span class="lab-table-subtitle">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages|default:1 }}</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="lab-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">S.No</th>
+                    <th>Hospital Department</th>
+                    <th style="width: 130px;">Diagnosis Code</th>
+                    <th>Diagnosis Name</th>
+                    <th>Age Group</th>
+                    <th style="width: 100px;">Status</th>
+                    <th style="width: 100px;" class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in mappings %}
+                <tr>
+                    <td class="text-muted">{{ forloop.counter0|add:page_obj.start_index }}</td>
+                    <td class="font-semibold text-slate-800">{{ m.department.name }}</td>
+                    <td><span class="lab-code-pill font-mono">{{ m.diagnosis.code|default:"—" }}</span></td>
+                    <td class="font-medium text-slate-800">{{ m.diagnosis.name }}</td>
+                    <td>{{ m.age_group.label|default:"Universal (All Ages)" }}</td>
+                    <td>
+                        {% if m.status == 'Active' %}
+                        <span class="lab-badge lab-badge-success">Active</span>
+                        {% else %}
+                        <span class="lab-badge lab-badge-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <button type="button" class="lab-btn lab-btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="openEditDeptMapModal({{ m.id }}, {{ m.department_id }}, {{ m.diagnosis_id }}, {{ m.age_group_id|default:'null' }}, '{{ m.status }}')">
+                            Edit
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-8 text-slate-400">
+                        <i class="bi bi-inbox text-3xl block mb-2 text-slate-300"></i>
+                        No diagnosis to department mappings found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include "lab/master/pagination.html" %}
+</div>
+
+<!-- Modal: Add/Edit Department Mapping -->
+<div class="lab-modal-overlay" id="deptMapModal">
+    <div class="lab-modal-dialog">
+        <div class="lab-modal-header">
+            <h3 class="lab-modal-title" id="deptMapModalTitle">Department Diagnosis Mapping</h3>
+            <button type="button" class="lab-modal-close" onclick="closeLabModal('deptMapModal')">&times;</button>
+        </div>
+        <form id="deptMapForm" onsubmit="submitDeptMapForm(event)">
+            {% csrf_token %}
+            <input type="hidden" id="dm_id">
+            <div class="lab-modal-body">
+                <div class="lab-form-group mb-3">
+                    <label class="lab-form-label">Hospital Department <span class="text-rose-500">*</span></label>
+                    <select class="lab-form-select" id="dm_dept" required>
+                        <option value="">-- Select Department --</option>
+                        {% for d in departments %}
+                        <option value="{{ d.id }}">{{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="lab-form-group mb-3">
+                    <label class="lab-form-label">Diagnosis <span class="text-rose-500">*</span></label>
+                    <select class="lab-form-select" id="dm_diag" required>
+                        <option value="">-- Select Diagnosis --</option>
+                        {% for diag in diagnoses %}
+                        <option value="{{ diag.id }}">{{ diag.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="lab-form-group mb-3">
+                    <label class="lab-form-label">Age Group</label>
+                    <select class="lab-form-select" id="dm_age_group">
+                        <option value="">-- All Ages --</option>
+                        {% for ag in age_groups %}
+                        <option value="{{ ag.id }}">{{ ag.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label">Status</label>
+                    <select class="lab-form-select" id="dm_status">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+            </div>
+            <div class="lab-modal-footer">
+                <button type="button" class="lab-btn lab-btn-secondary" onclick="closeLabModal('deptMapModal')">Cancel</button>
+                <button type="submit" class="lab-btn lab-btn-primary"><i class="bi bi-check-lg"></i>Save Mapping</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openAddDeptMapModal() {
+    document.getElementById('deptMapModalTitle').innerText = 'Add Department Diagnosis Mapping';
+    document.getElementById('dm_id').value = '';
+    document.getElementById('dm_dept').value = '{{ request.GET.department }}' || '';
+    document.getElementById('dm_diag').value = '';
+    document.getElementById('dm_age_group').value = '';
+    document.getElementById('dm_status').value = 'Active';
+    openLabModal('deptMapModal');
+}
+
+function openEditDeptMapModal(id, deptId, diagId, ageGroupId, status) {
+    document.getElementById('deptMapModalTitle').innerText = 'Edit Department Diagnosis Mapping';
+    document.getElementById('dm_id').value = id;
+    document.getElementById('dm_dept').value = deptId;
+    document.getElementById('dm_diag').value = diagId;
+    document.getElementById('dm_age_group').value = ageGroupId || '';
+    document.getElementById('dm_status').value = status;
+    openLabModal('deptMapModal');
+}
+
+async function submitDeptMapForm(e) {
+    e.preventDefault();
+    const payload = {
+        department_id: document.getElementById('dm_dept').value,
+        diagnosis_id: document.getElementById('dm_diag').value,
+        age_group_id: document.getElementById('dm_age_group').value || null,
+        status: document.getElementById('dm_status').value
+    };
+
+    try {
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const res = await fetch("{% url 'lab:api_master_diag_dept_map_save' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error saving mapping.');
+        }
+    } catch(err) {
+        alert('Failed: ' + err);
+    }
+}
+</script>
+{% endblock %}

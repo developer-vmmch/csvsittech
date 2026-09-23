@@ -1,0 +1,456 @@
+{% extends "base.html" %}
+
+{% block title %}Import Patients | VMMCerp{% endblock %}
+{% block page_heading %}Import Patients{% endblock %}
+
+{% block extra_head %}
+<style>
+    .upload-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 3rem;
+        text-align: center;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .upload-area:hover, .upload-area.dragover {
+        border-color: var(--accent-blue);
+        background: #eff6ff;
+    }
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 99px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+    .status-Valid { background: #dcfce7; color: #166534; }
+    .status-Error { background: #fee2e2; color: #991b1b; }
+    .status-Duplicate { background: #fef9c3; color: #854d0e; }
+    
+    .hidden { display: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header-action" style="margin-bottom: 1.5rem; display:flex; justify-content: space-between; align-items:center;">
+        <div>
+            <h2 class="panel-title">Bulk Import Patients (Excel / CSV)</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Upload bulk patient records safely.</p>
+        </div>
+        <div>
+            <a href="{% url 'patients:api_import_template' %}" class="btn btn-secondary">
+                <i class="bi bi-download"></i> Download Template
+            </a>
+            <a href="{% url 'patients:import_history' %}" class="btn btn-secondary">
+                <i class="bi bi-clock-history"></i> Import History
+            </a>
+        </div>
+    </div>
+
+    <!-- Step 1: Upload -->
+    <div id="step-upload">
+        <div class="upload-area" id="drop-zone">
+            <div id="drop-zone-content">
+                <i class="bi bi-cloud-arrow-up" style="font-size: 3rem; color: var(--accent-blue);"></i>
+                <h3 style="margin-top: 1rem;">Drag and drop file here</h3>
+                <p style="color: var(--text-muted);">or click to browse (.xlsx, .csv)</p>
+            </div>
+        </div>
+        <input type="file" id="file-input" style="display: none;" accept=".xlsx,.csv">
+        
+        <div id="upload-error-container" class="hidden" style="margin-top: 1rem; background: #fee2e2; border: 1px solid #fecaca; border-radius: 6px; padding: 1rem; color: #991b1b;">
+            <div style="font-weight: bold; margin-bottom: 0.5rem;"><i class="bi bi-exclamation-triangle-fill"></i> Upload Error</div>
+            <div id="upload-error-message"></div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 1rem;">
+            <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+                <i class="bi bi-file-earmark-excel"></i> Select File
+            </button>
+        </div>
+    </div>
+
+    <!-- Step 2: Preview & Validation -->
+    <div id="step-preview" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; background: #f8fafc; padding: 1rem; border-radius: 8px;">
+            <div>
+                <h3 style="margin: 0;">Validation Preview</h3>
+                <p style="margin: 0; font-size: 0.9rem; color: #64748b;" id="preview-filename"></p>
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <label>Filter:</label>
+                <select id="preview-filter" class="form-select" onchange="filterPreview()">
+                    <option value="All">All</option>
+                    <option value="Valid">Valid</option>
+                    <option value="Error">Errors</option>
+                    <option value="Duplicate">Duplicates</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+            <div style="flex:1; padding: 1rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; text-align: center;">
+                <div style="font-size: 2rem; font-weight: bold; color: var(--accent-blue);" id="count-total">0</div>
+                <div style="font-size: 0.85rem; color: #64748b; text-transform: uppercase;">Total Rows</div>
+            </div>
+            <div style="flex:1; padding: 1rem; background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 6px; text-align: center;">
+                <div style="font-size: 2rem; font-weight: bold; color: #166534;" id="count-valid">0</div>
+                <div style="font-size: 0.85rem; color: #166534; text-transform: uppercase;">Valid to Import</div>
+            </div>
+            <div style="flex:1; padding: 1rem; background: #fee2e2; border: 1px solid #fecaca; border-radius: 6px; text-align: center;">
+                <div style="font-size: 2rem; font-weight: bold; color: #991b1b;" id="count-error">0</div>
+                <div style="font-size: 0.85rem; color: #991b1b; text-transform: uppercase;">Errors</div>
+            </div>
+            <div style="flex:1; padding: 1rem; background: #fef9c3; border: 1px solid #fef08a; border-radius: 6px; text-align: center;">
+                <div style="font-size: 2rem; font-weight: bold; color: #854d0e;" id="count-duplicate">0</div>
+                <div style="font-size: 0.85rem; color: #854d0e; text-transform: uppercase;">Duplicates</div>
+            </div>
+        </div>
+
+        <div class="table-responsive" style="max-height: 480px; overflow-x: auto; overflow-y: auto; margin-bottom: 1.5rem; border: 1px solid #e2e8f0; border-radius: 6px;">
+            <table id="preview-table" class="table table-bordered" style="font-size: 0.85rem; margin-bottom: 0; min-width: 1400px;">
+                <thead style="background: #f1f5f9; position: sticky; top: 0; z-index: 1;">
+                    <tr>
+                        <th style="white-space: nowrap;">Row</th>
+                        <th style="white-space: nowrap;">Pat ID</th>
+                        <th style="white-space: nowrap;">OP No</th>
+                        <th style="white-space: nowrap;">Title</th>
+                        <th style="white-space: nowrap;">Name</th>
+                        <th style="white-space: nowrap;">Gender</th>
+                        <th style="white-space: nowrap;">DOB</th>
+                        <th style="white-space: nowrap; text-align: center;">Age</th>
+                        <th style="white-space: nowrap; text-align: center;">Age Display</th>
+                        <th style="white-space: nowrap;">Mobile</th>
+                        <th style="white-space: nowrap;">Guardian</th>
+                        <th style="white-space: nowrap;">Relation</th>
+                        <th style="white-space: nowrap;">City</th>
+                        <th style="white-space: nowrap;">Reg Date</th>
+                        <th style="white-space: nowrap;">Status</th>
+                        <th style="white-space: nowrap;">Message</th>
+                    </tr>
+                </thead>
+                <tbody id="preview-tbody">
+                </tbody>
+            </table>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 1.5rem; gap: 1rem;">
+            <button class="btn btn-secondary" onclick="resetUpload()">Cancel</button>
+            <button class="btn btn-primary" id="btn-import" onclick="confirmImport()">
+                <i class="bi bi-upload"></i> Import Valid Data
+            </button>
+        </div>
+    </div>
+
+
+    <!-- Step 2.5: Progress -->
+    <div id="step-progress" class="hidden">
+        <div style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 2rem; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <h3 style="margin-top: 0; color: var(--accent-blue);">Patient Import</h3>
+            <p id="prog-filename" style="color: #64748b; margin-bottom: 1.5rem; font-weight: bold;"></p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; row-gap: 0.5rem; margin-bottom: 1.5rem;">
+                <div>Total Records</div><div style="font-weight: bold; text-align: right;" id="prog-total">0</div>
+                <div>Processed</div><div style="font-weight: bold; text-align: right;" id="prog-processed">0</div>
+                <div>Successfully Imported</div><div style="font-weight: bold; text-align: right; color: #166534;" id="prog-imported">0</div>
+                <div>Skipped / Duplicate</div><div style="font-weight: bold; text-align: right; color: #854d0e;" id="prog-skipped">0</div>
+                <div>Failed</div><div style="font-weight: bold; text-align: right; color: #991b1b;" id="prog-failed">0</div>
+            </div>
+            
+            <div style="background: #e2e8f0; border-radius: 999px; height: 1.5rem; width: 100%; overflow: hidden; position: relative;">
+                <div id="prog-bar" style="background: var(--accent-blue); height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                <div id="prog-percent" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; text-align: center; font-size: 0.85rem; font-weight: bold; color: #334155; line-height: 1.5rem;">0.00%</div>
+            </div>
+            
+            <div style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                <div>Status: <strong id="prog-status" style="color: #f59e0b;">Starting...</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 3: Summary -->
+    <div id="step-summary" class="hidden">
+        <div style="text-align: center; padding: 3rem;">
+            <i class="bi bi-check-circle-fill" style="font-size: 4rem; color: #166534; margin-bottom: 1rem; display: block;"></i>
+            <h2 style="margin-bottom: 0.5rem;">Import Completed</h2>
+            
+            <div style="display: flex; justify-content: center; margin-bottom: 2rem; margin-top: 1rem;">
+                <div style="text-align: left; background: #f8fafc; padding: 2rem; border-radius: 8px; border: 1px solid #e2e8f0; min-width: 300px;">
+                    <h4 style="margin-top:0; border-bottom:1px solid #cbd5e1; padding-bottom:0.5rem;">Results</h4>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>Total Rows Processed:</span> <strong id="sum-total">0</strong></div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"><span>Imported:</span> <strong id="sum-imported" style="color: #166534;">0</strong></div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; border-top:1px solid #cbd5e1; padding-top:0.5rem;"><span>Failed:</span> <strong id="sum-failed" style="color: #991b1b;">0</strong></div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;"><span>Duplicates:</span> <strong id="sum-duplicates" style="color: #854d0e;">0</strong></div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 1rem;">
+                <a href="{% url 'patients:list' %}" class="btn btn-primary">Go to Patients List</a>
+                <a href="{% url 'patients:import_history' %}" class="btn btn-secondary">View History</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentData = [];
+    let currentFilename = '';
+    let currentImportId = null;
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            handleFileSelect();
+        }
+    });
+    fileInput.addEventListener('change', handleFileSelect);
+    
+    function handleFileSelect() {
+        if (!fileInput.files.length) return;
+        const file = fileInput.files[0];
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // Show loading state
+        const dropContent = document.getElementById('drop-zone-content');
+        if (dropContent) {
+            dropContent.innerHTML = '<i class="bi bi-hourglass-split" style="font-size: 3rem; color: var(--accent-blue);"></i><h3 style="margin-top: 1rem;">Validating...</h3>';
+        }
+        
+        fetch('{% url "patients:api_import_preview" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {'X-CSRFToken': getCookie('csrftoken')}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('upload-error-container').classList.add('hidden');
+                currentData = data.data; // Only the first 100 rows
+                currentFilename = data.filename;
+                currentImportId = data.import_id;
+                showPreview(data.total_rows, data.valid_rows, data.invalid_rows, data.duplicate_rows);
+            } else {
+                showUploadError(data.message || 'Validation failed');
+                resetUploadUI();
+            }
+        })
+        .catch(error => {
+            showUploadError('Error connecting to server');
+            resetUploadUI();
+        });
+    }
+    
+    function showUploadError(message) {
+        const container = document.getElementById('upload-error-container');
+        const msgDiv = document.getElementById('upload-error-message');
+        msgDiv.innerHTML = message.replace(/\n/g, '<br>');
+        container.classList.remove('hidden');
+    }
+    
+    function resetUploadUI() {
+        fileInput.value = '';
+        currentData = [];
+        
+        const dropContent = document.getElementById('drop-zone-content');
+        if (dropContent) {
+            dropContent.innerHTML = `
+                <i class="bi bi-cloud-arrow-up" style="font-size: 3rem; color: var(--accent-blue);"></i>
+                <h3 style="margin-top: 1rem;">Drag and drop file here</h3>
+                <p style="color: var(--text-muted);">or click to browse (.xlsx, .csv)</p>
+            `;
+        }
+    }
+    
+    function resetUpload() {
+        document.getElementById('step-upload').classList.remove('hidden');
+        document.getElementById('step-preview').classList.add('hidden');
+        document.getElementById('step-summary').classList.add('hidden');
+        document.getElementById('upload-error-container').classList.add('hidden');
+        resetUploadUI();
+    }
+    
+    function showPreview(totalRows, validRows, invalidRows, duplicateRows) {
+        document.getElementById('step-upload').classList.add('hidden');
+        document.getElementById('step-preview').classList.remove('hidden');
+        document.getElementById('preview-filename').textContent = `File: ${currentFilename}`;
+        
+        const tbody = document.getElementById('preview-tbody');
+        tbody.innerHTML = '';
+        
+        let rendered = 0;
+        
+        currentData.forEach(row => {
+                const tr = document.createElement('tr');
+                const statusClass = `status-${row.status}`;
+                
+                tr.innerHTML = `
+                    <td style="white-space: nowrap;">${row.row_num}</td>
+                    <td style="white-space: nowrap; font-family: monospace;">${row.patient_id || ''}</td>
+                    <td style="white-space: nowrap;">${row.op_number || ''}</td>
+                    <td style="white-space: nowrap;">${row.patient_title || ''}</td>
+                    <td style="white-space: nowrap;">${row.full_name || ''}</td>
+                    <td style="white-space: nowrap;">${row.gender || ''}</td>
+                    <td style="white-space: nowrap;">${row.dob || ''}</td>
+                    <td style="white-space: nowrap; text-align: center; font-weight: bold;">${row.age || ''}</td>
+                    <td style="white-space: nowrap; text-align: center;">${row.age_display || ''}</td>
+                    <td style="white-space: nowrap;">${row.mobile_number || ''}</td>
+                    <td style="white-space: nowrap;">${row.guardian_name || ''}</td>
+                    <td style="white-space: nowrap;">${row.guardian_relation || ''}</td>
+                    <td style="white-space: nowrap;">${row.city || ''}</td>
+                    <td style="white-space: nowrap;">${row.registration_date || ''}</td>
+                    <td style="white-space: nowrap;"><span class="status-badge ${statusClass}">${row.status}</span></td>
+                    <td style="white-space: nowrap;"><small style="color: #64748b;">${row.error || ''}</small></td>
+                `;
+                tbody.appendChild(tr);
+                rendered++;
+        });
+        
+        if (totalRows > 100) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td colspan="16" style="text-align: center; color: #64748b; font-style: italic;">Showing first 100 of ${totalRows} rows...</td>`;
+            tbody.appendChild(tr);
+        }
+        
+        document.getElementById('count-total').textContent = totalRows;
+        document.getElementById('count-valid').textContent = validRows;
+        document.getElementById('count-error').textContent = invalidRows;
+        document.getElementById('count-duplicate').textContent = duplicateRows;
+    }
+    
+    function filterPreview() {
+        const filter = document.getElementById('preview-filter').value;
+        const rows = document.getElementById('preview-tbody').querySelectorAll('tr:not(:last-child)');
+        
+        rows.forEach(row => {
+            if (filter === 'All' || row.querySelector('.status-badge').textContent === filter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+
+    let pollInterval = null;
+    
+    function startPolling() {
+        document.getElementById('step-preview').classList.add('hidden');
+        document.getElementById('step-progress').classList.remove('hidden');
+        document.getElementById('prog-filename').textContent = `File: ${currentFilename}`;
+        
+        const total = parseInt(document.getElementById('count-total').textContent) || 0;
+        document.getElementById('prog-total').textContent = total;
+        
+        pollInterval = setInterval(() => {
+            fetch(`{% url "patients:api_import_status" %}?import_id=${currentImportId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const imported = parseInt(data.imported) || 0;
+                    const failed = parseInt(data.failed) || 0;
+                    const skipped = parseInt(data.skipped) || 0;
+                    const processed = imported + failed + skipped;
+                    
+                    document.getElementById('prog-processed').textContent = processed;
+                    document.getElementById('prog-imported').textContent = imported;
+                    document.getElementById('prog-failed').textContent = failed;
+                    document.getElementById('prog-skipped').textContent = skipped;
+                    
+                    let pct = 0;
+                    if (total > 0) {
+                        pct = (processed / total) * 100;
+                        if (pct > 100) pct = 100;
+                    }
+                    
+                    document.getElementById('prog-bar').style.width = `${pct}%`;
+                    document.getElementById('prog-percent').textContent = `${pct.toFixed(2)}%`;
+                    document.getElementById('prog-status').textContent = data.job_status;
+                    
+                    if (data.job_status === 'Completed' || data.job_status === 'Failed') {
+                        clearInterval(pollInterval);
+                        if (data.job_status === 'Completed') {
+                            setTimeout(() => { showSummary({imported: imported, failed: failed, duplicates: skipped}) }, 1000);
+                        } else {
+                            document.getElementById('prog-status').style.color = '#991b1b';
+                            alert("Import encountered a critical failure. See history for details.");
+                        }
+                    }
+                }
+            })
+            .catch(err => console.error('Error polling status:', err));
+        }, 1500);
+    }
+
+    function confirmImport() {
+        if (!currentImportId) {
+            alert("No valid import ID found.");
+            return;
+        }
+        
+        fetch('{% url "patients:api_import_process" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                import_id: currentImportId
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                startPolling();
+            } else {
+                alert(data.message || 'Failed to start import');
+            }
+        })
+        .catch(err => alert('Error connecting to server.'));
+    }
+
+    
+    function showSummary(data) {
+        document.getElementById('step-preview').classList.add('hidden');
+        document.getElementById('step-summary').classList.remove('hidden');
+        
+        document.getElementById('sum-total').textContent = document.getElementById('count-total').textContent;
+        document.getElementById('sum-imported').textContent = data.imported;
+        document.getElementById('sum-failed').textContent = data.failed;
+        document.getElementById('sum-duplicates').textContent = data.duplicates || 0;
+    }
+</script>
+{% endblock %}

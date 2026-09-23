@@ -1,0 +1,2068 @@
+from django.shortcuts import render, redirect
+from django.views.generic import TemplateView, ListView
+from django.http import JsonResponse, HttpResponse
+from django.contrib.auth.mixins import LoginRequiredMixin
+from apps.core.mixins import MenuAccessRequiredMixin
+from .models import Diagnosis, LabDiagnosis, DiagnosisImportHistory, InvestigationImportHistory, ParameterImportHistory, AgeGroupImportHistory, ReferenceRangeImportHistory
+import pandas as pd
+import io
+import csv
+import json
+import os
+import uuid
+from django.core.files.storage import FileSystemStorage
+
+
+class LabDiagnosisImportView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
+    template_name = 'lab/master/import_lab_diagnosis.html'
+    menu_key = 'administration'
+
+class LabDiagnosisImportHistoryView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
+    model = DiagnosisImportHistory
+    template_name = 'lab/master/import_history.html'
+    context_object_name = 'histories'
+    menu_key = 'administration'
+
+class DiagnosisImportView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
+    template_name = 'lab/master/import_diagnosis.html'
+    menu_key = 'administration'
+
+class DiagnosisImportHistoryView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
+    model = DiagnosisImportHistory
+    template_name = 'lab/master/import_history.html'
+    context_object_name = 'histories'
+    menu_key = 'administration'
+
+
+def api_diagnosis_download_template(request):
+    import pandas as pd
+    from io import BytesIO
+    df = pd.DataFrame({
+        'icd_code': ['BA00', 'BA01'],
+        'diagnosis_name': ['Essential hypertension', 'Secondary hypertension'],
+        'category': ['Cardiovascular', 'Cardiovascular'],
+        'synonyms': ['High BP, HTN', ''],
+        'active': ['Yes', 'Yes']
+    })
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Template')
+    output.seek(0)
+    
+    response = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="diagnosis_import_template.xlsx"'
+    return response
+
+def api_lab_diagnosis_download_template(request):
+    import pandas as pd
+    from io import BytesIO
+    df = pd.DataFrame({
+        'icd_code': ['BA00', 'BA01'],
+        'diagnosis_name': ['Essential hypertension', 'Secondary hypertension'],
+        'category': ['Cardiovascular', 'Cardiovascular'],
+        'synonyms': ['High BP, HTN', ''],
+        'class_kind': ['', ''],
+        'active': ['Yes', 'Yes']
+    })
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Template')
+    output.seek(0)
+    
+    response = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="lab_diagnosis_import_template.xlsx"'
+    return response
+
+def get_diagnosis_rows(f, filename):
+    import pandas as pd
+    if filename.endswith('.csv'):
+        df = pd.read_csv(f, dtype=str)
+    else:
+        df = pd.read_excel(f, dtype=str)
+    
+    df_columns = [str(c).lower().strip() for c in df.columns]
+    df.columns = df_columns
+    
+    for index, row in df.iterrows():
+        yield index + 2, row
+
+def process_preview(request, is_lab_diagnosis=False):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid method'})
+    if 'file' not in request.FILES:
+        return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
+        
+    file = request.FILES['file']
+    filename = file.name
+    
+    try:
+        from django.conf import settings
+        fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, 'temp_imports'))
+        file_ext = os.path.splitext(filename)[1]
+        if file_ext.lower() not in ['.csv', '.xlsx', '.xls']:
+            return JsonResponse({'status': 'error', 'message': 'Unsupported file format. Please upload .csv or .xlsx'})
+            
+        upload_id = str(uuid.uuid4())
+        saved_name = fs.save(f"{upload_id}{file_ext}", file)
+        file_path = fs.path(saved_name)
+        
+        preview_data = []
+        file_codes = set()
+        file_names = set()
+        
+        ModelClass = LabDiagnosis if is_lab_diagnosis else Diagnosis
+        existing_codes = set(ModelClass.objects.exclude(code__isnull=True).exclude(code='').values_list('code', flat=True))
+        existing_names = set(ModelClass.objects.values_list('name', flat=True))
+        
+        with open(file_path, 'rb') as f:
+            for row_num, row in get_diagnosis_rows(f, filename):
+                icd_code = str(row.get('icd_code', '')).strip()
+                if icd_code == 'nan': icd_code = ''
+                
+                diag_name = str(row.get('diagnosis_name', '')).strip()
+                if diag_name == 'nan': diag_name = ''
+                
+                category = str(row.get('category', '')).strip() or 'Hospital Legacy'
+                if category == 'nan': category = 'Hospital Legacy'
+                
+                synonyms = str(row.get('synonyms', '')).strip()
+                if synonyms == 'nan': synonyms = ''
+                
+                class_kind = str(row.get('class_kind', '')).strip()
+                if class_kind == 'nan': class_kind = ''
+                
+                active_str = str(row.get('status', row.get('active', 'Yes'))).strip().lower()
+                is_active = True if active_str in ['yes', 'y', 'true', '1', 'active'] else False
+                
+                status = 'Valid'
+                error_msg = ''
+                
+                if not diag_name:
+                    status = 'Error'
+                    error_msg = 'Diagnosis Name is required'
+                elif icd_code and len(icd_code) > 50:
+                    status = 'Error'
+                    error_msg = 'ICD Code is too long'
+                elif icd_code and icd_code in file_codes:
+                    status = 'Error'
+                    error_msg = 'Duplicate ICD Code in file'
+                elif not icd_code and diag_name in file_names:
+                    status = 'Error'
+                    error_msg = 'Duplicate Diagnosis Name in file'
+                elif icd_code and icd_code in existing_codes:
+                    status = 'Duplicate'
+                    error_msg = 'ICD Code already exists in database'
+                elif not icd_code and diag_name in existing_names:
+                    status = 'Duplicate'
+                    error_msg = 'Diagnosis Name already exists in database'
+                
+                if icd_code: file_codes.add(icd_code)
+                if diag_name: file_names.add(diag_name)
+                
+                preview_data.append({
+                    'row_num': row_num,
+                    'icd_code': icd_code,
+                    'diagnosis_name': diag_name,
+                    'category': category,
+                    'class_kind': class_kind,
+                    'synonyms': synonyms,
+                    'active': is_active,
+                    'status': status,
+                    'error': error_msg
+                })
+                
+        return JsonResponse({
+            'status': 'success',
+            'filename': filename,
+            'upload_id': upload_id,
+            'data': preview_data
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'status': 'error', 'message': f'Error parsing file: {str(e)}'})
+
+def process_import(request, is_lab_diagnosis=False):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid method'})
+        
+    upload_id = request.POST.get('upload_id')
+    filename = request.POST.get('filename')
+    update_duplicates = request.POST.get('update_duplicates') == 'true'
+    
+    if not upload_id or not filename:
+        return JsonResponse({'status': 'error', 'message': 'File missing. Please start again.'})
+        
+    from django.conf import settings
+    fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, 'temp_imports'))
+    file_ext = os.path.splitext(filename)[1]
+    saved_name = f"{upload_id}{file_ext}"
+    
+    if not fs.exists(saved_name):
+        return JsonResponse({'status': 'error', 'message': 'File missing. Please start again.'})
+        
+    file_path = fs.path(saved_name)
+    
+    ModelClass = LabDiagnosis if is_lab_diagnosis else Diagnosis
+    
+    imported = 0
+    updated = 0
+    duplicates = 0
+    failed = 0
+    
+    from django.db import transaction
+    try:
+        existing_objs = ModelClass.objects.all()
+        existing_by_code = {obj.code: obj for obj in existing_objs if obj.code}
+        existing_by_name = {obj.name: obj for obj in existing_objs if obj.name}
+        
+        creates = []
+        updates = []
+        
+        file_codes = set()
+        file_names = set()
+        
+        with open(file_path, 'rb') as f:
+            for row_num, row in get_diagnosis_rows(f, filename):
+                icd_code = str(row.get('icd_code', '')).strip()
+                if icd_code == 'nan': icd_code = ''
+                
+                diag_name = str(row.get('diagnosis_name', '')).strip()
+                if diag_name == 'nan': diag_name = ''
+                
+                category = str(row.get('category', '')).strip() or 'Hospital Legacy'
+                if category == 'nan': category = 'Hospital Legacy'
+                
+                synonyms = str(row.get('synonyms', '')).strip()
+                if synonyms == 'nan': synonyms = ''
+                
+                class_kind = str(row.get('class_kind', '')).strip()
+                if class_kind == 'nan': class_kind = ''
+                
+                active_str = str(row.get('status', row.get('active', 'Yes'))).strip().lower()
+                is_active = True if active_str in ['yes', 'y', 'true', '1', 'active'] else False
+                
+                if not diag_name or (icd_code and len(icd_code) > 50):
+                    failed += 1
+                    continue
+                    
+                is_file_dup = False
+                if icd_code:
+                    if icd_code in file_codes: is_file_dup = True
+                    file_codes.add(icd_code)
+                else:
+                    if diag_name in file_names: is_file_dup = True
+                    file_names.add(diag_name)
+                    
+                if is_file_dup:
+                    failed += 1
+                    continue
+                    
+                obj = None
+                if icd_code and icd_code in existing_by_code:
+                    obj = existing_by_code[icd_code]
+                elif not icd_code and diag_name in existing_by_name:
+                    obj = existing_by_name[diag_name]
+                    
+                if obj:
+                    if update_duplicates:
+                        obj.name = diag_name
+                        if not obj.chapter and category: obj.chapter = category
+                        if not obj.synonyms and synonyms: obj.synonyms = synonyms
+                        if not getattr(obj, 'class_kind', None) and class_kind:
+                            if hasattr(obj, 'class_kind'): obj.class_kind = class_kind
+                        if is_active: obj.is_active = True
+                        updates.append(obj)
+                    else:
+                        duplicates += 1
+                else:
+                    save_code = icd_code
+                    if not save_code:
+                        slug = "".join(c for c in diag_name.upper().replace(" ", "_") if c.isalnum() or c == "_")[:20]
+                        save_code = f"DX-{slug}-{uuid.uuid4().hex[:4].upper()}"
+                        
+                    creates.append(ModelClass(
+                        code=save_code,
+                        name=diag_name,
+                        chapter=category,
+                        synonyms=synonyms,
+                        is_active=is_active,
+                        source='Import',
+                        **({'class_kind': class_kind} if hasattr(ModelClass, 'class_kind') else {})
+                    ))
+        
+        with transaction.atomic():
+            if updates:
+                update_fields = ['name', 'chapter', 'synonyms', 'is_active']
+                if hasattr(ModelClass, 'class_kind'):
+                    update_fields.append('class_kind')
+                ModelClass.objects.bulk_update(updates, update_fields, batch_size=1000)
+                updated = len(updates)
+            
+            if creates:
+                ModelClass.objects.bulk_create(creates, batch_size=1000)
+                imported = len(creates)
+                
+            history = DiagnosisImportHistory.objects.create(
+                file_name=filename,
+                uploaded_by=request.user if request.user.is_authenticated else None,
+                total_rows=imported + updated + duplicates + failed,
+                imported=imported,
+                updated=updated,
+                duplicates=duplicates,
+                failed=failed,
+                status='Completed'
+            )
+            
+        return JsonResponse({
+            'status': 'success',
+            'summary': {
+                'total': imported + updated + duplicates + failed,
+                'imported': imported,
+                'updated': updated,
+                'duplicates': duplicates,
+                'failed': failed,
+                'history_id': history.id
+            }
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'status': 'error', 'message': str(e)})
+
+def api_diagnosis_preview(request):
+    return process_preview(request, is_lab_diagnosis=False)
+
+def api_diagnosis_import(request):
+    return process_import(request, is_lab_diagnosis=False)
+
+def api_lab_diagnosis_preview(request):
+    return process_preview(request, is_lab_diagnosis=True)
+
+def api_lab_diagnosis_import(request):
+    return process_import(request, is_lab_diagnosis=True)
+
+
+class InvestigationImportView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
+    template_name = 'lab/master/import_investigation.html'
+    menu_key = 'administration'
+
+class InvestigationImportHistoryView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
+    model = InvestigationImportHistory
+    template_name = 'lab/master/import_investigation_history.html'
+    context_object_name = 'histories'
+    menu_key = 'administration'
+
+def api_investigation_download_template(request):
+    df = pd.DataFrame({
+        'investigation_code': ['INV-001', 'INV-002'],
+        'investigation_name': ['Complete Blood Count (CBC)', 'Liver Function Test'],
+        'category': ['Hematology', 'Biochemistry'],
+        'specimen_or_sample': ['Whole Blood', 'Serum'],
+        'parameters': ['Hemoglobin; RBC Count; WBC Count; Platelet Count', 'SGPT; SGOT; Bilirubin'],
+        'active': ['Yes', 'Yes']
+    })
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Template')
+    output.seek(0)
+    
+    response = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="investigation_import_template.xlsx"'
+    return response
+
+def api_investigation_preview(request):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid method'})
+    
+    if 'file' not in request.FILES:
+        return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
+        
+    file = request.FILES['file']
+    filename = file.name
+    
+    try:
+        if filename.endswith('.csv'):
+            df = pd.read_csv(file, dtype=str)
+        elif filename.endswith('.xlsx'):
+            df = pd.read_excel(file, dtype=str)
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Unsupported file format. Please upload .csv or .xlsx'})
+            
+        required_columns = ['investigation_code', 'investigation_name', 'category', 'specimen_or_sample', 'parameters', 'active']
+        
+        if df.empty:
+            return JsonResponse({'status': 'error', 'message': 'Uploaded file is empty.'})
+            
+        df_columns = [c.lower().strip() for c in df.columns]
+        for req in required_columns:
+            if req not in df_columns:
+                return JsonResponse({'status': 'error', 'message': f'Missing required column: {req}'})
+                
+        df.columns = df_columns
+        
+        preview_data = []
+        file_inv_codes = set()
+        
+        from .models import Investigation, InvestigationParameter
+        existing_inv_codes = set(Investigation.objects.values_list('code', flat=True))
+        
+        for index, row in df.iterrows():
+            row_num = index + 2
+            
+            inv_code = str(row.get('investigation_code', '')).strip()
+            if inv_code == 'nan' or not inv_code: inv_code = ''
+            
+            inv_name = str(row.get('investigation_name', '')).strip()
+            if inv_name == 'nan': inv_name = ''
+                
+            category = str(row.get('category', '')).strip()
+            if category == 'nan': category = ''
+                
+            specimen = str(row.get('specimen_or_sample', '')).strip()
+            if specimen == 'nan': specimen = ''
+                
+            active_str = str(row.get('active', '')).strip().lower()
+            is_active = True if active_str in ['yes', 'y', 'true', '1'] else False
+            
+            params_raw = str(row.get('parameters', '')).strip()
+            if params_raw == 'nan': params_raw = ''
+            
+            parameters_list = [p.strip() for p in params_raw.split(';') if p.strip()]
+            
+            status = 'Valid'
+            error_msg = ''
+            
+            if not inv_code:
+                status = 'Error'
+                error_msg = 'Investigation Code is required'
+            elif not inv_name:
+                status = 'Error'
+                error_msg = 'Investigation Name is required'
+            elif inv_code in file_inv_codes:
+                status = 'Error'
+                error_msg = 'Duplicate Investigation Code in file'
+            elif inv_code in existing_inv_codes:
+                status = 'Duplicate'
+                error_msg = 'Investigation Code already exists in database'
+            
+            if inv_code:
+                file_inv_codes.add(inv_code)
+                
+            preview_data.append({
+                'row_num': row_num,
+                'investigation_code': inv_code,
+                'investigation_name': inv_name,
+                'category': category,
+                'specimen_or_sample': specimen,
+                'parameters': parameters_list,
+                'active': is_active,
+                'status': status,
+                'error': error_msg
+            })
+            
+        return JsonResponse({
+            'status': 'success', 
+            'filename': filename,
+            'data': preview_data
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'status': 'error', 'message': f'Error parsing file: {str(e)}'})
+
+def api_investigation_import(request):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid method'})
+        
+    try:
+        data = json.loads(request.body)
+        filename = data.get('filename', 'Unknown')
+        rows = data.get('rows', [])
+        update_duplicates = data.get('update_duplicates', False)
+        
+        inv_imported = 0
+        inv_updated = 0
+        inv_skipped = 0
+        param_imported = 0
+        param_updated = 0
+        param_skipped = 0
+        failed = 0
+        
+        from django.db import transaction
+        from .models import Investigation, InvestigationParameter, LabDepartment, SampleType
+        
+        with transaction.atomic():
+            for row in rows:
+                if row['status'] == 'Error':
+                    failed += 1
+                    continue
+                    
+                inv_code = row['investigation_code']
+                
+                try:
+                    dept = None
+                    if row['category']:
+                        dept, _ = LabDepartment.objects.get_or_create(name=row['category'])
+                        
+                    samp = None
+                    if row['specimen_or_sample']:
+                        samp, _ = SampleType.objects.get_or_create(name=row['specimen_or_sample'])
+                
+                    inv = Investigation.objects.filter(code=inv_code).first()
+                    
+                    if inv:
+                        if update_duplicates:
+                            inv.name = row['investigation_name']
+                            inv.department = dept
+                            inv.sample_type = samp
+                            inv.is_active = row['active']
+                            inv.save()
+                            inv_updated += 1
+                        else:
+                            inv_skipped += 1
+                            continue # skip parameters too if skipping investigation
+                    else:
+                        inv = Investigation.objects.create(
+                            code=inv_code,
+                            name=row['investigation_name'],
+                            department=dept,
+                            sample_type=samp,
+                            is_active=row['active'],
+                            is_panel=len(row['parameters']) > 1
+                        )
+                        inv_imported += 1
+                        
+                    # Process parameters
+                    for idx, p_name in enumerate(row['parameters']):
+                        # Auto-generate a simple code if not provided
+                        p_code = f"{inv_code}-P{idx+1}"
+                        
+                        param = InvestigationParameter.objects.filter(investigation=inv, code=p_code).first()
+                        if param:
+                            if update_duplicates:
+                                param.name = p_name
+                                param.display_order = idx + 1
+                                param.save()
+                                param_updated += 1
+                            else:
+                                param_skipped += 1
+                        else:
+                            InvestigationParameter.objects.create(
+                                investigation=inv,
+                                code=p_code,
+                                name=p_name,
+                                display_order=idx + 1,
+                                result_type='Numeric', # default
+                                is_active=True
+                            )
+                            param_imported += 1
+                            
+                except Exception as e:
+                    print(f"Error importing row {row['row_num']}: {str(e)}")
+                    failed += 1
+                    
+            history = InvestigationImportHistory.objects.create(
+                file_name=filename,
+                uploaded_by=request.user if request.user.is_authenticated else None,
+                total_investigations=len(rows),
+                total_parameters=sum(len(r['parameters']) for r in rows),
+                investigations_imported=inv_imported,
+                investigations_updated=inv_updated,
+                investigations_skipped=inv_skipped,
+                parameters_imported=param_imported,
+                parameters_updated=param_updated,
+                parameters_skipped=param_skipped,
+                failed_records=failed,
+                status='Completed'
+            )
+            
+        return JsonResponse({
+            'status': 'success',
+            'summary': {
+                'total_investigations': len(rows),
+                'total_parameters': sum(len(r['parameters']) for r in rows),
+                'inv_imported': inv_imported,
+                'inv_updated': inv_updated,
+                'inv_skipped': inv_skipped,
+                'param_imported': param_imported,
+                'param_updated': param_updated,
+                'param_skipped': param_skipped,
+                'failed': failed,
+                'history_id': history.id
+            }
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'status': 'error', 'message': str(e)})
+
+# --- Age Group Import ---
+
+from .models import AgeGroupImportHistory, ParameterImportHistory, AgeGroup, ParameterReferenceRange
+
+class AgeGroupImportView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
+    template_name = 'lab/master/import_agegroup.html'
+    menu_key = 'administration'
+
+class AgeGroupImportHistoryView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
+    model = AgeGroupImportHistory
+    template_name = 'lab/master/import_agegroup_history.html'
+    context_object_name = 'histories'
+    menu_key = 'administration'
+
+def api_agegroup_download_template(request):
+    df = pd.DataFrame({
+        'age_group_code': ['NEWBORN', 'INFANT'],
+        'age_group_name': ['Newborn', 'Infant'],
+        'minimum_age': [0, 29],
+        'maximum_age': [28, 12],
+        'age_unit': ['Days', 'Months'],
+        'gender': ['All', 'All'],
+        'pregnancy_applicable': ['No', 'No'],
+        'display_order': [1, 2],
+        'active': ['Yes', 'Yes']
+    })
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Template')
+    output.seek(0)
+    response = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="agegroup_import_template.xlsx"'
+    return response
+
+def api_agegroup_preview(request):
+    if request.method != 'POST': return JsonResponse({'success': False, 'message': 'Invalid method'})
+    if 'file' not in request.FILES: return JsonResponse({'success': False, 'message': 'No file uploaded'})
+        
+    file = request.FILES['file']
+    filename = file.name
+    
+    try:
+        import pandas as pd
+        if filename.endswith('.csv'): 
+            import csv
+            import io
+            decoded_file = file.read().decode('utf-8')
+            reader = csv.reader(io.StringIO(decoded_file))
+            raw_headers = next(reader, [])
+            rows_data = list(reader)
+        elif filename.endswith('.xlsx'): 
+            from openpyxl import load_workbook
+            try:
+                workbook = load_workbook(file, read_only=True, data_only=True)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                print("AGE GROUP IMPORT ERROR:", repr(e))
+                return JsonResponse({'success': False, 'error_type': 'VALIDATION_ERROR', 'errors': [{'row': 0, 'field': 'File', 'value': '', 'message': 'Could not read Excel file'}]})
+            if 'Template' not in workbook.sheetnames:
+                return JsonResponse({'success': False, 'error_type': 'VALIDATION_ERROR', 'errors': [{'row': 0, 'field': 'Worksheet', 'value': '', 'message': "Import worksheet 'Template' not found."}]})
+            worksheet = workbook['Template']
+            raw_headers = []
+            rows_data = []
+            for i, row in enumerate(worksheet.iter_rows(values_only=True)):
+                if i == 0:
+                    raw_headers = list(row)
+                else:
+                    if any(cell is not None and str(cell).strip() != '' for cell in row):
+                        rows_data.append(list(row))
+        else: 
+            return JsonResponse({'success': False, 'message': 'Unsupported format'})
+            
+        required = ['age_group_code', 'age_group_name', 'minimum_age', 'maximum_age', 'age_unit', 'gender', 'pregnancy_applicable', 'display_order', 'active']
+        headers = [str(h).strip().lower() if h else "" for h in raw_headers]
+        
+        for req in required:
+            if req not in headers:
+                return JsonResponse({'success': False, 'error_type': 'VALIDATION_ERROR', 'errors': [{'row': 1, 'field': 'Header', 'value': '', 'message': f'Missing required column: {req}'}]})
+                
+        col_idx = {req: headers.index(req) for req in required}
+        
+        preview_data = []
+        validation_errors = []
+        file_codes = set()
+        
+        from .models import AgeGroup
+        existing = set(AgeGroup.objects.values_list('code', flat=True))
+        
+        valid_rows = 0
+        invalid_rows = 0
+        duplicate_rows = 0
+        
+        def parse_optional_number(value):
+            if value is None: return None
+            val_str = str(value).strip()
+            if val_str == "": return None
+            try:
+                f = float(val_str)
+                if f.is_integer(): return int(f)
+                return f
+            except Exception:
+                return "INVALID"
+                
+        def safe_str(val):
+            if val is None: return ""
+            return str(val).strip()
+        
+        for i, row in enumerate(rows_data):
+            row_num = i + 2
+            while len(row) < len(headers): row.append(None)
+            
+            code = safe_str(row[col_idx['age_group_code']])
+            name = safe_str(row[col_idx['age_group_name']])
+            min_age = parse_optional_number(row[col_idx['minimum_age']])
+            max_age = parse_optional_number(row[col_idx['maximum_age']])
+            disp_order = parse_optional_number(row[col_idx['display_order']])
+            
+            age_unit = safe_str(row[col_idx['age_unit']]).capitalize()
+            gender = safe_str(row[col_idx['gender']]).capitalize()
+            preg_str = safe_str(row[col_idx['pregnancy_applicable']]).lower()
+            active_str = safe_str(row[col_idx['active']]).lower()
+            
+            row_errors = []
+            
+            if not code: row_errors.append({'row': row_num, 'field': 'age_group_code', 'value': '', 'message': 'Age group code required'})
+            if not name: row_errors.append({'row': row_num, 'field': 'age_group_name', 'value': '', 'message': 'Age group name required'})
+            
+            if min_age == 'INVALID': row_errors.append({'row': row_num, 'field': 'minimum_age', 'value': row[col_idx['minimum_age']], 'message': 'INVALID_NUMERIC_VALUE'})
+            if max_age == 'INVALID': row_errors.append({'row': row_num, 'field': 'maximum_age', 'value': row[col_idx['maximum_age']], 'message': 'INVALID_NUMERIC_VALUE'})
+            if disp_order == 'INVALID': row_errors.append({'row': row_num, 'field': 'display_order', 'value': row[col_idx['display_order']], 'message': 'INVALID_NUMERIC_VALUE'})
+            
+            if min_age != 'INVALID' and max_age != 'INVALID' and min_age is not None and max_age is not None and min_age > max_age:
+                row_errors.append({'row': row_num, 'field': 'age_range', 'value': f'{min_age}-{max_age}', 'message': 'INVALID_AGE_RANGE: minimum_age > maximum_age'})
+                
+            if age_unit not in ['Days', 'Months', 'Years']:
+                row_errors.append({'row': row_num, 'field': 'age_unit', 'value': row[col_idx['age_unit']], 'message': 'INVALID_AGE_UNIT: Allowed values: Days, Months, Years.'})
+            if gender not in ['All', 'Male', 'Female']:
+                row_errors.append({'row': row_num, 'field': 'gender', 'value': row[col_idx['gender']], 'message': 'INVALID_GENDER: Allowed values: All, Male, Female.'})
+            
+            preg = preg_str in ['yes', 'y', '1', 'true']
+            if preg_str not in ['yes', 'no', 'y', 'n', '1', '0', 'true', 'false', '']:
+                row_errors.append({'row': row_num, 'field': 'pregnancy_applicable', 'value': row[col_idx['pregnancy_applicable']], 'message': 'INVALID_PREGNANCY_VALUE'})
+                
+            active = active_str in ['yes', 'y', '1', 'true', '']
+            if active_str not in ['yes', 'no', 'y', 'n', '1', '0', 'true', 'false', '']:
+                row_errors.append({'row': row_num, 'field': 'active', 'value': row[col_idx['active']], 'message': 'INVALID_ACTIVE_VALUE'})
+            
+            is_duplicate = False
+            if code in existing:
+                is_duplicate = True
+            elif code in file_codes:
+                row_errors.append({'row': row_num, 'field': 'age_group_code', 'value': code, 'message': 'DUPLICATE_AGE_GROUP_CODE_IN_FILE'})
+                
+            if code: file_codes.add(code)
+            
+            if row_errors:
+                status = 'Error'
+                invalid_rows += 1
+                validation_errors.extend(row_errors)
+                error_msg = row_errors[0]['message']
+            elif is_duplicate:
+                status = 'Duplicate'
+                duplicate_rows += 1
+                error_msg = 'EXISTING_AGE_GROUP'
+            else:
+                status = 'Valid'
+                valid_rows += 1
+                error_msg = ''
+                
+            preview_data.append({
+                'row_num': row_num,
+                'code': code,
+                'name': name,
+                'min_age': min_age if min_age != 'INVALID' and min_age is not None else '',
+                'max_age': max_age if max_age != 'INVALID' and max_age is not None else '',
+                'unit': age_unit,
+                'gender': gender,
+                'preg': preg,
+                'disp_order': disp_order if disp_order != 'INVALID' and disp_order is not None else '',
+                'active': active,
+                'status': status,
+                'error': error_msg
+            })
+            
+        if validation_errors:
+            return JsonResponse({
+                'success': False,
+                'error_type': 'VALIDATION_ERROR',
+                'errors': validation_errors,
+                'data': preview_data,
+                'filename': filename
+            })
+            
+        return JsonResponse({
+            'success': True,
+            'total_rows': len(rows_data),
+            'valid_rows': valid_rows,
+            'invalid_rows': invalid_rows,
+            'duplicates': duplicate_rows,
+            'errors': [],
+            'data': preview_data,
+            'filename': filename
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print("AGE GROUP IMPORT ERROR:", repr(e))
+        return JsonResponse({'success': False, 'message': str(e)})
+
+def api_agegroup_import(request):
+    import json
+    from django.http import JsonResponse
+    if request.method != 'POST': return JsonResponse({'success': False, 'message': 'Invalid method'})
+    try:
+        data = json.loads(request.body)
+        filename = data.get('filename', 'Unknown')
+        rows = data.get('rows', [])
+        update_duplicates = data.get('update_duplicates', False)
+        
+        imported = updated = skipped = failed = 0
+        from django.db import transaction, IntegrityError
+        from .models import AgeGroup, AgeGroupImportHistory
+        
+        # Pre-fetch existing codes to avoid querying per row
+        valid_codes = [r['code'] for r in rows if r['status'] != 'Error']
+        existing_age_groups = {ag.code: ag for ag in AgeGroup.objects.filter(code__in=valid_codes)}
+        
+        try:
+            with transaction.atomic():
+                for row in rows:
+                    if row['status'] == 'Error':
+                        failed += 1
+                        continue
+                    
+                    ag = existing_age_groups.get(row['code'])
+                    min_age = row['min_age'] if row['min_age'] != '' else 0
+                    max_age = row['max_age'] if row['max_age'] != '' else None
+                    disp = row['disp_order'] if row['disp_order'] != '' else 1
+                    
+                    if ag:
+                        if update_duplicates or row['status'] == 'Duplicate':
+                            if update_duplicates:
+                                ag.label = row['name']
+                                ag.min_age_value = min_age
+                                ag.min_age_unit = row['unit']
+                                ag.max_age_value = max_age
+                                ag.max_age_unit = row['unit']
+                                ag.gender = row['gender']
+                                ag.pregnancy_applicable = row['preg']
+                                ag.sort_order = disp
+                                ag.is_active = row['active']
+                                ag.save()
+                                updated += 1
+                            else:
+                                skipped += 1
+                        else:
+                            skipped += 1
+                    else:
+                        new_ag = AgeGroup.objects.create(
+                            code=row['code'],
+                            label=row['name'],
+                            min_age_value=min_age,
+                            min_age_unit=row['unit'],
+                            max_age_value=max_age,
+                            max_age_unit=row['unit'],
+                            gender=row['gender'],
+                            pregnancy_applicable=row['preg'],
+                            sort_order=disp,
+                            is_active=row['active']
+                        )
+                        existing_age_groups[new_ag.code] = new_ag
+                        imported += 1
+                        
+                history = AgeGroupImportHistory.objects.create(
+                    file_name=filename, uploaded_by=request.user if request.user.is_authenticated else None,
+                    total_records=len(rows), imported=imported, updated=updated, skipped=skipped, failed=failed
+                )
+                
+            return JsonResponse({'success': True, 'summary': {
+                'total': len(rows), 'imported': imported, 'updated': updated, 'skipped': skipped, 'failed': failed, 'history_id': history.id
+            }})
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            print("AGE GROUP IMPORT DATABASE ERROR:", repr(e))
+            return JsonResponse({
+                'success': False, 
+                'error_type': 'DATABASE_ERROR',
+                'message': 'Age Group import failed. No records were imported.'
+            })
+            
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print("AGE GROUP IMPORT ERROR:", repr(e))
+        return JsonResponse({'success': False, 'message': str(e)})
+
+# --- Parameter Import ---
+
+class ParameterImportView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
+    template_name = 'lab/master/import_parameter.html'
+    menu_key = 'administration'
+
+class ParameterImportHistoryView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
+    model = ParameterImportHistory
+    template_name = 'lab/master/import_parameter_history.html'
+    context_object_name = 'histories'
+    menu_key = 'administration'
+
+def api_parameter_download_template(request):
+    df = pd.DataFrame({
+        'parameter_code': ['00022476-P070', '00011930-P001'],
+        'investigation_code': ['00022476', '00011930'],
+        'parameter_name': ['Absolute Eosinophil Count', 'pH'],
+        'short_name': ['AEC', 'pH'],
+        'result_type': ['Numeric', 'Numeric'],
+        'unit': ['cells/µL', ''],
+        'decimal_precision': [2, 2],
+        'age_group_code': ['ADULT', 'ADULT'],
+        'gender': ['All', 'All'],
+        'min_age': [18, 18],
+        'max_age': [120, 120],
+        'age_unit': ['Years', 'Years'],
+        'reference_min': ['40', '7.35'],
+        'reference_max': ['400', '7.45'],
+        'reference_text': ['', ''],
+        'critical_low': ['20', '7.20'],
+        'critical_high': ['1000', '7.60'],
+        'display_order': [1, 1],
+        'active': ['Yes', 'Yes']
+    })
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Template')
+    output.seek(0)
+    response = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="parameter_import_template.xlsx"'
+    return response
+
+def api_parameter_preview(request):
+    if request.method != 'POST': return JsonResponse({'success': False, 'message': 'Invalid method'})
+    if 'file' not in request.FILES: return JsonResponse({'success': False, 'message': 'No file uploaded'})
+    
+    file = request.FILES['file']
+    filename = file.name
+    
+    try:
+        if filename.endswith('.csv'):
+            import csv
+            import io
+            decoded_file = file.read().decode('utf-8-sig')
+            reader = csv.reader(io.StringIO(decoded_file))
+            raw_headers = next(reader, [])
+            rows_data = [r for r in reader if any(cell is not None and str(cell).strip() != '' for cell in r)]
+        elif filename.endswith('.xlsx'):
+            from openpyxl import load_workbook
+            try:
+                workbook = load_workbook(file, read_only=True, data_only=True)
+            except Exception as e:
+                print("PARAMETER IMPORT ERROR:", repr(e))
+                import traceback
+                traceback.print_exc()
+                return JsonResponse({
+                    'success': False, 
+                    'error_type': 'VALIDATION_ERROR',
+                    'errors': [{'row': 0, 'field': 'File', 'value': '', 'message': 'Could not read Excel file'}]
+                })
+                
+            if 'Template' in workbook.sheetnames:
+                worksheet = workbook['Template']
+            else:
+                worksheet = workbook.active
+                
+            raw_headers = []
+            rows_data = []
+            for i, row in enumerate(worksheet.iter_rows(values_only=True)):
+                if i == 0:
+                    raw_headers = list(row)
+                else:
+                    if any(cell is not None and str(cell).strip() != '' for cell in row):
+                        rows_data.append(list(row))
+        else:
+            return JsonResponse({'success': False, 'message': 'Unsupported format. Please upload .xlsx or .csv'})
+            
+        mandatory_cols = [
+            'parameter_code', 'investigation_code', 'parameter_name', 'short_name', 
+            'result_type', 'decimal_precision'
+        ]
+        all_cols = [
+            'parameter_code', 'investigation_code', 'parameter_name', 'short_name', 
+            'result_type', 'unit', 'decimal_precision', 'age_group_code', 'gender', 
+            'min_age', 'max_age', 'age_unit', 'reference_min', 'reference_max', 
+            'reference_text', 'critical_low', 'critical_high', 'display_order', 'active'
+        ]
+        
+        headers = [str(h).strip().lower().replace(' ', '_') if h is not None else "" for h in raw_headers]
+        
+        for req in mandatory_cols:
+            if req not in headers:
+                return JsonResponse({
+                    'success': False, 
+                    'error_type': 'VALIDATION_ERROR',
+                    'errors': [{'row': 1, 'field': 'Header', 'value': '', 'message': f'Missing required column: {req}'}]
+                })
+                
+        col_idx = {col: headers.index(col) if col in headers else None for col in all_cols}
+        
+        def safe_cell(row, col_name):
+            idx = col_idx.get(col_name)
+            if idx is not None and idx < len(row):
+                val = row[idx]
+                if val is None: return ""
+                return str(val).strip()
+            return ""
+            
+        def parse_optional_number(value):
+            if value is None: return None
+            val_str = str(value).strip()
+            if val_str == "": return None
+            try:
+                f = float(val_str)
+                if f.is_integer(): return int(f)
+                return f
+            except Exception:
+                return "INVALID"
+                
+        from .models import Investigation, AgeGroup, InvestigationParameter
+        invs = set(Investigation.objects.values_list('code', flat=True))
+        ags = set(AgeGroup.objects.values_list('code', flat=True))
+        existing_params = set(InvestigationParameter.objects.values_list('investigation__code', 'code'))
+        
+        valid_result_types = [
+            'numeric', 'text', 'boolean', 'positive/negative', 
+            'reactive/non-reactive', 'detected/not detected', 'select', 'date', 'time'
+        ]
+        
+        preview_data = []
+        validation_errors = []
+        
+        valid_rows = 0
+        invalid_rows = 0
+        duplicate_rows = 0
+        
+        for i, row in enumerate(rows_data):
+            row_num = i + 2
+            
+            pcode = safe_cell(row, 'parameter_code')
+            icode = safe_cell(row, 'investigation_code')
+            name = safe_cell(row, 'parameter_name')
+            short_name = safe_cell(row, 'short_name')
+            rtype_input = safe_cell(row, 'result_type')
+            unit = safe_cell(row, 'unit')
+            
+            raw_dec = row[col_idx['decimal_precision']] if col_idx['decimal_precision'] is not None and col_idx['decimal_precision'] < len(row) else None
+            dec_prec = parse_optional_number(raw_dec)
+            
+            ag_code = safe_cell(row, 'age_group_code')
+            raw_gender = safe_cell(row, 'gender')
+            gender = raw_gender.capitalize() if raw_gender else 'All'
+            if gender not in ['Male', 'Female', 'All']: gender = 'All'
+            
+            raw_min_age = row[col_idx['min_age']] if col_idx['min_age'] is not None and col_idx['min_age'] < len(row) else None
+            raw_max_age = row[col_idx['max_age']] if col_idx['max_age'] is not None and col_idx['max_age'] < len(row) else None
+            min_age = parse_optional_number(raw_min_age)
+            max_age = parse_optional_number(raw_max_age)
+            
+            raw_age_unit = safe_cell(row, 'age_unit')
+            age_unit = raw_age_unit.capitalize() if raw_age_unit else 'Years'
+            if age_unit not in ['Days', 'Months', 'Years']: age_unit = 'Years'
+            
+            raw_ref_min = row[col_idx['reference_min']] if col_idx['reference_min'] is not None and col_idx['reference_min'] < len(row) else None
+            raw_ref_max = row[col_idx['reference_max']] if col_idx['reference_max'] is not None and col_idx['reference_max'] < len(row) else None
+            ref_min = parse_optional_number(raw_ref_min)
+            ref_max = parse_optional_number(raw_ref_max)
+            ref_text = safe_cell(row, 'reference_text')
+            
+            raw_crit_low = row[col_idx['critical_low']] if col_idx['critical_low'] is not None and col_idx['critical_low'] < len(row) else None
+            raw_crit_high = row[col_idx['critical_high']] if col_idx['critical_high'] is not None and col_idx['critical_high'] < len(row) else None
+            crit_low = parse_optional_number(raw_crit_low)
+            crit_high = parse_optional_number(raw_crit_high)
+            
+            raw_disp = row[col_idx['display_order']] if col_idx['display_order'] is not None and col_idx['display_order'] < len(row) else None
+            disp_order = parse_optional_number(raw_disp)
+            
+            active_str = safe_cell(row, 'active').lower()
+            active = active_str in ['yes', 'y', '1', 'true', '']
+            
+            row_errors = []
+            
+            if not pcode: row_errors.append({'row': row_num, 'field': 'parameter_code', 'value': '', 'message': 'Parameter code is required'})
+            
+            if not icode: 
+                row_errors.append({'row': row_num, 'field': 'investigation_code', 'value': '', 'message': 'Investigation code is required'})
+            elif icode not in invs:
+                row_errors.append({'row': row_num, 'field': 'investigation_code', 'value': icode, 'message': 'INVESTIGATION_NOT_FOUND'})
+                
+            if not name: row_errors.append({'row': row_num, 'field': 'parameter_name', 'value': '', 'message': 'Parameter name is required'})
+            
+            if not rtype_input:
+                row_errors.append({'row': row_num, 'field': 'result_type', 'value': '', 'message': 'RESULT_TYPE_REQUIRED'})
+            elif rtype_input.lower() not in valid_result_types:
+                row_errors.append({'row': row_num, 'field': 'result_type', 'value': rtype_input, 'message': 'Invalid result type'})
+                
+            if ag_code and ag_code not in ags and ag_code != 'GENERAL':
+                row_errors.append({'row': row_num, 'field': 'age_group_code', 'value': ag_code, 'message': 'AGE_GROUP_NOT_FOUND'})
+                
+            if dec_prec == 'INVALID': row_errors.append({'row': row_num, 'field': 'decimal_precision', 'value': str(raw_dec), 'message': 'INVALID_NUMERIC_VALUE'})
+            if disp_order == 'INVALID': row_errors.append({'row': row_num, 'field': 'display_order', 'value': str(raw_disp), 'message': 'INVALID_NUMERIC_VALUE'})
+            
+            if min_age == 'INVALID': row_errors.append({'row': row_num, 'field': 'min_age', 'value': str(raw_min_age), 'message': 'INVALID_NUMERIC_VALUE'})
+            if max_age == 'INVALID': row_errors.append({'row': row_num, 'field': 'max_age', 'value': str(raw_max_age), 'message': 'INVALID_NUMERIC_VALUE'})
+            
+            if ref_min == 'INVALID': row_errors.append({'row': row_num, 'field': 'reference_min', 'value': str(raw_ref_min), 'message': 'INVALID_NUMERIC_VALUE'})
+            if ref_max == 'INVALID': row_errors.append({'row': row_num, 'field': 'reference_max', 'value': str(raw_ref_max), 'message': 'INVALID_NUMERIC_VALUE'})
+            
+            if crit_low == 'INVALID': row_errors.append({'row': row_num, 'field': 'critical_low', 'value': str(raw_crit_low), 'message': 'INVALID_NUMERIC_VALUE'})
+            if crit_high == 'INVALID': row_errors.append({'row': row_num, 'field': 'critical_high', 'value': str(raw_crit_high), 'message': 'INVALID_NUMERIC_VALUE'})
+            
+            if min_age != 'INVALID' and max_age != 'INVALID' and min_age is not None and max_age is not None and min_age > max_age:
+                row_errors.append({'row': row_num, 'field': 'age_range', 'value': f'{min_age}-{max_age}', 'message': 'INVALID_AGE_RANGE'})
+                
+            if ref_min != 'INVALID' and ref_max != 'INVALID' and ref_min is not None and ref_max is not None and ref_min > ref_max:
+                row_errors.append({'row': row_num, 'field': 'reference_range', 'value': f'{ref_min}-{ref_max}', 'message': 'INVALID_REFERENCE_RANGE'})
+                
+            is_duplicate = False
+            if icode and pcode and (icode, pcode) in existing_params:
+                is_duplicate = True
+                
+            if row_errors:
+                status = 'Error'
+                invalid_rows += 1
+                validation_errors.extend(row_errors)
+                error_msg = row_errors[0]['message']
+            elif is_duplicate:
+                status = 'Duplicate'
+                duplicate_rows += 1
+                error_msg = 'DUPLICATE_PARAMETER'
+            else:
+                status = 'Valid'
+                valid_rows += 1
+                error_msg = ''
+                
+            rtype_final = rtype_input.capitalize()
+            for v in valid_result_types:
+                if v == rtype_input.lower(): rtype_final = v.title(); break
+                
+            preview_data.append({
+                'row_num': row_num,
+                'pcode': pcode,
+                'icode': icode,
+                'name': name,
+                'short_name': short_name,
+                'rtype': rtype_final,
+                'unit': unit,
+                'decimal_precision': dec_prec if dec_prec != 'INVALID' else '',
+                'ag_code': ag_code,
+                'gender': gender,
+                'min_age': min_age if min_age != 'INVALID' else '',
+                'max_age': max_age if max_age != 'INVALID' else '',
+                'age_unit': age_unit,
+                'ref_min': ref_min if ref_min != 'INVALID' else '',
+                'ref_max': ref_max if ref_max != 'INVALID' else '',
+                'ref_text': ref_text,
+                'crit_low': crit_low if crit_low != 'INVALID' else '',
+                'crit_high': crit_high if crit_high != 'INVALID' else '',
+                'disp_order': disp_order if disp_order != 'INVALID' else '',
+                'active': active,
+                'status': status,
+                'error': error_msg
+            })
+            
+        if validation_errors:
+            return JsonResponse({
+                'success': False,
+                'error_type': 'VALIDATION_ERROR',
+                'errors': validation_errors,
+                'total_rows': len(rows_data),
+                'valid_rows': valid_rows,
+                'invalid_rows': invalid_rows,
+                'duplicates': duplicate_rows,
+                'data': preview_data,
+                'filename': filename
+            })
+            
+        return JsonResponse({
+            'success': True,
+            'total_rows': len(rows_data),
+            'valid_rows': valid_rows,
+            'invalid_rows': invalid_rows,
+            'duplicates': duplicate_rows,
+            'errors': [],
+            'data': preview_data,
+            'filename': filename
+        })
+        
+    except Exception as e:
+        print("PARAMETER IMPORT ERROR:", repr(e))
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': str(e)})
+
+def api_parameter_import(request):
+    import json
+    from django.http import JsonResponse
+    if request.method != 'POST': return JsonResponse({'status': 'error', 'message': 'Invalid method'})
+    try:
+        data = json.loads(request.body)
+        filename = data.get('filename', 'Unknown')
+        rows = data.get('rows', [])
+        update_dups = data.get('update_duplicates', False)
+        
+        imported = updated = skipped = failed = 0
+        from django.db import transaction
+        from .models import Investigation, InvestigationParameter, AgeGroup, ParameterReferenceRange, ParameterImportHistory
+        
+        with transaction.atomic():
+            for row in rows:
+                if row['status'] == 'Error':
+                    failed += 1
+                    continue
+                try:
+                    inv = Investigation.objects.filter(code=row['icode']).first()
+                    if not inv:
+                        failed += 1
+                        continue
+                        
+                    pcode = row['pcode']
+                    param = InvestigationParameter.objects.filter(investigation=inv, code=pcode).first()
+                    
+                    dec_prec = None
+                    if row.get('decimal_precision') not in [None, '']:
+                        try: dec_prec = int(float(row['decimal_precision']))
+                        except: pass
+                        
+                    disp = 1
+                    if row.get('disp_order') not in [None, '']:
+                        try: disp = int(float(row['disp_order']))
+                        except: pass
+                        
+                    if param:
+                        if update_dups or row['status'] == 'Duplicate':
+                            if update_dups:
+                                param.name = row['name']
+                                param.short_name = row['short_name']
+                                param.result_type = row['rtype']
+                                param.unit = row['unit']
+                                param.decimal_precision = dec_prec
+                                param.display_order = disp
+                                param.is_active = row['active']
+                                param.save()
+                                updated += 1
+                            else:
+                                skipped += 1
+                                continue
+                        else:
+                            skipped += 1
+                            continue
+                    else:
+                        param = InvestigationParameter.objects.create(
+                            investigation=inv, code=pcode, name=row['name'],
+                            short_name=row['short_name'], result_type=row['rtype'], 
+                            unit=row['unit'], decimal_precision=dec_prec, 
+                            display_order=disp, is_active=row['active']
+                        )
+                        imported += 1
+                        
+                    ag_code = row['ag_code']
+                    if ag_code:
+                        ag = AgeGroup.objects.filter(code=ag_code).first()
+                        if ag:
+                            gen = row.get('gender', 'All')
+                            
+                            def s_float(val):
+                                if val in [None, '']: return None
+                                return float(val)
+                                
+                            r_min = s_float(row.get('ref_min'))
+                            r_max = s_float(row.get('ref_max'))
+                            c_low = s_float(row.get('crit_low'))
+                            c_high = s_float(row.get('crit_high'))
+                            
+                            ref, ref_cr = ParameterReferenceRange.objects.get_or_create(
+                                investigation_parameter=param, age_group=ag, gender=gen,
+                                defaults={
+                                    'min_value': r_min,
+                                    'max_value': r_max,
+                                    'reference_text': row.get('ref_text', ''),
+                                    'critical_low': c_low,
+                                    'critical_high': c_high,
+                                    'unit': row.get('unit', '')
+                                }
+                            )
+                            
+                            if not ref_cr and update_dups:
+                                ref.min_value = r_min
+                                ref.max_value = r_max
+                                ref.reference_text = row.get('ref_text', '')
+                                ref.critical_low = c_low
+                                ref.critical_high = c_high
+                                ref.unit = row.get('unit', '')
+                                ref.save()
+                                
+                except Exception as e:
+                    print(e)
+                    failed += 1
+                    
+            user_obj = request.user if hasattr(request, 'user') and request.user.is_authenticated else None
+            history = ParameterImportHistory.objects.create(
+                file_name=filename, uploaded_by=user_obj,
+                total_records=len(rows), imported=imported, updated=updated, skipped=skipped, failed=failed
+            )
+        return JsonResponse({'status': 'success', 'summary': {
+            'total': len(rows), 'imported': imported, 'updated': updated, 'skipped': skipped, 'failed': failed, 'history_id': history.id
+        }})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'status': 'error', 'message': str(e)})
+
+class ReferenceRangeImportView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
+    template_name = 'lab/master/import_reference_range.html'
+    menu_key = 'administration'
+
+class ReferenceRangeImportHistoryView(LoginRequiredMixin, MenuAccessRequiredMixin, ListView):
+    model = ReferenceRangeImportHistory
+    template_name = 'lab/master/import_reference_range_history.html'
+    context_object_name = 'histories'
+    menu_key = 'administration'
+
+def api_referencerange_download_template(request):
+    df = pd.DataFrame({
+        'investigation_code': ['00020537', '00020537'],
+        'investigation_name': ['CBC Complete Blood Count', 'CBC Complete Blood Count'],
+        'parameter_code': ['00020350', '00020350'],
+        'parameter_name': ['Hemoglobin', 'Hemoglobin'],
+        'age_group_code': ['ADOLESCENT', 'ADULT'],
+        'age_group_name': ['Younger Adolescent', 'Adult'],
+        'gender': ['Male', 'Female'],
+        'range_type': ['NUMERIC', 'NUMERIC'],
+        'min_value': ['11.0', '12.0'],
+        'max_value': ['15.0', '16.0'],
+        'reference_range_text': ['', ''],
+        'unit': ['g/dL', 'g/dL'],
+        'method': ['Colorimetric', 'Colorimetric'],
+        'remarks': ['', ''],
+        'status': ['Active', 'Active']
+    })
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Template')
+    output.seek(0)
+    
+    response = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="reference_range_import_template.xlsx"'
+    return response
+
+def api_referencerange_preview(request):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid method'})
+    
+    if 'file' not in request.FILES:
+        return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
+        
+    file = request.FILES['file']
+    filename = file.name
+    
+    try:
+        if filename.endswith('.csv'):
+            df = pd.read_csv(file, dtype=str)
+        elif filename.endswith('.xlsx'):
+            df = pd.read_excel(file, dtype=str)
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Unsupported file format.'})
+            
+        required_columns = [
+            'investigation_code', 'parameter_code', 'age_group_code', 'range_type'
+        ]
+        
+        # Normalize headers to handle spaces, case, etc.
+        df.columns = [str(c).strip().lower().replace(' ', '_') for c in df.columns]
+        
+        missing_columns = [req for req in required_columns if req not in df.columns]
+        if missing_columns:
+            msg = 'Missing required columns:\n- ' + '\n- '.join(missing_columns)
+            return JsonResponse({'status': 'error', 'message': msg})
+                
+        from .models import InvestigationParameter, AgeGroup, ParameterReferenceRange, Investigation, ReferenceRangeImportHistory
+        
+        # Create staging history record and save file
+        history = ReferenceRangeImportHistory.objects.create(
+            file_name=filename,
+            uploaded_by=request.user if request.user.is_authenticated else None,
+            total_records=len(df),
+            status='Staged',
+            upload_file=file
+        )
+        
+        valid_investigations = set(Investigation.objects.values_list('code', flat=True))
+        inv_params_cache = list(InvestigationParameter.objects.select_related('investigation', 'parameter').all())
+        ag_cache = {ag.code: ag for ag in AgeGroup.objects.all()}
+        
+        existing_ranges = set()
+        for r in ParameterReferenceRange.objects.all():
+            existing_ranges.add((r.investigation_parameter_id, r.age_group_id, r.gender))
+        
+        preview_data = []
+        file_keys = set()
+        
+        valid_rows = 0
+        invalid_rows = 0
+        duplicate_rows = 0
+        
+        for index, row in df.iterrows():
+            row_num = index + 2
+            
+            inv_code = str(row.get('investigation_code', '')).strip()
+            param_code = str(row.get('parameter_code', '')).strip()
+            ag_code = str(row.get('age_group_code', '')).strip()
+            gender = str(row.get('gender', '')).strip().capitalize()
+            range_type = str(row.get('range_type', '')).strip().upper()
+            
+            if inv_code == 'nan': inv_code = ''
+            if param_code == 'nan': param_code = ''
+            if ag_code == 'nan': ag_code = ''
+            if gender == 'nan' or not gender: gender = 'All'
+            if range_type == 'nan' or not range_type: range_type = 'NUMERIC'
+            
+            if range_type in ['NUMERIC RANGE', 'NUMERIC']: range_type = 'Numeric'
+            elif range_type in ['TEXT', 'TEXT / QUALITATIVE', 'QUALITATIVE']: range_type = 'Text'
+            elif range_type in ['NONE', 'NO REFERENCE RANGE']: range_type = 'None'
+            
+            min_val = str(row.get('min_value', '')).strip()
+            max_val = str(row.get('max_value', '')).strip()
+            if min_val == 'nan': min_val = ''
+            if max_val == 'nan': max_val = ''
+            
+            ref_text = str(row.get('reference_range_text', '')).strip()
+            if ref_text == 'nan': ref_text = ''
+            
+            status = 'Valid'
+            error_msg = ''
+            
+            ip_id = None
+            ag_id = None
+            
+            if not inv_code:
+                status = 'Error'
+                error_msg = 'Investigation Code is required'
+            elif not param_code:
+                status = 'Error'
+                error_msg = 'Parameter Code is required'
+            elif not ag_code:
+                status = 'Error'
+                error_msg = 'Age Group Code is required'
+            elif gender not in ['All', 'Male', 'Female']:
+                status = 'Error'
+                error_msg = 'Invalid Gender'
+            elif inv_code not in valid_investigations:
+                status = 'Error'
+                error_msg = f"Investigation code '{inv_code}' does not exist."
+            else:
+                ip = next((ip for ip in inv_params_cache if ip.investigation.code == inv_code and (ip.code == param_code or (ip.parameter and ip.parameter.code == param_code))), None)
+                if not ip:
+                    status = 'Error'
+                    error_msg = f"Parameter code '{param_code}' not found for investigation '{inv_code}'"
+                else:
+                    ip_id = ip.id
+                    ag = ag_cache.get(ag_code)
+                    if not ag:
+                        status = 'Error'
+                        error_msg = f"Age Group code '{ag_code}' does not exist."
+                    else:
+                        ag_id = ag.id
+                        
+            if status == 'Valid':
+                if range_type == 'Numeric':
+                    if min_val and max_val:
+                        try:
+                            if float(min_val) > float(max_val):
+                                status = 'Error'
+                                error_msg = 'Min > Max'
+                        except:
+                            status = 'Error'
+                            error_msg = 'Invalid numeric min/max'
+                            
+                key = f"{inv_code}-{param_code}-{ag_code}-{gender}"
+                if key in file_keys:
+                    status = 'Error'
+                    error_msg = 'Duplicate in file'
+                else:
+                    file_keys.add(key)
+                    
+                if status == 'Valid':
+                    if (ip_id, ag_id, gender) in existing_ranges:
+                        status = 'Duplicate'
+                        error_msg = 'Mapping already exists'
+            
+            if status == 'Valid':
+                valid_rows += 1
+            elif status == 'Duplicate':
+                duplicate_rows += 1
+            else:
+                invalid_rows += 1
+                
+            if index < 100:
+                preview_data.append({
+                    'row_num': row_num,
+                    'investigation_code': inv_code,
+                    'parameter_code': param_code,
+                    'age_group_code': ag_code,
+                    'gender': gender,
+                    'range_type': range_type.upper(),
+                    'min_value': min_val,
+                    'max_value': max_val,
+                    'reference_range_text': ref_text,
+                    'unit': str(row.get('unit', '')).strip(),
+                    'method': str(row.get('method', '')).strip(),
+                    'remarks': str(row.get('remarks', '')).strip(),
+                    'status': status,
+                    'error': error_msg
+                })
+            
+        return JsonResponse({
+            'status': 'success',
+            'filename': filename,
+            'import_id': history.id,
+            'total_rows': len(df),
+            'valid_rows': valid_rows,
+            'invalid_rows': invalid_rows,
+            'duplicate_rows': duplicate_rows,
+            'data': preview_data
+        })
+        
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'Error parsing file: {str(e)}'})
+
+def api_referencerange_import(request):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error'})
+        
+    try:
+        data = json.loads(request.body)
+        import_id = data.get('import_id')
+        update_existing = data.get('update_existing', False)
+        
+        if not import_id:
+            return JsonResponse({'status': 'error', 'message': 'Missing import_id'})
+            
+        from .models import InvestigationParameter, AgeGroup, ParameterReferenceRange, ReferenceRangeImportHistory, Investigation
+        from decimal import Decimal
+        from django.db import transaction, models
+        import pandas as pd
+        
+        history = ReferenceRangeImportHistory.objects.get(id=import_id)
+        if history.status != 'Staged':
+            return JsonResponse({'status': 'error', 'message': 'This import is already processed.'})
+            
+        history.status = 'In Progress'
+        history.save()
+        
+        file_path = history.upload_file.path
+        if file_path.endswith('.csv'):
+            df = pd.read_csv(file_path, dtype=str)
+        else:
+            df = pd.read_excel(file_path, dtype=str)
+            
+        df.columns = [str(c).strip().lower().replace(' ', '_') for c in df.columns]
+        
+        imported = 0
+        updated = 0
+        failed = 0
+        
+        # Pre-cache to speed up import
+        inv_params_cache = list(InvestigationParameter.objects.select_related('investigation', 'parameter').all())
+        ag_cache = {ag.code: ag for ag in AgeGroup.objects.all()}
+        valid_investigations = set(Investigation.objects.values_list('code', flat=True))
+        
+        try:
+            with transaction.atomic():
+                for index, row in df.iterrows():
+                    try:
+                        inv_code = str(row.get('investigation_code', '')).strip()
+                        param_code = str(row.get('parameter_code', '')).strip()
+                        ag_code = str(row.get('age_group_code', '')).strip()
+                        gender = str(row.get('gender', '')).strip().capitalize()
+                        
+                        if inv_code == 'nan': inv_code = ''
+                        if param_code == 'nan': param_code = ''
+                        if ag_code == 'nan': ag_code = ''
+                        if gender == 'nan' or not gender: gender = 'All'
+                        if gender not in ['All', 'Male', 'Female']:
+                            failed += 1
+                            continue
+                            
+                        if not inv_code or not param_code or not ag_code:
+                            failed += 1
+                            continue
+                            
+                        if inv_code not in valid_investigations:
+                            failed += 1
+                            continue
+                            
+                        range_type = str(row.get('range_type', '')).strip().upper()
+                        if range_type in ['NUMERIC RANGE', 'NUMERIC']: range_type = 'Numeric'
+                        elif range_type in ['TEXT', 'TEXT / QUALITATIVE', 'QUALITATIVE']: range_type = 'Text'
+                        else: range_type = 'None'
+                        
+                        min_val = str(row.get('min_value', '')).strip()
+                        max_val = str(row.get('max_value', '')).strip()
+                        ref_text = str(row.get('reference_range_text', '')).strip()
+                        unit = str(row.get('unit', '')).strip()
+                        method = str(row.get('method', '')).strip()
+                        remarks = str(row.get('remarks', '')).strip()
+                        
+                        min_d = Decimal(min_val) if min_val and min_val != 'nan' else None
+                        max_d = Decimal(max_val) if max_val and max_val != 'nan' else None
+                        
+                        if unit == 'nan': unit = ''
+                        if method == 'nan': method = ''
+                        if remarks == 'nan': remarks = ''
+                        if ref_text == 'nan': ref_text = ''
+                        
+                        ip = next((ip for ip in inv_params_cache if ip.investigation.code == inv_code and (ip.code == param_code or (ip.parameter and ip.parameter.code == param_code))), None)
+                        ag = ag_cache.get(ag_code)
+                        
+                        if ip and ag:
+                            obj, created = ParameterReferenceRange.objects.get_or_create(
+                                investigation_parameter=ip,
+                                age_group=ag,
+                                gender=gender
+                            )
+                            
+                            if created:
+                                imported += 1
+                            else:
+                                updated += 1
+                                
+                            obj.range_type = range_type
+                            obj.min_value = min_d
+                            obj.max_value = max_d
+                            obj.reference_text = ref_text
+                            obj.unit = unit
+                            obj.method = method
+                            obj.remarks = remarks
+                            obj.is_active = True
+                            obj.save()
+                        else:
+                            failed += 1
+                    except Exception as e:
+                        failed += 1
+                        
+                history.imported = imported
+                history.updated = updated
+                history.failed = failed
+                history.status = 'Completed'
+                history.save()
+                
+        except Exception as e:
+            history.status = 'Failed'
+            history.save()
+            return JsonResponse({'status': 'error', 'message': str(e)})
+        
+        return JsonResponse({
+            'status': 'success',
+            'imported': imported,
+            'updated': updated,
+            'failed': failed,
+            'skipped': 0
+        })
+        
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})
+
+
+# ─── Diagnosis–Investigation Age Mapping Import ────────────────────────────────
+
+class DiagnosisInvestigationMapImportView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
+    template_name = 'lab/master/import_diagnosis_investigation_map.html'
+    menu_key = 'administration'
+
+def api_diag_inv_map_download_template(request):
+    from .models import Diagnosis, LabDiagnosis, AgeGroup, Investigation
+    
+    d1 = Diagnosis.objects.filter(is_active=True).first()
+    ag1 = AgeGroup.objects.filter(is_active=True).first()
+    invs = list(Investigation.objects.filter(is_active=True)[:3])
+
+    inv1 = invs[0] if len(invs) > 0 else None
+    inv2 = invs[1] if len(invs) > 1 else inv1
+    inv3 = invs[2] if len(invs) > 2 else inv1
+
+    df = pd.DataFrame({
+        'diagnosis_name': [d1.name if d1 else '10 MONTH ANC', d1.name if d1 else '10 MONTH ANC', d1.name if d1 else '10 MONTH ANC'],
+        'diagnosis_code': [d1.code if d1 else 'LEGACY-261', d1.code if d1 else 'LEGACY-261', d1.code if d1 else 'LEGACY-261'],
+        'age_group_code': [ag1.code if ag1 else 'ADULT', ag1.code if ag1 else 'ADULT', ag1.code if ag1 else 'ADULT'],
+        'investigation_name': [inv1.name if inv1 else '24 HOURS URINE PROTEIN', inv2.name if inv2 else 'ABG ANALYSIS TEST', inv3.name if inv3 else 'AEC'],
+        'investigation_code': [inv1.code if inv1 else '00013389', inv2.code if inv2 else '00011930', inv3.code if inv3 else '00022476'],
+        'is_default': ['Yes', 'No', 'No'],
+        'active': ['Yes', 'Yes', 'Yes'],
+    })
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Template')
+    output.seek(0)
+    response = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="diagnosis_investigation_map_import_template.xlsx"'
+    return response
+
+def api_diag_inv_map_preview(request):
+    if request.method != 'POST': return JsonResponse({'success': False, 'message': 'Invalid method'})
+    if 'file' not in request.FILES: return JsonResponse({'success': False, 'message': 'No file uploaded'})
+
+    file = request.FILES['file']
+    filename = file.name
+
+    try:
+        if filename.endswith('.csv'):
+            import csv, io
+            decoded_file = file.read().decode('utf-8-sig')
+            reader = csv.reader(io.StringIO(decoded_file))
+            raw_headers = next(reader, [])
+            rows_data = [r for r in reader if any(cell is not None and str(cell).strip() != '' for cell in r)]
+        elif filename.endswith('.xlsx'):
+            from openpyxl import load_workbook
+            try:
+                workbook = load_workbook(file, read_only=True, data_only=True)
+            except Exception as e:
+                return JsonResponse({
+                    'success': False, 
+                    'error_type': 'VALIDATION_ERROR',
+                    'message': 'Could not read Excel file',
+                    'errors': [{'row': 0, 'field': 'File', 'value': '', 'message': 'Could not read Excel file'}]
+                })
+                
+            if 'Template' in workbook.sheetnames:
+                worksheet = workbook['Template']
+            else:
+                worksheet = workbook.active
+                
+            raw_headers = []
+            rows_data = []
+            for i, row in enumerate(worksheet.iter_rows(values_only=True)):
+                if i == 0:
+                    raw_headers = list(row)
+                else:
+                    if any(cell is not None and str(cell).strip() != '' for cell in row):
+                        rows_data.append(list(row))
+        else:
+            return JsonResponse({'success': False, 'message': 'Unsupported format. Please upload .xlsx or .csv'})
+
+        HEADER_MAP = {
+            'diagnosis_name': 'diagnosis_name',
+            'diagnosis': 'diagnosis_name',
+            'diagnosis_code': 'diagnosis_code',
+            'diag_code': 'diagnosis_code',
+            'age_group_code': 'age_group_code',
+            'age_group': 'age_group_code',
+            'investigation_name': 'investigation_name',
+            'investigation': 'investigation_name',
+            'investigation_code': 'investigation_code',
+            'inv_code': 'investigation_code',
+            'is_default': 'is_default',
+            'default': 'is_default',
+            'active': 'active',
+            'status': 'active',
+        }
+
+        headers = [HEADER_MAP.get(str(h).strip().lower().replace(' ', '_'), str(h).strip().lower().replace(' ', '_')) if h is not None else "" for h in raw_headers]
+        
+        required_cols = ['diagnosis_name', 'age_group_code', 'investigation_name']
+        all_cols = ['diagnosis_name', 'diagnosis_code', 'age_group_code', 'investigation_name', 'investigation_code', 'is_default', 'active']
+
+        # Check required columns
+        for req in required_cols:
+            if req not in headers:
+                return JsonResponse({
+                    'success': False,
+                    'error_type': 'VALIDATION_ERROR',
+                    'message': f'Missing required column: {req}',
+                    'errors': [{'row': 1, 'field': 'Header', 'value': '', 'message': f'Missing required column: {req}'}]
+                })
+
+        col_idx = {col: headers.index(col) for col in all_cols if col in headers}
+
+        def safe_cell(row, col_name):
+            idx = col_idx.get(col_name)
+            if idx is not None and idx < len(row):
+                val = row[idx]
+                if val is None: return ""
+                if isinstance(val, float) and val.is_integer():
+                    return str(int(val))
+                return str(val).strip()
+            return ""
+
+        import re
+        def normalize_name(s):
+            if s is None: return ""
+            return re.sub(r'\s+', ' ', str(s)).strip().lower()
+
+        def normalize_code(s):
+            if s is None: return ""
+            val_str = str(s).strip()
+            if val_str.endswith('.0') and val_str[:-2].isdigit():
+                val_str = val_str[:-2]
+            return val_str.lower()
+
+        from .models import Diagnosis, AgeGroup, Investigation, DiagnosisInvestigationMap
+
+        all_diagnoses = Diagnosis.objects.all()
+        diag_by_name = {}
+        diag_by_code = {}
+        diag_by_id   = {}
+
+        for d in all_diagnoses:
+            diag_by_id[str(d.id)] = d
+            if d.code:
+                c_norm = normalize_code(d.code)
+                if c_norm: diag_by_code[c_norm] = d
+            if d.legacy_code:
+                lc_norm = normalize_code(d.legacy_code)
+                if lc_norm: diag_by_code[lc_norm] = d
+            if d.name:
+                n_norm = normalize_name(d.name)
+                if n_norm and n_norm not in diag_by_name: diag_by_name[n_norm] = d
+            if d.icd11_title:
+                t_norm = normalize_name(d.icd11_title)
+                if t_norm and t_norm not in diag_by_name: diag_by_name[t_norm] = d
+            if d.synonyms:
+                for syn in re.split(r'[,;\n]+', str(d.synonyms)):
+                    s_norm = normalize_name(syn)
+                    if s_norm and s_norm not in diag_by_name: diag_by_name[s_norm] = d
+
+        ag_by_code   = {normalize_code(ag.code): ag for ag in AgeGroup.objects.all() if ag.code}
+        ag_by_label  = {normalize_name(ag.label): ag for ag in AgeGroup.objects.all() if ag.label}
+        inv_by_name  = {normalize_name(i.name): i for i in Investigation.objects.all() if i.name}
+        inv_by_code  = {normalize_code(i.code): i for i in Investigation.objects.all() if i.code}
+
+        existing_keys = set(DiagnosisInvestigationMap.objects.values_list('diagnosis_id', 'age_group_id', 'investigation_id'))
+
+        preview_data = []
+        validation_errors = []
+        file_keys = set()
+        valid_rows = invalid_rows = duplicate_rows = 0
+
+        for i, row in enumerate(rows_data):
+            row_num = i + 2
+
+            d_name_raw = safe_cell(row, 'diagnosis_name')
+            d_code_raw = safe_cell(row, 'diagnosis_code')
+            ag_code_raw = safe_cell(row, 'age_group_code')
+            i_name_raw = safe_cell(row, 'investigation_name')
+            i_code_raw = safe_cell(row, 'investigation_code')
+            raw_is_default = safe_cell(row, 'is_default')
+            raw_active = safe_cell(row, 'active')
+
+            row_errors = []
+            diag_obj = None
+
+            # Validate Diagnosis (code/ID if supplied, otherwise name)
+            d_name_norm = normalize_name(d_name_raw)
+            d_code_norm = normalize_code(d_code_raw)
+
+            if d_code_raw:
+                diag_obj = diag_by_code.get(d_code_norm) or diag_by_id.get(str(d_code_raw).strip())
+                if not diag_obj:
+                    row_errors.append({'row': row_num, 'field': 'diagnosis_code', 'value': d_code_raw, 'message': f'Diagnosis code "{d_code_raw}" was not found in Diagnosis Master.'})
+                else:
+                    if d_name_raw:
+                        d_by_n = diag_by_name.get(d_name_norm)
+                        if d_by_n and d_by_n.id != diag_obj.id:
+                            row_errors.append({'row': row_num, 'field': 'diagnosis_code', 'value': d_code_raw, 'message': f'Diagnosis name "{d_name_raw}" and diagnosis code "{d_code_raw}" do not match.'})
+            elif d_name_raw:
+                diag_obj = diag_by_name.get(d_name_norm)
+                if not diag_obj:
+                    row_errors.append({'row': row_num, 'field': 'diagnosis_name', 'value': d_name_raw, 'message': f'Diagnosis "{d_name_raw}" was not found in Diagnosis Master.'})
+            else:
+                row_errors.append({'row': row_num, 'field': 'diagnosis_name', 'value': '', 'message': 'Diagnosis name or diagnosis code is required.'})
+
+            # Validate Age Group
+            ag_obj = None
+            ag_code_norm = normalize_code(ag_code_raw)
+            ag_label_norm = normalize_name(ag_code_raw)
+            if not ag_code_raw:
+                row_errors.append({'row': row_num, 'field': 'age_group_code', 'value': '', 'message': 'Age Group code is required.'})
+            else:
+                ag_obj = ag_by_code.get(ag_code_norm) or ag_by_label.get(ag_label_norm)
+                if not ag_obj:
+                    row_errors.append({'row': row_num, 'field': 'age_group_code', 'value': ag_code_raw, 'message': f'Age Group "{ag_code_raw}" was not found in Age Group Master.'})
+
+            # Validate Investigation (code if supplied, otherwise name)
+            inv_obj = None
+            i_name_norm = normalize_name(i_name_raw)
+            i_code_norm = normalize_code(i_code_raw)
+
+            if i_code_raw:
+                i_by_c = inv_by_code.get(i_code_norm)
+                if not i_by_c:
+                    row_errors.append({'row': row_num, 'field': 'investigation_code', 'value': i_code_raw, 'message': f'Investigation code "{i_code_raw}" was not found in Investigation Master.'})
+                else:
+                    if i_name_raw:
+                        i_by_n = inv_by_name.get(i_name_norm)
+                        if i_by_n and i_by_n.id != i_by_c.id:
+                            row_errors.append({'row': row_num, 'field': 'investigation_code', 'value': i_code_raw, 'message': f'Investigation name "{i_name_raw}" and investigation code "{i_code_raw}" do not match.'})
+                        else:
+                            inv_obj = i_by_c
+                    else:
+                        inv_obj = i_by_c
+            elif i_name_raw:
+                inv_obj = inv_by_name.get(i_name_norm)
+                if not inv_obj:
+                    row_errors.append({'row': row_num, 'field': 'investigation_name', 'value': i_name_raw, 'message': f'Investigation "{i_name_raw}" was not found in Investigation Master.'})
+            else:
+                row_errors.append({'row': row_num, 'field': 'investigation_name', 'value': '', 'message': 'Investigation name or investigation code is required.'})
+
+            # Validate is_default (Optional - default False)
+            is_default = False
+            if raw_is_default != '':
+                def_clean = raw_is_default.lower()
+                if def_clean in ['yes', 'y', '1', 'true']:
+                    is_default = True
+                elif def_clean in ['no', 'n', '0', 'false']:
+                    is_default = False
+                else:
+                    row_errors.append({'row': row_num, 'field': 'is_default', 'value': raw_is_default, 'message': 'Invalid is_default value (must be Yes or No).'})
+
+            # Validate active (Optional - default True)
+            is_active = True
+            if raw_active != '':
+                act_clean = raw_active.lower()
+                if act_clean in ['yes', 'y', '1', 'true']:
+                    is_active = True
+                elif act_clean in ['no', 'n', '0', 'false']:
+                    is_active = False
+                else:
+                    row_errors.append({'row': row_num, 'field': 'active', 'value': raw_active, 'message': 'Invalid active value (must be Yes or No).'})
+
+            status = ''
+            error_msg = ''
+            if row_errors:
+                status = 'Error'
+                invalid_rows += 1
+                validation_errors.extend(row_errors)
+                error_msg = '; '.join(e['message'] for e in row_errors)
+            else:
+                mapping_key = (diag_obj.id, ag_obj.id, inv_obj.id)
+                if mapping_key in file_keys:
+                    status = 'Error'
+                    error_msg = 'Duplicate mapping in file'
+                    invalid_rows += 1
+                    validation_errors.append({'row': row_num, 'field': 'mapping', 'value': '', 'message': 'Duplicate mapping in file'})
+                elif mapping_key in existing_keys:
+                    status = 'Duplicate'
+                    error_msg = 'Duplicate mapping'
+                    duplicate_rows += 1
+                else:
+                    status = 'Valid'
+                    valid_rows += 1
+                file_keys.add(mapping_key)
+
+            preview_data.append({
+                'row_num': row_num,
+                'diagnosis_name': diag_obj.name if diag_obj else d_name_raw,
+                'diagnosis_code': diag_obj.code if diag_obj else d_code_raw,
+                'diagnosis_id': diag_obj.id if diag_obj else None,
+                'age_group_code': ag_obj.code if ag_obj else ag_code_raw,
+                'age_group_id': ag_obj.id if ag_obj else None,
+                'age_group_name': ag_obj.label if ag_obj else ag_code_raw,
+                'investigation_name': inv_obj.name if inv_obj else i_name_raw,
+                'investigation_code': inv_obj.code if inv_obj else i_code_raw,
+                'investigation_id': inv_obj.id if inv_obj else None,
+                'is_default': is_default,
+                'is_active': is_active,
+                'status': status,
+                'error': error_msg
+            })
+
+        return JsonResponse({
+            'success': True,
+            'total_rows': len(rows_data),
+            'valid_rows': valid_rows,
+            'invalid_rows': invalid_rows,
+            'duplicates': duplicate_rows,
+            'errors': validation_errors,
+            'data': preview_data,
+            'filename': filename
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': str(e)})
+
+def api_diag_inv_map_import(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'status': 'error', 'message': 'Invalid method'})
+    try:
+        data = json.loads(request.body)
+        filename = data.get('filename', 'Unknown')
+        rows = data.get('rows', [])
+        update_duplicates = data.get('update_duplicates', False)
+
+        imported = updated = skipped = failed = 0
+
+        from django.db import transaction
+        from .models import DiagnosisInvestigationMap, DiagnosisImportHistory
+
+        with transaction.atomic():
+            for row in rows:
+                if row.get('status') == 'Error':
+                    failed += 1
+                    continue
+
+                diag_id = row.get('diagnosis_id')
+                ag_id   = row.get('age_group_id')
+                inv_id  = row.get('investigation_id')
+
+                if not diag_id or not ag_id or not inv_id:
+                    failed += 1
+                    continue
+
+                try:
+                    obj, created = DiagnosisInvestigationMap.objects.get_or_create(
+                        diagnosis_id=diag_id,
+                        age_group_id=ag_id,
+                        investigation_id=inv_id,
+                        defaults={
+                            'is_default': row.get('is_default', False),
+                            'is_active': row.get('is_active', True)
+                        }
+                    )
+                    if created:
+                        imported += 1
+                    else:
+                        if update_duplicates or row.get('status') == 'Duplicate':
+                            if update_duplicates:
+                                obj.is_default = row.get('is_default', False)
+                                obj.is_active  = row.get('is_active', True)
+                                obj.save()
+                                updated += 1
+                            else:
+                                skipped += 1
+                        else:
+                            skipped += 1
+                except Exception as e:
+                    print("IMPORT ROW ERROR:", repr(e))
+                    failed += 1
+
+            user_obj = request.user if hasattr(request, 'user') and request.user.is_authenticated else None
+            history = DiagnosisImportHistory.objects.create(
+                file_name=filename, uploaded_by=user_obj,
+                total_rows=len(rows), imported=imported, updated=updated,
+                duplicates=skipped, failed=failed
+            )
+
+        return JsonResponse({
+            'success': True,
+            'status': 'success',
+            'summary': {
+                'total': len(rows), 'imported': imported, 'updated': updated,
+                'skipped': skipped, 'failed': failed, 'history_id': history.id
+            }
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'status': 'error', 'message': str(e)})

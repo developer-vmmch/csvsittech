@@ -1,0 +1,1355 @@
+{% extends "base.html" %}
+
+{% block title %}Service Request{% endblock %}
+
+{% block extra_head %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    :root {
+        --primary-blue: #0b5ed7;
+        --light-blue-bg: #eff6ff;
+        --border-color: #e2e8f0;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --btn-green: #059669;
+        --btn-green-hover: #047857;
+        --warning-bg: #fffbeb;
+        --warning-text: #b45309;
+        --warning-border: #fef3c7;
+    }
+    
+    body {
+        background-color: #f1f5f9 !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .sr-container {
+        padding: 1rem 1.5rem;
+        max-width: 100%;
+    }
+
+    /* Page Header */
+    .sr-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+    }
+    .sr-header-titles h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0 0 0.25rem 0;
+    }
+    .sr-header-titles p {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+    
+    .sr-breadcrumb {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+    .sr-breadcrumb a { color: var(--text-muted); text-decoration: none; }
+    
+    .sr-main-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+        gap: 1.5rem;
+        align-items: start;
+    }
+    .sr-main-grid > div {
+        min-width: 0; /* Prevent grid blowout */
+    }
+    @media (max-width: 1200px) {
+        .sr-main-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Cards */
+    .sr-card {
+        background-color: #fff;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        margin-bottom: 1.5rem;
+        /* overflow: hidden; Removed to allow dropdowns to overflow */
+        position: relative; /* Ensure it can act as a positioning context if needed */
+    }
+    .sr-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        background-color: #fff;
+        border-bottom: 1px solid var(--border-color);
+        border-radius: 8px 8px 0 0;
+    }
+    .sr-card-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--primary-blue);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Patient Details Section */
+    .patient-details-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem 2rem;
+        padding: 1.25rem;
+        background: #f8fafc;
+    }
+    .detail-group {
+        display: grid;
+        grid-template-columns: 130px 10px 1fr;
+        align-items: center;
+    }
+    @media (max-width: 768px) {
+        .patient-details-grid {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+        .detail-group {
+            grid-template-columns: 100px 10px 1fr;
+        }
+    }
+    .detail-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+    .detail-value {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--primary-blue);
+    }
+    .detail-sub {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-weight: normal;
+    }
+    
+    .sample-info {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+    .sample-badge {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 600;
+        margin-left: 0.25rem;
+    }
+    
+    /* Add Investigation */
+    .add-inv-box {
+        padding: 1.25rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .btn-add {
+        background-color: var(--btn-green);
+        color: #fff;
+        border: none;
+        padding: 0.5rem 1.25rem;
+        border-radius: 6px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+    .btn-add:hover { background-color: var(--btn-green-hover); color: white; }
+
+    /* Investigation Table */
+    .inv-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+    .inv-table th {
+        background-color: #f8fafc;
+        color: var(--text-main);
+        font-weight: 600;
+        text-align: left;
+        padding: 0.85rem 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .inv-table td {
+        padding: 0.85rem 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        vertical-align: middle;
+        color: var(--text-main);
+    }
+    .qty-input {
+        width: 60px;
+        text-align: center;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        padding: 0.25rem;
+        outline: none;
+    }
+    .btn-remove {
+        background: #fff;
+        border: 1px solid #ef4444;
+        color: #ef4444;
+        border-radius: 4px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .btn-remove:hover { background-color: #fef2f2; }
+    
+    .source-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    .source-mapped { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+    .source-manual { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+
+    .info-alert {
+        background-color: var(--warning-bg);
+        border: 1px solid var(--warning-border);
+        color: var(--warning-text);
+        padding: 1rem;
+        margin: 1.25rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+    .info-alert i {
+        color: #d97706;
+        font-size: 1.1rem;
+    }
+
+    .footer-actions {
+        padding: 1.25rem;
+        display: flex;
+        gap: 1rem;
+    }
+    .btn-save {
+        background-color: var(--btn-green);
+        color: #fff;
+        border: none;
+        padding: 0.6rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .btn-save:hover { background-color: var(--btn-green-hover); color: white;}
+    .btn-clear {
+        background-color: #f8fafc;
+        border: 1px solid var(--border-color);
+        color: var(--text-main);
+        padding: 0.6rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .btn-clear:hover { background-color: #f1f5f9; }
+
+    /* Right Side: Patient Finder */
+    .finder-filters {
+        padding: 1.25rem;
+        background: #f8fafc;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .filter-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    .filter-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 0.4rem;
+        display: block;
+    }
+    .radio-group {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        height: 38px;
+    }
+    .radio-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        color: var(--text-main);
+    }
+    .sr-input {
+        width: 100%;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        outline: none;
+        height: 38px;
+    }
+    .sr-input:focus { border-color: var(--primary-blue); }
+    
+    .date-view-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 1rem;
+    }
+    .btn-view {
+        background-color: var(--btn-green);
+        color: #fff;
+        border: none;
+        padding: 0 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        height: 38px;
+    }
+    .btn-view:hover { background-color: var(--btn-green-hover); color: white;}
+
+    .patient-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+    }
+    .patient-table th {
+        background-color: #fff;
+        color: var(--text-main);
+        font-weight: 600;
+        text-align: left;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .patient-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        color: var(--text-main);
+    }
+    .patient-table tbody tr {
+        cursor: pointer;
+        transition: background-color 0.2s ease, border-left-color 0.2s ease;
+    }
+    
+    /* Pending Row Styling */
+    .patient-table tbody tr.status-pending {
+        background-color: #fff;
+    }
+    .patient-table tbody tr.status-pending:nth-child(even) {
+        background-color: #f8fafc;
+    }
+    .patient-table tbody tr.status-pending:hover {
+        background-color: #eff6ff !important;
+    }
+    .patient-table tbody tr.status-pending.selected {
+        background-color: #eff6ff !important;
+    }
+    .patient-table tbody tr.status-pending.selected td {
+        color: var(--primary-blue);
+    }
+    
+    /* Request Raised Status Styling */
+    .patient-table tbody tr.status-raised {
+        background-color: #d1fae5 !important;
+    }
+    .patient-table tbody tr.status-raised td {
+        border-top: 1px solid #a7f3d0 !important;
+        border-bottom: 1px solid #a7f3d0 !important;
+        color: #064e3b;
+    }
+    .patient-table tbody tr.status-raised td:first-child {
+        border-left: 4px solid #059669 !important;
+    }
+    .patient-table tbody tr.status-raised td:last-child {
+        border-right: 1px solid #a7f3d0 !important;
+    }
+    .patient-table tbody tr.status-raised:hover {
+        background-color: #a7f3d0 !important;
+    }
+    .patient-table tbody tr.status-raised.selected {
+        background-color: #6ee7b7 !important;
+    }
+    
+    /* Pagination footer removed */
+    .pagination-btns {
+        display: flex;
+        gap: 0.25rem;
+    }
+    .page-btn {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+        background: #fff;
+        color: var(--primary-blue);
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .page-btn.active {
+        background: var(--primary-blue);
+        color: #fff;
+        border-color: var(--primary-blue);
+    }
+
+    .select2-container--default .select2-selection--single {
+        height: 38px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    }
+    
+    .trigger-box {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.25rem 0;
+        text-align: center;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 1.15rem;
+        color: #334155;
+        transition: all 0.15s ease-in-out;
+        background-color: #fff;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .trigger-box:hover {
+        border-color: #3b82f6;
+        background-color: #f0f9ff;
+        color: #1e40af;
+    }
+    .trigger-box.selected {
+        background-color: #0d6efd;
+        color: #fff;
+        border-color: #0d6efd;
+        box-shadow: 0 4px 6px rgba(13, 110, 253, 0.25);
+    }
+    @media (max-width: 500px) {
+        #box-grid { grid-template-columns: repeat(3, 1fr) !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sr-container">
+    <div class="sr-header">
+        <div class="sr-header-titles">
+            <h2>Service Request</h2>
+            <p>Create laboratory service request based on patient diagnosis and age mapping</p>
+        </div>
+        <div class="sr-breadcrumb">
+            Dashboard > Lab > Service Request
+        </div>
+    </div>
+
+    <div class="sr-main-grid">
+        <!-- LEFT WORKSPACE -->
+        <div>
+            <!-- Patient Details Card -->
+            <div class="sr-card">
+                <div class="sr-card-header">
+                    <h5 class="sr-card-title"><i class="bi bi-person-fill"></i> Patient Details</h5>
+                    <div class="sample-info">
+                        Sample ID: <span class="sample-badge" id="lbl-sample-id">{{ last_sample|default:"-" }}</span>
+                        <span style="margin-left: 1rem;">Receipt No:</span> <span class="sample-badge" id="lbl-receipt-no">{{ last_receipt|default:"-" }}</span>
+                    </div>
+                </div>
+                <div class="patient-details-grid" id="patient-details-block" style="display: none;">
+                    <div class="detail-group">
+                        <span class="detail-label">Patient ID</span><span>:</span>
+                        <span class="detail-value" id="lbl-pid"></span>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Visit No</span><span>:</span>
+                        <span class="detail-value" id="lbl-visit"></span>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Patient Name</span><span>:</span>
+                        <span class="detail-value" id="lbl-name" style="color: var(--text-main);"></span>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Visit Type</span><span>:</span>
+                        <span class="detail-value" id="lbl-visit-type"></span>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Age / Gender</span><span>:</span>
+                        <span class="detail-value" id="lbl-age-gender"></span>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Consultant / Doctor</span><span>:</span>
+                        <span class="detail-value" id="lbl-consultant" style="color: var(--text-main);"></span>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Department</span><span>:</span>
+                        <span class="detail-value" id="lbl-department"></span>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Sample ID</span><span>:</span>
+                        <span class="detail-value" id="lbl-sample-id-grid">-</span>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label"></span><span></span>
+                        <span class="detail-value"></span>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Receipt No</span><span>:</span>
+                        <span class="detail-value" id="lbl-receipt-no-grid">-</span>
+                    </div>
+                </div>
+                <div id="patient-details-empty" style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+                    Select a patient from the right panel to view details.
+                </div>
+            </div>
+
+            <!-- Diagnosis Card -->
+            <div class="sr-card" id="diagnosis-card" style="display: none;">
+                <div class="sr-card-header">
+                    <h5 class="sr-card-title"><i class="bi bi-journal-medical"></i> Diagnosis</h5>
+                </div>
+                <div class="add-inv-box" style="border-bottom: 1px solid var(--border-color);">
+                    <div style="flex-grow: 1;">
+                        <div id="diagnosis-search" style="width: 100%;"></div>
+                    </div>
+                    <button type="button" id="btn-save-diagnosis" class="btn-add">
+                        <i class="bi bi-plus-lg"></i> Add
+                    </button>
+                </div>
+                <div style="padding: 1.25rem;">
+                    <h6 id="diagnosis-heading" style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 0.75rem; font-weight: 600;">Selected Diagnosis (0)</h6>
+                    <div id="selected-diagnosis-list">
+                        <!-- Populated via JS -->
+                        <div style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">No diagnosis selected.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Investigation Card -->
+            <div class="sr-card">
+                <div class="sr-card-header">
+                    <h5 class="sr-card-title"><i class="bi bi-flask"></i> Add Investigation</h5>
+                </div>
+                <div class="add-inv-box">
+                    <div id="inv-search-container" style="flex-grow: 1; position: relative;">
+                        <div id="inv-search" style="width: 100%;"></div>
+                        <div id="inv-disabled-msg" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.5rem; font-weight: 500;">
+                            <i class="bi bi-exclamation-circle"></i> Please select a diagnosis first to add investigations.
+                        </div>
+                    </div>
+                    <button type="button" id="btn-add-inv" class="btn-add">
+                        <i class="bi bi-plus-lg"></i> Add
+                    </button>
+                </div>
+            </div>
+
+            <!-- Selected Investigations Card -->
+            <div class="sr-card">
+                <div class="sr-card-header">
+                    <h5 class="sr-card-title"><i class="bi bi-list-check"></i> Selected Investigations (<span id="inv-count">0</span>)</h5>
+                </div>
+                <div style="width: 100%; overflow-x: auto;">
+                    <table class="inv-table" id="inv-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">S.NO</th>
+                                <th>INVESTIGATION NAME</th>
+                                <th>CODE</th>
+                                <th>AVAILABLE</th>
+                                <th>SAMPLE TYPE</th>
+                                <th style="width: 70px; text-align: center;">QTY</th>
+                                <th>SOURCE</th>
+                                <th style="text-align: right;">ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated via JS -->
+                            <tr><td colspan="6" class="text-center text-muted" style="padding: 2rem;">No investigations selected.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="info-alert">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <div>
+                        Default investigations are automatically selected based on diagnosis and age mapping. You can add or remove investigations as required.
+                    </div>
+                </div>
+
+                <div class="footer-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button type="button" id="btn-save-request" class="btn-save" style="background-color: #0b5ed7; display: none;">
+                        <i class="bi bi-floppy"></i> Save
+                    </button>
+                    <button type="button" id="btn-allocate-request" class="btn-save" style="background-color: var(--primary-blue); display: none;">
+                        <i class="bi bi-check-all"></i> Save & Trigger
+                    </button>
+                    <button type="button" id="btn-clear-all" class="btn-clear">
+                        <i class="bi bi-arrow-repeat"></i> Clear All
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT WORKSPACE (Patient Finder) -->
+        <div class="sr-card h-100 mb-0">
+            <div class="sr-card-header">
+                <h5 class="sr-card-title"><i class="bi bi-people-fill"></i> Patient List <span id="finder-title-dept" style="color: var(--text-main); font-weight: 500; font-size: 0.9rem; margin-left: 0.25rem;">(A - ALL)</span></h5>
+            </div>
+            
+            <div class="finder-filters">
+                <div class="filter-grid" style="grid-template-columns: auto auto 1.5fr; gap: 0.75rem; align-items: end;">
+                    <div>
+                        <span class="filter-label">Type</span>
+                        <select id="f_patient_type" class="sr-input">
+                            <option value="A">A</option>
+                            <option value="O">O</option>
+                            <option value="D">D</option>
+                        </select>
+                    </div>
+                    <div>
+                        <span class="filter-label">Visit</span>
+                        <select id="f_visit_type" class="sr-input">
+                            <option value="">All</option>
+                            <option value="OP">OP</option>
+                            <option value="IP">IP</option>
+                        </select>
+                    </div>
+                    <div>
+                        <span class="filter-label">Department</span>
+                        <select id="f_dept" class="sr-input select2">
+                            <option value="">ALL DEPARTMENTS</option>
+                            {% for d in departments %}
+                            <option value="{{ d.id }}">{{ d.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-top: 0.75rem;">
+                    <span class="filter-label">Date</span>
+                    <div class="date-view-row">
+                        <input type="date" id="f_date" class="sr-input" value="{% now 'Y-m-d' %}" onclick="if(this.showPicker) this.showPicker();">
+                        <button type="button" id="btn-view-patients" class="btn-view"><i class="bi bi-search"></i> View</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="width: 100%; overflow: auto; max-height: calc(100vh - 370px);">
+                <table class="inv-table patient-table" id="patients-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Patient ID</th>
+                            <th>Patient Name</th>
+                            <th>Age</th>
+                            <th>Type</th>
+                            <th>Visit</th>
+                            <th>Dept</th>
+                            <th>Diagnosis</th>
+                            <th style="text-align: center;">SR</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="9" class="text-center text-muted" style="padding: 2rem;">
+                                Please select filters and click View to load patients
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+        </div>
+
+        <!-- RIGHT SIDE: Department Summary -->
+        <div class="sr-panel" style="margin-top: 1.5rem;">
+            <div class="panel-header">
+                <h2 class="panel-title"><i class="bi bi-bar-chart-fill" style="color: var(--accent-purple);"></i> Department Summary</h2>
+            </div>
+            <div style="overflow-y: auto; max-height: 250px;">
+                <table class="inv-table" id="summary-table">
+                    <thead>
+                        <tr>
+                            <th>Department</th>
+                            <th style="text-align: center;">OP</th>
+                            <th style="text-align: center;">IP</th>
+                            <th style="text-align: center;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="4" class="text-center text-muted">No data available</td></tr>
+                    </tbody>
+                    <tfoot id="summary-tfoot" style="display: none; font-weight: bold; background: #f8fafc; border-top: 2px solid #cbd5e1;">
+                        <tr>
+                            <td>TOTAL</td>
+                            <td id="tot-op" style="text-align: center;">0</td>
+                            <td id="tot-ip" style="text-align: center;">0</td>
+                            <td id="tot-all" style="text-align: center;">0</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trigger Modal -->
+<div id="trigger-modal" class="modal" tabindex="-1" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.6); z-index: 1050; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+    <div class="modal-dialog" style="background: white; border-radius: 16px; width: 600px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); position: relative; overflow: hidden;">
+        
+        <!-- Header -->
+        <div style="padding: 1.5rem 1.5rem 1rem; display: flex; align-items: flex-start; gap: 1rem;">
+            <div style="background-color: #e0e7ff; color: #0d6efd; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; flex-shrink: 0;">
+                <i class="bi bi-diagram-2"></i>
+            </div>
+            <div style="padding-top: 0.1rem;">
+                <h4 style="margin: 0 0 0.35rem 0; font-weight: 700; color: #0f172a; font-size: 1.3rem;">Select Diagnosis Box</h4>
+                <p style="margin: 0; color: #475569; font-size: 0.95rem;">Select a box number (1 - 10) for dummy result generation.</p>
+            </div>
+            <button type="button" class="btn-close-modal" style="position: absolute; top: 1.5rem; right: 1.5rem; background: #f1f5f9; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #475569; transition: background 0.2s;"><i class="bi bi-x-lg"></i></button>
+        </div>
+        
+        <!-- Body -->
+        <div style="padding: 0 1.5rem 1.5rem; overflow-y: auto; flex: 1; min-height: 0;">
+            
+            <div style="background-color: #eff6ff; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.85rem;">
+                <i class="bi bi-info-circle-fill" style="font-size: 1.4rem; color: #3b82f6;"></i>
+                <div>
+                    <strong style="color: #1e40af; display: block; font-size: 0.95rem; margin-bottom: 0.15rem;">This is used for dummy result generation only.</strong>
+                    <span style="color: #64748b; font-size: 0.85rem;">Please select a box number from 1 to 10.</span>
+                </div>
+            </div>
+            
+            <div id="box-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem;">
+                <div class="trigger-box" data-value="001">1</div>
+                <div class="trigger-box" data-value="002">2</div>
+                <div class="trigger-box" data-value="003">3</div>
+                <div class="trigger-box" data-value="004">4</div>
+                <div class="trigger-box" data-value="005">5</div>
+                <div class="trigger-box" data-value="006">6</div>
+                <div class="trigger-box" data-value="007">7</div>
+                <div class="trigger-box" data-value="008">8</div>
+                <div class="trigger-box" data-value="009">9</div>
+                <div class="trigger-box" data-value="010">10</div>
+            </div>
+            <input type="hidden" id="box-selector" value="">
+            
+        </div>
+        
+        <!-- Footer -->
+        <div style="padding: 1rem 1.5rem; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 0.75rem; background: #fff;">
+            <button type="button" class="btn-clear btn-close-modal" style="padding: 0.5rem 1.25rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #334155; font-weight: 600; display: flex; align-items: center; gap: 0.4rem; transition: background 0.2s;">
+                <i class="bi bi-x-lg" style="font-size: 0.9rem;"></i> Close
+            </button>
+            <button type="button" id="btn-confirm-trigger" class="btn-save" style="background-color: #0d6efd; padding: 0.5rem 1.5rem; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 0.4rem; border: none; color: #fff; transition: background 0.2s;">
+                <i class="bi bi-check2" style="font-size: 1.1rem;"></i> Save
+            </button>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('.select2').select2();
+    
+    let currentPatient = null;
+    let selectedInvestigations = [];
+    let selectedDiagnoses = [];
+    let currentDiagnosisIds = [];
+    
+    // Update Title on filter change
+    function updateFinderTitle() {
+        const type = $('#f_patient_type').val() || 'A';
+        const visit = $('#f_visit_type').val() || '';
+        const dept = $("#f_dept option:selected").text();
+        const visitLabel = visit ? ` | ${visit}` : '';
+        const deptLabel = (dept === 'ALL DEPARTMENTS' || !dept) ? '' : ` | ${dept}`;
+        $('#finder-title-dept').text(`(${type}${visitLabel}${deptLabel})`);
+    }
+    $('#f_patient_type, #f_visit_type').change(updateFinderTitle);
+    $('#f_dept').change(updateFinderTitle);
+    updateFinderTitle();
+    
+    // --- 1. PATIENT FINDER ---
+    function loadPatients() {
+        const btn = $('#btn-view-patients');
+        const orig = btn.html();
+        btn.html('<i class="spinner-border spinner-border-sm"></i>');
+        
+        $.ajax({
+            url: "{% url 'lab:api_doctor_window_patients' %}",
+            data: {
+                date: $('#f_date').val(),
+                department_id: $('#f_dept').val(),
+                patient_type: $('#f_patient_type').val(),
+                visit_type: $('#f_visit_type').val()
+            },
+            success: function(res) {
+                const tbody = $('#patients-table tbody');
+                tbody.empty();
+                
+                if(res.patients && res.patients.length > 0) {
+                    
+                    const deptSummary = {};
+                    let totOP = 0;
+                    let totIP = 0;
+
+                    let pendingCount = 0;
+                    res.patients.forEach(p => { if (p.request_count === 0) pendingCount++; });
+                    
+                    if (pendingCount === 0) {
+                        tbody.append('<tr><td colspan="9" class="text-center" style="padding: 1.5rem; color: #059669; font-weight: 600; font-size: 0.95rem; background: #f0fdf4; border-bottom: 2px solid #a7f3d0;"><i class="bi bi-check-circle-fill"></i> All service requests completed</td></tr>');
+                    }
+
+                    // Sort patients: Pending (0) first, Request Raised (>0) second
+                    res.patients.sort((a, b) => {
+                        const statusA = (a.request_count > 0) ? 1 : 0;
+                        const statusB = (b.request_count > 0) ? 1 : 0;
+                        return statusA - statusB;
+                    });
+
+                    res.patients.forEach((p, index) => {
+                        // Summary Calculation
+                        const dCode = p.dept_code || '-';
+                        if (!deptSummary[dCode]) deptSummary[dCode] = { op: 0, ip: 0 };
+                        if (p.visit_type === 'OP') { deptSummary[dCode].op++; totOP++; }
+                        else { deptSummary[dCode].ip++; totIP++; }
+
+                        const isRaised = p.request_count > 0;
+                        const ptBadge = p.patient_type === 'D'
+                            ? `<span style="color:#b45309;font-weight:700;">D</span>`
+                            : `<span style="color:#0b5ed7;font-weight:700;">O</span>`;
+                        const tr = $(`
+                            <tr class="patient-row ${isRaised ? 'status-raised' : 'status-pending'}">
+                                <td>${index + 1}</td>
+                                <td style="color: var(--primary-blue); font-weight: 600;">${p.patient_id}</td>
+                                <td style="font-weight: 500;">${p.name}</td>
+                                <td>${p.age}</td>
+                                <td>${ptBadge}</td>
+                                <td>${p.visit_type || '-'}</td>
+                                <td><span title="${p.department}">${dCode}</span></td>
+                                <td>${p.diagnosis.length > 15 ? p.diagnosis.substring(0,15)+'...' : p.diagnosis}</td>
+                                <td style="text-align: center;"><span style="color: var(--primary-blue); font-weight: 700;">${p.request_count}</span></td>
+                            </tr>
+                        `);
+                        tr.data('patient-info', p);
+                        tbody.append(tr);
+                    });
+
+                    // Render Summary
+                    const sumBody = $('#summary-table tbody');
+                    sumBody.empty();
+                    for (const [code, counts] of Object.entries(deptSummary)) {
+                        sumBody.append(`
+                            <tr>
+                                <td><strong>${code}</strong></td>
+                                <td style="text-align: center;">${counts.op}</td>
+                                <td style="text-align: center;">${counts.ip}</td>
+                                <td style="text-align: center;"><strong>${counts.op + counts.ip}</strong></td>
+                            </tr>
+                        `);
+                    }
+                    $('#tot-op').text(totOP);
+                    $('#tot-ip').text(totIP);
+                    $('#tot-all').text(totOP + totIP);
+                    $('#summary-tfoot').show();
+
+                } else {
+                    tbody.html('<tr><td colspan="9" class="text-center text-muted" style="padding: 2rem;">No patients found for the selected date and filters.</td></tr>');
+                    
+                    $('#summary-table tbody').html(`
+                        <tr><td colspan="4" class="text-center text-muted">No data available</td></tr>
+                    `);
+                    $('#summary-tfoot').hide();
+                }
+            },
+            error: function(xhr) {
+                console.error("Error loading patients:", xhr);
+                $('#patients-table tbody').html('<tr><td colspan="9" class="text-center text-danger" style="padding: 2rem;">Unable to load patient data. Please try again.</td></tr>');
+            },
+            complete: function() { btn.html(orig); }
+        });
+    }
+    
+    $('#btn-view-patients').click(loadPatients);
+    loadPatients();
+    
+    // --- 2. SELECT PATIENT ---
+    $(document).on('click', '.patient-row', function() {
+        // Clear previous patient state completely (Bug 6)
+        selectedInvestigations = [];
+        selectedDiagnoses = [];
+        currentDiagnosisIds = [];
+        removedMappedInvestigations = [];
+        renderInvestigations();
+        $('#box-selector').val('');
+        $('.trigger-box').removeClass('selected');
+        $('#btn-confirm-trigger').prop('disabled', true);
+
+        $('.patient-row').removeClass('selected');
+        $(this).addClass('selected');
+        
+        currentPatient = $(this).data('patient-info');
+        
+        $('#patient-details-empty').hide();
+        $('#patient-details-block').show();
+        
+        $('#lbl-pid').text(currentPatient.patient_id);
+        $('#lbl-name').text(currentPatient.name);
+        $('#lbl-age-gender').text(`${currentPatient.age} / ${currentPatient.gender}`);
+        $('#lbl-department').text(currentPatient.department);
+        $('#lbl-visit').text(currentPatient.visit_no);
+        $('#lbl-visit-type').text(currentPatient.visit_type || '-');
+        $('#lbl-consultant').text(currentPatient.consultant || '-');
+        
+        // Save vs Save & Trigger logic based on actual patient_type
+        if (currentPatient.patient_type === 'D') {
+            $('#btn-save-request').hide();
+            $('#btn-allocate-request').show();
+            $('#btn-allocate-request').prop('disabled', false);
+        } else {
+            // Patient type O (or anything else)
+            $('#btn-save-request').show();
+            $('#btn-save-request').prop('disabled', false);
+            $('#btn-allocate-request').hide();
+        }
+        
+        // Fetch current diagnoses
+        $('#diagnosis-card').show();
+        $.ajax({
+            url: "{% url 'lab:api_doctor_window_get_diagnosis' %}",
+            data: { visit_id: currentPatient.visit_id },
+            success: function(res) {
+                selectedDiagnoses = res.diagnoses.filter(d => d.type === 'Diagnosis').map(d => ({
+                    id: d.id,
+                    name: d.text,
+                    icd: d.code || 'mapped'
+                }));
+                currentDiagnosisIds = selectedDiagnoses.map(d => d.id);
+                renderDiagnoses();
+                loadDefaultInvestigations();
+            }
+        });
+    });
+    
+    function renderDiagnoses() {
+        const container = $('#selected-diagnosis-list');
+        $('#diagnosis-heading').text(`Selected Diagnosis (${selectedDiagnoses.length})`);
+        
+        if (selectedDiagnoses.length === 0) {
+            container.html('<div style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">No diagnosis selected.</div>');
+        } else {
+            let html = '';
+            selectedDiagnoses.forEach(diag => {
+                html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-left: 4px solid var(--primary-blue); border-radius: 4px; margin-bottom: 0.5rem; background: #f8fafc;">
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.9rem; color: var(--primary-blue); margin-bottom: 0.15rem;">${diag.name}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">ICD: ${diag.icd}</div>
+                    </div>
+                    <button type="button" class="btn-remove btn-remove-diagnosis" data-id="${diag.id}">
+                        <i class="bi bi-x"></i> Remove
+                    </button>
+                </div>
+                `;
+            });
+            container.html(html);
+        }
+        updateInvestigationState();
+    }
+    /* Removed duplicate loop */
+    
+    $(document).on('click', '.btn-remove-diagnosis', function() {
+        const id = $(this).data('id');
+        selectedDiagnoses = selectedDiagnoses.filter(d => d.id != id);
+        currentDiagnosisIds = selectedDiagnoses.map(d => d.id);
+        renderDiagnoses();
+        // Option to save automatically, but per instructions, we just keep it in memory
+        // and fetch mapped investigations again
+        loadDefaultInvestigations();
+    });
+    
+    // --- 2.5 ADD DIAGNOSIS FLOW ---
+    let selectedDiagData = null;
+    const diagSelect = new VMMCSearchSelect('#diagnosis-search', {
+        url: "{% url 'lab:api_search_diagnosis' %}",
+        placeholder: 'Search diagnosis name / ICD code...',
+        searchParam: 'q',
+        extraParams: { type: 'Diagnosis' },
+        processResults: (data) => data.results,
+        renderMain: (item) => item.text,
+        renderSub: (item) => item.code,
+        onSelect: (item) => { selectedDiagData = item; },
+        onClear: () => { selectedDiagData = null; }
+    });
+
+    $('#btn-save-diagnosis').click(function() {
+        if(!selectedDiagData || !selectedDiagData.id) return alert('Please select a diagnosis first.');
+        
+        const exists = selectedDiagnoses.find(d => d.id == selectedDiagData.id);
+        if(exists) return alert('This diagnosis is already added.');
+        
+        selectedDiagnoses.push({
+            id: selectedDiagData.id,
+            name: selectedDiagData.text,
+            icd: selectedDiagData.code || 'mapped'
+        });
+        currentDiagnosisIds = selectedDiagnoses.map(d => d.id);
+        
+        renderDiagnoses();
+        loadDefaultInvestigations();
+        
+        diagSelect.clear();
+    });
+    
+    let removedMappedInvestigations = [];
+    
+    // --- 3. DEFAULT INVESTIGATIONS ---
+    function loadDefaultInvestigations() {
+        if(currentDiagnosisIds.length === 0) {
+            // Keep manual ones, but optionally we could remove mapped ones? The user says "When another diagnosis is selected... add only missing".
+            // If they remove all diagnoses, maybe we should remove all mapped ones?
+            // Actually, let's just leave the ones already there, or remove mapped ones if they no longer match any diagnosis.
+            // A simpler approach: just fetch and add missing. We won't auto-remove mapped investigations if a diagnosis is removed, they can just remove them manually.
+            return;
+        }
+        
+        $.ajax({
+            url: "{% url 'lab:api_suggest_investigations' %}",
+            type: 'POST',
+            contentType: 'application/json',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            data: JSON.stringify({
+                diagnosis_ids: currentDiagnosisIds,
+                patient_id: currentPatient.patient_pk
+            }),
+            success: function(res) {
+                if(res.status === 'success' && res.investigations) {
+                    if (res.investigations.length === 0 && res.message) {
+                        let toast = $(`<div style="position:fixed; top:20px; right:20px; background:#f59e0b; color:white; padding:10px 20px; border-radius:4px; font-weight:500; z-index:9999; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"><i class="bi bi-info-circle"></i> ${res.message}</div>`);
+                        $('body').append(toast);
+                        toast.fadeIn('fast').delay(3500).fadeOut('fast', function(){ $(this).remove(); });
+                    }
+                    
+                    res.investigations.forEach(inv => {
+                        // Check if already in selected
+                        const exists = selectedInvestigations.find(i => i.id == inv.id);
+                        const manuallyRemoved = removedMappedInvestigations.includes(inv.id);
+                        
+                        if(!exists && !manuallyRemoved) {
+                            selectedInvestigations.push({
+                                id: inv.id,
+                                name: inv.name,
+                                code: inv.code,
+                                sample: inv.sample || 'Whole Blood',
+                                qty: 1,
+                                source: 'Mapped'
+                            });
+                        }
+                    });
+                }
+                renderInvestigations();
+            }
+        });
+    }
+    
+    // --- 4. INVESTIGATION SEARCH ---
+    let selectedInvData = null;
+    const invSelect = new VMMCSearchSelect('#inv-search', {
+        url: "{% url 'lab:api_search_investigation' %}",
+        placeholder: 'Search investigation by name or code...',
+        searchParam: 'q',
+        extraParams: () => {
+            return {
+                diagnosis_ids: currentDiagnosisIds.join(','),
+                patient_id: currentPatient ? currentPatient.patient_pk : ''
+            };
+        },
+        processResults: (data) => data.results,
+        renderMain: (item) => item.text,
+        renderSub: (item) => item.code,
+        onSelect: (item) => { selectedInvData = item; },
+        onClear: () => { selectedInvData = null; }
+    });
+    
+    $(document).ready(function() {
+        updateInvestigationState();
+    });
+    
+    function updateInvestigationState() {
+        const noDiagnosis = currentDiagnosisIds.length === 0;
+        
+        if (typeof invSelect.setDisabled === 'function') {
+            invSelect.setDisabled(noDiagnosis);
+        }
+        
+        $('#btn-add-inv').prop('disabled', noDiagnosis);
+        
+        if (noDiagnosis) {
+            $('#btn-add-inv').css({ 'opacity': '0.5', 'cursor': 'not-allowed' });
+            $('#inv-disabled-msg').show();
+            // Clear current search/dropdown
+            invSelect.clear();
+            if (typeof invSelect.closeDropdown === 'function') invSelect.closeDropdown();
+        } else {
+            $('#btn-add-inv').css({ 'opacity': '1', 'cursor': 'pointer' });
+            $('#inv-disabled-msg').hide();
+        }
+    }
+    
+    $('#inv-search-container').on('click mousedown focusin', function(e) {
+        if(currentDiagnosisIds.length === 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            let toast = $('<div style="position:fixed; top:20px; right:20px; background:#dc2626; color:white; padding:10px 20px; border-radius:4px; font-weight:500; z-index:9999; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"><i class="bi bi-exclamation-circle"></i> Please select a diagnosis before adding an investigation.</div>');
+            $('body').append(toast);
+            toast.fadeIn('fast').delay(2500).fadeOut('fast', function(){ $(this).remove(); });
+            // Blur input to ensure no focus
+            const input = $(this).find('input');
+            if (input.length) input.blur();
+        }
+    });
+
+    
+    $('#btn-add-inv').click(function() {
+        if(!selectedInvData || !selectedInvData.id) return;
+        
+        const exists = selectedInvestigations.find(i => i.id == selectedInvData.id);
+        if(exists) return alert('This investigation is already added.');
+        
+        selectedInvestigations.push({
+            id: selectedInvData.id,
+            name: selectedInvData.text,
+            code: selectedInvData.code || 'N/A',
+            available_count: selectedInvData.available_count || 0,
+            sample: 'Manual',
+            qty: 1,
+            source: 'Manual'
+        });
+        
+        invSelect.clear();
+        renderInvestigations();
+    });
+    
+    // --- 5. RENDER INVESTIGATIONS ---
+    function renderInvestigations() {
+        $('#inv-count').text(selectedInvestigations.length);
+        const tbody = $('#inv-table tbody');
+        tbody.empty();
+        
+        if(selectedInvestigations.length === 0) {
+            tbody.append('<tr><td colspan="7" class="text-center text-muted" style="padding: 2rem;">No investigations selected.</td></tr>');
+            return;
+        }
+        
+        selectedInvestigations.forEach((inv, idx) => {
+            const badgeClass = inv.source === 'Manual' ? 'source-manual' : 'source-mapped';
+            tbody.append(`
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td style="color: var(--text-main); font-weight: 500;">${inv.name}</td>
+                    <td>${inv.code}</td>
+                    <td><span class="badge" style="background-color: ${inv.available_count > 0 ? '#10b981' : '#dc2626'};">${inv.available_count || 0}</span></td>
+                    <td>${inv.sample}</td>
+                    <td style="text-align: center;">
+                        <input type="number" min="1" class="qty-input" data-index="${idx}" value="${inv.qty}">
+                    </td>
+                    <td><span class="source-badge ${badgeClass}">${inv.source}</span></td>
+                    <td style="text-align: right;">
+                        <button type="button" class="btn-remove" data-index="${idx}"><i class="bi bi-trash"></i> Remove</button>
+                    </td>
+                </tr>
+            `);
+        });
+    }
+    
+    $(document).on('click', '.btn-remove', function() {
+        const idx = $(this).data('index');
+        const inv = selectedInvestigations[idx];
+        if (inv.source === 'Diagnosis Mapping') {
+            removedMappedInvestigations.push(inv.id);
+        }
+        selectedInvestigations.splice(idx, 1);
+        renderInvestigations();
+    });
+    
+    $(document).on('change', '.qty-input', function() {
+        selectedInvestigations[$(this).data('index')].qty = parseInt($(this).val()) || 1;
+    });
+    
+    // --- 6. SAVE REQUEST ---
+    let isSaving = false;
+    
+    // Trigger Box selection
+    $('.trigger-box').click(function() {
+        $('.trigger-box').removeClass('selected');
+        $(this).addClass('selected');
+        $('#box-selector').val($(this).data('value'));
+        $('#btn-confirm-trigger').prop('disabled', false);
+    });
+
+    function submitRequest(allocate) {
+        if(isSaving) return;
+        if(!currentPatient) return alert('Please select a patient first.');
+        if(currentDiagnosisIds.length === 0) return alert('Please select at least one diagnosis before saving investigations.');
+        if(selectedInvestigations.length === 0) return alert('Please add at least one investigation.');
+        
+        if (allocate) {
+            // Show modal, require box selection
+            $('#box-selector').val('');
+            $('.trigger-box').removeClass('selected');
+            $('#btn-confirm-trigger').prop('disabled', true);
+            $('#trigger-modal').css('display', 'flex');
+        } else {
+            // Normal save as draft
+            executeRequest(false, null);
+        }
+    }
+    
+    $('.btn-close-modal').click(function() {
+        $('#trigger-modal').hide();
+    });
+    
+    $('#btn-confirm-trigger').click(function() {
+        const boxId = $('#box-selector').val();
+        $('#trigger-modal').hide();
+        executeRequest(true, boxId);
+    });
+
+    function executeRequest(allocate, boxId) {
+        if (isSaving) return;
+        isSaving = true;
+        const btn = allocate ? $('#btn-allocate-request') : $('#btn-save-request');
+        const orig = btn.html();
+        btn.html('<i class="spinner-border spinner-border-sm"></i> Saving...').prop('disabled', true);
+        
+        const payload = {
+            patient_id: currentPatient.patient_pk,
+            consultant_name: currentPatient.consultant,
+            visit_no: currentPatient.visit_no,
+            department_id: $('#f_dept').val() || null,
+            visit_type: $('input[name="f_visit_type"]:checked').val(),
+            request_date: $('#f_date').val(),
+            diagnoses: currentDiagnosisIds.map(id => ({ type: 'Diagnosis', id: id })),
+            investigations: selectedInvestigations.map(i => ({
+                id: i.id,
+                qty: i.qty,
+                source: i.source === 'Manual' ? 'MANUAL' : 'AUTO_SUGGESTED'
+            })),
+            allocate_results: allocate,
+            box_id: boxId
+        };
+        
+        const apiUrl = allocate ? "{% url 'lab:api_save_and_trigger' %}" : "{% url 'lab:service_request_add' %}";
+        
+        $.ajax({
+            url: apiUrl,
+            type: 'POST',
+            contentType: 'application/json',
+            dataType: 'json',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            data: JSON.stringify(payload),
+            success: function(res) {
+                try {
+                    if(res && res.status === 'success') {
+                        alert('Service Request saved successfully!');
+                        
+                        // Update request count in the patient list visually before resetting
+                        const row = $(`.patient-row.selected`);
+                        if(row.length > 0) {
+                            const countCell = row.find('td:nth-child(9) span');
+                            let currentCount = parseInt(countCell.text()) || 0;
+                            countCell.text(currentCount + 1);
+                            
+                            // Apply green status styling and move row to bottom
+                            row.removeClass('status-pending').addClass('status-raised');
+                            
+                            const tbody = $('#patients-table tbody');
+                            row.detach().appendTo(tbody);
+                            
+                            // Re-number rows to maintain sequence
+                            tbody.find('tr.patient-row').each(function(idx) {
+                                $(this).find('td:first').text(idx + 1);
+                            });
+                            
+                            // Also update the stored data object
+                            if(currentPatient) {
+                                currentPatient.request_count = currentCount + 1;
+                            }
+                        }
+                        
+                        // Reset the form for the next patient (Bug 5)
+                        $('#btn-clear-all').click();
+                    } else {
+                        alert('Error: ' + (res.message || 'Unknown error occurred.'));
+                    }
+                } catch(err) {
+                    console.error('Error in success callback:', err);
+                    alert('An error occurred while updating the UI.');
+                }
+            },
+            error: function(xhr) {
+                alert('An error occurred while saving the request. Check console for details.');
+                console.error(xhr);
+            },
+            complete: function() {
+                btn.html(orig).prop('disabled', false);
+                isSaving = false;
+            }
+        });
+    }
+
+    $('#btn-save-request').click(() => submitRequest(false));
+    $('#btn-allocate-request').click(() => submitRequest(true));
+    
+    $('#btn-clear-all').click(function() {
+        $('#patient-details-block').hide();
+        $('#diagnosis-card').hide();
+        $('#patient-details-empty').show();
+        currentPatient = null;
+        selectedInvestigations = [];
+        selectedDiagnoses = [];
+        currentDiagnosisIds = [];
+        removedMappedInvestigations = [];
+        renderDiagnoses();
+        renderInvestigations();
+        $('.patient-row').removeClass('selected');
+    });
+});
+</script>
+{% endblock %}

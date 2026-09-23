@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log in | VMMC ERP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --brand-mint: #00df9a;
+            --brand-mint-dark: #00c688;
+            --brand-mint-light: #e6fbf5;
+            --brand-dark: #0f172a;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --input-bg: #ffffff;
+            --card-radius: 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--brand-mint);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dark);
+            position: relative;
+            overflow-x: hidden;
+            padding: 1.5rem;
+        }
+
+        /* Split Background Effect for larger screens */
+        .page-bg-split {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .bg-left {
+            width: 42%;
+            height: 100%;
+            background-color: var(--brand-mint);
+        }
+
+        .bg-right {
+            width: 58%;
+            height: 100%;
+            background-color: #f1f5f9;
+        }
+
+        /* Main Login Card Container */
+        .login-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 960px;
+            min-height: 560px;
+            display: flex;
+            background: #ffffff;
+            border-radius: var(--card-radius);
+            overflow: hidden;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.18), 0 0 20px rgba(0, 0, 0, 0.04);
+            animation: fadeIn 0.45s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(16px) scale(0.99);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Left Brand Panel */
+        .brand-panel {
+            flex: 0.95;
+            background-color: var(--brand-mint);
+            padding: 3.5rem 3rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .brand-logo-wrap {
+            margin-bottom: 1.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+        }
+
+        .brand-logo-wrap:hover {
+            transform: scale(1.05);
+        }
+
+        .brand-logo-svg {
+            width: 72px;
+            height: 72px;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+        }
+
+        .brand-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: var(--brand-dark);
+            letter-spacing: -0.02em;
+            margin-bottom: 0.6rem;
+            line-height: 1.2;
+        }
+
+        .brand-tagline {
+            font-size: 0.95rem;
+            color: rgba(15, 23, 42, 0.82);
+            font-weight: 500;
+            line-height: 1.45;
+            max-width: 280px;
+        }
+
+        /* Right Form Panel */
+        .form-panel {
+            flex: 1.35;
+            background: #ffffff;
+            padding: 3.25rem 3.5rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Top Bar with 'Need help?' */
+        .form-top-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .help-link {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            background: none;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .help-link:hover {
+            color: var(--brand-dark);
+            background-color: #f8fafc;
+        }
+
+        /* Form Main Body */
+        .form-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 380px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .form-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--brand-dark);
+            text-align: center;
+            margin-bottom: 2.25rem;
+            letter-spacing: -0.01em;
+        }
+
+        /* Input Groups */
+        .input-group {
+            margin-bottom: 1.35rem;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            font-size: 0.92rem;
+            font-family: inherit;
+            color: var(--text-dark);
+            background: var(--input-bg);
+            border: 1.5px solid var(--border-color);
+            border-radius: 10px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .form-input::placeholder {
+            color: #94a3b8;
+            font-size: 0.88rem;
+        }
+
+        .form-input:focus {
+            border-color: var(--brand-mint);
+            box-shadow: 0 0 0 3px rgba(0, 223, 154, 0.2);
+            background: #ffffff;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 6px;
+            font-size: 1.05rem;
+            transition: color 0.2s ease;
+        }
+
+        .password-toggle-btn:hover {
+            color: var(--text-dark);
+        }
+
+        /* Forgot Password Link */
+        .forgot-password-wrap {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 0.5rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .forgot-link {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .forgot-link:hover {
+            color: var(--brand-dark);
+            text-decoration: underline;
+        }
+
+        /* Submit Button */
+        .btn-submit {
+            width: 100%;
+            padding: 0.85rem 1.5rem;
+            background-color: var(--brand-mint);
+            border: none;
+            border-radius: 10px;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(0, 223, 154, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--brand-mint-dark);
+            box-shadow: 0 6px 18px rgba(0, 223, 154, 0.45);
+            transform: translateY(-1px);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        /* Alerts & Messages */
+        .alert-box {
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            color: #166534;
+        }
+
+        /* Help / Forgot Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .modal-box {
+            background: #ffffff;
+            border-radius: 16px;
+            max-width: 440px;
+            width: 100%;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 1.25rem;
+            right: 1.25rem;
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .modal-close-btn:hover {
+            color: var(--brand-dark);
+        }
+
+        .modal-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--brand-dark);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modal-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.55;
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-info-card {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            font-size: 0.85rem;
+            color: var(--text-dark);
+            margin-bottom: 0.75rem;
+        }
+
+        .modal-info-card strong {
+            display: block;
+            color: var(--brand-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 820px) {
+            .page-bg-split {
+                display: none;
+            }
+
+            body {
+                background: #f1f5f9;
+                padding: 1rem;
+            }
+
+            .login-card {
+                flex-direction: column;
+                max-width: 440px;
+                min-height: auto;
+            }
+
+            .brand-panel {
+                padding: 2.25rem 2rem 2rem;
+            }
+
+            .brand-title {
+                font-size: 1.5rem;
+            }
+
+            .brand-tagline {
+                font-size: 0.88rem;
+            }
+
+            .form-panel {
+                padding: 2.25rem 2rem;
+            }
+
+            .form-top-bar {
+                margin-bottom: 1.25rem;
+            }
+
+            .form-title {
+                font-size: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Split Screen Background Effect -->
+    <div class="page-bg-split">
+        <div class="bg-left"></div>
+        <div class="bg-right"></div>
+    </div>
+
+    <!-- Login Card Container -->
+    <div class="login-card">
+
+        <!-- Left Brand Panel -->
+        <div class="brand-panel">
+            <div class="brand-logo-wrap">
+                <!-- Sleek Teardrop Medical Brand Logo -->
+                <svg class="brand-logo-svg" viewBox="0 0 68 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M34 6C34 6 12 28 12 44C12 56.1503 21.8497 66 34 66C46.1503 66 56 56.1503 56 44C56 28 34 6 34 6Z" fill="#0f172a"/>
+                    <circle cx="34" cy="45" r="14" fill="#00df9a"/>
+                    <path d="M34 38V52M27 45H41" stroke="#0f172a" stroke-width="3.5" stroke-linecap="round"/>
+                </svg>
+            </div>
+
+            <h1 class="brand-title">VMMC ERP</h1>
+            <p class="brand-tagline">Vinayaka Missions Medical College &amp; Hospital Information System</p>
+        </div>
+
+        <!-- Right Form Panel -->
+        <div class="form-panel">
+            <!-- Top Right Support Link -->
+            <div class="form-top-bar">
+                <button type="button" class="help-link" onclick="openHelpModal()">
+                    Need help?
+                </button>
+            </div>
+
+            <div class="form-body">
+                <h2 class="form-title">Log in</h2>
+
+                {% if messages %}
+                {% for message in messages %}
+                <div class="alert-box {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+                    <i class="bi bi-info-circle-fill"></i> {{ message }}
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% if form.errors %}
+                <div class="alert-box alert-error">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Invalid username or password.
+                </div>
+                {% endif %}
+
+                <form method="post" action="">
+                    {% csrf_token %}
+
+                    <div class="input-group">
+                        <label for="id_username" class="input-label">Email or Username</label>
+                        <div class="input-wrapper">
+                            <input type="text" name="username" id="id_username" class="form-input"
+                                placeholder="Enter username or email" required autofocus
+                                value="{{ form.username.value|default:'' }}">
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="margin-bottom: 0.25rem;">
+                        <label for="id_login_password" class="input-label">Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" name="password" id="id_login_password" class="form-input"
+                                placeholder="Enter your Password" required style="padding-right: 2.75rem;">
+                            <button type="button" class="password-toggle-btn" onclick="togglePass('id_login_password', this)"
+                                title="Show/Hide Password" tabindex="-1">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="forgot-password-wrap">
+                        <a href="javascript:void(0)" class="forgot-link" onclick="openForgotModal()">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="btn-submit">
+                        Login
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Need Help Modal -->
+    <div id="helpModal" class="modal-overlay" onclick="handleBackdropClick(event, 'helpModal')">
+        <div class="modal-box">
+            <button type="button" class="modal-close-btn" onclick="closeModal('helpModal')">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <h3 class="modal-title">
+                <i class="bi bi-headset" style="color: var(--brand-mint-dark);"></i> Need Help?
+            </h3>
+            <p class="modal-desc">
+                If you are having trouble signing in to the VMMC ERP system, please contact the IT Helpdesk.
+            </p>
+            <div class="modal-info-card">
+                <strong><i class="bi bi-telephone-fill"></i> IT Support Ext.</strong>
+                <span>Ext: 104 / 105 (Campus Intercom)</span>
+            </div>
+            <div class="modal-info-card">
+                <strong><i class="bi bi-envelope-fill"></i> Support Email</strong>
+                <span>it-support@vmmch.edu</span>
+            </div>
+            <div class="modal-info-card">
+                <strong><i class="bi bi-geo-alt-fill"></i> IT Department Location</strong>
+                <span>Administrative Block - 1st Floor, Room 108</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotModal" class="modal-overlay" onclick="handleBackdropClick(event, 'forgotModal')">
+        <div class="modal-box">
+            <button type="button" class="modal-close-btn" onclick="closeModal('forgotModal')">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <h3 class="modal-title">
+                <i class="bi bi-key-fill" style="color: var(--brand-mint-dark);"></i> Reset Password
+            </h3>
+            <p class="modal-desc">
+                For security and HIPAA/NABH compliance, ERP password resets must be authorized by your department head or the System Administrator.
+            </p>
+            <div class="modal-info-card">
+                <strong>Contact Administrator</strong>
+                <span>Please visit the IT department or email <b>admin-erp@vmmch.edu</b> with your Staff ID to receive temporary login credentials.</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePass(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input && icon) {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('bi-eye');
+                    icon.classList.add('bi-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('bi-eye-slash');
+                    icon.classList.add('bi-eye');
+                }
+            }
+        }
+
+        function openHelpModal() {
+            document.getElementById('helpModal').classList.add('active');
+        }
+
+        function openForgotModal() {
+            document.getElementById('forgotModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function handleBackdropClick(event, modalId) {
+            if (event.target === document.getElementById(modalId)) {
+                closeModal(modalId);
+            }
+        }
+
+        // Close on Escape key
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeModal('helpModal');
+                closeModal('forgotModal');
+            }
+        });
+    </script>
+</body>
+
+</html>

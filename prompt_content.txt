@@ -1,0 +1,2293 @@
+<USER_REQUEST>
+============================================================
+MASTER REQUIREMENT
+LAB MASTER + LAB SUB-DEPARTMENTS + INVESTIGATION MAPPING
++ DEPARTMENT WORKLOAD MAPPING + DATABASE IMPORT/EXPORT
+============================================================
+
+PROJECT:
+Existing Hospital Laboratory Information System
+
+OBJECTIVE:
+Implement the complete Laboratory Master and Laboratory reporting
+architecture inside the EXISTING application.
+
+The existing Hospital Department system is already implemented.
+
+DO NOT replace it.
+DO NOT create a parallel department system.
+DO NOT duplicate Investigation Master.
+DO NOT duplicate Parameter Master.
+DO NOT create a separate disconnected Lab application.
+
+The new Laboratory architecture must integrate with the existing:
+
+OP
+IP
+OT
+
+flows and existing:
+
+Patient
+→ Service Request
+→ Diagnosis
+→ Investigation
+→ Work Order
+→ Result Entry
+→ Result Validation
+→ Result View
+→ Reports
+
+============================================================
+1. VERY IMPORTANT TERMINOLOGY
+============================================================
+
+Use only:
+
+OP
+IP
+OT
+
+when referring to patient/service types.
+
+Do NOT introduce or mention any other patient-type terminology.
+
+============================================================
+2. EXISTING HOSPITAL DEPARTMENT SYSTEM
+============================================================
+
+The existing Hospital Department module is already working.
+
+Examples include:
+
+General Medicine
+General Surgery
+Paediatrics
+Orthopaedics
+OBG
+and other existing departments.
+
+DO NOT modify their fundamental architecture.
+
+The new Lab system must become a departmental/service layer that
+works WITH the existing Hospital Department system.
+
+Architecture:
+
+Hospital Department
+        +
+Laboratory
+        +
+Lab Sub Department
+        +
+Investigation
+        +
+Parameter
+        +
+Result
+
+============================================================
+3. NEW LAB MASTER
+============================================================
+
+Create:
+
+MASTER
+→ LAB MASTER
+
+If the application already has a Master/Admin menu, place Lab Master
+inside the existing structure.
+
+Do NOT create a new unrelated top-level administration architecture.
+
+Lab Master should contain the following modules where required:
+
+1. Lab Sub Departments
+2. Investigation Mapping
+3. Parameter Mapping
+4. Hospital Department → Lab Workload Mapping
+5. Lab Report Configuration
+6. Mapping Validation
+7. Import
+8. Export
+
+Reuse existing functionality wherever equivalent functionality already
+exists.
+
+============================================================
+4. LAB SUB-DEPARTMENT MASTER
+============================================================
+
+Create the following initial Laboratory sub-departments based on the
+attached/reference statistics data:
+
+1. Hematology
+2. Clinical Biochemistry
+3. Microbiology
+4. Serology / Immunology
+5. Clinical Pathology
+6. Histopathology
+7. Cytology
+8. Blood Bank
+
+Molecular Diagnostics may be created as an INACTIVE/FUTURE sub-department
+only if it is not currently represented in the existing investigation
+master.
+
+Do not create unnecessary active departments without corresponding
+investigations.
+
+============================================================
+5. IMPORTANT CATEGORY NORMALIZATION
+============================================================
+
+The reference reports contain variations of category names.
+
+Normalize them into the Lab Master.
+
+Examples:
+
+Hematology
+→ Hematology
+
+Biochemistry
+→ Clinical Biochemistry
+
+Microbiology
+→ Microbiology
+
+Serology / Infectious Disease
+→ Serology / Immunology
+
+Serology / Immunology
+→ Serology / Immunology
+
+Urine & Body Fluids
+→ Clinical Pathology
+
+Urine / Body Fluids
+→ Clinical Pathology
+
+Histopathology / Cytology
+→ determine investigation:
+   Histopathology
+   OR
+   Cytology
+
+Blood Bank / Peripartum
+→ Blood Bank
+
+Blood Bank / Perioperative
+→ Blood Bank
+
+Obstetric Hypertension / Preeclampsia
+→ NOT a Lab Department.
+It is a clinical/reporting category whose investigations must map to
+the appropriate Lab sub-department.
+
+============================================================
+6. DO NOT PUT THESE UNDER LABORATORY
+============================================================
+
+The reference reports contain many non-laboratory categories.
+
+DO NOT create these as Lab Sub Departments:
+
+X-ray
+USG / Doppler
+CT Scan
+MRI Scan
+Cardiac / Neurology Diagnostics
+Respiratory / Special Diagnostics
+PICU Workload
+Neonatal / NICU Workload
+General Paediatric Clinical Workload
+Obstetric Ultrasound
+Gynaecology Ultrasound
+Radiology - X-ray / CT / MRI
+Fetal Surveillance / Diagnostics
+Labour Room Workload
+Gynaecology Procedures / Surgery
+Operative Workload
+Endoscopy / Special Diagnostics
+Trauma & Emergency Workload
+Plaster / Procedure Room
+Rehabilitation / Physiotherapy
+Bone / Special Diagnostics
+
+These must remain under their appropriate existing/future clinical
+service domains.
+
+For example:
+
+X-ray
+→ Radiology
+
+CT
+→ Radiology
+
+MRI
+→ Radiology
+
+Operative workload
+→ OT / Surgery
+
+Physiotherapy
+→ Rehabilitation
+
+Do NOT classify everything called "diagnostic" as Laboratory.
+
+============================================================
+7. INVESTIGATION MASTER INTEGRATION
+============================================================
+
+Inspect the EXISTING Investigation Master before creating anything.
+
+This is critical.
+
+If an investigation already exists:
+
+DO NOT create another investigation.
+
+Example:
+
+CBC already exists.
+
+Do NOT create:
+
+CBC - General Medicine
+CBC - Surgery
+CBC - Paediatrics
+CBC - OBG
+
+Instead:
+
+ONE CBC investigation
+
+mapped to:
+
+Laboratory
+→ Hematology
+→ CBC
+
+The same CBC can be requested by multiple Hospital Departments.
+
+============================================================
+8. INVESTIGATION RELATIONSHIP
+============================================================
+
+The intended relationship is:
+
+Hospital Department
+        ↓
+Service Request
+        ↓
+Investigation
+        ↓
+Laboratory
+        ↓
+Lab Sub Department
+        ↓
+Work Order
+        ↓
+Result
+
+Example:
+
+General Medicine
+→ CBC
+→ Laboratory
+→ Hematology
+→ Work Order
+
+Paediatrics
+→ CBC
+→ Laboratory
+→ Hematology
+→ Work Order
+
+General Surgery
+→ CBC
+→ Laboratory
+→ Hematology
+→ Work Order
+
+OBG
+→ CBC
+→ Laboratory
+→ Hematology
+→ Work Order
+
+Orthopaedics
+→ CBC
+→ Laboratory
+→ Hematology
+→ Work Order
+
+One investigation.
+Multiple requesting Hospital Departments.
+One Laboratory processing location.
+
+============================================================
+9. PARAMETER RELATIONSHIP
+============================================================
+
+Do not duplicate existing parameters.
+
+Example:
+
+CBC
+│
+├── Hemoglobin
+├── RBC Count
+├── WBC Count
+├── MCV
+├── MCH
+├── MCHC
+├── RDW
+├── PCV
+├── Platelets
+├── Neutrophils
+├── Lymphocytes
+└── Differential Count
+
+The parameter remains linked to CBC.
+
+The Lab Sub Department is linked at the investigation/service level.
+
+============================================================
+10. COMPLETE LABORATORY DATA FROM REFERENCE REPORTS
+============================================================
+
+The following reference data must be represented in the application
+through the appropriate Hospital Department → Lab Sub Department →
+Investigation workload mapping.
+
+Do NOT create duplicate Investigation Master records.
+
+Use the existing investigation wherever available.
+
+The benchmark data is workload/reference data.
+
+============================================================
+11. PAEDIATRICS LAB DATA
+============================================================
+
+Hospital Department:
+PAEDIATRICS
+
+------------------------------------------------------------
+HEMATOLOGY
+------------------------------------------------------------
+
+CBC | Monthly 3120 | Weekly 780 | Daily 104
+Hemoglobin | 1040 | 260 | 35
+ESR | 624 | 156 | 21
+Peripheral Blood Smear | 364 | 91 | 12
+Reticulocyte Count | 125 | 31 | 4
+Platelet Count (if separately ordered) | 416 | 104 | 14
+PT / INR | 312 | 78 | 10
+aPTT | 156 | 39 | 5
+D-dimer | 83 | 21 | 3
+Fibrinogen | 31 | 8 | 1
+Blood grouping & Rh typing | 260 | 65 | 9
+Cross-match requests | 187 | 47 | 6
+
+------------------------------------------------------------
+BIOCHEMISTRY
+------------------------------------------------------------
+
+Blood Glucose – RBS/FBS | 2288 | 572 | 76
+Blood Urea | 1664 | 416 | 55
+Serum Creatinine | 1664 | 416 | 55
+Serum Sodium | 1560 | 390 | 52
+Serum Potassium | 1560 | 390 | 52
+Serum Chloride | 1040 | 260 | 35
+Serum Calcium | 520 | 130 | 17
+Serum Phosphorus | 312 | 78 | 10
+Serum Magnesium | 187 | 47 | 6
+Liver Function Tests | 832 | 208 | 28
+Total Protein / Albumin | 624 | 156 | 21
+Serum Bilirubin | 728 | 182 | 24
+Serum Ammonia | 52 | 13 | 2
+Serum Lactate | 125 | 31 | 4
+CRP | 520 | 130 | 17
+Procalcitonin | 104 | 26 | 3
+ABG | 312 | 78 | 10
+HbA1c | 104 | 26 | 3
+Thyroid Function Tests | 187 | 47 | 6
+
+------------------------------------------------------------
+MICROBIOLOGY
+------------------------------------------------------------
+
+Blood culture & sensitivity | 260 | 65 | 9
+Urine culture & sensitivity | 187 | 47 | 6
+Sputum / respiratory sample culture | 83 | 21 | 3
+CSF Gram stain / culture | 62 | 16 | 2
+Stool microscopy / culture | 104 | 26 | 3
+Pus / wound culture | 62 | 16 | 2
+AFB smear / CBNAAT | 42 | 11 | 1
+Fungal microscopy / culture | 31 | 8 | 1
+Other body-fluid culture | 31 | 8 | 1
+
+------------------------------------------------------------
+SEROLOGY / IMMUNOLOGY
+------------------------------------------------------------
+
+Dengue NS1 / IgM / IgG | 156 | 39 | 5
+Malaria antigen / smear | 104 | 26 | 3
+Scrub typhus IgM | 78 | 20 | 3
+Leptospira IgM | 42 | 11 | 1
+Widal / enteric fever testing | 83 | 21 | 3
+HIV 1 & 2 | 104 | 26 | 3
+HBsAg | 104 | 26 | 3
+Anti-HCV | 78 | 20 | 3
+VDRL / RPR | 31 | 8 | 1
+ASO titre | 52 | 13 | 2
+
+------------------------------------------------------------
+CLINICAL PATHOLOGY
+------------------------------------------------------------
+
+Urine routine & microscopy | 1248 | 312 | 42
+Urine protein / albumin | 260 | 65 | 9
+Urine sugar / glucose | 208 | 52 | 7
+Urine ketone bodies | 156 | 39 | 5
+Urine ACR / microalbumin | 62 | 16 | 2
+CSF complete analysis | 62 | 16 | 2
+Pleural fluid analysis | 21 | 5 | 1
+Ascitic fluid analysis | 16 | 4 | 1
+Synovial / other body-fluid analysis | 10 | 3 | 0
+
+============================================================
+12. GENERAL MEDICINE LAB DATA
+============================================================
+
+Hospital Department:
+GENERAL MEDICINE
+
+------------------------------------------------------------
+HEMATOLOGY
+------------------------------------------------------------
+
+CBC | 4000 | 1000 | 133
+ESR | 1000 | 250 | 33
+Peripheral Blood Smear | 400 | 100 | 13
+Reticulocyte Count | 120 | 30 | 4
+Platelet Count (if separately counted) | 400 | 100 | 13
+PT / INR | 650 | 162.5 | 22
+aPTT | 250 | 62.5 | 8
+D-dimer | 200 | 50 | 7
+Fibrinogen | 40 | 10 | 1
+Hb electrophoresis / HPLC | 40 | 10 | 1
+Bone marrow aspiration / biopsy | 15 | 3.75 | 1
+
+------------------------------------------------------------
+BIOCHEMISTRY
+------------------------------------------------------------
+
+Blood Glucose – FBS/PPBS/RBS | 4000 | 1000 | 133
+HbA1c | 500 | 125 | 17
+Blood Urea | 3300 | 825 | 110
+Serum Creatinine | 3300 | 825 | 110
+Serum Sodium | 2700 | 675 | 90
+Serum Potassium | 2700 | 675 | 90
+Serum Chloride | 2000 | 500 | 67
+Serum Uric Acid | 400 | 100 | 13
+Total Bilirubin | 2000 | 500 | 67
+Direct / Indirect Bilirubin | 1600 | 400 | 53
+AST / SGOT | 2000 | 500 | 67
+ALT / SGPT | 2000 | 500 | 67
+Alkaline Phosphatase | 1600 | 400 | 53
+Total Protein | 1300 | 325 | 43
+Serum Albumin | 1300 | 325 | 43
+Total Cholesterol | 650 | 162.5 | 22
+Triglycerides | 650 | 162.5 | 22
+HDL Cholesterol | 650 | 162.5 | 22
+LDL Cholesterol | 650 | 162.5 | 22
+Serum Calcium | 650 | 162.5 | 22
+Serum Phosphorus | 400 | 100 | 13
+Serum Magnesium | 250 | 62.5 | 8
+Serum Amylase | 200 | 50 | 7
+Serum Lipase | 200 | 50 | 7
+LDH | 200 | 50 | 7
+CPK / CK | 130 | 32.5 | 4
+CK-MB | 130 | 32.5 | 4
+Troponin I/T | 400 | 100 | 13
+TSH | 500 | 125 | 17
+Free T4 / T4 | 400 | 100 | 13
+T3 | 330 | 82.5 | 11
+Vitamin B12 | 130 | 32.5 | 4
+Vitamin D | 130 | 32.5 | 4
+Serum Iron | 130 | 32.5 | 4
+Ferritin | 200 | 50 | 7
+TIBC | 130 | 32.5 | 4
+CRP | 650 | 162.5 | 22
+Procalcitonin | 130 | 32.5 | 4
+Serum Lactate | 200 | 50 | 7
+ABG | 400 | 100 | 13
+
+------------------------------------------------------------
+MICROBIOLOGY
+------------------------------------------------------------
+
+Blood culture & sensitivity | 270 | 67.5 | 9
+Urine culture & sensitivity | 330 | 82.5 | 11
+Sputum Gram stain | 200 | 50 | 7
+Sputum culture & sensitivity | 130 | 32.5 | 4
+AFB smear microscopy | 130 | 32.5 | 4
+CBNAAT / Truenat for TB | 100 | 25 | 3
+Pus / wound culture & sensitivity | 100 | 25 | 3
+CSF microscopy / culture | 35 | 8.75 | 1
+Pleural fluid culture | 30 | 7.5 | 1
+Ascitic fluid culture | 30 | 7.5 | 1
+Stool microscopy / culture | 65 | 16.25 | 2
+Fungal microscopy / culture | 40 | 10 | 1
+
+------------------------------------------------------------
+SEROLOGY / IMMUNOLOGY
+------------------------------------------------------------
+
+HIV 1 & 2 | 270 | 67.5 | 9
+HBsAg | 330 | 82.5 | 11
+Anti-HCV | 200 | 50 | 7
+Dengue NS1 antigen | 130 | 32.5 | 4
+Dengue IgM / IgG | 130 | 32.5 | 4
+Leptospira IgM | 65 | 16.25 | 2
+Scrub typhus IgM | 100 | 25 | 3
+Widal | 130 | 32.5 | 4
+VDRL / RPR | 100 | 25 | 3
+Malaria antigen / rapid test | 100 | 25 | 3
+
+------------------------------------------------------------
+CLINICAL PATHOLOGY
+------------------------------------------------------------
+
+Urine routine & microscopy | 2000 | 500 | 67
+Urine protein / albumin | 650 | 162.5 | 22
+Urine sugar / glucose | 650 | 162.5 | 22
+Urine ketone bodies | 270 | 67.5 | 9
+Urine microalbumin | 270 | 67.5 | 9
+Urine ACR | 200 | 50 | 7
+24-hour urinary protein | 100 | 25 | 3
+24-hour creatinine / clearance | 65 | 16.25 | 2
+Urine electrolytes | 65 | 16.25 | 2
+CSF analysis | 40 | 10 | 1
+Pleural fluid analysis | 40 | 10 | 1
+Ascitic fluid analysis | 40 | 10 | 1
+Synovial fluid analysis | 20 | 5 | 1
+Pericardial / other body fluids | 12 | 3 | 0
+
+============================================================
+13. GENERAL SURGERY LAB DATA
+============================================================
+
+Hospital Department:
+GENERAL SURGERY
+
+------------------------------------------------------------
+HEMATOLOGY
+------------------------------------------------------------
+
+CBC | 3600 | 900 | 120
+ESR | 700 | 175 | 23
+Peripheral Blood Smear | 300 | 75 | 10
+Reticulocyte Count | 90 | 23 | 3
+PT/INR | 900 | 225 | 30
+aPTT | 400 | 100 | 13
+D-dimer | 180 | 45 | 6
+Fibrinogen | 40 | 10 | 1
+Blood grouping & Rh typing | 450 | 113 | 15
+Cross-match requests | 400 | 100 | 13
+
+------------------------------------------------------------
+BIOCHEMISTRY
+------------------------------------------------------------
+
+Blood Glucose – FBS/PPBS/RBS | 3000 | 750 | 100
+HbA1c | 300 | 75 | 10
+Blood Urea | 2700 | 675 | 90
+Serum Creatinine | 2700 | 675 | 90
+Serum Sodium | 2200 | 550 | 73
+Serum Potassium | 2200 | 550 | 73
+Serum Chloride | 1500 | 375 | 50
+Liver Function Tests | 1500 | 375 | 50
+Total Protein / Albumin | 1100 | 275 | 37
+Serum Calcium | 450 | 113 | 15
+Serum Phosphorus | 250 | 63 | 8
+Serum Magnesium | 180 | 45 | 6
+Serum Amylase | 250 | 63 | 8
+Serum Lipase | 250 | 63 | 8
+LDH | 120 | 30 | 4
+Serum Lactate | 180 | 45 | 6
+ABG | 400 | 100 | 13
+
+------------------------------------------------------------
+MICROBIOLOGY
+------------------------------------------------------------
+
+Blood culture & sensitivity | 180 | 45 | 6
+Urine culture & sensitivity | 180 | 45 | 6
+Pus / wound swab culture & sensitivity | 450 | 113 | 15
+Drain fluid culture | 100 | 25 | 3
+Tissue culture | 60 | 15 | 2
+Sputum Gram stain / culture | 90 | 23 | 3
+AFB smear / CBNAAT | 60 | 15 | 2
+Body-fluid Gram stain / culture | 60 | 15 | 2
+Fungal microscopy / culture | 40 | 10 | 1
+Anaerobic culture | 25 | 6 | 1
+
+------------------------------------------------------------
+SEROLOGY / IMMUNOLOGY
+------------------------------------------------------------
+
+HIV 1 & 2 | 300 | 75 | 10
+HBsAg | 350 | 88 | 12
+Anti-HCV | 250 | 63 | 8
+VDRL / RPR | 90 | 23 | 3
+Dengue testing | 60 | 15 | 2
+Leptospira IgM | 30 | 8 | 1
+Scrub typhus IgM | 30 | 8 | 1
+CRP | 500 | 125 | 17
+Procalcitonin | 120 | 30 | 4
+
+------------------------------------------------------------
+CLINICAL PATHOLOGY
+------------------------------------------------------------
+
+Urine routine & microscopy | 1500 | 375 | 50
+Urine protein / albumin | 350 | 88 | 12
+Urine sugar / glucose | 350 | 88 | 12
+Urine ketones | 120 | 30 | 4
+Urine ACR / microalbumin | 120 | 30 | 4
+24-hour urinary protein / studies | 40 | 10 | 1
+Ascitic fluid analysis | 50 | 13 | 2
+Pleural fluid analysis | 30 | 8 | 1
+Drain fluid analysis | 100 | 25 | 3
+Other body-fluid analysis | 25 | 6 | 1
+
+------------------------------------------------------------
+HISTOPATHOLOGY / CYTOLOGY
+------------------------------------------------------------
+
+Surgical histopathology specimens | 400 | 100 | 13
+Biopsy specimens | 180 | 45 | 6
+FNAC | 120 | 30 | 4
+Cytology – body fluids | 60 | 15 | 2
+Frozen section | 20 | 5 | 1
+Immunohistochemistry panels | 40 | 10 | 1
+
+------------------------------------------------------------
+BLOOD BANK
+------------------------------------------------------------
+
+PRBC units issued for Surgery patients | 200 | 50 | 7
+FFP units | 100 | 25 | 3
+Platelet units | 50 | 13 | 2
+Cryoprecipitate units | 12 | 3 | 0
+Pre-anaesthetic evaluation cases | 500 | 125 | 17
+
+============================================================
+14. ORTHOPAEDICS LAB DATA
+============================================================
+
+Hospital Department:
+ORTHOPAEDICS
+
+------------------------------------------------------------
+HEMATOLOGY
+------------------------------------------------------------
+
+CBC | 2800 | 700 | 93
+Hemoglobin | 900 | 225 | 30
+ESR | 700 | 175 | 23
+Peripheral Blood Smear | 250 | 63 | 8
+Reticulocyte Count | 80 | 20 | 3
+Platelet Count (if separately ordered) | 350 | 88 | 12
+PT / INR | 450 | 113 | 15
+aPTT | 200 | 50 | 7
+D-dimer | 150 | 38 | 5
+Fibrinogen | 30 | 8 | 1
+Blood grouping & Rh typing | 300 | 75 | 10
+Cross-match requests | 250 | 63 | 8
+
+------------------------------------------------------------
+BIOCHEMISTRY
+------------------------------------------------------------
+
+Blood Glucose – FBS/PPBS/RBS | 1800 | 450 | 60
+HbA1c | 150 | 38 | 5
+Blood Urea | 1500 | 375 | 50
+Serum Creatinine | 1500 | 375 | 50
+Serum Sodium | 1100 | 275 | 37
+Serum Potassium | 1100 | 275 | 37
+Serum Chloride | 800 | 200 | 27
+Liver Function Tests | 650 | 163 | 22
+Total Protein / Albumin | 500 | 125 | 17
+Serum Calcium | 500 | 125 | 17
+Serum Phosphorus | 300 | 75 | 10
+Serum Magnesium | 150 | 38 | 5
+Alkaline Phosphatase | 400 | 100 | 13
+Vitamin D | 180 | 45 | 6
+Serum Uric Acid | 150 | 38 | 5
+CRP | 500 | 125 | 17
+Procalcitonin | 70 | 18 | 2
+Serum Lactate | 80 | 20 | 3
+ABG | 120 | 30 | 4
+
+------------------------------------------------------------
+MICROBIOLOGY
+------------------------------------------------------------
+
+Pus / wound culture & sensitivity | 300 | 75 | 10
+Tissue culture & sensitivity | 100 | 25 | 3
+Blood culture & sensitivity | 100 | 25 | 3
+Urine culture & sensitivity | 100 | 25 | 3
+Joint / synovial fluid culture | 80 | 20 | 3
+Implant / deep tissue culture | 60 | 15 | 2
+AFB smear / CBNAAT | 40 | 10 | 1
+Fungal microscopy / culture | 30 | 8 | 1
+Anaerobic culture | 30 | 8 | 1
+
+------------------------------------------------------------
+SEROLOGY / IMMUNOLOGY
+------------------------------------------------------------
+
+HIV 1 & 2 | 180 | 45 | 6
+HBsAg | 200 | 50 | 7
+Anti-HCV | 150 | 38 | 5
+VDRL / RPR | 50 | 13 | 2
+CRP | 500 | 125 | 17
+Rheumatoid Factor | 100 | 25 | 3
+Anti-CCP | 50 | 13 | 2
+ANA | 40 | 10 | 1
+HLA-B27 | 30 | 8 | 1
+ASO titre | 40 | 10 | 1
+
+------------------------------------------------------------
+CLINICAL PATHOLOGY
+------------------------------------------------------------
+
+Urine routine & microscopy | 900 | 225 | 30
+Urine protein / albumin | 180 | 45 | 6
+Urine sugar / glucose | 180 | 45 | 6
+Synovial fluid cell count / analysis | 100 | 25 | 3
+Synovial fluid crystal examination | 50 | 13 | 2
+Synovial fluid Gram stain / culture | 80 | 20 | 3
+Other body-fluid analysis | 15 | 4 | 1
+
+------------------------------------------------------------
+BLOOD BANK
+------------------------------------------------------------
+
+PRBC units issued for Orthopaedics | 120 | 30 | 4
+FFP units | 40 | 10 | 1
+Platelet units | 20 | 5 | 1
+Pre-anaesthetic evaluation cases | 350 | 88 | 12
+
+============================================================
+15. OBG LAB DATA
+============================================================
+
+Hospital Department:
+OBG
+
+------------------------------------------------------------
+HEMATOLOGY
+------------------------------------------------------------
+
+CBC | 3249 | 812 | 108
+Hemoglobin | 1218 | 305 | 41
+Platelet count (if separately ordered) | 508 | 127 | 17
+Peripheral blood smear | 254 | 64 | 8
+PT / INR | 508 | 127 | 17
+aPTT | 203 | 51 | 7
+D-dimer | 122 | 31 | 4
+Fibrinogen | 51 | 13 | 2
+Blood grouping & Rh typing | 609 | 152 | 20
+Cross-match requests | 406 | 102 | 14
+
+------------------------------------------------------------
+BIOCHEMISTRY
+------------------------------------------------------------
+
+Blood glucose – FBS/PPBS/RBS | 2538 | 635 | 85
+HbA1c | 203 | 51 | 7
+Blood urea | 1828 | 457 | 61
+Serum creatinine | 1828 | 457 | 61
+Serum sodium | 1320 | 330 | 44
+Serum potassium | 1320 | 330 | 44
+Serum chloride | 914 | 229 | 30
+Liver function tests | 914 | 229 | 30
+Total protein / albumin | 711 | 178 | 24
+Serum uric acid | 355 | 89 | 12
+Serum calcium | 305 | 76 | 10
+Serum phosphorus | 152 | 38 | 5
+Serum magnesium | 122 | 31 | 4
+LDH | 254 | 64 | 8
+Serum lactate | 102 | 26 | 3
+ABG | 183 | 46 | 6
+
+------------------------------------------------------------
+OBSTETRIC CLINICAL MAPPING
+------------------------------------------------------------
+
+IMPORTANT:
+
+"Obstetric Hypertension / Preeclampsia" is NOT a Lab Sub Department.
+
+Its investigations must be mapped to the appropriate Lab Sub Department.
+
+Urine protein / dipstick
+→ Clinical Pathology
+
+Urine protein-creatinine ratio
+→ Clinical Pathology
+
+24-hour urinary protein
+→ Clinical Pathology
+
+Platelet count
+→ Hematology
+
+Serum creatinine
+→ Clinical Biochemistry
+
+AST / ALT
+→ Clinical Biochemistry
+
+LDH
+→ Clinical Biochemistry
+
+Serum uric acid
+→ Clinical Biochemistry
+
+Coagulation profile
+→ Hematology
+
+Benchmarks:
+
+Urine protein / dipstick | 711 | 178 | 24
+Urine protein-creatinine ratio | 183 | 46 | 6
+24-hour urinary protein | 81 | 20 | 3
+Platelet count | 355 | 89 | 12
+Serum creatinine | 305 | 76 | 10
+AST / ALT | 355 | 89 | 12
+LDH | 254 | 64 | 8
+Serum uric acid | 254 | 64 | 8
+Coagulation profile | 152 | 38 | 5
+
+------------------------------------------------------------
+MICROBIOLOGY
+------------------------------------------------------------
+
+Urine culture & sensitivity | 254 | 64 | 8
+High vaginal swab culture | 183 | 46 | 6
+Cervical swab culture | 81 | 20 | 3
+Blood culture & sensitivity | 81 | 20 | 3
+Pus / wound culture | 122 | 31 | 4
+Placental / tissue culture when indicated | 20 | 5 | 1
+AFB / CBNAAT when indicated | 20 | 5 | 1
+Fungal microscopy / culture | 25 | 6 | 1
+
+------------------------------------------------------------
+SEROLOGY / IMMUNOLOGY
+------------------------------------------------------------
+
+HIV 1 & 2 | 457 | 114 | 15
+HBsAg | 457 | 114 | 15
+Anti-HCV | 305 | 76 | 10
+VDRL / RPR | 355 | 89 | 12
+Rubella IgG / relevant TORCH testing | 81 | 20 | 3
+Dengue testing | 41 | 10 | 1
+Leptospira IgM | 15 | 4 | 1
+Scrub typhus IgM | 15 | 4 | 1
+CRP | 254 | 64 | 8
+Procalcitonin | 51 | 13 | 2
+
+------------------------------------------------------------
+CLINICAL PATHOLOGY
+------------------------------------------------------------
+
+Urine routine & microscopy | 1828 | 457 | 61
+Urine protein / albumin | 711 | 178 | 24
+Urine sugar / glucose | 406 | 102 | 14
+Urine ketones | 183 | 46 | 6
+Urine protein-creatinine ratio | 183 | 46 | 6
+24-hour urinary protein | 81 | 20 | 3
+Ascitic / other body-fluid analysis | 20 | 5 | 1
+
+------------------------------------------------------------
+BLOOD BANK
+------------------------------------------------------------
+
+PRBC units issued for OBG patients | 183 | 46 | 6
+FFP units | 81 | 20 | 3
+Platelet units | 51 | 13 | 2
+Cryoprecipitate units | 15 | 4 | 1
+Massive transfusion activations / major haemorrhage support | 5 | 1 | 0
+
+============================================================
+16. DUPLICATE / VARIANT INVESTIGATION NORMALIZATION
+============================================================
+
+The source reports intentionally contain naming variations.
+
+Normalize only for mapping.
+
+Examples:
+
+PT / INR
+PT/INR
+→ same investigation where existing master confirms equivalence.
+
+Peripheral Blood Smear
+Peripheral blood smear
+→ same investigation.
+
+Platelet Count
+Platelet count
+Platelet Count (if separately ordered)
+Platelet Count (if separately counted)
+→ map to the appropriate existing investigation where applicable.
+
+Serum Creatinine
+Serum creatinine
+→ same investigation.
+
+Serum Calcium
+Serum calcium
+→ same investigation.
+
+Serum Potassium
+Serum potassium
+→ same investigation.
+
+Serum Sodium
+Serum sodium
+→ same investigation.
+
+Serum Chloride
+Serum chloride
+→ same investigation.
+
+Serum Magnesium
+Serum magnesium
+→ same investigation.
+
+Serum Phosphorus
+Serum phosphorus
+→ same investigation.
+
+Serum Lactate
+Serum lactate
+→ same investigation.
+
+Liver Function Tests
+Liver function tests
+→ same investigation.
+
+Total Protein / Albumin
+Total protein / albumin
+→ same investigation.
+
+Do NOT create duplicate records because of capitalization,
+spacing, slash formatting, or wording differences.
+
+============================================================
+17. IMPORTANT: DO NOT AUTOMATICALLY MERGE DIFFERENT TESTS
+============================================================
+
+Normalization must NOT become destructive.
+
+For example:
+
+Blood Glucose – FBS/PPBS/RBS
+
+and:
+
+Blood Glucose – RBS/FBS
+
+may represent the same investigation only after checking the existing
+Investigation Master.
+
+Similarly:
+
+Dengue testing
+Dengue NS1 antigen
+Dengue IgM / IgG
+Dengue NS1 / IgM / IgG
+
+must NOT automatically be merged if the existing system treats them
+as separate investigations.
+
+Inspect the existing master first.
+
+============================================================
+18. DATABASE DESIGN
+============================================================
+
+Inspect existing database models before creating new models.
+
+Potential architecture:
+
+LabDepartment
+LabSubDepartment
+LabInvestigationMapping
+LabWorkloadMapping
+
+But if equivalent models already exist, REUSE THEM.
+
+Recommended relationship:
+
+LabSubDepartment
+    id
+    name
+    code
+    active
+
+LabInvestigationMapping
+    lab_sub_department
+    investigation
+    active
+
+LabWorkloadMapping
+    hospital_department
+    lab_sub_department
+    investigation
+    monthly_benchmark
+    weekly_benchmark
+    daily_benchmark
+    source
+    active
+
+Do not duplicate fields already represented in existing models.
+
+============================================================
+19. UNIQUE CONSTRAINTS
+============================================================
+
+Prevent duplicate mappings.
+
+A mapping combination such as:
+
+Hospital Department
++
+Lab Sub Department
++
+Investigation
+
+must not be duplicated.
+
+Do not duplicate Investigation records simply because two Hospital
+Departments use the same test.
+
+============================================================
+20. DATABASE IMPORT
+============================================================
+
+Create a proper Lab Master Import mechanism.
+
+The reference workload data must be importable into the database.
+
+Import should support:
+
+CSV
+XLSX
+
+if the existing system already has an import/export framework.
+
+Import process:
+
+UPLOAD
+→ VALIDATE
+→ PREVIEW
+→ CONFIRM
+→ IMPORT
+→ RESULT SUMMARY
+
+Do NOT directly insert rows without validation.
+
+============================================================
+21. IMPORT VALIDATION
+============================================================
+
+Before database insertion, validate:
+
+Hospital Department exists
+Lab Sub Department exists
+Investigation exists
+Investigation mapping is valid
+Benchmark values are numeric
+No duplicate mapping exists
+No invalid category exists
+No accidental Radiology category is being inserted into Lab
+No duplicate Investigation is being created
+
+Show:
+
+TOTAL ROWS
+VALID
+INVALID
+DUPLICATE
+UNMAPPED
+NEW MAPPING
+
+============================================================
+22. UNMAPPED INVESTIGATION SYSTEM
+============================================================
+
+If an investigation from the reference data cannot confidently be
+matched to the existing Investigation Master:
+
+DO NOT automatically create a duplicate.
+
+Put it into:
+
+UNMAPPED LAB INVESTIGATIONS
+
+Example:
+
+Hospital Department | Source Category | Investigation | Reason
+
+Then allow Administrator to choose:
+
+[Map to Existing Investigation]
+
+or:
+
+[Create New Investigation]
+
+Only an authorized user should create a genuinely new Investigation.
+
+============================================================
+23. IMPORT SHOULD BE SAFE TO RE-RUN
+============================================================
+
+This is critical.
+
+If the same workload file is imported twice:
+
+DO NOT create duplicate mappings.
+
+The import must be idempotent.
+
+Existing mapping:
+→ update/skip
+
+Missing mapping:
+→ create
+
+Duplicate:
+→ report
+
+============================================================
+24. DATABASE EXPORT
+============================================================
+
+Create Export capability.
+
+Admin should be able to export:
+
+1. Lab Sub Departments
+2. Investigation Mapping
+3. Parameter Mapping
+4. Hospital Department → Lab Mapping
+5. Workload Benchmarks
+6. Complete Lab Master
+
+Export formats:
+
+XLSX
+CSV
+
+The exported data must be suitable for re-import.
+
+Therefore:
+
+EXPORT
+→ MODIFY
+→ IMPORT
+
+must work safely.
+
+============================================================
+25. BACKUP / RESTORE FRIENDLY DESIGN
+============================================================
+
+Lab Master data must remain database-driven.
+
+Do NOT hard-code all Lab Departments inside frontend JavaScript.
+
+Do NOT hard-code mappings in templates.
+
+The database must be the source of truth.
+
+This allows:
+
+Database backup
+Database migration
+Database export
+Database import
+Environment migration
+Production deployment
+
+============================================================
+26. SERVICE REQUEST INTEGRATION
+============================================================
+
+Existing Service Request flow:
+
+OP/IP/OT
+→ Service Request
+→ Diagnosis
+→ Investigation
+
+When the selected Investigation is a Lab Investigation:
+
+System automatically resolves:
+
+Laboratory
+→ Lab Sub Department
+
+Example:
+
+CBC
+→ Hematology
+
+Creatinine
+→ Clinical Biochemistry
+
+Urine Routine
+→ Clinical Pathology
+
+Blood Culture
+→ Microbiology
+
+HBsAg
+→ Serology / Immunology
+
+FNAC
+→ Cytology
+
+Biopsy
+→ Histopathology
+
+The user should not normally need to manually select the Lab
+Sub Department.
+
+============================================================
+27. WORK ORDER INTEGRATION
+============================================================
+
+Existing Work Order system must be reused.
+
+A Lab Work Order should expose:
+
+Patient
+Hospital Department
+Investigation
+Laboratory
+Lab Sub Department
+Work Order Status
+Sample/Specimen information
+Created Date
+Completed Date
+
+Allow Lab users to filter:
+
+Lab Sub Department
+Investigation
+Status
+Date
+Hospital Department
+OP/IP/OT
+
+============================================================
+28. RESULT ENTRY
+============================================================
+
+Continue using the existing Result Entry system.
+
+Do NOT create a second Result system.
+
+Flow:
+
+Work Order
+→ Investigation
+→ Parameters
+→ Result
+→ Reference Range
+→ Status
+→ Validation
+→ Final Report
+
+============================================================
+29. HIGH / LOW / NORMAL INTEGRATION
+============================================================
+
+Use the existing corrected result-status logic.
+
+For numeric values:
+
+result > upper reference
+→ HIGH
+
+result < lower reference
+→ LOW
+
+lower <= result <= upper
+→ NORMAL
+
+Boundary values are NORMAL.
+
+One abnormal parameter is enough to make the investigation abnormal.
+
+Do NOT use majority voting.
+
+Example:
+
+CBC:
+
+Hemoglobin 13.1 / 11.6–15
+→ NORMAL
+
+RBC 5.16 / 3.92–5.13
+→ HIGH
+
+MCH 20 / 24–32
+→ LOW
+
+RDW 14.6 / 11.5–14.5
+→ HIGH
+
+Neutrophils 71 / 40–70
+→ HIGH
+
+Lymphocytes 48 / 20–45
+→ HIGH
+
+Overall CBC:
+→ ABNORMAL
+
+This status must feed the Lab reporting system.
+
+============================================================
+30. LAB DASHBOARD
+============================================================
+
+Create:
+
+LABORATORY DASHBOARD
+
+Cards:
+
+Total Requests
+Pending
+In Progress
+Completed
+Validated
+Abnormal
+Critical if supported
+
+Sub-department cards:
+
+Hematology
+Clinical Biochemistry
+Microbiology
+Serology / Immunology
+Clinical Pathology
+Histopathology
+Cytology
+Blood Bank
+
+Clicking a sub-department opens its work queue/report.
+
+============================================================
+31. LAB REPORTING
+============================================================
+
+Create:
+
+Lab Daily Report
+Lab Monthly Report
+Lab Sub Department Report
+Investigation-wise Report
+Hospital Department-wise Lab Report
+Pending Lab Report
+Completed Lab Report
+Abnormal Result Report
+HIGH / LOW / NORMAL Report
+Workload vs Benchmark Report
+
+Filters:
+
+Date From
+Date To
+Hospital Department
+Lab Sub Department
+Investigation
+OP/IP/OT
+Work Order Status
+Result Status
+
+============================================================
+32. HOSPITAL DEPARTMENT REPORT INTEGRATION
+============================================================
+
+Existing Hospital Department reports must continue to work.
+
+Example:
+
+GENERAL MEDICINE
+
+Laboratory Workload
+
+Hematology
+CBC
+ESR
+Peripheral Blood Smear
+
+Biochemistry
+Blood Urea
+Serum Creatinine
+LFT
+etc.
+
+The Hospital Department report should obtain this from actual
+Service Request / Investigation / Work Order transactions.
+
+Do NOT duplicate the transaction data.
+
+============================================================
+33. LAB → HOSPITAL DEPARTMENT REPORT
+============================================================
+
+From:
+
+LABORATORY
+→ Hematology
+→ CBC
+
+show:
+
+General Medicine
+General Surgery
+Paediatrics
+Orthopaedics
+OBG
+etc.
+
+Example:
+
+CBC
+Total: 1240
+
+General Medicine: 400
+General Surgery: 300
+Paediatrics: 250
+OBG: 200
+Orthopaedics: 90
+
+Values must come from actual transactions.
+
+============================================================
+34. HOSPITAL DEPARTMENT → LAB REPORT
+============================================================
+
+From:
+
+General Medicine
+→ Laboratory
+
+show:
+
+Hematology
+Biochemistry
+Microbiology
+Serology
+Clinical Pathology
+etc.
+
+Again, calculate from actual database transactions.
+
+============================================================
+35. BENCHMARK REPORT
+============================================================
+
+Compare:
+
+Actual Workload
+vs
+Reference Benchmark
+
+Example:
+
+GENERAL MEDICINE
+
+CBC
+
+Monthly Benchmark:
+4000
+
+Actual:
+XXXX
+
+Achievement:
+XX%
+
+Variance:
+XX
+
+Status:
+
+Below Benchmark
+Near Benchmark
+Above Benchmark
+
+The benchmark values supplied above are reference/workload planning
+values.
+
+Do not treat them as actual transaction counts.
+
+============================================================
+36. MAPPING VALIDATION DASHBOARD
+============================================================
+
+Create:
+
+LAB MAPPING VALIDATION
+
+Show:
+
+Total source records
+Mapped
+Unmapped
+Duplicate
+Invalid
+Missing Investigation
+Missing Lab Sub Department
+Non-Lab category detected
+
+Allow filtering by Hospital Department.
+
+Example:
+
+GENERAL MEDICINE
+Mapped: XX
+Unmapped: XX
+Invalid: XX
+
+============================================================
+37. REPORT SOURCE DATA
+============================================================
+
+The five reference reports are:
+
+PAEDIATRICS STATISTICS.xlsx
+GENERAL SURGERY STATISTICS.xlsx
+GENERAL MEDICINE STATISTICS.xlsx
+ORTHOPAEDICS STATISTICS.xlsx
+OBG STATISTICS.xlsx
+
+They are reference sources for the implementation.
+
+The application must preserve the distinction between:
+
+SOURCE BENCHMARK DATA
+
+and:
+
+ACTUAL LAB TRANSACTION DATA.
+
+Do NOT treat benchmark numbers as actual patient transactions.
+
+Do NOT create fake patient/work-order/result records from benchmark
+numbers.
+
+Benchmark data belongs in Lab Workload Mapping.
+
+Actual requests/results come from the existing application workflow.
+
+============================================================
+38. REPORT DATA SHOULD BE DATABASE DRIVEN
+============================================================
+
+Reports must use database aggregation.
+
+Do not load every Result into application memory.
+
+Use appropriate database aggregation:
+
+COUNT
+SUM
+GROUP BY
+FILTER
+
+Add database indexes where appropriate.
+
+Likely reporting fields:
+
+date
+hospital_department
+lab_sub_department
+investigation
+patient/service type
+work_order_status
+result_status
+
+============================================================
+39. PERFORMANCE
+============================================================
+
+The system must support large datasets.
+
+Avoid:
+
+N+1 queries
+Model.save() inside large loops
+Repeated database lookups
+Repeated investigation queries
+Repeated parameter queries
+
+Use:
+
+select_related
+prefetch_related
+bulk operations
+database aggregation
+indexes
+
+where appropriate.
+
+============================================================
+40. EXISTING PRODUCTION DATA
+============================================================
+
+ABSOLUTELY DO NOT DELETE EXISTING DATA.
+
+Before migrations:
+
+inspect current schema.
+
+Before master import:
+
+check existing records.
+
+Before creating investigation:
+
+search existing Investigation Master.
+
+Before creating parameters:
+
+search existing Parameter Master.
+
+Before creating mapping:
+
+search existing mappings.
+
+Never blindly truncate tables.
+
+============================================================
+41. MIGRATION STRATEGY
+============================================================
+
+FIRST:
+
+Inspect current database.
+
+SECOND:
+
+Create migration.
+
+THIRD:
+
+Create Lab Sub Departments.
+
+FOURTH:
+
+Map existing investigations.
+
+FIFTH:
+
+Import workload mappings.
+
+SIXTH:
+
+Validate.
+
+SEVENTH:
+
+Connect to Service Request / Work Orders.
+
+EIGHTH:
+
+Connect reporting.
+
+NINTH:
+
+Run complete tests.
+
+============================================================
+42. UI REQUIREMENTS
+============================================================
+
+Keep UI consistent with the existing application.
+
+Do not redesign the entire application.
+
+Use:
+
+cards
+tables
+filters
+search
+tabs
+status badges
+clean forms
+
+Lab Master screen:
+
+LAB MASTER
+
+[Sub Departments]
+[Investigation Mapping]
+[Workload Mapping]
+[Validation]
+[Import]
+[Export]
+
+Keep the interface simple and operational.
+
+============================================================
+43. ADMIN PERMISSIONS
+============================================================
+
+Only authorized users should be able to:
+
+Create Lab Sub Department
+Edit Lab Sub Department
+Map Investigation
+Import mappings
+Export mappings
+Modify benchmarks
+
+Normal Lab users should not be able to modify master configuration.
+
+Reuse existing permission architecture.
+
+============================================================
+44. COMPLETE FLOW
+============================================================
+
+OP:
+
+OP
+→ Service Request
+→ Diagnosis
+→ CBC
+→ Laboratory
+→ Hematology
+→ Work Order
+→ Result Entry
+→ HIGH/LOW/NORMAL
+→ Validation
+→ Report
+
+IP:
+
+IP
+→ Service Request
+→ Diagnosis
+→ CBC
+→ Laboratory
+→ Hematology
+→ Work Order
+→ Result Entry
+→ Validation
+→ Report
+
+OT:
+
+OT
+→ Service Request
+→ Diagnosis
+→ CBC
+→ Laboratory
+→ Hematology
+→ Work Order
+→ Result Entry
+→ Validation
+→ Report
+
+============================================================
+45. TESTING
+============================================================
+
+TEST 1:
+General Medicine → CBC
+
+Expected:
+CBC maps to Hematology.
+
+TEST 2:
+Paediatrics → CBC
+
+Expected:
+Same CBC master.
+Hematology mapping.
+
+TEST 3:
+General Surgery → Creatinine
+
+Expected:
+Clinical Biochemistry.
+
+TEST 4:
+OBG → HBsAg
+
+Expected:
+Serology / Immunology.
+
+TEST 5:
+Orthopaedics → Joint/Synovial culture
+
+Expected:
+Microbiology.
+
+TEST 6:
+Urine Routine
+
+Expected:
+Clinical Pathology.
+
+TEST 7:
+FNAC
+
+Expected:
+Cytology.
+
+TEST 8:
+Biopsy
+
+Expected:
+Histopathology.
+
+TEST 9:
+X-ray
+
+Expected:
+NOT Laboratory.
+
+TEST 10:
+CT
+
+Expected:
+NOT Laboratory.
+
+TEST 11:
+MRI
+
+Expected:
+NOT Laboratory.
+
+TEST 12:
+OP full flow.
+
+TEST 13:
+IP full flow.
+
+TEST 14:
+OT full flow.
+
+============================================================
+46. IMPORT TEST
+============================================================
+
+The database must contain the complete reference workload mappings
+represented in the five source reports.
+
+Do NOT create fake patient transactions.
+
+Import:
+
+Hospital Department
++
+Lab Sub Department
++
+Investigation
++
+Monthly Benchmark
++
+Weekly Benchmark
++
+Daily Benchmark
+
+Validate every imported mapping.
+
+============================================================
+47. EXPORT TEST
+============================================================
+
+Export:
+
+Complete Lab Master
+
+Then:
+
+Open exported XLSX.
+
+Verify:
+
+Lab Sub Department
+Investigation
+Hospital Department
+Monthly Benchmark
+Weekly Benchmark
+Daily Benchmark
+
+are present.
+
+Modify a benchmark.
+
+Re-import.
+
+Verify database updates correctly.
+
+============================================================
+48. DUPLICATE TEST
+============================================================
+
+Import the same data twice.
+
+Expected:
+
+No duplicate Investigation records.
+No duplicate Lab Sub Departments.
+No duplicate mappings.
+
+============================================================
+49. UNMAPPED TEST
+============================================================
+
+Add an unknown investigation to a test import.
+
+Expected:
+
+It appears under:
+
+UNMAPPED LAB INVESTIGATIONS
+
+It must NOT silently create a duplicate.
+
+============================================================
+50. DATA INTEGRITY TEST
+============================================================
+
+After implementation verify:
+
+Existing patients unchanged.
+Existing Service Requests unchanged.
+Existing Investigations unchanged.
+Existing Parameters unchanged.
+Existing Work Orders unchanged.
+Existing Results unchanged.
+Existing Hospital Departments unchanged.
+
+Only the new Lab mapping/configuration data should be added or
+updated.
+
+============================================================
+51. FINAL ACCEPTANCE CRITERIA
+============================================================
+
+The implementation is complete only when:
+
+[ ] Lab Master exists under existing Master architecture.
+
+[ ] Lab Sub Departments are created.
+
+[ ] Existing Investigation Master is reused.
+
+[ ] No duplicate investigations are created.
+
+[ ] No duplicate parameters are created.
+
+[ ] Investigation → Lab Sub Department mapping works.
+
+[ ] Hospital Department → Lab workload mapping works.
+
+[ ] Benchmark values are stored in database.
+
+[ ] Benchmark values are separate from actual transactions.
+
+[ ] Import works.
+
+[ ] Export works.
+
+[ ] Exported data can be re-imported.
+
+[ ] Import is idempotent.
+
+[ ] Duplicate mappings are prevented.
+
+[ ] Unmapped investigations are identified.
+
+[ ] Mapping validation screen exists.
+
+[ ] Service Request integration works.
+
+[ ] Work Order integration works.
+
+[ ] Result Entry integration works.
+
+[ ] HIGH/LOW/NORMAL integration works.
+
+[ ] Lab Dashboard works.
+
+[ ] Lab Sub Department reports work.
+
+[ ] Investigation reports work.
+
+[ ] Hospital Department → Lab report works.
+
+[ ] Lab → Hospital Department drill-down works.
+
+[ ] Benchmark comparison works.
+
+[ ] OP flow works.
+
+[ ] IP flow works.
+
+[ ] OT flow works.
+
+[ ] Existing Hospital Department system is not broken.
+
+[ ] Existing production data is not deleted.
+
+[ ] Radiology is not incorrectly classified as Laboratory.
+
+[ ] OT/operative workload is not incorrectly classified as Laboratory.
+
+[ ] Non-laboratory categories remain outside Lab Master.
+
+============================================================
+52. IMPLEMENTATION ORDER
+============================================================
+
+DO NOT CODE EVERYTHING AT ONCE.
+
+Follow this order:
+
+PHASE 1
+Inspect existing architecture.
+
+PHASE 2
+Inspect Department Master.
+
+PHASE 3
+Inspect Investigation Master.
+
+PHASE 4
+Inspect Parameter Master.
+
+PHASE 5
+Inspect Service Request.
+
+PHASE 6
+Inspect Work Order.
+
+PHASE 7
+Inspect Result and Result View.
+
+PHASE 8
+Inspect existing reporting.
+
+PHASE 9
+Create Lab Master architecture.
+
+PHASE 10
+Create Lab Sub Departments.
+
+PHASE 11
+Map existing Investigations.
+
+PHASE 12
+Import the reference workload mappings.
+
+PHASE 13
+Create validation screen.
+
+PHASE 14
+Connect Service Request.
+
+PHASE 15
+Connect Work Orders.
+
+PHASE 16
+Connect Result/Validation.
+
+PHASE 17
+Create Lab Dashboard.
+
+PHASE 18
+Create Lab Reports.
+
+PHASE 19
+Create Import/Export.
+
+PHASE 20
+Run all validation tests.
+
+PHASE 21
+Run OP/IP/OT end-to-end testing.
+
+PHASE 22
+Check database integrity.
+
+============================================================
+53. MOST IMPORTANT RULES
+============================================================
+
+RULE 1:
+Do not duplicate existing Investigation records.
+
+RULE 2:
+Do not duplicate existing Parameter records.
+
+RULE 3:
+Do not duplicate Hospital Departments.
+
+RULE 4:
+Do not create Radiology as Laboratory.
+
+RULE 5:
+Do not create OT workload as Laboratory.
+
+RULE 6:
+Do not convert benchmark numbers into fake transactions.
+
+RULE 7:
+Database is the source of truth.
+
+RULE 8:
+Import and Export must work.
+
+RULE 9:
+One Investigation can be requested by multiple Hospital Departments.
+
+RULE 10:
+Lab Sub Department identifies where the Investigation is processed.
+
+RULE 11:
+One abnormal parameter must make the investigation abnormal.
+
+RULE 12:
+Do not use majority voting for HIGH/LOW/NORMAL.
+
+RULE 13:
+Do not delete existing production data.
+
+RULE 14:
+Do not build a parallel Lab system.
+
+RULE 15:
+Reuse the existing Hospital LIS architecture.
+
+============================================================
+54. FINAL ARCHITECTURE
+============================================================
+
+                    MASTER
+                      │
+          ┌───────────┴───────────┐
+          │                       │
+ Hospital Departments          LAB MASTER
+          │                       │
+          │               ┌───────┼────────┐
+          │               │       │        │
+          │          Sub Dept  Mapping  Workload
+          │               │       │        │
+          └───────────────┼───────┼────────┘
+                          │
+                    INVESTIGATION
+                          │
+                       PARAMETER
+                          │
+                        RESULT
+                          │
+                 HIGH / LOW / NORMAL
+                          │
+                      VALIDATION
+                          │
+                        REPORT
+
+
+Before writing code, inspect the existing project and database.
+
+Do not guess model names.
+
+Do not guess relationships.
+
+Do not create duplicate architecture.
+
+Use the existing Hospital Department, Investigation, Parameter,
+Service Request, Work Order, Result and Reporting systems.
+
+Use the five reference department reports listed in this prompt as
+the source for the Laboratory workload/benchmark mappings.
+
+Reconstruct the laboratory-related data from this prompt into the
+database through a controlled import/migration process.
+
+Do not create fake patient records or fake work orders from the
+benchmark numbers.
+
+The benchmark data represents workload planning/statistics.
+
+Actual patient/test activity must continue to come from the existing
+application transactions.
+
+After implementation, provide a validation summary showing:
+
+Lab Sub Departments created
+Existing Investigations matched
+New Investigations created, if any
+Duplicate investigations detected
+Workload mappings imported
+Unmapped investigations
+Invalid mappings
+Import/export status
+OP test status
+IP test status
+OT test status
+Existing Hospital Department system status
+
+Do not mark the task complete until the full end-to-end integration
+has been tested.
+
+
+### One architectural point I would keep strict
+
+The Excel reports contain **both laboratory and non-laboratory workload**. For example, the same reports include Hematology/Biochemistry/Microbiology but also X-ray, CT, MRI, ultrasound, operative workload, labour-room workload, physiotherapy, etc. The Lab Master must extract only the laboratory side; otherwise the new Lab Department will become a mixture of unrelated hospital services.
+
+Also, the five source files have slightly different column labels such as **“Approx. / Weak”** and **“Approx. / Week”**. In the database, normalize that to **Weekly Benchmark** rather than preserving the typo. The original source wording can be retained as source metadata if needed.
+
+This prompt also makes the **database the actual source of truth**, so later you can export the Lab Master, modify mappings/benchmarks in Excel, and safely import them back without creating duplicate investigations.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-09-11T15:31:20+05:30.
+
+The user's current state is as follows:
+Active Document: c:\Users\Admin\Desktop\erp1\templates\lab\master\investigation_form.html (LANGUAGE_HTML)
+Cursor is on line: 60
+Other open documents:
+- c:\Users\Admin\Desktop\erp1\templates\lab\master\investigation_form.html (LANGUAGE_HTML)
+- c:\Users\Admin\Desktop\erp1\templates\lab\master\department_list.html (LANGUAGE_HTML)
+- c:\Users\Admin\Desktop\erp1\templates\base.html (LANGUAGE_HTML)
+- c:\Users\Admin\Desktop\erp1\apps\lab\result_importer.py (LANGUAGE_PYTHON)
+- c:\Users\Admin\Desktop\erp1\apps\lab\auto_trigger_views.py (LANGUAGE_PYTHON)
+Running terminal commands:
+- python manage.py runserver (in c:\Users\Admin\Desktop\erp1, running for 6h17m30s)
+</ADDITIONAL_METADATA>

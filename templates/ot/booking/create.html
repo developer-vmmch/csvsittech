@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}New OT Booking — VMMC ERP{% endblock %}
+{% block extra_head %}
+<style>
+.form-section { background:white; border-radius:12px; border:1px solid #e2e8f0; padding:1.5rem; margin-bottom:1.25rem; }
+.form-section h3 { font-size:.9rem; font-weight:700; color:#1e293b; margin-bottom:1rem; padding-bottom:.5rem; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; gap:.5rem; }
+.form-label { display:block; font-size:.8rem; font-weight:600; color:#475569; margin-bottom:.3rem; }
+.form-input { width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:.55rem .75rem; font-size:.9rem; outline:none; transition:.2s; }
+.form-input:focus { border-color:#0284c7; box-shadow:0 0 0 3px rgba(2,132,199,.12); }
+.patient-card { background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:1rem; display:none; }
+.patient-card.show { display:block; }
+.emergency-section { display:none; }
+.emergency-section.show { display:block; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="p-4 sm:p-6 max-w-4xl mx-auto">
+  <!-- Header -->
+  <div class="flex items-center gap-3 mb-6">
+    <a href="{% url 'ot:booking_list' %}" class="text-slate-400 hover:text-slate-600"><i class="bi bi-arrow-left text-xl"></i></a>
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">New OT Booking</h1>
+      <p class="text-sm text-slate-500">Create a new Operation Theatre case</p>
+    </div>
+  </div>
+
+  {% if messages %}
+  {% for msg in messages %}
+  <div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium {% if msg.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+    <i class="bi bi-{% if msg.tags == 'error' %}exclamation-triangle{% else %}check-circle{% endif %} mr-2"></i>{{ msg }}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <form method="post" id="otBookingForm">
+    {% csrf_token %}
+
+    <!-- Patient Search -->
+    <div class="form-section">
+      <h3><i class="bi bi-person-search text-blue-500"></i> Patient</h3>
+      <div class="mb-3">
+        <label class="form-label">Search Patient (Name / ID / Mobile)</label>
+        <div class="flex gap-2">
+          <input type="text" id="patientSearch" placeholder="Type at least 2 characters..."
+                 class="form-input flex-1" autocomplete="off">
+        </div>
+        <div id="patientSuggestions" class="border border-slate-200 rounded-lg mt-1 bg-white shadow-lg hidden max-h-48 overflow-y-auto z-50 relative"></div>
+        <input type="hidden" name="patient_id" id="patientId" required>
+      </div>
+      <div class="patient-card" id="patientCard">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+          <div><span class="text-slate-500 text-xs">Name</span><div class="font-semibold" id="pc-name">—</div></div>
+          <div><span class="text-slate-500 text-xs">Patient ID</span><div class="font-mono font-semibold" id="pc-pid">—</div></div>
+          <div><span class="text-slate-500 text-xs">Age / Gender</span><div id="pc-age">—</div></div>
+          <div><span class="text-slate-500 text-xs">Department</span><div id="pc-dept">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IP Admission -->
+    <div class="form-section">
+      <h3><i class="bi bi-hospital text-indigo-500"></i> IP Admission</h3>
+      <div id="ipSection">
+        <p class="text-sm text-slate-500 mb-2">Select a patient first to load their IP admissions.</p>
+        <select name="ip_admission_id" id="ipAdmissionSelect" class="form-input">
+          <option value="">— Select IP Admission —</option>
+        </select>
+        <p class="text-xs text-slate-400 mt-1">Required for Elective cases. Emergency cases may leave blank.</p>
+      </div>
+    </div>
+
+    <!-- Diagnosis + Procedure -->
+    <div class="form-section">
+      <h3><i class="bi bi-clipboard2-pulse text-purple-500"></i> Diagnosis & Procedure</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Diagnosis (optional)</label>
+          <input type="text" id="diagSearch" placeholder="Search diagnosis..." class="form-input" autocomplete="off">
+          <div id="diagSuggestions" class="border border-slate-200 rounded-lg mt-1 bg-white shadow-lg hidden max-h-48 overflow-y-auto z-50 relative"></div>
+          <input type="hidden" name="diagnosis_id" id="diagId">
+          <div id="diagSelected" class="text-xs text-teal-700 mt-1 font-medium"></div>
+        </div>
+        <div>
+          <label class="form-label">Planned Procedure <span class="text-red-500">*</span></label>
+          <select name="procedure_id" class="form-input" required>
+            <option value="">— Select Procedure —</option>
+            {% for p in procedures %}
+            <option value="{{ p.pk }}">{{ p.name }} ({{ p.avg_duration_min }} min)</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Case Type & Priority -->
+    <div class="form-section">
+      <h3><i class="bi bi-tag text-amber-500"></i> Case Type & Priority</h3>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Case Type <span class="text-red-500">*</span></label>
+          <select name="case_type" id="caseType" class="form-input">
+            {% for val, lbl in case_type_choices %}
+            <option value="{{ val }}">{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Priority</label>
+          <select name="priority" class="form-input">
+            {% for val, lbl in priority_choices %}
+            <option value="{{ val }}">{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Emergency-only fields -->
+      <div class="emergency-section mt-4 p-3 bg-red-50 border border-red-200 rounded-lg" id="emergencySection">
+        <p class="text-sm font-semibold text-red-700 mb-2"><i class="bi bi-lightning-fill"></i> Emergency Details</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-3">
+            <label class="form-label">Emergency Reason</label>
+            <textarea name="emergency_reason" rows="2" class="form-input" placeholder="Describe the emergency..."></textarea>
+          </div>
+          <div>
+            <label class="form-label"><input type="checkbox" name="is_mlc" id="isMlc" class="mr-1"> MLC Case</label>
+          </div>
+          <div class="sm:col-span-2" id="mlcSection" style="display:none;">
+            <label class="form-label">MLC Number</label>
+            <input type="text" name="mlc_number" class="form-input" placeholder="e.g. MLC-2026-001">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Surgical Team -->
+    <div class="form-section">
+      <h3><i class="bi bi-people text-teal-500"></i> Surgical Team</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="form-label">Surgeon <span class="text-red-500">*</span></label>
+          <select name="surgeon_id" class="form-input" required>
+            <option value="">— Select Surgeon —</option>
+            {% for u in surgeons %}
+            <option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Assistant Surgeon</label>
+          <select name="assistant_id" class="form-input">
+            <option value="">— None —</option>
+            {% for u in surgeons %}
+            <option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Anesthetist</label>
+          <select name="anesthetist_id" class="form-input">
+            <option value="">— None —</option>
+            {% for u in surgeons %}
+            <option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Room & Schedule -->
+    <div class="form-section">
+      <h3><i class="bi bi-calendar-week text-blue-500"></i> OT Room & Timing</h3>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div>
+          <label class="form-label">OT Room <span class="text-red-500">*</span></label>
+          <select name="room_id" class="form-input" required>
+            <option value="">— Select Room —</option>
+            {% for r in rooms %}
+            <option value="{{ r.pk }}">{{ r.code }} — {{ r.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Preferred Date <span class="text-red-500">*</span></label>
+          <input type="date" name="preferred_date" class="form-input" value="{{ today }}" required>
+        </div>
+        <div>
+          <label class="form-label">Expected Start</label>
+          <input type="time" name="expected_start" class="form-input">
+        </div>
+        <div>
+          <label class="form-label">Duration (min)</label>
+          <input type="number" name="expected_duration" class="form-input" value="60" min="15" max="600">
+        </div>
+      </div>
+    </div>
+
+    <!-- Remarks -->
+    <div class="form-section">
+      <h3><i class="bi bi-chat-text text-slate-500"></i> Remarks</h3>
+      <textarea name="remarks" rows="2" class="form-input" placeholder="Additional notes..."></textarea>
+    </div>
+
+    <!-- Submit -->
+    <div class="flex gap-3">
+      <button type="submit" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-xl font-bold text-base transition-colors flex items-center justify-center gap-2">
+        <i class="bi bi-plus-circle"></i> Create OT Booking
+      </button>
+      <a href="{% url 'ot:booking_list' %}" class="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition-colors flex items-center gap-2">
+        Cancel
+      </a>
+    </div>
+  </form>
+</div>
+
+<script>
+// Patient search
+let searchTimeout;
+document.getElementById('patientSearch').addEventListener('input', function() {
+  clearTimeout(searchTimeout);
+  const q = this.value.trim();
+  if (q.length < 2) { document.getElementById('patientSuggestions').classList.add('hidden'); return; }
+  searchTimeout = setTimeout(() => {
+    fetch(`{% url 'ot:api_patient_search' %}?q=${encodeURIComponent(q)}`)
+      .then(r => r.json()).then(data => {
+        const box = document.getElementById('patientSuggestions');
+        if (!data.patients.length) { box.innerHTML = '<div class="px-4 py-3 text-sm text-slate-500">No patients found.</div>'; box.classList.remove('hidden'); return; }
+        box.innerHTML = data.patients.map(p => `<div class="px-4 py-2 text-sm cursor-pointer hover:bg-blue-50 border-b border-slate-100 last:border-0"
+          onclick="selectPatient(${p.id},'${p.patient_id}','${p.name.replace(/'/g,"\\'")}',${p.age},'${p.gender}','${p.department.replace(/'/g,"\\'")}')">
+          <strong>${p.name}</strong> <span class="text-slate-500 ml-2 text-xs">${p.patient_id}</span>
+          <span class="text-slate-400 ml-2 text-xs">${p.age}y ${p.gender.charAt(0)}</span>
+        </div>`).join('');
+        box.classList.remove('hidden');
+      });
+  }, 300);
+});
+
+function selectPatient(pk, pid, name, age, gender, dept) {
+  document.getElementById('patientId').value = pid;
+  document.getElementById('patientSearch').value = name + ' (' + pid + ')';
+  document.getElementById('patientSuggestions').classList.add('hidden');
+  document.getElementById('pc-name').textContent = name;
+  document.getElementById('pc-pid').textContent = pid;
+  document.getElementById('pc-age').textContent = age + 'y / ' + gender;
+  document.getElementById('pc-dept').textContent = dept;
+  document.getElementById('patientCard').classList.add('show');
+  // Load IP admissions
+  fetch(`/ot/api/patient/${pk}/admissions/`)
+    .then(r => r.json()).then(data => {
+      const sel = document.getElementById('ipAdmissionSelect');
+      sel.innerHTML = '<option value="">— No IP Admission Selected —</option>';
+      data.admissions.forEach(a => {
+        sel.innerHTML += `<option value="${a.id}">IP-${a.ipno || '?'} | ${a.visit_date} | ${a.ward || '?'} / Bed ${a.bed || '?'}</option>`;
+      });
+    });
+}
+
+// Emergency toggle
+document.getElementById('caseType').addEventListener('change', function() {
+  const sec = document.getElementById('emergencySection');
+  if (this.value === 'EMERGENCY') sec.classList.add('show'); else sec.classList.remove('show');
+});
+
+// MLC toggle
+document.getElementById('isMlc').addEventListener('change', function() {
+  document.getElementById('mlcSection').style.display = this.checked ? 'block' : 'none';
+});
+
+// Diagnosis search
+let diagTimeout;
+document.getElementById('diagSearch').addEventListener('input', function() {
+  clearTimeout(diagTimeout);
+  const q = this.value.trim();
+  if (q.length < 2) { document.getElementById('diagSuggestions').classList.add('hidden'); return; }
+  diagTimeout = setTimeout(() => {
+    fetch(`{% url 'ot:api_diagnosis_search' %}?q=${encodeURIComponent(q)}`)
+      .then(r => r.json()).then(data => {
+        const box = document.getElementById('diagSuggestions');
+        box.innerHTML = data.diagnoses.map(d => `<div class="px-4 py-2 text-sm cursor-pointer hover:bg-blue-50 border-b border-slate-100 last:border-0"
+          onclick="selectDiag(${d.id},'${d.name.replace(/'/g,"\\'")}','${d.code}')">
+          ${d.name} <span class="text-slate-400 text-xs ml-1">(${d.code})</span>
+        </div>`).join('') || '<div class="px-4 py-3 text-sm text-slate-500">No results.</div>';
+        box.classList.remove('hidden');
+      });
+  }, 300);
+});
+
+function selectDiag(id, name, code) {
+  document.getElementById('diagId').value = id;
+  document.getElementById('diagSearch').value = name;
+  document.getElementById('diagSuggestions').classList.add('hidden');
+  document.getElementById('diagSelected').textContent = '✓ ' + name + (code ? ' (' + code + ')' : '');
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#patientSearch') && !e.target.closest('#patientSuggestions'))
+    document.getElementById('patientSuggestions').classList.add('hidden');
+  if (!e.target.closest('#diagSearch') && !e.target.closest('#diagSuggestions'))
+    document.getElementById('diagSuggestions').classList.add('hidden');
+});
+</script>
+{% endblock %}

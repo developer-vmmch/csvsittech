@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+
+{% block title %}Universal Import / Export | VMMCerp{% endblock %}
+{% block page_heading %}Universal Import / Export{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="text-sm text-slate-500 mb-4 flex items-center gap-2">
+        Home <i class="bi bi-chevron-right text-xs"></i> Lab Master <i class="bi bi-chevron-right text-xs"></i> <span class="text-slate-900 font-semibold">Universal Import / Export</span>
+    </div>
+    
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="flex items-center gap-4">
+            <div class="bg-blue-600 text-white w-12 h-12 rounded-lg flex justify-center items-center text-2xl flex-shrink-0">
+                <i class="bi bi-file-earmark-spreadsheet"></i>
+            </div>
+            <div>
+                <h1 class="m-0 text-2xl font-bold text-slate-900">Universal Import / Export</h1>
+                <p class="m-0 text-sm text-slate-600">Bulk import and export all Lab Master data</p>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-2 w-full md:w-auto">
+            <a href="?template=true" class="bg-slate-50 text-slate-900 border border-slate-300 font-medium rounded-lg px-4 py-2 hover:bg-slate-100 transition-colors flex items-center gap-2 flex-1 md:flex-none justify-center whitespace-nowrap shadow-sm">
+                <i class="bi bi-download"></i> Download Blank Template
+            </a>
+            <a href="?export=excel" class="bg-green-100 text-green-800 font-semibold border border-green-300 rounded-lg px-4 py-2 hover:bg-green-200 transition-colors flex items-center gap-2 flex-1 md:flex-none justify-center whitespace-nowrap shadow-sm">
+                <i class="bi bi-box-arrow-up"></i> Export Complete Master
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white shadow-sm border border-slate-200 rounded-xl mb-8">
+    <div class="p-6">
+        <h5 class="mt-0 mb-4 text-slate-900 font-semibold text-lg">Import Data</h5>
+        
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-900">
+            <strong><i class="bi bi-info-circle"></i> Required Format:</strong> 
+            Please upload a multi-sheet workbook containing the following sheets: 
+            <em>Departments, Diagnoses, Investigations, Parameters, Age Groups, Reference Ranges, Investigation Parameters, Diagnosis Investigations, Diagnosis Departments</em>.
+        </div>
+        <form id="uploadForm" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <input type="file" id="importFile" name="file" accept=".xlsx,.xls" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-300 rounded-lg sm:max-w-md bg-white shadow-sm" required>
+                <button type="button" id="btnValidate" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto shadow-sm transition-colors">
+                    <i class="bi bi-check-circle"></i> Validate File
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="importErrorCard" style="display: none;" class="mb-8 bg-red-50 border-2 border-red-300 rounded-xl p-6 text-red-900 shadow-sm">
+    <div class="flex items-start gap-4">
+        <div class="p-3 bg-red-100 text-red-600 rounded-xl text-2xl flex-shrink-0">
+            <i class="bi bi-x-octagon-fill"></i>
+        </div>
+        <div class="flex-1">
+            <div class="flex items-center justify-between">
+                <h4 class="text-lg font-bold text-red-800 tracking-wide uppercase">IMPORT FAILED</h4>
+                <button type="button" class="text-red-400 hover:text-red-700 text-xl font-bold leading-none" onclick="document.getElementById('importErrorCard').style.display='none'">&times;</button>
+            </div>
+            <div id="importErrorDetails" class="mt-3 space-y-2 text-sm bg-white border border-red-200 rounded-lg p-4 shadow-inner">
+                <!-- Injected dynamically -->
+            </div>
+            <div class="mt-4 pt-3 border-t border-red-200 text-xs text-red-700 font-semibold flex items-center gap-2">
+                <i class="bi bi-shield-check text-base"></i> Transaction Safety: All database operations were rolled back — no partial changes were committed.
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="previewSection" style="display: none;">
+    <div class="bg-white shadow-sm border border-slate-200 rounded-xl mb-8 overflow-hidden">
+        <div class="bg-slate-50 border-b border-slate-200 px-6 py-4">
+            <h5 class="m-0 text-slate-900 font-semibold text-lg">Validation Summary</h5>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6" id="statsGrid">
+                <!-- Stats injected here -->
+            </div>
+            
+            <div id="warningsContainer" style="display: none;" class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900">
+                <h6 class="text-amber-800 font-semibold mb-2 flex items-center gap-2"><i class="bi bi-exclamation-circle"></i> Warnings</h6>
+                <ul id="warningsList" class="list-disc pl-5 space-y-1"></ul>
+            </div>
+
+            <div id="errorsContainer" style="display: none;" class="mb-6">
+                <h6 class="text-red-600 font-semibold mb-2 flex items-center gap-2"><i class="bi bi-exclamation-triangle"></i> Validation Errors Found</h6>
+                <div class="max-h-80 overflow-y-auto border border-red-200 rounded-lg shadow-sm">
+                    <table class="w-full text-sm text-left text-slate-700 m-0">
+                        <thead class="text-xs text-slate-700 uppercase bg-red-50 sticky top-0 border-b border-red-200">
+                            <tr>
+                                <th class="px-4 py-3">Sheet</th>
+                                <th class="px-4 py-3">Row</th>
+                                <th class="px-4 py-3">Field</th>
+                                <th class="px-4 py-3">Value</th>
+                                <th class="px-4 py-3">Error</th>
+                            </tr>
+                        </thead>
+                        <tbody id="errorsTbody" class="divide-y divide-red-100 bg-white">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-slate-200 sm:justify-end">
+                <button type="button" class="bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 font-medium py-2 px-6 rounded-lg w-full sm:w-auto shadow-sm transition-colors" onclick="resetImport()">Cancel</button>
+                <button type="button" id="btnImport" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto shadow-sm transition-colors">
+                    <i class="bi bi-cloud-upload"></i> Import & Apply
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="resultSection" style="display: none;">
+    <div class="bg-green-50 shadow-sm border border-green-200 rounded-xl mb-8">
+        <div class="p-8 text-center">
+            <i class="bi bi-check-circle-fill text-5xl text-green-500"></i>
+            <h4 class="mt-4 text-green-800 font-bold text-2xl">Import Completed Successfully</h4>
+            <div id="importCounts" class="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 text-left max-w-4xl mx-auto">
+                <!-- Final counts injected here -->
+            </div>
+            <button type="button" class="mt-8 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-sm inline-flex items-center" onclick="resetImport()">Start New Import</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    let currentValidationId = null;
+    
+    document.getElementById('btnValidate').addEventListener('click', async () => {
+        const fileInput = document.getElementById('importFile');
+        if (!fileInput.files.length) {
+            alert('Please select an Excel file first.');
+            return;
+        }
+
+        hideImportError();
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('action', 'validate');
+
+        const btn = document.getElementById('btnValidate');
+        btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Validating...`;
+        btn.disabled = true;
+        btn.classList.add('opacity-75', 'cursor-not-allowed');
+
+        try {
+            const response = await fetch('{% url "lab:legacy_mapping" %}', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData
+            });
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                currentValidationId = data.validation.validation_id;
+                showPreview(data.validation);
+            } else {
+                alert(data.message || 'Validation failed');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('An error occurred during validation.');
+        } finally {
+            btn.innerHTML = '<i class="bi bi-check-circle"></i> Validate File';
+            btn.disabled = false;
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+        }
+    });
+
+    document.getElementById('btnImport').addEventListener('click', async () => {
+        if (!confirm('Are you sure you want to import this data? This cannot be undone.')) return;
+
+        if (!currentValidationId) {
+            alert("No active validation found. Please validate the file again.");
+            return;
+        }
+
+        const btn = document.getElementById('btnImport');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Importing...`;
+        btn.disabled = true;
+        btn.classList.add('opacity-75', 'cursor-not-allowed');
+        hideImportError();
+
+        try {
+            const formData = new FormData();
+            formData.append('action', 'import');
+            formData.append('validation_id', currentValidationId);
+
+            const response = await fetch('{% url "lab:legacy_mapping" %}', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                showResult(data.counts);
+                currentValidationId = null; // Clear it on success
+            } else {
+                showImportError(data);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            }
+        } catch (err) {
+            console.error(err);
+            showImportError({
+                message: 'An unexpected network or server error occurred during import.',
+                error_details: {
+                    entity: 'Network / System',
+                    reason: err.message || 'Communication error with server.',
+                    action: 'Please check your connection and retry.'
+                }
+            });
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+        }
+    });
+
+    function showPreview(validation) {
+        document.getElementById('previewSection').style.display = 'block';
+        document.getElementById('resultSection').style.display = 'none';
+
+        // Render Stats
+        const sheetStats = validation.sheet_stats || {};
+        const totalStats = validation.total_stats || {};
+        let html = '';
+        
+        // Total summary banner
+        html += `
+            <div class="col-span-full bg-blue-50 border border-blue-200 rounded-xl p-4 mb-2 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-blue-700">Workbook Summary</span>
+                    <div class="text-sm text-blue-950 font-medium mt-1">
+                        Detected: <span class="font-bold text-blue-900">${totalStats.detected_rows || 0}</span> rows | 
+                        Valid: <span class="font-bold text-green-700">${totalStats.valid_rows || 0}</span> | 
+                        Invalid: <span class="font-bold text-red-600">${totalStats.invalid_rows || 0}</span> | 
+                        Duplicates: <span class="font-bold text-amber-600">${totalStats.duplicates || 0}</span>
+                    </div>
+                </div>
+                <div class="flex gap-3 text-xs font-semibold">
+                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full">${totalStats.new || 0} New</span>
+                    <span class="px-3 py-1 bg-slate-200 text-slate-800 rounded-full">${totalStats.existing || 0} Updates</span>
+                </div>
+            </div>
+        `;
+
+        const sheetNames = [
+            'Departments', 'Diagnoses', 'Investigations', 'Parameters',
+            'Age Groups', 'Investigation Parameters', 'Reference Ranges',
+            'Diagnosis Departments', 'Diagnosis Investigations'
+        ];
+        
+        sheetNames.forEach(sName => {
+            const s = sheetStats[sName];
+            if (!s) return;
+            html += `
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 shadow-sm">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="text-xs text-slate-700 font-bold uppercase tracking-wider">${sName}</div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded ${s.invalid_rows > 0 ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'}">
+                            ${s.detected_rows} rows
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs text-slate-600 mt-2">
+                        <div>Valid: <span class="font-bold text-green-600">${s.valid_rows}</span></div>
+                        <div>Invalid: <span class="font-bold ${s.invalid_rows > 0 ? 'text-red-600' : 'text-slate-500'}">${s.invalid_rows}</span></div>
+                        <div>New: <span class="font-bold text-blue-600">${s.new}</span></div>
+                        <div>Updates: <span class="font-bold text-slate-600">${s.existing}</span></div>
+                    </div>
+                    ${s.duplicates > 0 ? `<div class="mt-2 text-[11px] text-amber-700 font-medium"><i class="bi bi-info-circle"></i> ${s.duplicates} duplicate codes in sheet</div>` : ''}
+                </div>
+            `;
+        });
+        document.getElementById('statsGrid').innerHTML = html;
+
+        // Render Warnings
+        const warnings = validation.warnings || [];
+        const warnContainer = document.getElementById('warningsContainer');
+        if (warnings.length > 0) {
+            warnContainer.style.display = 'block';
+            document.getElementById('warningsList').innerHTML = warnings.map(w => `<li>${w}</li>`).join('');
+        } else {
+            warnContainer.style.display = 'none';
+        }
+
+        // Render Errors
+        const errors = validation.errors;
+        if (errors && errors.length > 0) {
+            document.getElementById('errorsContainer').style.display = 'block';
+            document.getElementById('btnImport').disabled = true;
+            document.getElementById('btnImport').classList.add('opacity-50', 'cursor-not-allowed');
+            let errHtml = '';
+            errors.forEach(e => {
+                errHtml += `<tr class="hover:bg-red-50">
+                    <td class="px-4 py-2 border-b border-red-100 font-semibold text-slate-800 whitespace-nowrap">${e.sheet || '-'}</td>
+                    <td class="px-4 py-2 border-b border-red-100 whitespace-nowrap text-slate-600">${e.row || '-'}</td>
+                    <td class="px-4 py-2 border-b border-red-100 font-medium">${e.field || '-'}</td>
+                    <td class="px-4 py-2 border-b border-red-100 break-all text-slate-500 font-mono text-xs">${e.value || ''}</td>
+                    <td class="px-4 py-2 border-b border-red-100 text-red-600 font-medium">${e.message || e.error || 'Validation error'}</td>
+                </tr>`;
+            });
+            document.getElementById('errorsTbody').innerHTML = errHtml;
+        } else {
+            document.getElementById('errorsContainer').style.display = 'none';
+            document.getElementById('btnImport').disabled = false;
+            document.getElementById('btnImport').classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    }
+
+    function hideImportError() {
+        const errorCard = document.getElementById('importErrorCard');
+        if (errorCard) errorCard.style.display = 'none';
+    }
+
+    function showImportError(data) {
+        const errorCard = document.getElementById('importErrorCard');
+        const detailsDiv = document.getElementById('importErrorDetails');
+        const d = data.error_details || {};
+        
+        let html = '';
+        if (d.entity) {
+            html += `<div class="flex items-start gap-2"><span class="font-bold text-slate-800 w-28 flex-shrink-0">${d.entity}:</span> <span class="font-mono bg-red-100 text-red-900 font-semibold px-2 py-0.5 rounded text-xs">${d.entity_name || 'N/A'}</span></div>`;
+        }
+        if (d.row_number) {
+            html += `<div class="flex items-start gap-2"><span class="font-bold text-slate-800 w-28 flex-shrink-0">Excel Row:</span> <span class="font-medium text-slate-900">Row ${d.row_number}</span></div>`;
+        }
+        if (d.reason) {
+            html += `<div class="flex items-start gap-2"><span class="font-bold text-slate-800 w-28 flex-shrink-0">Reason:</span> <span class="text-red-700">${d.reason}</span></div>`;
+        }
+        if (d.action) {
+            html += `<div class="flex items-start gap-2"><span class="font-bold text-slate-800 w-28 flex-shrink-0">Action:</span> <span class="text-slate-700">${d.action}</span></div>`;
+        }
+        if (!html) {
+            html = `<div class="text-red-700">${data.message || 'An error occurred during import.'}</div>`;
+        }
+
+        detailsDiv.innerHTML = html;
+        errorCard.style.display = 'block';
+        errorCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function showResult(counts) {
+        document.getElementById('previewSection').style.display = 'none';
+        document.getElementById('resultSection').style.display = 'block';
+        document.getElementById('uploadForm').reset();
+        hideImportError();
+
+        const labels = {
+            'departments': 'Departments',
+            'diagnoses': 'Diagnoses',
+            'investigations': 'Investigations',
+            'parameters': 'Parameters',
+            'age_groups': 'Age Groups',
+            'ref_ranges': 'Reference Ranges',
+            'inv_params': 'Investigation Parameters',
+            'diag_dept_mappings': 'Diagnosis Departments',
+            'diag_inv_mappings': 'Diagnosis Investigations',
+        };
+
+        let html = '';
+        Object.keys(labels).forEach(k => {
+            const created = counts[`${k}_created`] || 0;
+            const updated = counts[`${k}_updated`] || 0;
+            const skipped = counts[`${k}_skipped`] || 0;
+            if (created > 0 || updated > 0 || skipped > 0) {
+                html += `
+                    <div class="bg-white border border-green-200 rounded-lg p-4 shadow-sm">
+                        <div class="font-semibold text-green-900 mb-2 border-b border-green-100 pb-1">${labels[k]}</div>
+                        <div class="text-xs text-slate-600 flex flex-wrap gap-3">
+                            <div>Created: <span class="font-bold text-emerald-600">${created}</span></div>
+                            <div>Updated: <span class="font-bold text-blue-600">${updated}</span></div>
+                            <div>Skipped: <span class="font-bold text-slate-500">${skipped}</span></div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        document.getElementById('importCounts').innerHTML = html || '<div class="col-span-full text-slate-500">No records were modified.</div>';
+    }
+
+    function resetImport() {
+        document.getElementById('uploadForm').reset();
+        document.getElementById('previewSection').style.display = 'none';
+        document.getElementById('resultSection').style.display = 'none';
+        hideImportError();
+    }
+</script>
+{% endblock %}

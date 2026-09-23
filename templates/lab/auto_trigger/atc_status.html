@@ -1,0 +1,469 @@
+{% extends "base.html" %}
+
+{% block title %}ATC Live Status | VMMCerp{% endblock %}
+{% block page_heading %}ATC Live Status{% endblock %}
+
+{% block extra_head %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+    .page-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        letter-spacing: -0.02em;
+    }
+    
+    .status-card {
+        background: #fff;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 8px;
+        padding: 1.15rem 1.25rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        margin-bottom: 1rem;
+    }
+    .status-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+        margin-bottom: 0.85rem;
+    }
+    
+    /* Metrics Grid */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 0.85rem;
+    }
+    .metric-tile {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.65rem 0.85rem;
+    }
+    .metric-tile .lbl {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        margin-bottom: 0.2rem;
+    }
+    .metric-tile .val {
+        display: block;
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
+    .metric-tile.highlight-op {
+        background: #ecfdf5;
+        border-color: #a7f3d0;
+    }
+    .metric-tile.highlight-op .val {
+        color: #065f46;
+    }
+    .metric-tile.highlight-rev {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+    }
+    .metric-tile.highlight-rev .val {
+        color: #1e40af;
+    }
+
+    /* Operation Banner */
+    .operation-banner {
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        border-left: 4px solid #0284c7;
+        padding: 0.65rem 1rem;
+        border-radius: 6px;
+        font-size: 0.88rem;
+        color: #0f172a;
+        margin-bottom: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    /* Emergency Stop Button */
+    .btn-emergency-stop {
+        background-color: #dc2626 !important;
+        border-color: #dc2626 !important;
+        color: #fff !important;
+        font-weight: 700 !important;
+        box-shadow: 0 1px 2px rgba(220, 38, 38, 0.2);
+    }
+    .btn-emergency-stop:hover {
+        background-color: #b91c1c !important;
+        border-color: #b91c1c !important;
+    }
+
+    @media (max-width: 640px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        .status-card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="px-3 py-2">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <div class="text-xs text-slate-500 mb-1 flex items-center gap-1.5 font-medium">
+                <span>Home</span> <i class="bi bi-chevron-right text-[10px]"></i>
+                <span>Auto Trigger</span> <i class="bi bi-chevron-right text-[10px]"></i>
+                <span class="text-slate-900 font-semibold">ATC Live Status</span>
+            </div>
+            <h1 class="page-title">ATC LIVE STATUS</h1>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-800 text-xs font-semibold rounded-lg border border-green-200 shadow-sm">
+                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                System Date: {{ today_display }}
+            </span>
+            <a href="{% url 'lab:auto_trigger_atc' %}" class="btn btn-outline-primary btn-sm fw-semibold">
+                <i class="bi bi-gear-wide-connected me-1"></i> Configure ATC
+            </a>
+            <a href="{% url 'lab:auto_trigger_atc_settings' %}" class="btn btn-light border btn-sm fw-semibold text-secondary">
+                <i class="bi bi-sliders me-1"></i> Settings
+            </a>
+        </div>
+    </div>
+
+    <!-- CSRF Token Helper -->
+    <form id="csrfHelper">{% csrf_token %}</form>
+
+    <!-- Main Live Status Card -->
+    <div class="status-card" id="mainStatusCard" style="border-top: 4px solid #0284c7;">
+        
+        <!-- Header Bar -->
+        <div class="status-card-header">
+            <div>
+                <h3 class="fs-6 fw-bold text-slate-900 m-0 d-flex align-items-center gap-2">
+                    <i class="bi bi-activity text-primary"></i>
+                    <span>JOB INFORMATION: <strong id="valJobCode">{{ active_job.job_id|default:"No Active Job" }}</strong></span>
+                </h3>
+                <div class="text-xs text-muted mt-0.5" id="valJobDept">
+                    Department: <strong>{{ active_job.department.name|default:"All / General" }}</strong>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span id="valStatusBadge" class="badge px-3 py-1.5 text-xs fw-bold rounded-pill {% if active_job.status == 'RUNNING' %}bg-primary text-white{% elif active_job.status == 'COMPLETED' %}bg-success text-white{% elif active_job.status == 'EMERGENCY_STOPPED' %}bg-danger text-white{% else %}bg-slate-200 text-slate-700{% endif %}">
+                    {{ active_job.status|default:"IDLE" }}
+                </span>
+                <button type="button" id="btnEmergencyStop" class="btn btn-emergency-stop btn-sm px-3" onclick="triggerEmergencyStop()" {% if not active_job or active_job.status in 'COMPLETED,STOPPED,EMERGENCY_STOPPED,FAILED' %}disabled{% endif %}>
+                    <i class="bi bi-stop-circle-fill me-1"></i> EMERGENCY STOP
+                </button>
+            </div>
+        </div>
+
+        <!-- Stop Reason Alert (if stopped) -->
+        <div id="stopReasonAlert" class="alert alert-danger py-2 px-3 text-xs mb-3" style="display: {% if active_job.status in 'EMERGENCY_STOPPED,STOPPED' %}block{% else %}none{% endif %};">
+            <i class="bi bi-exclamation-octagon-fill me-1.5"></i>
+            <strong>Job Stopped:</strong> <span id="stopReasonText">{{ active_job.stop_reason|default:"Emergency Stop clicked by user." }}</span>
+        </div>
+
+        <!-- Section: TARGET METRICS -->
+        <div class="text-xs fw-bold text-slate-500 text-uppercase tracking-wider mb-2">TARGET ALLOCATION</div>
+        <div class="metrics-grid">
+            <div class="metric-tile">
+                <span class="lbl">Total Target</span>
+                <span class="val" id="valTargetTotal">{{ active_job.target_total|default:0 }}</span>
+            </div>
+            <div class="metric-tile highlight-op">
+                <span class="lbl">OP Target ({{ active_job.op_daily_pct|default:75 }}%)</span>
+                <span class="val" id="valTargetOp">{{ active_job.target_op|default:0 }}</span>
+            </div>
+            <div class="metric-tile highlight-rev">
+                <span class="lbl">Review Target ({{ active_job.review_pct|default:25 }}%)</span>
+                <span class="val" id="valTargetReview">{{ active_job.target_review|default:0 }}</span>
+            </div>
+            <div class="metric-tile">
+                <span class="lbl">Schedule Window</span>
+                <span class="val" id="valScheduleWindow" style="font-size: 0.95rem; line-height: 1.4;">
+                    {{ active_job.schedule_start_time|time:"h:i A"|default:"08:00 AM" }} – {{ active_job.schedule_end_time|time:"h:i A"|default:"02:00 PM" }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Section: PROGRESS METRICS -->
+        <div class="text-xs fw-bold text-slate-500 text-uppercase tracking-wider mb-2">PROGRESS &amp; COMPLETION</div>
+        <div class="metrics-grid">
+            <div class="metric-tile highlight-op">
+                <span class="lbl">OP Created</span>
+                <span class="val" id="valCreatedOp">{{ active_job.created_op|default:0 }} / {{ active_job.target_op|default:0 }}</span>
+            </div>
+            <div class="metric-tile highlight-rev">
+                <span class="lbl">Review Created</span>
+                <span class="val" id="valCreatedReview">{{ active_job.created_review|default:0 }} / {{ active_job.target_review|default:0 }}</span>
+            </div>
+            <div class="metric-tile">
+                <span class="lbl">Total Completed</span>
+                <span class="val text-success" id="valCreatedTotal">{{ active_job.created_count|default:0 }} / {{ active_job.target_total|default:0 }}</span>
+            </div>
+            <div class="metric-tile">
+                <span class="lbl">Remaining</span>
+                <span class="val text-secondary" id="valRemaining">{{ active_job.remaining_count|default:0 }}</span>
+            </div>
+            <div class="metric-tile">
+                <span class="lbl">Male / Female</span>
+                <span class="val" id="valGenderBreakdown" style="font-size: 1rem;">
+                    M: <span id="valMale">{{ active_job.created_male|default:0 }}</span> / F: <span id="valFemale">{{ active_job.created_female|default:0 }}</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Section: CURRENT OPERATION BANNER -->
+        <div class="operation-banner" id="operationBanner">
+            <div class="d-flex align-items-center gap-2">
+                <span class="spinner-border spinner-border-sm text-primary" id="operationSpinner" style="display: {% if active_job.status == 'RUNNING' %}inline-block{% else %}none{% endif %};"></span>
+                <span><strong>CURRENT OPERATION:</strong> <span id="valCurrentOperation">{{ active_job.current_patient_info|default:"Idle / Ready" }}</span></span>
+            </div>
+            <span class="badge bg-slate-200 text-slate-700 text-xs" id="valBatchInfo">
+                Batch {{ active_job.current_batch|default:0 }} / {{ active_job.total_batches|default:0 }}
+            </span>
+        </div>
+
+        <!-- Section: PROGRESS BAR -->
+        <div class="mb-3">
+            <div class="d-flex justify-content-between text-xs fw-bold mb-1">
+                <span class="text-slate-700">Automation Progress</span>
+                <span class="text-primary font-bold" id="valProgressPctText">{{ active_job.progress_percentage|default:0 }}%</span>
+            </div>
+            <div class="progress" style="height: 14px; border-radius: 7px; background-color: #e2e8f0;">
+                <div id="valProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: {{ active_job.progress_percentage|default:0 }}%;"></div>
+            </div>
+        </div>
+
+        <!-- Section: LIVE ACTIVITY AUDIT LOG -->
+        <div>
+            <div class="d-flex justify-content-between align-items-center mb-1.5">
+                <span class="text-xs fw-bold text-uppercase text-secondary">Live Audit Logs</span>
+                <span class="text-xs text-muted">Latest 15 transactions</span>
+            </div>
+            <div class="table-responsive border rounded-2 overflow-hidden" style="max-height: 250px;">
+                <table class="table table-sm table-striped mb-0 text-xs">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 80px;">Time</th>
+                            <th>Patient Name</th>
+                            <th style="width: 80px;">Gender</th>
+                            <th>Department</th>
+                            <th style="width: 70px;">Batch</th>
+                            <th style="width: 90px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activityTbody">
+                        {% for log in active_job.logs.all|slice:":15" %}
+                        <tr>
+                            <td>{{ log.created_at|date:"H:i:s" }}</td>
+                            <td><strong>{{ log.patient_name }}</strong></td>
+                            <td>{{ log.gender }}</td>
+                            <td>{{ log.department }}</td>
+                            <td>Batch {{ log.batch_number }}</td>
+                            <td>
+                                <span class="badge {% if log.status == 'Success' %}bg-success{% else %}bg-danger{% endif %} text-white">
+                                    {{ log.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">No activity logs recorded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Poller Script -->
+<script>
+    const csrfToken = document.querySelector('#csrfHelper [name=csrfmiddlewaretoken]').value;
+    let currentJobId = {% if active_job %}{{ active_job.id }}{% else %}null{% endif %};
+    let pollerTimer = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (currentJobId) {
+            startPoller();
+        } else {
+            // Check if there is an active job via API
+            fetch('/lab/api/atc/active/')
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status === 'found') {
+                        currentJobId = res.job_id;
+                        startPoller();
+                    }
+                });
+        }
+    });
+
+    function startPoller() {
+        if (pollerTimer) clearInterval(pollerTimer);
+        pollJobStatus();
+        pollerTimer = setInterval(pollJobStatus, 1500);
+    }
+
+    function pollJobStatus() {
+        if (!currentJobId) return;
+
+        fetch(`/lab/api/atc/status/${currentJobId}/`)
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success' && res.job) {
+                    updateDashboard(res.job, res.logs);
+                }
+            })
+            .catch(err => console.error("ATC Poller error:", err));
+    }
+
+    function updateDashboard(job, logs) {
+        // Job Info
+        document.getElementById('valJobCode').textContent = job.job_code || job.job_id;
+        document.getElementById('valJobDept').innerHTML = `Department: <strong>${job.department_name}</strong>`;
+
+        // Badge
+        const badge = document.getElementById('valStatusBadge');
+        badge.textContent = job.status;
+        badge.className = 'badge px-3 py-1.5 text-xs fw-bold rounded-pill ' + 
+            (job.status === 'RUNNING' ? 'bg-primary text-white' :
+             job.status === 'COMPLETED' ? 'bg-success text-white' :
+             job.status === 'EMERGENCY_STOPPED' ? 'bg-danger text-white' :
+             job.status === 'STOPPED' ? 'bg-warning text-dark' : 'bg-slate-200 text-slate-700');
+
+        // Targets
+        document.getElementById('valTargetTotal').textContent = job.target_total;
+        document.getElementById('valTargetOp').textContent = job.target_op;
+        document.getElementById('valTargetReview').textContent = job.target_review;
+        document.getElementById('valScheduleWindow').textContent = `${job.start_time} – ${job.end_time}`;
+
+        // Progress
+        document.getElementById('valCreatedOp').textContent = `${job.created_op} / ${job.target_op}`;
+        document.getElementById('valCreatedReview').textContent = `${job.created_review} / ${job.target_review}`;
+        document.getElementById('valCreatedTotal').textContent = `${job.created_count} / ${job.target_total}`;
+        document.getElementById('valRemaining').textContent = job.remaining_count;
+        document.getElementById('valMale').textContent = job.created_male;
+        document.getElementById('valFemale').textContent = job.created_female;
+
+        // Current Operation & Batch
+        document.getElementById('valCurrentOperation').textContent = job.current_patient_info || 'Processing...';
+        document.getElementById('valBatchInfo').textContent = `Batch ${job.current_batch} / ${job.total_batches}`;
+
+        const spinner = document.getElementById('operationSpinner');
+        if (job.is_running) {
+            spinner.style.display = 'inline-block';
+        } else {
+            spinner.style.display = 'none';
+        }
+
+        // Progress Bar
+        const pct = job.progress_percentage || 0;
+        document.getElementById('valProgressPctText').textContent = pct + '%';
+        const bar = document.getElementById('valProgressBar');
+        bar.style.width = pct + '%';
+        if (job.is_running) {
+            bar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-primary';
+        } else if (job.is_completed) {
+            bar.className = 'progress-bar bg-success';
+        } else {
+            bar.className = 'progress-bar bg-danger';
+        }
+
+        // Stop Reason
+        const alertBox = document.getElementById('stopReasonAlert');
+        if (job.is_stopped) {
+            alertBox.style.display = 'block';
+            document.getElementById('stopReasonText').textContent = job.stop_reason || 'Job halted.';
+        } else {
+            alertBox.style.display = 'none';
+        }
+
+        // Stop Button
+        const stopBtn = document.getElementById('btnEmergencyStop');
+        if (job.is_running) {
+            stopBtn.disabled = false;
+        } else {
+            stopBtn.disabled = true;
+        }
+
+        // Logs
+        if (logs && logs.length > 0) {
+            let logHtml = '';
+            logs.forEach(l => {
+                const statusBadge = l.status === 'Success' 
+                    ? '<span class="badge bg-success text-white">Success</span>' 
+                    : '<span class="badge bg-danger text-white">Failed</span>';
+                logHtml += `
+                    <tr>
+                        <td>${l.created_at}</td>
+                        <td><strong>${l.patient_name}</strong></td>
+                        <td>${l.gender}</td>
+                        <td>${l.department || '-'}</td>
+                        <td>Batch ${l.batch_number}</td>
+                        <td>${statusBadge}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('activityTbody').innerHTML = logHtml;
+        }
+
+        // If job completed or stopped, slow down or stop poller
+        if (job.is_completed || job.is_stopped || job.is_failed) {
+            if (pollerTimer) {
+                clearInterval(pollerTimer);
+                pollerTimer = null;
+            }
+        }
+    }
+
+    function triggerEmergencyStop() {
+        if (!currentJobId) {
+            alert("No active job to stop.");
+            return;
+        }
+
+        if (!confirm("Are you sure you want to stop this automation immediately?")) {
+            return;
+        }
+
+        const data = new FormData();
+        data.append('csrfmiddlewaretoken', csrfToken);
+
+        fetch(`/lab/api/atc/stop/${currentJobId}/`, {
+            method: 'POST',
+            body: data,
+        })
+        .then(r => r.json())
+        .then(res => {
+            alert(res.message || "Emergency Stop signal sent.");
+            pollJobStatus();
+        })
+        .catch(err => {
+            alert("Error sending stop signal: " + err);
+        });
+    }
+</script>
+{% endblock %}

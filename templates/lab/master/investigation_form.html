@@ -1,0 +1,186 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}{% if object %}Edit Investigation{% else %}Add Investigation{% endif %} | Lab Master{% endblock %}
+{% block page_heading %}{% if object %}Edit Investigation{% else %}Add New Investigation{% endif %}{% endblock %}
+
+{% block extra_head %}
+<!-- Select2 for searchable dropdowns -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .select2-container .select2-selection--single {
+        height: 42px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 40px;
+        color: #1e293b;
+        font-size: 0.875rem;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 40px;
+    }
+</style>
+{% endblock %}
+
+{% block lab_content %}
+<div style="max-width: 860px; margin: 0 auto;">
+    <div class="lab-card">
+        <div class="lab-table-card-header mb-4 pb-2 border-b border-slate-100">
+            <span class="lab-table-title">{% if object %}Edit Investigation: {{ object.name }}{% else %}New Investigation Details{% endif %}</span>
+            <span class="lab-table-subtitle">Laboratory Catalog Master</span>
+        </div>
+
+        <form method="post" id="investigationForm">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="p-3 mb-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <div class="lab-form-grid-2 mb-3">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.code.id_for_label }}">Investigation Code <span class="text-rose-500">*</span></label>
+                    {{ form.code }}
+                    {% if form.code.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.code.errors }}</div>{% endif %}
+                </div>
+                
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.name.id_for_label }}">Investigation Name <span class="text-rose-500">*</span></label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.name.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="lab-form-grid-2 mb-3">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.short_name.id_for_label }}">Short Name / Alias</label>
+                    {{ form.short_name }}
+                    {% if form.short_name.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.short_name.errors }}</div>{% endif %}
+                </div>
+
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.turnaround_time_hours.id_for_label }}">Turnaround Time (Hours)</label>
+                    {{ form.turnaround_time_hours }}
+                    {% if form.turnaround_time_hours.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.turnaround_time_hours.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="lab-form-grid-2 mb-4">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.department.id_for_label }}">Hospital Department</label>
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            {{ form.department }}
+                        </div>
+                        <button type="button" class="lab-btn lab-btn-secondary shrink-0" onclick="promptAddLookup('department')">
+                            <i class="bi bi-plus"></i> New
+                        </button>
+                    </div>
+                    {% if form.department.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.department.errors }}</div>{% endif %}
+                </div>
+
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.sample_type.id_for_label }}">Sample Type</label>
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            {{ form.sample_type }}
+                        </div>
+                        <button type="button" class="lab-btn lab-btn-secondary shrink-0" onclick="promptAddLookup('sample_type')">
+                            <i class="bi bi-plus"></i> New
+                        </button>
+                    </div>
+                    {% if form.sample_type.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.sample_type.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="p-3 mb-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-wrap gap-6 items-center">
+                <label class="flex items-center gap-2 cursor-pointer mb-0">
+                    {{ form.is_panel }}
+                    <span class="text-xs font-semibold text-slate-700">Is Panel (Multi-parameter Investigation)</span>
+                </label>
+                
+                <label class="flex items-center gap-2 cursor-pointer mb-0">
+                    {{ form.is_active }}
+                    <span class="text-xs font-semibold text-slate-700">Active Status</span>
+                </label>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <a href="{% url 'lab:investigation_list' %}" class="lab-btn lab-btn-secondary">Cancel</a>
+                <button type="submit" class="lab-btn lab-btn-primary">
+                    <i class="bi bi-check-lg"></i> {% if object %}Update{% else %}Save{% endif %} Investigation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#{{ form.department.id_for_label }}').select2({
+            placeholder: "Select Department",
+            allowClear: true,
+            width: '100%'
+        });
+        
+        $('#{{ form.sample_type.id_for_label }}').select2({
+            placeholder: "Select Sample Type",
+            allowClear: true,
+            width: '100%'
+        });
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function promptAddLookup(type) {
+        const title = type === 'department' ? 'Department' : 'Sample Type';
+        const val = prompt(`Enter new ${title} name:`);
+        if (!val || val.trim() === '') return;
+        
+        const url = type === 'department' ? "{% url 'lab:api_department_add' %}" : "{% url 'lab:api_sample_type_add' %}";
+        
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+                'name': val,
+                'csrfmiddlewaretoken': getCookie('csrftoken')
+            },
+            success: function(response) {
+                if(response.status === 'success') {
+                    const selectId = type === 'department' ? '#{{ form.department.id_for_label }}' : '#{{ form.sample_type.id_for_label }}';
+                    var newOption = new Option(response.name, response.id, true, true);
+                    $(selectId).append(newOption).trigger('change');
+                } else {
+                    alert('Error creating ' + title);
+                }
+            },
+            error: function() {
+                alert('Server error creating ' + title);
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Pre-Op — {{ case.ot_number }}{% endblock %}
+{% block extra_head %}<style>
+.form-section{background:white;border-radius:12px;border:1px solid #e2e8f0;padding:1.5rem;margin-bottom:1.25rem;}
+.form-section h3{font-size:.9rem;font-weight:700;color:#1e293b;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:.5rem;}
+.form-label{display:block;font-size:.8rem;font-weight:600;color:#475569;margin-bottom:.3rem;}
+.form-input{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:.55rem .75rem;font-size:.9rem;outline:none;transition:.2s;}
+.form-input:focus{border-color:#0284c7;box-shadow:0 0 0 3px rgba(2,132,199,.12);}
+</style>{% endblock %}
+{% block content %}
+<div class="p-4 sm:p-6 max-w-4xl mx-auto">
+  <div class="flex items-center gap-3 mb-6">
+    <a href="{% url 'ot:case_detail' case.pk %}" class="text-slate-400 hover:text-slate-600"><i class="bi bi-arrow-left text-xl"></i></a>
+    <div>
+      <h1 class="text-xl font-bold text-slate-800">Pre-Operative Checklist</h1>
+      <p class="text-sm text-slate-500">{{ case.ot_number }} — {{ case.patient.name }} | {{ case.procedure.name }}</p>
+    </div>
+  </div>
+  {% if messages %}{% for msg in messages %}<div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium {% if msg.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">{{ msg }}</div>{% endfor %}{% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+
+    <!-- NPO -->
+    <div class="form-section">
+      <h3><i class="bi bi-cup-hot text-orange-500"></i> NPO (Nil Per Os)</h3>
+      <div class="flex items-center gap-3 mb-3">
+        <input type="checkbox" name="npo_given" id="npoGiven" class="w-4 h-4" {% if preop.npo_given %}checked{% endif %}>
+        <label for="npoGiven" class="text-sm font-medium text-slate-700">NPO Instructions Given to Patient</label>
+      </div>
+      <div>
+        <label class="form-label">NPO From (Date & Time)</label>
+        <input type="datetime-local" name="npo_from" class="form-input sm:max-w-xs"
+          value="{% if preop.npo_from %}{{ preop.npo_from|date:'Y-m-d\TH:i' }}{% endif %}">
+      </div>
+    </div>
+
+    <!-- Consent -->
+    <div class="form-section">
+      <h3><i class="bi bi-file-earmark-check text-teal-500"></i> Informed Consent</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="form-label">Consent Status</label>
+          <select name="consent_status" class="form-input">
+            {% for val, lbl in consent_status_choices %}
+            <option value="{{ val }}" {% if preop.consent_status == val %}selected{% endif %}>{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Consent Mode</label>
+          <select name="consent_mode" class="form-input">
+            {% for val, lbl in consent_mode_choices %}
+            <option value="{{ val }}" {% if preop.consent_mode == val %}selected{% endif %}>{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Consent Date & Time</label>
+          <input type="datetime-local" name="consent_time" class="form-input"
+            value="{% if preop.consent_time %}{{ preop.consent_time|date:'Y-m-d\TH:i' }}{% endif %}">
+        </div>
+        <div>
+          <label class="form-label">Signed By (Patient/Guardian)</label>
+          <input type="text" name="consent_signed_by" class="form-input" value="{{ preop.consent_signed_by|default:'' }}" placeholder="Name">
+        </div>
+        <div>
+          <label class="form-label">Relation</label>
+          <input type="text" name="consent_relation" class="form-input" value="{{ preop.consent_relation|default:'' }}" placeholder="Self / Spouse / Parent">
+        </div>
+        <div>
+          <label class="form-label">Witness</label>
+          <input type="text" name="consent_witness" class="form-input" value="{{ preop.consent_witness|default:'' }}" placeholder="Staff witness">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="form-label">Life-Saving Reason (if consent N/A)</label>
+          <textarea name="consent_life_saving_reason" rows="2" class="form-input" placeholder="Describe why consent could not be obtained...">{{ preop.consent_life_saving_reason|default:'' }}</textarea>
+        </div>
+        <div>
+          <label class="form-label">Consultant 1</label>
+          <input type="text" name="consent_consultant_1" class="form-input" value="{{ preop.consent_consultant_1|default:'' }}" placeholder="Name">
+        </div>
+        <div>
+          <label class="form-label">Consultant 2</label>
+          <input type="text" name="consent_consultant_2" class="form-input" value="{{ preop.consent_consultant_2|default:'' }}" placeholder="Name">
+        </div>
+      </div>
+    </div>
+
+    <!-- PAC -->
+    <div class="form-section">
+      <h3><i class="bi bi-heart-pulse text-red-500"></i> Pre-Anaesthetic Checkup (PAC)</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="form-label">PAC Status</label>
+          <select name="pac_status" class="form-input">
+            {% for val, lbl in pac_status_choices %}
+            <option value="{{ val }}" {% if preop.pac_status == val %}selected{% endif %}>{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">PAC Mode</label>
+          <select name="pac_mode" class="form-input">
+            {% for val, lbl in pac_mode_choices %}
+            <option value="{{ val }}" {% if preop.pac_mode == val %}selected{% endif %}>{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">ASA Grade</label>
+          <select name="asa_grade" class="form-input">
+            <option value="">— Select —</option>
+            {% for val, lbl in asa_choices %}
+            <option value="{{ val }}" {% if preop.asa_grade == val %}selected{% endif %}>{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Fitness for Anaesthesia</label>
+          <select name="pac_fitness" class="form-input">
+            <option value="">— Select —</option>
+            {% for val, lbl in fitness_choices %}
+            <option value="{{ val }}" {% if preop.pac_fitness == val %}selected{% endif %}>{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="form-label">PAC Remarks</label>
+          <textarea name="pac_remarks" rows="2" class="form-input" placeholder="Any special remarks or conditions...">{{ preop.pac_remarks|default:'' }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Site Marking -->
+    <div class="form-section">
+      <h3><i class="bi bi-geo-alt text-blue-500"></i> Site Marking</h3>
+      <div class="flex items-center gap-6 mb-4">
+        <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <input type="checkbox" name="site_marked" id="siteMarked" class="w-4 h-4" {% if preop.site_marked %}checked{% endif %}> Site Marked
+        </label>
+        <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <input type="checkbox" name="site_not_applicable" id="siteNA" class="w-4 h-4" {% if preop.site_not_applicable %}checked{% endif %}> Not Applicable
+        </label>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Site Description</label>
+          <input type="text" name="site_description" class="form-input" value="{{ preop.site_description|default:'' }}" placeholder="e.g. Right arm, Left knee">
+        </div>
+        <div>
+          <label class="form-label">N/A Reason</label>
+          <input type="text" name="site_na_reason" class="form-input" value="{{ preop.site_na_reason|default:'' }}" placeholder="If N/A, state reason">
+        </div>
+      </div>
+    </div>
+
+    <!-- Blood Arrangement -->
+    <div class="form-section">
+      <h3><i class="bi bi-droplet-fill text-red-600"></i> Blood Arrangement</h3>
+      <div class="flex items-center gap-6 mb-3">
+        <label class="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" name="blood_required" class="w-4 h-4" {% if preop.blood_required %}checked{% endif %}> Blood Required
+        </label>
+        <label class="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" name="blood_arranged" class="w-4 h-4" {% if preop.blood_arranged %}checked{% endif %}> Blood Arranged
+        </label>
+      </div>
+      <div class="sm:max-w-xs">
+        <label class="form-label">Units</label>
+        <input type="number" name="blood_units" class="form-input" min="0" max="20" value="{{ preop.blood_units|default:0 }}">
+      </div>
+    </div>
+
+    <!-- Remarks -->
+    <div class="form-section">
+      <h3><i class="bi bi-chat-text text-slate-500"></i> Additional Remarks</h3>
+      <textarea name="remarks" rows="2" class="form-input" placeholder="Any additional pre-op notes...">{{ preop.remarks|default:'' }}</textarea>
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-bold text-base transition-colors flex items-center justify-center gap-2">
+        <i class="bi bi-floppy"></i> Save Pre-Op Record
+      </button>
+      <a href="{% url 'ot:case_detail' case.pk %}" class="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition-colors flex items-center gap-2">Back</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

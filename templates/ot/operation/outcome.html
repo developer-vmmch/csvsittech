@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Outcome — {{ case.ot_number }}{% endblock %}
+{% block extra_head %}<style>
+.form-label{display:block;font-size:.8rem;font-weight:600;color:#475569;margin-bottom:.3rem;}
+.form-input{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:.55rem .75rem;font-size:.9rem;outline:none;transition:.2s;}
+.form-input:focus{border-color:#0284c7;box-shadow:0 0 0 3px rgba(2,132,199,.12);}
+.outcome-card{border-radius:12px;border:2px solid #e2e8f0;padding:1.25rem;cursor:pointer;transition:.15s;background:white;}
+.outcome-card:hover{border-color:#94a3b8;}
+.outcome-card.selected{border-color:#0284c7;background:#f0f9ff;}
+.outcome-card.danger{border-color:#fca5a5;}
+.outcome-card.danger.selected{border-color:#dc2626;background:#fef2f2;}
+</style>{% endblock %}
+{% block content %}
+<div class="p-4 sm:p-6 max-w-3xl mx-auto">
+  <div class="flex items-center gap-3 mb-6">
+    <a href="{% url 'ot:case_detail' case.pk %}" class="text-slate-400 hover:text-slate-600"><i class="bi bi-arrow-left text-xl"></i></a>
+    <div>
+      <h1 class="text-xl font-bold text-slate-800"><i class="bi bi-clipboard-data text-green-500"></i> Record Outcome</h1>
+      <p class="text-sm text-slate-500">{{ case.ot_number }} — {{ case.patient.name }}</p>
+    </div>
+  </div>
+  {% if messages %}{% for msg in messages %}<div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium {% if msg.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">{{ msg }}</div>{% endfor %}{% endif %}
+
+  <form method="post" id="outcomeForm">
+    {% csrf_token %}
+    <div class="bg-white rounded-xl border border-slate-200 p-6 mb-5">
+      <p class="text-sm font-semibold text-slate-700 mb-4">Surgical Outcome</p>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        {% for val, lbl in outcome_choices %}
+        <div class="outcome-card {% if val == 'INTRAOPERATIVE_DEATH' %}danger{% endif %} {% if op.outcome == val %}selected{% endif %}"
+             onclick="selectOutcome('{{ val }}')">
+          <div class="font-semibold text-sm text-slate-800">
+            {% if val == 'SUCCESSFUL' %}✅{% elif val == 'COMPLICATION' %}⚠️{% elif val == 'INTRAOPERATIVE_DEATH' %}☠️{% elif val == 'ABORTED' %}🛑{% else %}🔄{% endif %}
+            {{ lbl }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <input type="hidden" name="outcome" id="outcomeInput" value="{{ op.outcome|default:'' }}" required>
+
+      <div>
+        <label class="form-label">Procedure Status</label>
+        <select name="procedure_status" class="form-input sm:max-w-xs">
+          {% for val, lbl in procedure_status_choices %}
+          <option value="{{ val }}" {% if op.procedure_status == val %}selected{% endif %}>{{ lbl }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 p-6 mb-5">
+      <p class="text-sm font-semibold text-slate-700 mb-4">Complications (if any)</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Complications</label>
+          <textarea name="complications" rows="3" class="form-input" placeholder="None / describe...">{{ op.complications|default:'' }}</textarea>
+        </div>
+        <div>
+          <label class="form-label">Action Taken</label>
+          <textarea name="complication_action" rows="3" class="form-input" placeholder="Management steps...">{{ op.complication_action|default:'' }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Death section (shows conditionally) -->
+    <div id="deathSection" class="bg-red-50 border border-red-200 rounded-xl p-6 mb-5" style="display:{% if op.outcome == 'INTRAOPERATIVE_DEATH' %}block{% else %}none{% endif %};">
+      <p class="text-sm font-bold text-red-800 mb-3">⚠️ Intraoperative Death — Required Details</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="sm:col-span-2">
+          <label class="form-label">Cause of Death</label>
+          <textarea name="death_cause" rows="2" class="form-input" placeholder="Cause of intraoperative death...">{{ op.death_cause|default:'' }}</textarea>
+        </div>
+        <div>
+          <label class="form-label">Certifying Doctor</label>
+          <input type="text" name="certifying_doctor" class="form-input" placeholder="Name" value="{{ op.certifying_doctor|default:'' }}">
+        </div>
+        <div>
+          <label class="form-label">Remarks</label>
+          <input type="text" name="death_remarks" class="form-input" placeholder="..." value="{{ op.death_remarks|default:'' }}">
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold text-base transition-colors flex items-center justify-center gap-2">
+        <i class="bi bi-check-circle"></i> Save Outcome & Continue
+      </button>
+      <a href="{% url 'ot:case_detail' case.pk %}" class="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition-colors">Back</a>
+    </div>
+  </form>
+</div>
+<script>
+function selectOutcome(val) {
+  document.querySelectorAll('.outcome-card').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  document.getElementById('outcomeInput').value = val;
+  document.getElementById('deathSection').style.display = val === 'INTRAOPERATIVE_DEATH' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

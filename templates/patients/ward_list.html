@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Hospital Wards | Master Module | VMMCerp{% endblock %}
+{% block page_heading %}Hospital Wards Master{% endblock %}
+
+{% block content %}
+<div style="max-width: 1400px; margin: 0 auto;">
+
+    <!-- Top Metric Overview Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="panel" style="margin-bottom: 0; padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #0284c7;">
+            <div>
+                <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">Total Wards</div>
+                <div style="font-size: 1.8rem; font-weight: 800; color: #0f172a; margin-top: 4px;">{{ total_wards_count }}</div>
+            </div>
+            <div style="width: 48px; height: 48px; background: #e0f2fe; color: #0284c7; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                <i class="bi bi-hospital"></i>
+            </div>
+        </div>
+
+        <div class="panel" style="margin-bottom: 0; padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #10b981;">
+            <div>
+                <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">Active Wards</div>
+                <div style="font-size: 1.8rem; font-weight: 800; color: #10b981; margin-top: 4px;">{{ active_wards_count }}</div>
+            </div>
+            <div style="width: 48px; height: 48px; background: #d1fae5; color: #10b981; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+        </div>
+
+        <div class="panel" style="margin-bottom: 0; padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #8b5cf6;">
+            <div>
+                <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">Total Bed Capacity</div>
+                <div style="font-size: 1.8rem; font-weight: 800; color: #8b5cf6; margin-top: 4px;">{{ total_beds_count }}</div>
+            </div>
+            <div style="width: 48px; height: 48px; background: #ede9fe; color: #8b5cf6; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                <i class="bi bi-door-open-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main List Panel -->
+    <div class="panel">
+        <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h2 class="panel-title" style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #0f172a;">
+                    <i class="bi bi-hospital text-primary"></i> Hospital Wards Master Directory
+                </h2>
+                <p style="color: #64748b; font-size: 0.85rem; margin-top: 4px; margin-bottom: 0;">
+                    Configure inpatient admission wards, bed capacities, floor assignments, and active availability.
+                </p>
+            </div>
+            <div>
+                <a href="{% url 'patients:ward_add' %}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.55rem 1.25rem; border-radius: 8px;">
+                    <i class="bi bi-plus-circle-fill"></i> + Add Ward
+                </a>
+            </div>
+        </div>
+
+        <!-- Search and Filter Bar -->
+        <form method="get" action="{% url 'patients:ward_list' %}" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+            <div style="display: grid; grid-template-columns: 2fr 1.2fr 1.2fr 1.2fr 1fr auto; gap: 0.75rem; align-items: flex-end;">
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 4px; display: block;">Search Ward:</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background: #ffffff; border-right: none; color: #64748b;"><i class="bi bi-search"></i></span>
+                        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search by name, code or floor..." style="border-left: none;">
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 4px; display: block;">Department:</label>
+                    <select name="department" class="form-select">
+                        <option value="">All Departments</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if selected_dept == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 4px; display: block;">Patient Gender:</label>
+                    <select name="gender" class="form-select">
+                        <option value="">All Patient Genders</option>
+                        {% for g_key, g_label in gender_categories %}
+                        <option value="{{ g_key }}" {% if selected_gender == g_key %}selected{% endif %}>{{ g_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 4px; display: block;">Ward Type:</label>
+                    <select name="ward_type" class="form-select">
+                        <option value="">All Ward Types</option>
+                        {% for type_key, type_label in ward_types %}
+                        <option value="{{ type_key }}" {% if selected_type == type_key %}selected{% endif %}>{{ type_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 4px; display: block;">Status:</label>
+                    <select name="status" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1rem; font-weight: 600;">
+                        <i class="bi bi-funnel-fill"></i> Filter
+                    </button>
+                    {% if q or selected_dept or selected_gender or selected_type or selected_status %}
+                    <a href="{% url 'patients:ward_list' %}" class="btn btn-outline-secondary" style="padding: 0.5rem 0.85rem;" title="Reset filters">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+
+        <!-- Wards Table -->
+        {% if wards %}
+        <div class="table-responsive">
+            <table class="table" style="margin-bottom: 0; vertical-align: middle;">
+                <thead>
+                    <tr style="background: #f1f5f9; color: #334155; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <th style="padding: 10px 14px; width: 100px;">Code</th>
+                        <th style="padding: 10px 14px;">Ward Name</th>
+                        <th style="padding: 10px 14px; width: 170px;">Mapped Department</th>
+                        <th style="padding: 10px 14px; width: 150px;">Patient Category</th>
+                        <th style="padding: 10px 14px; width: 140px;">Ward Type</th>
+                        <th style="padding: 10px 14px; width: 80px; text-align: center;">Beds</th>
+                        <th style="padding: 10px 14px;">Building / Floor / Location</th>
+                        <th style="padding: 10px 14px; width: 90px; text-align: center;">Status</th>
+                        <th style="padding: 10px 14px; width: 140px; text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ward in wards %}
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 12px 14px;">
+                            <span style="font-family: monospace; font-weight: 700; font-size: 0.85rem; color: #0284c7; background: #e0f2fe; padding: 3px 8px; border-radius: 4px;">
+                                {{ ward.code }}
+                            </span>
+                        </td>
+                        <td style="padding: 12px 14px;">
+                            <strong style="color: #0f172a; font-size: 0.95rem;">{{ ward.name }}</strong>
+                            {% if ward.description %}
+                            <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">{{ ward.description|truncatechars:60 }}</div>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 14px;">
+                            {% if ward.department %}
+                            <a href="{% url 'patients:department_edit' ward.department.id %}" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; color: #0284c7; font-weight: 700; font-size: 0.82rem; background: #f0f9ff; border: 1px solid #bae6fd; padding: 3px 8px; border-radius: 6px;">
+                                <i class="bi bi-building"></i> {{ ward.department.name }}
+                            </a>
+                            {% else %}
+                            <span style="color: #94a3b8; font-size: 0.82rem; font-style: italic;">Common / Multi-Dept</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 14px;">
+                            {% if ward.gender_category == 'MALE' %}
+                                <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.78rem; padding: 4px 8px; border: 1px solid #bae6fd;">
+                                    <i class="bi bi-gender-male"></i> Male Patients
+                                </span>
+                            {% elif ward.gender_category == 'FEMALE' %}
+                                <span class="badge" style="background: #fdf2f8; color: #be185d; font-weight: 700; font-size: 0.78rem; padding: 4px 8px; border: 1px solid #fbcfe8;">
+                                    <i class="bi bi-gender-female"></i> Female Patients
+                                </span>
+                            {% elif ward.gender_category == 'PAEDIATRIC' %}
+                                <span class="badge" style="background: #fef3c7; color: #b45309; font-weight: 700; font-size: 0.78rem; padding: 4px 8px; border: 1px solid #fde68a;">
+                                    <i class="bi bi-emoji-smile-fill"></i> Paediatric
+                                </span>
+                            {% else %}
+                                <span class="badge" style="background: #f1f5f9; color: #475569; font-weight: 600; font-size: 0.78rem; padding: 4px 8px; border: 1px solid #e2e8f0;">
+                                    <i class="bi bi-people-fill"></i> Unisex / All
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 14px;">
+                            {% if ward.ward_type == 'ICU' %}
+                                <span class="badge" style="background: #fee2e2; color: #b91c1c; font-weight: 700; font-size: 0.78rem; padding: 5px 8px; border: 1px solid #fca5a5;">
+                                    <i class="bi bi-heart-pulse-fill"></i> {{ ward.get_ward_type_display }}
+                                </span>
+                            {% elif ward.ward_type == 'EMERGENCY' %}
+                                <span class="badge" style="background: #fef2f2; color: #dc2626; font-weight: 700; font-size: 0.78rem; padding: 5px 8px; border: 1px solid #fecaca;">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> {{ ward.get_ward_type_display }}
+                                </span>
+                            {% elif ward.ward_type == 'SPECIAL' or ward.ward_type == 'SEMI_SPECIAL' %}
+                                <span class="badge" style="background: #fef3c7; color: #b45309; font-weight: 700; font-size: 0.78rem; padding: 5px 8px; border: 1px solid #fde68a;">
+                                    <i class="bi bi-star-fill"></i> {{ ward.get_ward_type_display }}
+                                </span>
+                            {% elif ward.ward_type == 'POST_OP' or ward.ward_type == 'MATERNITY' %}
+                                <span class="badge" style="background: #ede9fe; color: #6d28d9; font-weight: 700; font-size: 0.78rem; padding: 5px 8px; border: 1px solid #ddd6fe;">
+                                    {{ ward.get_ward_type_display }}
+                                </span>
+                            {% else %}
+                                <span class="badge" style="background: #f8fafc; color: #475569; font-weight: 600; font-size: 0.78rem; padding: 5px 8px; border: 1px solid #e2e8f0;">
+                                    {{ ward.get_ward_type_display }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 14px; text-align: center;">
+                            <span style="font-weight: 700; font-size: 0.95rem; color: #0f172a;">{{ ward.total_beds }}</span>
+                        </td>
+                        <td style="padding: 12px 14px; color: #475569; font-size: 0.88rem;">
+                            {{ ward.floor_building|default:"--" }}
+                        </td>
+                        <td style="padding: 12px 14px; text-align: center;">
+                            {% if ward.is_active %}
+                                <span class="badge bg-success" style="font-size: 0.75rem; padding: 4px 8px;">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger" style="font-size: 0.75rem; padding: 4px 8px;">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 14px; text-align: right;">
+                            <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                                <a href="{% url 'patients:ward_edit' ward.id %}" class="btn btn-sm btn-outline-primary" style="padding: 3px 10px; font-size: 0.82rem; font-weight: 600;" title="Edit Ward">
+                                    <i class="bi bi-pencil-square"></i> Edit
+                                </a>
+                                <form method="post" action="{% url 'patients:ward_delete' ward.id %}" onsubmit="return confirm('Are you sure you want to delete ward \'{{ ward.name|escapejs }}\' ({{ ward.code }})?');" style="margin: 0; display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="padding: 3px 8px; font-size: 0.82rem;" title="Delete Ward">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 3.5rem 1rem; color: #64748b; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1;">
+            <i class="bi bi-hospital" style="font-size: 3rem; color: #94a3b8; display: block; margin-bottom: 1rem;"></i>
+            <h5 style="color: #334155; font-weight: 700;">No Wards Found</h5>
+            <p style="font-size: 0.9rem; max-width: 450px; margin: 0 auto 1.25rem;">
+                No hospital wards matched your search filters. Click below to add a new ward.
+            </p>
+            <a href="{% url 'patients:ward_add' %}" class="btn btn-primary" style="font-weight: 600;">
+                <i class="bi bi-plus-circle"></i> + Add First Ward
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

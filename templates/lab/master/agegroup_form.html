@@ -1,0 +1,97 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}{% if object %}Edit Age Group{% else %}Add Age Group{% endif %} | Lab Master{% endblock %}
+{% block page_heading %}{% if object %}Edit Age Group{% else %}Add New Age Group{% endif %}{% endblock %}
+
+{% block lab_content %}
+<div style="max-width: 860px; margin: 0 auto;">
+    <div class="lab-card">
+        <div class="lab-table-card-header mb-4 pb-2 border-b border-slate-100">
+            <span class="lab-table-title">{% if object %}Edit Age Group: {{ object.label }}{% else %}Age Group Details{% endif %}</span>
+            <span class="lab-table-subtitle">Demographic Cohort Master</span>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="p-3 mb-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <div class="lab-form-grid-2 mb-3">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.code.id_for_label }}">Age Group Code <span class="text-rose-500">*</span></label>
+                    {{ form.code }}
+                    {% if form.code.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.code.errors }}</div>{% endif %}
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.label.id_for_label }}">Age Group Name / Label <span class="text-rose-500">*</span></label>
+                    {{ form.label }}
+                    {% if form.label.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.label.errors }}</div>{% endif %}
+                </div>
+            </div>
+            
+            <div class="lab-form-grid-2 mb-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.min_age_value.id_for_label }}">Min Age Value <span class="text-rose-500">*</span></label>
+                    {{ form.min_age_value }}
+                    {% if form.min_age_value.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.min_age_value.errors }}</div>{% endif %}
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.min_age_unit.id_for_label }}">Min Age Unit <span class="text-rose-500">*</span></label>
+                    {{ form.min_age_unit }}
+                    {% if form.min_age_unit.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.min_age_unit.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="lab-form-grid-2 mb-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.max_age_value.id_for_label }}">Max Age Value <span class="text-rose-500">*</span></label>
+                    {{ form.max_age_value }}
+                    {% if form.max_age_value.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.max_age_value.errors }}</div>{% endif %}
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.max_age_unit.id_for_label }}">Max Age Unit <span class="text-rose-500">*</span></label>
+                    {{ form.max_age_unit }}
+                    {% if form.max_age_unit.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.max_age_unit.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="lab-form-grid-3 mb-4">
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.gender.id_for_label }}">Gender</label>
+                    {{ form.gender }}
+                    {% if form.gender.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.gender.errors }}</div>{% endif %}
+                </div>
+                <div class="lab-form-group flex flex-col justify-center pt-5">
+                    <label class="flex items-center gap-2 cursor-pointer mb-0">
+                        {{ form.pregnancy_applicable }}
+                        <span class="text-xs font-semibold text-slate-700">Pregnancy Applicable</span>
+                    </label>
+                </div>
+                <div class="lab-form-group">
+                    <label class="lab-form-label" for="{{ form.sort_order.id_for_label }}">Display Order</label>
+                    {{ form.sort_order }}
+                    {% if form.sort_order.errors %}<div class="text-rose-600 text-xs mt-1">{{ form.sort_order.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="p-3 mb-4 rounded-lg bg-slate-50 border border-slate-200">
+                <label class="flex items-center gap-2 cursor-pointer mb-0">
+                    {{ form.is_active }}
+                    <span class="text-xs font-semibold text-slate-700">Active Status</span>
+                </label>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <a href="{% url 'lab:agegroup_list' %}" class="lab-btn lab-btn-secondary">Cancel</a>
+                <button type="submit" class="lab-btn lab-btn-primary">
+                    <i class="bi bi-check-lg"></i> {% if object %}Update{% else %}Save{% endif %} Age Group
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

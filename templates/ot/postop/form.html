@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Post-Op — {{ case.ot_number }}{% endblock %}
+{% block extra_head %}<style>
+.form-label{display:block;font-size:.8rem;font-weight:600;color:#475569;margin-bottom:.3rem;}
+.form-input{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:.55rem .75rem;font-size:.9rem;outline:none;transition:.2s;}
+.form-input:focus{border-color:#0284c7;box-shadow:0 0 0 3px rgba(2,132,199,.12);}
+.pain-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;font-weight:700;border:2px solid #e2e8f0;cursor:pointer;background:white;transition:.15s;font-size:.9rem;}
+.pain-btn:hover{border-color:#94a3b8;}
+.pain-btn.selected{background:#0284c7;border-color:#0284c7;color:white;}
+.pain-btn.pain-high{background:#fee2e2;border-color:#fca5a5;color:#dc2626;}
+.pain-btn.pain-high.selected{background:#dc2626;border-color:#dc2626;color:white;}
+</style>{% endblock %}
+{% block content %}
+<div class="p-4 sm:p-6 max-w-3xl mx-auto">
+  <div class="flex items-center gap-3 mb-6">
+    <a href="{% url 'ot:case_detail' case.pk %}" class="text-slate-400 hover:text-slate-600"><i class="bi bi-arrow-left text-xl"></i></a>
+    <div>
+      <h1 class="text-xl font-bold text-slate-800"><i class="bi bi-clipboard-heart text-teal-500"></i> Post-Operative Notes</h1>
+      <p class="text-sm text-slate-500">{{ case.ot_number }} — {{ case.patient.name }}</p>
+    </div>
+  </div>
+  {% if messages %}{% for msg in messages %}<div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium {% if msg.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">{{ msg }}</div>{% endfor %}{% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="bg-white rounded-xl border border-slate-200 p-6 mb-5">
+      <p class="text-sm font-semibold text-slate-700 mb-4"><i class="bi bi-activity text-red-500"></i> Vitals & Pain</p>
+      <div class="mb-4">
+        <label class="form-label">Vitals Notes</label>
+        <textarea name="vitals_notes" rows="2" class="form-input" placeholder="BP, Pulse, Temperature, SpO2...">{{ postop.vitals_notes|default:'' }}</textarea>
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Pain Score (0–10)</label>
+        <div class="flex gap-1 flex-wrap mt-1">
+          {% for i in "0123456789X" %}
+          {% if forloop.counter <= 11 %}
+          <button type="button" class="pain-btn {% if i|add:'0' > 6 %}pain-high{% endif %} {% if postop.pain_score == forloop.counter0 %}selected{% endif %}"
+                  data-score="{{ forloop.counter0 }}"
+                  onclick="selectPain(this)">{{ forloop.counter0 }}</button>
+          {% endif %}
+          {% endfor %}
+        </div>
+        <input type="hidden" name="pain_score" id="painScore" value="{{ postop.pain_score|default:'' }}">
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 p-6 mb-5">
+      <p class="text-sm font-semibold text-slate-700 mb-4"><i class="bi bi-bandaid text-orange-500"></i> Wound & Drain</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Wound Status</label>
+          <textarea name="wound_status" rows="3" class="form-input" placeholder="Clean/dry, sutured, dressing...">{{ postop.wound_status|default:'' }}</textarea>
+        </div>
+        <div>
+          <label class="form-label">Drain Output</label>
+          <textarea name="drain_output" rows="3" class="form-input" placeholder="Drain output / serosanguinous...">{{ postop.drain_output|default:'' }}</textarea>
+        </div>
+        <div>
+          <label class="form-label">Urine Output</label>
+          <input type="text" name="urine_output" class="form-input" placeholder="ml/hr" value="{{ postop.urine_output|default:'' }}">
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 p-6 mb-5">
+      <p class="text-sm font-semibold text-slate-700 mb-4"><i class="bi bi-journal-check text-blue-500"></i> Instructions</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Diet Instructions</label>
+          <textarea name="diet_instructions" rows="2" class="form-input" placeholder="NBM / Sips / Soft diet...">{{ postop.diet_instructions|default:'' }}</textarea>
+        </div>
+        <div>
+          <label class="form-label">Medication Instructions</label>
+          <textarea name="medication_instructions" rows="2" class="form-input" placeholder="Antibiotics, analgesics, others...">{{ postop.medication_instructions|default:'' }}</textarea>
+        </div>
+        <div>
+          <label class="form-label">Follow-up Date</label>
+          <input type="date" name="follow_up_date" class="form-input sm:max-w-xs"
+            value="{% if postop.follow_up_date %}{{ postop.follow_up_date|date:'Y-m-d' }}{% endif %}">
+        </div>
+        <div>
+          <label class="form-label">Remarks</label>
+          <input type="text" name="remarks" class="form-input" value="{{ postop.remarks|default:'' }}" placeholder="Additional notes...">
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-bold text-base transition-colors flex items-center justify-center gap-2">
+        <i class="bi bi-floppy"></i> Save Post-Op Notes
+      </button>
+      <a href="{% url 'ot:case_detail' case.pk %}" class="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition-colors">Back</a>
+    </div>
+  </form>
+</div>
+<script>
+function selectPain(el) {
+  document.querySelectorAll('.pain-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('painScore').value = el.dataset.score;
+}
+</script>
+{% endblock %}

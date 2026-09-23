@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Import History | VMMCerp{% endblock %}
+{% block page_heading %}Patient Import History{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header-action" style="margin-bottom: 1.5rem; display:flex; justify-content: space-between; align-items:center;">
+        <div>
+            <h2 class="panel-title">Patient Bulk Import History</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Log of previous bulk imports.</p>
+        </div>
+        <div>
+            <a href="{% url 'patients:import' %}" class="btn btn-primary">
+                <i class="bi bi-upload"></i> New Import
+            </a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Filename</th>
+                    <th>Import Date/Time</th>
+                    <th>Total Rows</th>
+                    <th>Successfully Imported</th>
+                    <th>Failed</th>
+                    <th>Duplicates</th>
+                    <th>Imported By</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for history in histories %}
+                <tr>
+                    <td><i class="bi bi-file-earmark-excel"></i> <strong>{{ history.file_name }}</strong></td>
+                    <td>{{ history.created_at|date:"d M Y H:i" }}</td>
+                    <td><strong>{{ history.total_records }}</strong></td>
+                    <td style="color: #166534; font-weight: bold;">{{ history.imported }}</td>
+                    <td style="color: #991b1b; font-weight: bold;">{{ history.failed }}</td>
+                    <td style="color: #854d0e; font-weight: bold;">{{ history.skipped }}</td>
+                    <td>{{ history.uploaded_by.username|default:"System" }}</td>
+                    <td>
+                        {% if history.status == 'Completed' %}
+                            <span style="background: #dcfce7; color: #166534; padding: 0.2rem 0.5rem; border-radius: 99px; font-size: 0.85rem; font-weight: bold;">Completed</span>
+                        {% elif history.status == 'In Progress' %}
+                            <span style="background: #dbeafe; color: #1e40af; padding: 0.2rem 0.5rem; border-radius: 99px; font-size: 0.85rem; font-weight: bold;">In Progress</span>
+                        {% else %}
+                            <span style="background: #fee2e2; color: #991b1b; padding: 0.2rem 0.5rem; border-radius: 99px; font-size: 0.85rem; font-weight: bold;">{{ history.status }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No import history found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

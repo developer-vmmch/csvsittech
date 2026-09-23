@@ -1,0 +1,1455 @@
+{% extends "base.html" %}
+
+{% block title %}Ward Transfer - Inter-Department Transfers | VMMCerp{% endblock %}
+{% block page_heading %}WARD TRANSFER - Patient Department Transfers{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --bt-primary: #0284c7;
+        --bt-dark: #0369a1;
+        --bt-teal: #0d9488;
+        --bt-success: #16a34a;
+        --bt-danger: #e11d48;
+        --bt-warning: #f59e0b;
+        --bt-border: #e2e8f0;
+    }
+
+    .kpi-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .kpi-card {
+        background: #ffffff;
+        border: 1px solid var(--bt-border);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+    }
+
+    .kpi-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+    }
+
+    .kpi-value {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+    }
+
+    .kpi-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-top: 2px;
+    }
+
+    .quick-transfer-card {
+        background: #ffffff;
+        border: 1px solid var(--bt-border);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .quick-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.85rem;
+        padding-bottom: 0.6rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .quick-card-title {
+        font-weight: 800;
+        font-size: 1.05rem;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .quick-report-link {
+        background: #ffffff;
+        color: #0284c7;
+        border: 1.5px solid #0284c7;
+        font-weight: 700;
+        padding: 0.35rem 0.85rem;
+        border-radius: 7px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        text-decoration: none;
+        font-size: 0.8rem;
+        transition: all 0.15s ease;
+    }
+
+    .quick-report-link:hover {
+        background: #f0f9ff;
+    }
+
+    .quick-form-grid-2 {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 0.85rem;
+    }
+
+    @media (max-width: 768px) {
+        .quick-form-grid-2 {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .quick-form-grid-actions {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.85rem;
+        flex-wrap: wrap;
+    }
+
+    .quick-actions-btns {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .quick-label {
+        display: block;
+        font-weight: 700;
+        font-size: 0.76rem;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        margin-bottom: 0.3rem;
+    }
+
+    .quick-search-box {
+        display: flex;
+        gap: 6px;
+        align-items: stretch;
+    }
+
+    .quick-input, .quick-select {
+        width: 100%;
+        height: 38px;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.85rem;
+        color: #0f172a;
+        background: #ffffff;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 7px;
+        outline: none;
+        box-sizing: border-box;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .quick-input:focus, .quick-select:focus {
+        border-color: #0284c7;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+
+    .quick-btn-search {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 1rem;
+        height: 38px;
+        font-weight: 700;
+        font-size: 0.82rem;
+        background: #0f172a;
+        color: #ffffff;
+        border: none;
+        border-radius: 7px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s ease;
+    }
+
+    .quick-btn-search:hover {
+        background: #1e293b;
+    }
+
+    .quick-btn-cancel {
+        height: 38px;
+        background: #ffffff;
+        border: 1.5px solid #cbd5e1;
+        color: #475569;
+        font-weight: 700;
+        padding: 0 1.15rem;
+        border-radius: 7px;
+        cursor: pointer;
+        font-size: 0.84rem;
+        transition: all 0.15s ease;
+    }
+
+    .quick-btn-cancel:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+    }
+
+    .quick-btn-submit {
+        height: 38px;
+        background: #0284c7;
+        color: #ffffff;
+        font-weight: 700;
+        padding: 0 1.35rem;
+        border-radius: 7px;
+        border: none;
+        box-shadow: 0 2px 5px rgba(2, 132, 199, 0.25);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-size: 0.84rem;
+        white-space: nowrap;
+        transition: background 0.15s ease, transform 0.1s ease;
+    }
+
+    .quick-btn-submit:hover {
+        background: #0369a1;
+        transform: translateY(-1px);
+    }
+
+    .header-action-bar {
+        background: #ffffff;
+        border: 1px solid var(--bt-border);
+        border-radius: 10px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .tab-bar {
+        display: flex;
+        gap: 0.5rem;
+        border-bottom: 2px solid #e2e8f0;
+        margin-bottom: 1.5rem;
+        overflow-x: auto;
+        padding-bottom: 0;
+    }
+
+    .tab-link {
+        padding: 0.75rem 1.25rem;
+        font-weight: 700;
+        font-size: 0.88rem;
+        color: #64748b;
+        text-decoration: none;
+        border-bottom: 3px solid transparent;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-bottom: -2px;
+        white-space: nowrap;
+        transition: all 0.2s ease;
+    }
+
+    .tab-link.active {
+        color: #0284c7;
+        border-bottom-color: #0284c7;
+        background: #f0f9ff;
+        border-radius: 6px 6px 0 0;
+    }
+
+    .tab-link:hover:not(.active) {
+        color: #0f172a;
+        border-bottom-color: #cbd5e1;
+    }
+
+    .filter-card {
+        background: #ffffff;
+        border: 1px solid var(--bt-border);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .filter-form-row {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-end;
+        gap: 0.85rem;
+        width: 100%;
+        flex-wrap: nowrap;
+    }
+
+    @media (max-width: 1024px) {
+        .filter-form-row {
+            flex-wrap: wrap;
+        }
+    }
+
+    .filter-col-search {
+        flex: 1.8;
+        min-width: 200px;
+    }
+
+    .filter-col {
+        flex: 1.2;
+        min-width: 140px;
+    }
+
+    .filter-col-btn {
+        flex: 0 0 auto;
+        display: flex;
+        gap: 0.4rem;
+        align-items: flex-end;
+    }
+
+    .filter-label {
+        display: block;
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #475569;
+        margin-bottom: 0.3rem;
+        white-space: nowrap;
+    }
+
+    .search-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .filter-input, .filter-select {
+        width: 100%;
+        height: 38px;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.84rem;
+        color: #1e293b;
+        background-color: #ffffff;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 7px;
+        outline: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        box-sizing: border-box;
+    }
+
+    .filter-input:focus, .filter-select:focus {
+        border-color: #0284c7;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+
+    .search-clear-btn {
+        position: absolute;
+        right: 10px;
+        color: #94a3b8;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+    }
+
+    .search-clear-btn:hover {
+        color: #e11d48;
+    }
+
+    .filter-btn {
+        height: 38px;
+        background: #0284c7;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.85rem;
+        padding: 0 1.25rem;
+        border-radius: 7px;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 5px rgba(2, 132, 199, 0.25);
+        transition: background 0.15s ease, transform 0.1s ease;
+        white-space: nowrap;
+    }
+
+    .filter-btn:hover {
+        background: #0369a1;
+        transform: translateY(-1px);
+    }
+
+    .filter-reset-btn {
+        height: 38px;
+        width: 38px;
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 7px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        font-size: 0.95rem;
+        transition: all 0.15s ease;
+    }
+
+    .filter-reset-btn:hover {
+        background: #fee2e2;
+        color: #dc2626;
+        border-color: #fca5a5;
+    }
+
+    .transfer-table-card {
+        background: #ffffff;
+        border: 1px solid var(--bt-border);
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        overflow: hidden;
+    }
+
+    .table thead th {
+        background-color: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e2e8f0;
+        padding: 0.75rem 0.9rem;
+        white-space: nowrap;
+    }
+
+    .table tbody td {
+        padding: 0.85rem 0.9rem;
+        vertical-align: middle;
+        font-size: 0.86rem;
+        color: #1e293b;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .status-badge {
+        font-size: 0.76rem;
+        font-weight: 800;
+        padding: 4px 9px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        letter-spacing: 0.3px;
+    }
+
+    .status-pending { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .status-accepted { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .status-rejected { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .status-cancelled { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+    /* Modal Backdrop & Animation */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(6px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+        padding: 1rem;
+    }
+
+    .modal-box {
+        background: #ffffff;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 620px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        overflow: hidden;
+        animation: modalSlide 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalSlide {
+        from { opacity: 0; transform: translateY(20px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        color: white;
+        padding: 1.15rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .modal-header-btn-close {
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.15s ease;
+    }
+    .modal-header-btn-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.05);
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+        max-height: calc(85vh - 130px);
+        overflow-y: auto;
+    }
+
+    .modal-footer {
+        padding: 1rem 1.5rem;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    /* Modal Form Controls */
+    .modal-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 1.15rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .modal-form-label {
+        display: block;
+        font-weight: 700;
+        font-size: 0.82rem;
+        color: #1e293b;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin: 0;
+    }
+    .modal-form-control,
+    .modal-form-select,
+    .modal-box input[type="text"],
+    .modal-box select,
+    .modal-box textarea {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 0.65rem 0.9rem !important;
+        font-size: 0.9rem !important;
+        font-weight: 500 !important;
+        color: #0f172a !important;
+        background-color: #ffffff !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 8px !important;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+        font-family: inherit !important;
+    }
+    .modal-form-control:focus,
+    .modal-form-select:focus,
+    .modal-box input[type="text"]:focus,
+    .modal-box select:focus,
+    .modal-box textarea:focus {
+        outline: none !important;
+        border-color: #0284c7 !important;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+    }
+    .modal-box textarea {
+        min-height: 85px !important;
+        resize: vertical !important;
+        line-height: 1.45 !important;
+    }
+
+    .modal-search-group {
+        display: flex;
+        width: 100%;
+        gap: 8px;
+        align-items: stretch;
+    }
+    .modal-search-group input {
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+    .modal-btn-search {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 0.65rem 1.35rem;
+        font-weight: 700;
+        font-size: 0.88rem;
+        background: #0f172a;
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.1s ease;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+    .modal-btn-search:hover {
+        background: #1e293b;
+        transform: translateY(-1px);
+    }
+    .modal-btn-search:active {
+        transform: translateY(0);
+    }
+
+    /* Modal Patient Preview Card */
+    .patient-preview-box {
+        background: #f0f9ff;
+        border: 1.5px solid #bae6fd;
+        border-radius: 12px;
+        padding: 1.1rem 1.25rem;
+        margin-bottom: 1.25rem;
+        animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .preview-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.85rem 1rem;
+    }
+    .preview-item-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #0369a1;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 3px;
+    }
+    .preview-item-val {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.2;
+    }
+    .preview-sub {
+        font-size: 0.8rem;
+        color: #475569;
+        font-weight: 500;
+        margin-top: 2px;
+    }
+    .preview-footer {
+        grid-column: 1 / -1;
+        border-top: 1px dashed #bae6fd;
+        padding-top: 0.75rem;
+        margin-top: 0.25rem;
+    }
+</style>
+
+<div class="container-fluid" style="padding: 0 0.5rem;">
+
+    <!-- 1. COMPACT NEW WARD TRANSFER REQUEST CARD -->
+    <div class="quick-transfer-card">
+        <div class="quick-card-header">
+            <div class="quick-card-title">
+                <i class="bi bi-arrow-left-right text-primary" style="color: #0284c7;"></i> New Ward Transfer Request
+            </div>
+            <a href="{% url 'patients:branch_transfer_report' %}" class="quick-report-link">
+                <i class="bi bi-file-earmark-bar-graph"></i> Transfer Report
+            </a>
+        </div>
+
+        <form method="post" action="{% url 'patients:branch_transfer' %}" id="newTransferForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create_request">
+
+            <!-- Row 1: Search Patient & Select Destination -->
+            <div class="quick-form-grid-2">
+                <div>
+                    <label class="quick-label">
+                        Search Patient ID / UHID or IP Number <span style="color: #e11d48;">*</span>
+                    </label>
+                    <div class="quick-search-box">
+                        <input type="text" name="patient_id_input" id="search_patient_input" 
+                               class="quick-input" placeholder="Enter Patient ID (e.g. 2699001001) or IP No..." required>
+                        <button type="button" onclick="lookupPatientForTransfer()" class="quick-btn-search">
+                            <i class="bi bi-search"></i> Find Patient
+                        </button>
+                    </div>
+                    <div id="lookup_feedback" style="font-size: 0.8rem; margin-top: 4px; font-weight: 600; display: none;"></div>
+                </div>
+
+                <div>
+                    <label class="quick-label">
+                        Transfer To Department <span style="color: #e11d48;">*</span>
+                    </label>
+                    <select name="to_department" id="select_to_dept" class="quick-select" required>
+                        <option value="">-- Select Destination Department --</option>
+                        {% for d in departments %}
+                        <option value="{{ d.id }}" data-dept-id="{{ d.id }}">{{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Patient Details Card (Compact banner when found) -->
+            <div id="patient_preview_card" class="patient-preview-box" style="display: none; margin: 0.75rem 0;">
+                <div class="preview-grid">
+                    <div>
+                        <div class="preview-item-label">Patient Name & Demographics</div>
+                        <div id="prev_patient_name" class="preview-item-val">--</div>
+                        <div id="prev_age_gender" class="preview-sub">--</div>
+                    </div>
+                    <div>
+                        <div class="preview-item-label">Active Inpatient Admission</div>
+                        <div id="prev_ipno" class="preview-item-val" style="color: #0284c7;">--</div>
+                        <div id="prev_adm_date" class="preview-sub">--</div>
+                    </div>
+                    <div class="preview-footer">
+                        <div style="font-size: 0.82rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-building" style="color: #be123c;"></i> Current Department: <span id="prev_current_dept" style="color: #be123c; font-weight: 800;">--</span>
+                        </div>
+                        <div style="font-size: 0.78rem; color: #475569; margin-top: 2px;">
+                            <strong>Ward:</strong> <span id="prev_ward">--</span> &nbsp;|&nbsp; 
+                            <strong>Bed:</strong> <span id="prev_bed">--</span> &nbsp;|&nbsp; 
+                            <strong>Doctor:</strong> <span id="prev_doctor">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Reason & Action Buttons in a single line -->
+            <div class="quick-form-grid-actions" style="margin-top: 0.75rem;">
+                <div style="flex: 1; min-width: 250px;">
+                    <label class="quick-label">
+                        Transfer Reason / Clinical Justification <span style="color: #e11d48;">*</span>
+                    </label>
+                    <input type="text" name="transfer_reason" id="transfer_reason_input" class="quick-input" 
+                           placeholder="Explain why patient requires transfer (e.g., specialized care, ICU management)..." required>
+                </div>
+
+                <div class="quick-actions-btns">
+                    <button type="button" onclick="resetNewTransferForm()" class="quick-btn-cancel">
+                        Cancel
+                    </button>
+                    <button type="submit" id="btn_submit_transfer" class="quick-btn-submit">
+                        <i class="bi bi-send-check-fill"></i> Submit Transfer Request
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- KPI SUMMARY CARDS -->
+    <div class="kpi-container">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-value" style="color: #0284c7;">{{ kpi_total }}</div>
+                <div class="kpi-label">Total Requests</div>
+            </div>
+            <div class="kpi-icon" style="background: #e0f2fe; color: #0284c7;">
+                <i class="bi bi-journal-text"></i>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-value" style="color: #f59e0b;">{{ kpi_pending }}</div>
+                <div class="kpi-label">Pending Approval</div>
+            </div>
+            <div class="kpi-icon" style="background: #fef3c7; color: #d97706;">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-value" style="color: #16a34a;">{{ kpi_accepted }}</div>
+                <div class="kpi-label">Transfers Accepted</div>
+            </div>
+            <div class="kpi-icon" style="background: #dcfce7; color: #16a34a;">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-value" style="color: #e11d48;">{{ kpi_rejected }}</div>
+                <div class="kpi-label">Rejected / Cancelled</div>
+            </div>
+            <div class="kpi-icon" style="background: #fee2e2; color: #e11d48;">
+                <i class="bi bi-x-circle-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEARCH & FILTER CARD -->
+    <div class="filter-card">
+        <form method="get" action="{% url 'patients:branch_transfer' %}" class="filter-form-row">
+            <input type="hidden" name="tab" value="{{ current_tab }}">
+
+            <div class="filter-col-search">
+                <label class="filter-label">
+                    <i class="bi bi-search"></i> Search Request / Patient:
+                </label>
+                <div class="search-input-wrapper">
+                    <input type="text" name="q" value="{{ search_query }}" class="filter-input" placeholder="Request ID, UHID, Patient Name, IP No...">
+                    {% if search_query %}
+                    <a href="{% url 'patients:branch_transfer' %}?tab={{ current_tab }}{% if selected_from_dept %}&from_dept={{ selected_from_dept }}{% endif %}{% if selected_to_dept %}&to_dept={{ selected_to_dept }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" class="search-clear-btn" title="Clear search">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="filter-col">
+                <label class="filter-label">From Dept:</label>
+                <select name="from_dept" class="filter-select">
+                    <option value="">-- All Source --</option>
+                    {% for d in departments %}
+                    <option value="{{ d.id }}" {% if selected_from_dept == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-col">
+                <label class="filter-label">To Dept:</label>
+                <select name="to_dept" class="filter-select">
+                    <option value="">-- All Destination --</option>
+                    {% for d in departments %}
+                    <option value="{{ d.id }}" {% if selected_to_dept == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-col">
+                <label class="filter-label">Status:</label>
+                <select name="status" class="filter-select">
+                    <option value="">-- All Statuses --</option>
+                    {% for s_val, s_lbl in status_choices %}
+                    <option value="{{ s_val }}" {% if selected_status == s_val %}selected{% endif %}>{{ s_lbl }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-col-btn">
+                <button type="submit" class="filter-btn">
+                    <i class="bi bi-funnel-fill"></i> Filter
+                </button>
+                {% if search_query or selected_from_dept or selected_to_dept or selected_status %}
+                <a href="{% url 'patients:branch_transfer' %}?tab={{ current_tab }}" class="filter-reset-btn" title="Reset all filters">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- TABBED NAVIGATION -->
+    <div class="tab-bar">
+        <a href="{% url 'patients:branch_transfer' %}?tab=all{% if search_query %}&q={{ search_query }}{% endif %}" 
+           class="tab-link {% if current_tab == 'all' %}active{% endif %}">
+            <i class="bi bi-grid-fill"></i> All Requests ({{ kpi_total }})
+        </a>
+        <a href="{% url 'patients:branch_transfer' %}?tab=incoming{% if search_query %}&q={{ search_query }}{% endif %}" 
+           class="tab-link {% if current_tab == 'incoming' %}active{% endif %}">
+            <i class="bi bi-box-arrow-in-down-right text-success"></i> Incoming Requests
+            {% if kpi_incoming_pending > 0 %}
+            <span class="badge rounded-pill bg-warning text-dark ms-1" style="font-size: 0.75rem;">{{ kpi_incoming_pending }}</span>
+            {% endif %}
+        </a>
+        <a href="{% url 'patients:branch_transfer' %}?tab=outgoing{% if search_query %}&q={{ search_query }}{% endif %}" 
+           class="tab-link {% if current_tab == 'outgoing' %}active{% endif %}">
+            <i class="bi bi-box-arrow-up-right text-primary"></i> Outgoing Requests
+        </a>
+        <a href="{% url 'patients:branch_transfer' %}?tab=pending{% if search_query %}&q={{ search_query }}{% endif %}" 
+           class="tab-link {% if current_tab == 'pending' %}active{% endif %}">
+            <i class="bi bi-hourglass-split text-warning"></i> Pending Approval ({{ kpi_pending }})
+        </a>
+        <a href="{% url 'patients:branch_transfer' %}?tab=history{% if search_query %}&q={{ search_query }}{% endif %}" 
+           class="tab-link {% if current_tab == 'history' %}active{% endif %}">
+            <i class="bi bi-clock-history"></i> Transfer History
+        </a>
+    </div>
+
+    <!-- TRANSFER REQUESTS TABLE -->
+    <div class="transfer-table-card">
+        <div style="padding: 0.85rem 1.25rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #fafafa;">
+            <div style="font-weight: 800; color: #1e293b; font-size: 0.92rem;">
+                <i class="bi bi-list-columns-reverse text-primary"></i> 
+                {% if current_tab == 'incoming' %}Incoming Transfer Requests (Assigned to Your Department)
+                {% elif current_tab == 'outgoing' %}Outgoing Transfer Requests (Requested by Your Department)
+                {% elif current_tab == 'pending' %}Active Pending Transfer Requests
+                {% elif current_tab == 'history' %}Completed Transfer History Log
+                {% else %}All Inter-Department Ward Transfer Requests{% endif %}
+            </div>
+            <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 0.8rem; padding: 5px 10px;">
+                Showing {{ transfer_requests|length }} Records
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Patient ID / UHID</th>
+                        <th>Patient Details</th>
+                        <th>Current Dept</th>
+                        <th>Requested Dept</th>
+                        <th>Requested By</th>
+                        <th>Date & Time</th>
+                        <th>Reason / Notes</th>
+                        <th>Status</th>
+                        <th style="text-align: center; min-width: 170px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in transfer_requests %}
+                    <tr {% if request.GET.highlight == req.id|stringformat:"s" %}style="background: #fefce8; border-left: 4px solid #eab308;"{% endif %}>
+                        <td>
+                            <strong style="color: #0284c7; font-size: 0.88rem;">{{ req.transfer_request_number }}</strong>
+                            <div style="font-size: 0.72rem; color: #64748b;">IP #{{ req.admission.ipno|default:req.admission.visit_no }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border" style="font-weight: 700;">{{ req.patient.patient_id }}</span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; color: #0f172a;">{{ req.patient.title }} {{ req.patient.name }}</div>
+                            <div style="font-size: 0.76rem; color: #64748b;">{{ req.patient.age_years }}Y / {{ req.patient.get_gender_display }}</div>
+                        </td>
+                        <td>
+                            <span class="badge" style="background: #f1f5f9; color: #334155; font-size: 0.8rem; border: 1px solid #cbd5e1;">
+                                {{ req.from_department.name }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge" style="background: #eff6ff; color: #1d4ed8; font-size: 0.8rem; border: 1px solid #bfdbfe;">
+                                <i class="bi bi-arrow-right"></i> {{ req.to_department.name }}
+                            </span>
+                            {% if req.to_unit %}
+                            <div style="font-size: 0.74rem; color: #475569; margin-top: 2px;">{{ req.to_unit.unit_name }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; font-size: 0.82rem; color: #334155;">{{ req.requested_by.username|default:"Staff" }}</div>
+                            <div style="font-size: 0.74rem; color: #64748b;">{{ req.requested_by.get_role_display }}</div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; font-size: 0.82rem;">{{ req.requested_at|date:"d/M/Y" }}</div>
+                            <div style="font-size: 0.74rem; color: #64748b;">{{ req.requested_at|date:"H:i" }}</div>
+                        </td>
+                        <td style="max-width: 200px;">
+                            <div style="font-size: 0.82rem; color: #334155;" title="{{ req.transfer_reason }}">
+                                {{ req.transfer_reason|truncatechars:45 }}
+                            </div>
+                        </td>
+                        <td>
+                            {% if req.status == 'PENDING' %}
+                            <span class="status-badge status-pending"><i class="bi bi-hourglass-split"></i> Pending</span>
+                            {% elif req.status == 'ACCEPTED' %}
+                            <span class="status-badge status-accepted"><i class="bi bi-check-circle-fill"></i> Accepted</span>
+                            {% elif req.status == 'REJECTED' %}
+                            <span class="status-badge status-rejected"><i class="bi bi-x-circle-fill"></i> Rejected</span>
+                            {% elif req.status == 'CANCELLED' %}
+                            <span class="status-badge status-cancelled"><i class="bi bi-slash-circle"></i> Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            <div style="display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; align-items: center;">
+                                {% if req.status == 'PENDING' %}
+                                    {% if user.is_superuser or user.role == 'ADMIN' or user_dept and user_dept.id == req.to_department.id or user.department and user.department|lower == req.to_department.name|lower or user.department and user.department|lower == req.to_department.code|lower %}
+                                    <button type="button" class="btn btn-sm btn-success" style="font-weight: 700; font-size: 0.78rem; padding: 3px 8px;"
+                                            title="Accept Transfer into {{ req.to_department.name }}"
+                                            onclick="openAcceptModal('{{ req.id }}', '{{ req.transfer_request_number }}', '{{ req.patient.name|escapejs }}', '{{ req.from_department.name|escapejs }}', '{{ req.to_department.name|escapejs }}', '{{ req.to_department.id }}')">
+                                        <i class="bi bi-check2"></i> Accept
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" style="font-weight: 700; font-size: 0.78rem; padding: 3px 8px;"
+                                            title="Reject Transfer Request"
+                                            onclick="openRejectModal('{{ req.id }}', '{{ req.transfer_request_number }}', '{{ req.patient.name|escapejs }}', '{{ req.from_department.name|escapejs }}', '{{ req.to_department.name|escapejs }}')">
+                                        <i class="bi bi-x"></i> Reject
+                                    </button>
+                                    {% else %}
+                                    <span class="badge" style="background: #f8fafc; color: #64748b; font-size: 0.72rem; padding: 4px 6px; border: 1px solid #e2e8f0;" title="Awaiting approval by destination department: {{ req.to_department.name }}">
+                                        <i class="bi bi-hourglass"></i> {{ req.to_department.name }}
+                                    </span>
+                                    {% endif %}
+
+                                    {% if user.is_superuser or user.role == 'ADMIN' or req.requested_by == user or user_dept and user_dept.id == req.from_department.id or user.department and user.department|lower == req.from_department.name|lower %}
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size: 0.78rem; padding: 3px 6px;"
+                                            title="Cancel Request"
+                                            onclick="openCancelModal('{{ req.id }}', '{{ req.transfer_request_number }}', '{{ req.patient.name|escapejs }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                {% endif %}
+                                <button type="button" class="btn btn-sm btn-outline-info" style="font-size: 0.78rem; padding: 3px 7px; color: #0284c7; border-color: #0284c7;"
+                                        title="View Full Details & Audit"
+                                        data-req-number="{{ req.transfer_request_number }}"
+                                        data-patient-id="{{ req.patient.patient_id }}"
+                                        data-patient-name="{{ req.patient.name }}"
+                                        data-ip-no="{{ req.admission.ipno|default:req.admission.visit_no }}"
+                                        data-from-dept="{{ req.from_department.name }}"
+                                        data-to-dept="{{ req.to_department.name }}"
+                                        data-req-by="{{ req.requested_by.username|default:'Staff' }}"
+                                        data-req-at="{{ req.requested_at|date:'d/M/Y H:i' }}"
+                                        data-reason="{{ req.transfer_reason }}"
+                                        data-status="{{ req.status }}"
+                                        data-reviewed-by="{{ req.reviewed_by.username|default:'' }}"
+                                        data-reviewed-at="{{ req.reviewed_at|date:'d/M/Y H:i'|default:'' }}"
+                                        data-review-notes="{{ req.review_notes|default:'' }}"
+                                        onclick="openDetailsFromBtn(this)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center py-5">
+                            <div style="width: 56px; height: 56px; background: #f0f9ff; color: #0284c7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.75rem;">
+                                <i class="bi bi-shuffle"></i>
+                            </div>
+                            <h6 style="font-weight: 700; color: #334155;">No Transfer Requests Found</h6>
+                            <p style="font-size: 0.85rem; color: #64748b; margin: 0;">There are no ward transfer records matching your current filter selection.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+
+
+<!-- 2. ACCEPT TRANSFER MODAL -->
+<div id="acceptModal" class="modal-overlay">
+    <div class="modal-box">
+        <form method="post" action="{% url 'patients:branch_transfer' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="accept_request">
+            <input type="hidden" name="transfer_request_id" id="accept_req_id">
+
+            <div class="modal-header" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);">
+                <div style="display: flex; align-items: center; gap: 0.6rem; font-weight: 800; font-size: 1.05rem;">
+                    <i class="bi bi-check2-circle" style="font-size: 1.2rem;"></i> Accept Ward Transfer Request
+                </div>
+                <button type="button" class="modal-header-btn-close" onclick="closeAcceptModal()" title="Close">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="alert alert-success" style="background: #f0fdf4; border: 1.5px solid #86efac; color: #166534; font-size: 0.86rem; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1.25rem;">
+                    <strong><i class="bi bi-info-circle-fill"></i> Confirm Acceptance:</strong> Accepting this request will atomically update the patient's active inpatient department to the destination department.
+                </div>
+
+                <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 0.9rem 1.1rem; margin-bottom: 1.15rem;">
+                    <div style="font-size: 0.92rem; font-weight: 800; color: #0f172a;" id="accept_patient_summary">--</div>
+                    <div style="font-size: 0.84rem; color: #0284c7; font-weight: 700; margin-top: 3px;" id="accept_route_summary">--</div>
+                </div>
+
+                <div class="modal-form-group">
+                    <label class="modal-form-label">
+                        Assign Unit / Doctor (Optional)
+                    </label>
+                    <select name="to_unit" id="accept_unit_select" class="modal-form-select">
+                        <option value="">-- Default Unit / First Available --</option>
+                    </select>
+                </div>
+
+                <div class="modal-form-group" style="margin-bottom: 0;">
+                    <label class="modal-form-label">
+                        Acceptance Notes / Bed Allocation Remarks (Optional)
+                    </label>
+                    <textarea name="review_notes" class="modal-form-control" rows="2" placeholder="Enter any acceptance notes or assigned ward details..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" onclick="closeAcceptModal()" class="btn" style="background: #ffffff; border: 1.5px solid #cbd5e1; color: #475569; font-weight: 700; padding: 0.55rem 1.25rem; border-radius: 8px;">
+                    Cancel
+                </button>
+                <button type="submit" class="btn" style="background: #16a34a; color: white; font-weight: 700; padding: 0.55rem 1.5rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(22,163,74,0.35); display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="bi bi-check-circle-fill"></i> Accept & Transfer Patient
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 3. REJECT TRANSFER MODAL -->
+<div id="rejectModal" class="modal-overlay">
+    <div class="modal-box">
+        <form method="post" action="{% url 'patients:branch_transfer' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reject_request">
+            <input type="hidden" name="transfer_request_id" id="reject_req_id">
+
+            <div class="modal-header" style="background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);">
+                <div style="display: flex; align-items: center; gap: 0.6rem; font-weight: 800; font-size: 1.05rem;">
+                    <i class="bi bi-x-octagon-fill" style="font-size: 1.2rem;"></i> Reject Ward Transfer Request
+                </div>
+                <button type="button" class="modal-header-btn-close" onclick="closeRejectModal()" title="Close">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="alert alert-danger" style="background: #fff1f2; border: 1.5px solid #fecdd3; color: #9f1239; font-size: 0.86rem; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1.25rem;">
+                    <strong><i class="bi bi-exclamation-octagon-fill"></i> Notice:</strong> The patient will remain in their original department. You must provide a clear rejection reason below.
+                </div>
+
+                <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 0.9rem 1.1rem; margin-bottom: 1.15rem;">
+                    <div style="font-size: 0.92rem; font-weight: 800; color: #0f172a;" id="reject_patient_summary">--</div>
+                    <div style="font-size: 0.84rem; color: #be123c; font-weight: 700; margin-top: 3px;" id="reject_route_summary">--</div>
+                </div>
+
+                <div class="modal-form-group" style="margin-bottom: 0;">
+                    <label class="modal-form-label">
+                        Rejection Reason <span style="color: #e11d48;">*</span>
+                    </label>
+                    <textarea name="rejection_reason" class="modal-form-control" rows="3" placeholder="Explain reason for rejection (e.g. bed unavailable, out of clinical scope, requires stabilization before transfer)..." required></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" onclick="closeRejectModal()" class="btn" style="background: #ffffff; border: 1.5px solid #cbd5e1; color: #475569; font-weight: 700; padding: 0.55rem 1.25rem; border-radius: 8px;">
+                    Cancel
+                </button>
+                <button type="submit" class="btn" style="background: #e11d48; color: white; font-weight: 700; padding: 0.55rem 1.5rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(225,29,72,0.35); display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="bi bi-x-circle-fill"></i> Reject Transfer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 4. CANCEL TRANSFER MODAL -->
+<div id="cancelModal" class="modal-overlay">
+    <div class="modal-box">
+        <form method="post" action="{% url 'patients:branch_transfer' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="cancel_request">
+            <input type="hidden" name="transfer_request_id" id="cancel_req_id">
+
+            <div class="modal-header" style="background: linear-gradient(135deg, #475569 0%, #334155 100%);">
+                <div style="display: flex; align-items: center; gap: 0.6rem; font-weight: 800; font-size: 1.05rem;">
+                    <i class="bi bi-slash-circle" style="font-size: 1.2rem;"></i> Cancel Ward Transfer Request
+                </div>
+                <button type="button" class="modal-header-btn-close" onclick="closeCancelModal()" title="Close">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <p style="font-size: 0.9rem; color: #334155; margin-bottom: 1rem; line-height: 1.5;">
+                    Are you sure you want to cancel transfer request <strong id="cancel_req_num" style="color: #0284c7;">--</strong> for <strong id="cancel_patient_name" style="color: #0f172a;">--</strong>?
+                </p>
+
+                <div class="modal-form-group" style="margin-bottom: 0;">
+                    <label class="modal-form-label">
+                        Cancellation Reason (Optional)
+                    </label>
+                    <textarea name="cancellation_reason" class="modal-form-control" rows="2" placeholder="e.g. Patient stabilized, transfer no longer needed..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" onclick="closeCancelModal()" class="btn" style="background: #ffffff; border: 1.5px solid #cbd5e1; color: #475569; font-weight: 700; padding: 0.55rem 1.25rem; border-radius: 8px;">
+                    Close
+                </button>
+                <button type="submit" class="btn" style="background: #475569; color: white; font-weight: 700; padding: 0.55rem 1.5rem; border-radius: 8px;">
+                    Confirm Cancellation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 5. DETAILS & AUDIT MODAL -->
+<div id="detailsModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 650px;">
+        <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 0.6rem; font-weight: 800; font-size: 1.05rem;">
+                <i class="bi bi-info-circle-fill" style="font-size: 1.2rem;"></i> Ward Transfer Audit & Details
+            </div>
+            <button type="button" class="modal-header-btn-close" onclick="closeDetailsModal()" title="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 1.15rem; margin-bottom: 1.15rem;">
+                <div>
+                    <div style="font-size: 0.72rem; color: #0369a1; font-weight: 700; text-transform: uppercase;">REQUEST NUMBER</div>
+                    <div id="det_req_id" style="font-weight: 800; color: #0284c7; font-size: 1.05rem; font-family: monospace;">--</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase;">CURRENT STATUS</div>
+                    <div id="det_status" style="font-weight: 800;">--</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase;">PATIENT INFORMATION</div>
+                    <div id="det_patient" style="font-weight: 800; color: #0f172a; font-size: 0.95rem;">--</div>
+                    <div id="det_uhid" style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">--</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase;">TRANSFER ROUTE</div>
+                    <div id="det_route" style="font-weight: 700; color: #047857; font-size: 0.92rem;">--</div>
+                </div>
+            </div>
+
+            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 1rem; margin-bottom: 1.15rem;">
+                <div style="font-size: 0.74rem; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">TRANSFER REASON / CLINICAL JUSTIFICATION</div>
+                <div id="det_reason" style="font-size: 0.88rem; color: #1e293b; line-height: 1.45; white-space: pre-wrap;">--</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 1.15rem;">
+                <div>
+                    <div style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase;">REQUESTED BY</div>
+                    <div id="det_requested_by" style="font-weight: 700; font-size: 0.85rem; color: #334155;">--</div>
+                    <div id="det_requested_at" style="font-size: 0.78rem; color: #64748b;">--</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase;">REVIEWED / ACTIONED BY</div>
+                    <div id="det_reviewed_by" style="font-weight: 700; font-size: 0.85rem; color: #334155;">--</div>
+                    <div id="det_reviewed_at" style="font-size: 0.78rem; color: #64748b;">--</div>
+                </div>
+            </div>
+
+            <div id="det_review_notes_section" style="display: none; background: #fef2f2; border: 1.5px solid #fecdd3; border-radius: 10px; padding: 1rem;">
+                <div style="font-size: 0.74rem; color: #991b1b; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">REVIEW / REJECTION REMARKS</div>
+                <div id="det_review_notes" style="font-size: 0.88rem; color: #1e293b; line-height: 1.45; white-space: pre-wrap;">--</div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" onclick="closeDetailsModal()" class="btn" style="font-weight: 700; background: #0284c7; color: #ffffff; padding: 0.55rem 1.5rem; border-radius: 8px;">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function resetNewTransferForm() {
+        document.getElementById('newTransferForm').reset();
+        document.getElementById('patient_preview_card').style.display = 'none';
+        const feedback = document.getElementById('lookup_feedback');
+        if (feedback) { feedback.style.display = 'none'; }
+        const submitBtn = document.getElementById('btn_submit_transfer');
+        if (submitBtn) { submitBtn.disabled = false; }
+    }
+
+    function openAcceptModal(reqId, reqNum, patientName, fromDept, toDept, toDeptId) {
+        document.getElementById('accept_req_id').value = reqId;
+        document.getElementById('accept_patient_summary').textContent = `Request ${reqNum} • ${patientName}`;
+        document.getElementById('accept_route_summary').textContent = `Transfer: ${fromDept} ➔ ${toDept}`;
+        
+        // Fetch destination units
+        const unitSel = document.getElementById('accept_unit_select');
+        unitSel.innerHTML = '<option value="">-- Default Unit / First Available --</option>';
+        if (toDeptId) {
+            fetch(`{% url 'patients:api_units' %}?department_id=${toDeptId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.units && data.units.length > 0) {
+                        data.units.forEach(u => {
+                            const opt = document.createElement('option');
+                            opt.value = u.id;
+                            opt.textContent = u.unit_name;
+                            unitSel.appendChild(opt);
+                        });
+                    }
+                });
+        }
+        document.getElementById('acceptModal').style.display = 'flex';
+    }
+    function closeAcceptModal() { document.getElementById('acceptModal').style.display = 'none'; }
+
+    function openRejectModal(reqId, reqNum, patientName, fromDept, toDept) {
+        document.getElementById('reject_req_id').value = reqId;
+        document.getElementById('reject_patient_summary').textContent = `Request ${reqNum} • ${patientName}`;
+        document.getElementById('reject_route_summary').textContent = `Transfer: ${fromDept} ➔ ${toDept}`;
+        document.getElementById('rejectModal').style.display = 'flex';
+    }
+    function closeRejectModal() { document.getElementById('rejectModal').style.display = 'none'; }
+
+    function openCancelModal(reqId, reqNum, patientName) {
+        document.getElementById('cancel_req_id').value = reqId;
+        document.getElementById('cancel_req_num').textContent = reqNum;
+        document.getElementById('cancel_patient_name').textContent = patientName;
+        document.getElementById('cancelModal').style.display = 'flex';
+    }
+    function closeCancelModal() { document.getElementById('cancelModal').style.display = 'none'; }
+
+    function openDetailsFromBtn(btn) {
+        const d = btn.dataset;
+        openDetailsModal(
+            d.reqNumber || '',
+            d.patientId || '',
+            d.patientName || '',
+            d.ipNo || '',
+            d.fromDept || '',
+            d.toDept || '',
+            d.reqBy || '--',
+            d.reqAt || '--',
+            d.reason || '--',
+            d.status || '--',
+            d.reviewedBy || '--',
+            d.reviewedAt || '--',
+            d.reviewNotes || ''
+        );
+    }
+
+    function openDetailsModal(reqNum, uhid, patientName, ipNo, fromDept, toDept, reqBy, reqAt, reason, status, revBy, revAt, revNotes) {
+        document.getElementById('det_req_id').textContent = reqNum;
+        document.getElementById('det_status').textContent = status;
+        document.getElementById('det_patient').textContent = patientName;
+        document.getElementById('det_uhid').textContent = `ID: ${uhid} • IP #${ipNo}`;
+        document.getElementById('det_route').textContent = `${fromDept} ➔ ${toDept}`;
+        document.getElementById('det_reason').textContent = reason || '--';
+        document.getElementById('det_requested_by').textContent = reqBy || '--';
+        document.getElementById('det_requested_at').textContent = reqAt || '--';
+        document.getElementById('det_reviewed_by').textContent = revBy || '--';
+        document.getElementById('det_reviewed_at').textContent = revAt || '--';
+
+        const notesSec = document.getElementById('det_review_notes_section');
+        if (revNotes && revNotes.trim() !== '') {
+            document.getElementById('det_review_notes').textContent = revNotes;
+            notesSec.style.display = 'block';
+        } else {
+            notesSec.style.display = 'none';
+        }
+
+        document.getElementById('detailsModal').style.display = 'flex';
+    }
+    function closeDetailsModal() { document.getElementById('detailsModal').style.display = 'none'; }
+
+    // Close on backdrop click
+    window.onclick = function(event) {
+        ['acceptModal', 'rejectModal', 'cancelModal', 'detailsModal'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && event.target === el) { el.style.display = 'none'; }
+        });
+    };
+
+    // Patient Lookup for New Request
+    function lookupPatientForTransfer() {
+        const query = document.getElementById('search_patient_input').value.trim();
+        const feedback = document.getElementById('lookup_feedback');
+        const card = document.getElementById('patient_preview_card');
+        const submitBtn = document.getElementById('btn_submit_transfer');
+        const deptSelect = document.getElementById('select_to_dept');
+
+        if (!query) {
+            feedback.style.display = 'block';
+            feedback.style.color = '#e11d48';
+            feedback.innerHTML = '<i class="bi bi-exclamation-circle"></i> Please enter a Patient ID or IP Number.';
+            return;
+        }
+
+        feedback.style.display = 'block';
+        feedback.style.color = '#0284c7';
+        feedback.innerHTML = '<i class="bi bi-hourglass-split"></i> Searching patient...';
+
+        fetch(`{% url 'patients:api_branch_transfer_patient_info' %}?q=${encodeURIComponent(query)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.exists) {
+                    feedback.style.color = '#e11d48';
+                    feedback.innerHTML = `<i class="bi bi-x-circle"></i> ${data.message || 'Patient not found.'}`;
+                    card.style.display = 'none';
+                    submitBtn.disabled = true;
+                    return;
+                }
+
+                if (!data.is_admitted) {
+                    feedback.style.color = '#e11d48';
+                    feedback.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> <strong>Validation Rule:</strong> Patient does not have an active admission. Ward transfer cannot be requested.';
+                    card.style.display = 'none';
+                    submitBtn.disabled = true;
+                    return;
+                }
+
+                if (data.has_pending_transfer) {
+                    feedback.style.color = '#e11d48';
+                    feedback.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> <strong>Duplicate Request:</strong> This patient already has a pending ward transfer request (<strong>${data.pending_transfer_number}</strong>).`;
+                    card.style.display = 'none';
+                    submitBtn.disabled = true;
+                    return;
+                }
+
+                // Success: Populate card
+                feedback.style.color = '#16a34a';
+                feedback.innerHTML = '<i class="bi bi-check-circle-fill"></i> Active Inpatient record found.';
+
+                document.getElementById('prev_patient_name').textContent = data.name;
+                document.getElementById('prev_age_gender').textContent = data.age_gender;
+                document.getElementById('prev_ipno').textContent = '#' + data.ipno;
+                document.getElementById('prev_adm_date').textContent = 'Adm: ' + data.admission_date;
+                document.getElementById('prev_current_dept').textContent = data.current_dept_name;
+                document.getElementById('prev_ward').textContent = data.ward;
+                document.getElementById('prev_bed').textContent = data.bed;
+                document.getElementById('prev_doctor').textContent = data.current_doctor;
+
+                card.style.display = 'block';
+                submitBtn.disabled = false;
+
+                // Disable the current department option in dropdown
+                const currentDeptId = data.current_dept_id;
+                Array.from(deptSelect.options).forEach(opt => {
+                    if (currentDeptId && opt.getAttribute('data-dept-id') == currentDeptId) {
+                        opt.disabled = true;
+                        opt.textContent = opt.textContent.replace(' (Current)', '') + ' (Current - Cannot Select)';
+                    } else {
+                        opt.disabled = false;
+                        opt.textContent = opt.textContent.replace(' (Current - Cannot Select)', '');
+                    }
+                });
+            })
+            .catch(err => {
+                feedback.style.color = '#e11d48';
+                feedback.innerHTML = '<i class="bi bi-exclamation-circle"></i> Error querying patient record.';
+            });
+    }
+
+    document.getElementById('search_patient_input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            lookupPatientForTransfer();
+        }
+    });
+</script>
+{% endblock %}

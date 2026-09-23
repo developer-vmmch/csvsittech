@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Search Patients | VMMCerp{% endblock %}
+{% block page_heading %}Patient Search & Lookup{% endblock %}
+
+{% block content %}
+<style>
+.search-form-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.1rem 1rem;
+}
+@media (max-width: 1200px) {
+    .search-form-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 640px) {
+    .search-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+    <!-- Search Filters Panel -->
+    <div class="panel">
+        <div class="panel-header-action" style="margin-bottom: 1.25rem;">
+            <div>
+                <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">
+                    <i class="bi bi-search" style="color: var(--accent-blue);"></i> Advanced Patient Search
+                </h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+                    Filter patient records by Name, Registration Date Range, Mobile Number, Aadhar Number, ABHA Number, Department, or Registered By User.
+                </p>
+            </div>
+        </div>
+
+        <form method="get" action="{% url 'patients:search' %}" class="custom-form">
+            <div class="search-form-grid">
+                <div class="form-group">
+                    <label for="q_name">Patient Name</label>
+                    <input type="text" id="q_name" name="q_name" value="{{ q_name }}" class="form-input" placeholder="e.g. EDWIN or KARTHI">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_from_date">From Date</label>
+                    <input type="date" id="q_from_date" name="q_from_date" value="{{ q_from_date }}" class="form-input" onclick="if(this.showPicker) this.showPicker();">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_to_date">To Date</label>
+                    <input type="date" id="q_to_date" name="q_to_date" value="{{ q_to_date }}" class="form-input" onclick="if(this.showPicker) this.showPicker();">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_mobile">Mobile Number</label>
+                    <input type="text" id="q_mobile" name="q_mobile" value="{{ q_mobile }}" class="form-input" placeholder="10-digit mobile..." maxlength="10">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_aadhar">Aadhar Card Number</label>
+                    <input type="text" id="q_aadhar" name="q_aadhar" value="{{ q_aadhar }}" class="form-input" placeholder="12-digit Aadhar..." maxlength="12">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_abha">ABHA ID / Patient ID / OP No.</label>
+                    <input type="text" id="q_abha" name="q_abha" value="{{ q_abha }}" class="form-input" placeholder="ABHA / Patient ID / OP...">
+                </div>
+
+                <div class="form-group">
+                    <label for="q_department">Department</label>
+                    <select id="q_department" name="q_department" class="form-select">
+                        <option value="">-- All Departments --</option>
+                        {% for d in departments %}
+                        <option value="{{ d.id }}" {% if q_department == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="q_user">Registered By User</label>
+                    <select id="q_user" name="q_user" class="form-select">
+                        <option value="">-- All Users --</option>
+                        <option value="system" {% if q_user == 'system' %}selected{% endif %}>System / Initial Entry</option>
+                        {% for u in users_list %}
+                        <option value="{{ u.id }}" {% if q_user == u.id|stringformat:"s" %}selected{% endif %}>{{ u.get_full_name|default:u.username }} ({{ u.username }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="q_entry_type">Patient Type</label>
+                    <select id="q_entry_type" name="q_entry_type" class="form-select">
+                        <option value="A" {% if q_entry_type == 'A' or not q_entry_type %}selected{% endif %}>A</option>
+                        <option value="O" {% if q_entry_type == 'O' %}selected{% endif %}>O</option>
+                        <option value="D" {% if q_entry_type == 'D' %}selected{% endif %}>D</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-actions" style="margin-top: 1.25rem;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Search Patients
+                </button>
+                {% if has_filters %}
+                <a href="{% url 'patients:search' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Clear Filters
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    {% if not has_searched %}
+    <!-- Initial Prompt Panel -->
+    <div style="text-align: center; padding: 3.5rem 1.5rem; color: var(--text-muted); background: #ffffff; border: 1px solid var(--border-color); border-radius: 14px; box-shadow: var(--shadow-sm);">
+        <i class="bi bi-search" style="font-size: 3.2rem; display: block; margin-bottom: 1rem; color: var(--accent-teal);"></i>
+        <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">Enter Search Criteria to Find Patients</h3>
+        <p style="font-size: 0.9rem; color: var(--text-muted); max-width: 550px; margin: 0 auto;">
+            Use the search filter panel above (Patient Name, ID, Mobile No, Aadhar, ABHA ID, Patient Type, or Date Range) and click <strong>"Search Patients"</strong> to view matching records.
+        </p>
+    </div>
+    {% else %}
+    <!-- Search Results Panel -->
+    <div class="panel">
+        <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h2 class="panel-title" style="margin: 0; font-size: 1.2rem;">
+                    Search Results <span class="badge badge-blue" style="font-size: 0.8rem; margin-left: 8px;">Filtered Results</span>
+                </h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+                    Found <strong>{{ patients|length }}</strong> matching patient records.
+                </p>
+            </div>
+            <a href="{% url 'patients:add' %}" class="btn btn-primary">
+                <i class="bi bi-person-plus-fill"></i> Add New Patient
+            </a>
+        </div>
+
+        {% if patients %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Patient ID</th>
+                        <th>OP Number</th>
+                        <th>Patient Name</th>
+                        <th>Age / Gender</th>
+                        <th>Mobile No</th>
+                        <th>Aadhar Card</th>
+                        <th>ABHA ID</th>
+                        <th>Department</th>
+                        <th>IP Dept</th>
+                        <th>Patient Type</th>
+                        <th>Doctor</th>
+                        <th>Registered By</th>
+                        <th>Registered On</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for patient in patients %}
+                    <tr>
+                        <td><strong>{{ patient.patient_id }}</strong></td>
+                        <td><strong style="color: var(--accent-purple);">{{ patient.op_number|default:"--" }}</strong></td>
+                        <td><strong>{{ patient.title }} {{ patient.name }}</strong></td>
+                        <td>{{ patient.age_years }} Y / {{ patient.gender }}</td>
+                        <td>{{ patient.mobile_no }}</td>
+                        <td>{{ patient.aadhar_card|default:"--" }}</td>
+                        <td><span class="badge badge-purple">{{ patient.abha_id|default:"--" }}</span></td>
+                        <td><span class="badge badge-blue">{{ patient.department }}</span></td>
+                        <td>
+                            {% if patient.active_ip_admission %}
+                                <span class="badge badge-purple" style="font-weight: 700;">{{ patient.active_ip_admission.department }}</span>
+                            {% elif patient.is_admitted_inpatient %}
+                                <span class="badge badge-purple" style="font-weight: 700;">{{ patient.department }}</span>
+                            {% else %}
+                                <span style="color: var(--text-muted); font-size: 0.8rem;">--</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if patient.patient_type == 'D' or patient.created_source == 'D' %}
+                                <span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">D</span>
+                            {% else %}
+                                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">O</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ patient.unit_doctor }}</td>
+                        <td>
+                            {% if patient.created_by %}
+                            <span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); font-weight: 500;">
+                                <i class="bi bi-person-fill"></i> {{ patient.created_by.get_full_name|default:patient.created_by.username }}
+                            </span>
+                            {% else %}
+                            <span style="color: var(--text-muted); font-size: 0.82rem;">--</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ patient.created_at|date:"d/M/Y H:i" }}</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                <a href="{% url 'patients:edit' patient.id %}" class="btn-edit-sm" title="Edit Patient">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </a>
+                                <a href="{% url 'patients:print' patient.id %}" target="_blank" class="btn-print-sm" title="Print OP Pass">
+                                    <i class="bi bi-printer"></i> Print OP
+                                </a>
+                                {% if patient.patient_type != 'D' and patient.created_source != 'D' %}
+                                <form method="post" action="{% url 'patients:delete' patient.id %}" onsubmit="return confirm('Delete patient {{ patient.name }}?');" style="margin: 0;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-danger-sm" title="Delete Patient Record">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+            <i class="bi bi-exclamation-circle" style="font-size: 3rem; display: block; margin-bottom: 1rem; color: var(--accent-amber);"></i>
+            <p style="font-size: 1.1rem; font-weight: 600; color: var(--text-main);">No patients found matching your search criteria.</p>
+            <p style="font-size: 0.85rem; margin-top: 4px;">Try searching with different keywords or clearing filters.</p>
+            <a href="{% url 'patients:search' %}" class="btn btn-secondary" style="margin-top: 1rem; display: inline-block;">
+                <i class="bi bi-x-circle"></i> Clear Search Filters
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

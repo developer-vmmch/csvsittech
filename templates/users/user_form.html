@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Create System Login User | VMMCerp{% endblock %}
+{% block page_heading %}User Login Creation{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h2><i class="bi bi-person-plus-fill" style="color: var(--accent-blue);"></i> Create New System User</h2>
+        <p>Register a new login account for ERP system access.</p>
+    </div>
+
+    <form method="post" class="custom-form" id="userForm">
+        {% csrf_token %}
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}">Username *</label>
+                {{ form.username }}
+                {% if form.username.errors %}<div class="field-error">{{ form.username.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.role.id_for_label }}">System Role *</label>
+                {{ form.role }}
+                {% if form.role.errors %}<div class="field-error">{{ form.role.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.first_name.id_for_label }}">First Name</label>
+                {{ form.first_name }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+                {{ form.last_name }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}">Password *</label>
+                <div class="password-toggle-group">
+                    {{ form.password }}
+                    <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('{{ form.password.id_for_label }}', this)" title="Show/Hide Password">
+                        <i class="bi bi-eye-fill"></i>
+                    </button>
+                </div>
+                {% if form.password.errors %}<div class="field-error">{{ form.password.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.confirm_password.id_for_label }}">Confirm Password *</label>
+                <div class="password-toggle-group">
+                    {{ form.confirm_password }}
+                    <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('{{ form.confirm_password.id_for_label }}', this)" title="Show/Hide Password">
+                        <i class="bi bi-eye-fill"></i>
+                    </button>
+                </div>
+                {% if form.confirm_password.errors %}<div class="field-error">{{ form.confirm_password.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}">Email Address</label>
+                {{ form.email }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.phone_number.id_for_label }}">Phone / Mobile Number</label>
+                {{ form.phone_number }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.department.id_for_label }}">Department</label>
+                {{ form.department }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.employee_id.id_for_label }}">Employee ID / Unique User ID</label>
+                {{ form.employee_id }}
+                {% if form.employee_id.errors %}<div class="field-error">{{ form.employee_id.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group checkbox-group" style="grid-column: 1 / -1;">
+                <label class="checkbox-label" for="{{ form.is_active.id_for_label }}">
+                    {{ form.is_active }} <span>Active Login Account</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg"></i> Create User Account
+            </button>
+            <a href="{% url 'users:list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const usernameInput = document.getElementById('{{ form.username.id_for_label }}');
+    const statusDiv = document.createElement('div');
+    statusDiv.id = 'usernameStatus';
+    statusDiv.style.fontSize = '0.82rem';
+    statusDiv.style.marginTop = '4px';
+    statusDiv.style.fontWeight = '600';
+
+    if (usernameInput && usernameInput.parentNode) {
+        usernameInput.parentNode.appendChild(statusDiv);
+
+        let timeout = null;
+        let isUsernameTaken = false;
+
+        const checkUsername = function() {
+            const val = usernameInput.value.trim();
+            if (!val) {
+                statusDiv.innerHTML = '';
+                usernameInput.classList.remove('is-invalid');
+                isUsernameTaken = false;
+                return;
+            }
+
+            const currentUserId = "{% if object %}{{ object.pk }}{% else %}{% endif %}";
+            let url = `{% url "users:api_check_username" %}?username=${encodeURIComponent(val)}`;
+            if (currentUserId) {
+                url += `&user_id=${currentUserId}`;
+            }
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.exists) {
+                        isUsernameTaken = true;
+                        usernameInput.classList.add('is-invalid');
+                        statusDiv.style.color = '#ef4444';
+                        statusDiv.innerHTML = `<i class="bi bi-x-circle-fill"></i> ${data.message}`;
+                    } else {
+                        isUsernameTaken = false;
+                        usernameInput.classList.remove('is-invalid');
+                        statusDiv.style.color = '#10b981';
+                        statusDiv.innerHTML = `<i class="bi bi-check-circle-fill"></i> ${data.message}`;
+                    }
+                })
+                .catch(err => {
+                    console.error('Error checking username:', err);
+                });
+        };
+
+        usernameInput.addEventListener('input', function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(checkUsername, 300);
+        });
+
+        const form = document.getElementById('userForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (isUsernameTaken) {
+                    e.preventDefault();
+                    usernameInput.focus();
+                    statusDiv.style.color = '#ef4444';
+                    statusDiv.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> Cannot save: Username is already in use by another account.`;
+                }
+            });
+        }
+    }
+});
+</script>
+{% endblock %}

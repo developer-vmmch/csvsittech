@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Out-Patient (OP) Census Analytics | VMMCerp{% endblock %}
+{% block page_heading %}OP Census Analytics{% endblock %}
+
+{% block content %}
+<style>
+    .census-filter-bar {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-sm);
+    }
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        align-items: flex-end;
+    }
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 1.75rem;
+    }
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+    }
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    .stat-val {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--text-color);
+        line-height: 1.2;
+    }
+    .stat-label {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+    .pct-bar-bg {
+        background: rgba(255, 255, 255, 0.08);
+        height: 6px;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 4px;
+    }
+    .pct-bar-fill {
+        background: var(--accent-blue);
+        height: 100%;
+        border-radius: 3px;
+    }
+
+    @media print {
+        .sidebar, .header, .census-filter-bar, .no-print {
+            display: none !important;
+        }
+        .main-layout, .content {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .stat-grid {
+            grid-template-columns: repeat(4, 1fr) !important;
+        }
+        .panel {
+            box-shadow: none !important;
+            border: none !important;
+        }
+    }
+</style>
+
+<!-- Date & Filter Bar -->
+<div class="census-filter-bar no-print">
+    <form method="get" action="{% url 'patients:op_census' %}">
+        <div class="filter-grid">
+            <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.82rem; margin-bottom: 4px; color: var(--text-muted);">Census Date *</label>
+                <input type="date" name="census_date" value="{{ census_date }}" class="form-input" style="padding: 0.45rem 0.75rem;" onclick="if(this.showPicker) this.showPicker();">
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.82rem; margin-bottom: 4px; color: var(--text-muted);">Department</label>
+                <select name="department" class="form-select" style="padding: 0.45rem 0.75rem;">
+                    <option value="">-- All Departments --</option>
+                    {% for d in departments %}
+                    <option value="{{ d.id }}" {% if selected_dept == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.82rem; margin-bottom: 4px; color: var(--text-muted);">Category</label>
+                <select name="category" class="form-select" style="padding: 0.45rem 0.75rem;">
+                    <option value="">-- All Categories --</option>
+                    {% for cat_val, cat_label in categories %}
+                    <option value="{{ cat_val }}" {% if selected_category == cat_val %}selected{% endif %}>{{ cat_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="submit" class="btn btn-primary" style="padding: 0.45rem 1rem; font-size: 0.85rem;">
+                    <i class="bi bi-filter"></i> Apply Filter
+                </button>
+                <a href="{% url 'patients:op_census' %}" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.85rem;">
+                    Reset
+                </a>
+                <button type="button" onclick="window.print()" class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.85rem;">
+                    <i class="bi bi-printer"></i> Print Report
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Header -->
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h2 style="margin: 0; font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem;">
+            <i class="bi bi-bar-chart-line-fill" style="color: #f59e0b;"></i> Out-Patient (OP) Census Report
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px; margin-bottom: 0;">
+            Attendance Census for <strong>{{ display_date }}</strong>
+        </p>
+    </div>
+</div>
+
+<!-- KPI Summary Cards: New OP, Review OP, IP Admissions, Discharged Patients -->
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(2, 132, 199, 0.15); color: #0284c7;">
+            <i class="bi bi-person-plus-fill"></i>
+        </div>
+        <div>
+            <div class="stat-val">{{ new_op_count }}</div>
+            <div class="stat-label">New OP Registrations</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(13, 148, 136, 0.15); color: #0d9488;">
+            <i class="bi bi-clock-history"></i>
+        </div>
+        <div>
+            <div class="stat-val">{{ review_op_count }}</div>
+            <div class="stat-label">Review OP Visits</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">
+            <i class="bi bi-hospital-fill"></i>
+        </div>
+        <div>
+            <div class="stat-val">{{ ip_admissions_count }}</div>
+            <div class="stat-label">IP Admissions</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+            <i class="bi bi-box-arrow-right"></i>
+        </div>
+        <div>
+            <div class="stat-val">{{ discharged_count }}</div>
+            <div class="stat-label">Discharged Patients</div>
+        </div>
+    </div>
+</div>
+
+<!-- Department-Wise OP Census Breakdown -->
+<div class="panel" style="margin-bottom: 1.75rem;">
+    <h3 style="font-size: 1.1rem; font-weight: 700; margin-top: 0; margin-bottom: 1rem; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+        <i class="bi bi-diagram-3-fill" style="color: var(--accent-purple);"></i> Department-Wise OP Census Breakdown
+    </h3>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Department Name</th>
+                    <th style="text-align: center;">Units / Doctors</th>
+                    <th style="text-align: center;">Male (M)</th>
+                    <th style="text-align: center;">Female (F)</th>
+                    <th style="text-align: center;">Other (O)</th>
+                    <th style="text-align: center;">Child (&lt;12)</th>
+                    <th style="text-align: center;">Total OP Census</th>
+                    <th style="width: 20%;">OP Census Share</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in dept_census %}
+                <tr>
+                    <td><strong>{{ row.dept.name }}</strong></td>
+                    <td style="text-align: center;"><span class="badge badge-blue">{{ row.unit_count }} Units</span></td>
+                    <td style="text-align: center;">{{ row.male }}</td>
+                    <td style="text-align: center;">{{ row.female }}</td>
+                    <td style="text-align: center;">{{ row.other }}</td>
+                    <td style="text-align: center;">{{ row.child }}</td>
+                    <td style="text-align: center;"><strong style="font-size: 1rem; color: var(--accent-blue);">{{ row.total }}</strong></td>
+                    <td>
+                        <div style="font-size: 0.8rem; font-weight: 600; display: flex; justify-content: space-between;">
+                            <span>{{ row.percentage }}%</span>
+                        </div>
+                        <div class="pct-bar-bg">
+                            <div class="pct-bar-fill" style="width: {{ row.percentage }}%;"></div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No department data available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- User-Wise Counter Staff OP Registration Breakdown -->
+<div class="panel">
+    <h3 style="font-size: 1.1rem; font-weight: 700; margin-top: 0; margin-bottom: 1rem; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+        <i class="bi bi-people-fill" style="color: var(--accent-green);"></i> Counter Staff User-Wise OP Census Count
+    </h3>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Counter Staff / User Name</th>
+                    <th>Employee ID</th>
+                    <th>System Role</th>
+                    <th>Department</th>
+                    <th style="text-align: center;">Male (M)</th>
+                    <th style="text-align: center;">Female (F)</th>
+                    <th style="text-align: center;">Child (&lt;12)</th>
+                    <th style="text-align: center;">OP Registrations Count</th>
+                    <th style="width: 20%;">Total OP Share</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u_row in users_census %}
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--accent-blue); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">
+                                {{ u_row.display_name|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <strong>{{ u_row.display_name }}</strong>
+                                {% if u_row.username %}
+                                <div style="color: var(--text-muted); font-size: 0.78rem;">@{{ u_row.username }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td><code style="font-size: 0.85rem; color: var(--accent-blue);">{{ u_row.employee_id }}</code></td>
+                    <td><span class="badge badge-purple">{{ u_row.role_display }}</span></td>
+                    <td>{{ u_row.department }}</td>
+                    <td style="text-align: center;">{{ u_row.male }}</td>
+                    <td style="text-align: center;">{{ u_row.female }}</td>
+                    <td style="text-align: center;">{{ u_row.child }}</td>
+                    <td style="text-align: center;"><strong style="font-size: 1.1rem; color: var(--accent-green);">{{ u_row.total }}</strong></td>
+                    <td>
+                        <div style="font-size: 0.8rem; font-weight: 600; display: flex; justify-content: space-between;">
+                            <span>{{ u_row.percentage }}%</span>
+                        </div>
+                        <div class="pct-bar-bg">
+                            <div class="pct-bar-fill" style="width: {{ u_row.percentage }}%; background: var(--accent-green);"></div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">No user registration records available for {{ display_date }}.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

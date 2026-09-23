@@ -1,0 +1,925 @@
+{% extends "base.html" %}
+
+{% block title %}Create Monthly Trigger Plan{% endblock %}
+
+{% block extra_head %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+    
+    .config-card {
+        background: #fff;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+    .config-card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    .form-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.4rem;
+    }
+    .form-label.required::after {
+        content: " *";
+        color: #dc2626;
+    }
+    .form-control {
+        width: 100%;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        color: #334155;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .form-control:focus {
+        border-color: #3b82f6;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+    }
+    
+    /* Clickable Date Input Fix */
+    input[type="date"] {
+        position: relative;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: auto;
+        height: auto;
+        color: transparent;
+        background: transparent;
+        cursor: pointer;
+    }
+    .date-wrapper {
+        position: relative;
+    }
+    .date-wrapper i {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #64748b;
+        pointer-events: none;
+    }
+
+    .grid-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-alert {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+    
+    .table-container {
+        background: #fff;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 8px;
+        overflow: hidden; /* Contains the scrollable area */
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+    
+    .table-header-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+        background: #fff;
+    }
+    .table-header-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #0f172a;
+        margin: 0;
+    }
+    
+    .month-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.25rem;
+    }
+    .month-nav button {
+        background: transparent;
+        border: none;
+        color: #64748b;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .month-nav button:hover {
+        background: #e2e8f0;
+        color: #0f172a;
+    }
+    .month-nav span {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #334155;
+        min-width: 120px;
+        text-align: center;
+    }
+    
+    .table-scroll {
+        max-height: 55vh;
+        overflow-x: auto;
+        overflow-y: auto;
+    }
+    
+    .target-table {
+        min-width: max-content;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-bottom: 0;
+    }
+    
+    .target-table th {
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    .target-table th.dept-header {
+        border-left: 1px solid #e2e8f0;
+        color: #0f172a;
+    }
+    
+    .target-table th.sticky-col {
+        position: sticky;
+        left: 0;
+        background: #f8fafc;
+        z-index: 12;
+        border-right: 1px solid #e2e8f0;
+    }
+    .target-table th.sticky-col:nth-child(2) {
+        left: 100px;
+    }
+
+    .target-table td.sticky-col {
+        position: sticky;
+        left: 0;
+        background: #fff;
+        z-index: 5;
+        border-right: 1px solid #e2e8f0;
+        font-weight: 500;
+    }
+    .target-table td.sticky-col:nth-child(2) {
+        left: 100px;
+    }
+    
+    .target-table td {
+        padding: 0.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+        text-align: center;
+        background: #fff;
+    }
+    .target-table td.dept-cell {
+        border-left: 1px solid #f1f5f9;
+    }
+    
+    .input-sm {
+        width: 60px;
+        padding: 0.35rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        text-align: center;
+        font-size: 0.85rem;
+        transition: border-color 0.15s;
+    }
+    .input-sm:focus {
+        border-color: #3b82f6;
+        outline: none;
+    }
+    .input-sm:invalid, .input-error {
+        border-color: #dc2626 !important;
+        background: #fef2f2;
+    }
+    
+    .footer-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .notes-card, .summary-card {
+        background: #fff;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 8px;
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .notes-card h6, .summary-card h6 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+    }
+    
+    .notes-list {
+        margin: 0;
+        padding-left: 1.25rem;
+        color: #475569;
+        font-size: 0.85rem;
+        line-height: 1.6;
+    }
+    
+    .summary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    .summary-item {
+        display: flex;
+        flex-direction: column;
+    }
+    .summary-item span.lbl {
+        font-size: 0.75rem;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+    .summary-item span.val {
+        font-size: 1.1rem;
+        color: #0f172a;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="px-4 py-3">
+    <!-- Header -->
+    <div class="page-header">
+        <h1 class="page-title">Create Monthly Trigger Plan (All Departments)</h1>
+        <div class="d-flex gap-2">
+            <button class="btn btn-light border fw-semibold text-secondary" onclick="window.location.href='{% url 'lab:auto_trigger_monthly' %}'">Cancel</button>
+            <button class="btn btn-primary fw-semibold" onclick="previewPlan()"><i class="bi bi-eye me-1"></i> Preview Plan</button>
+            <button class="btn btn-success fw-semibold" onclick="saveConfiguration()"><i class="bi bi-check-circle me-1"></i> Save Configuration</button>
+        </div>
+    </div>
+
+    <!-- Plan Configuration -->
+    <div class="config-card">
+        <h2 class="config-card-title">PLAN CONFIGURATION</h2>
+        
+        <div class="grid-container">
+            <!-- Source Data Period -->
+            <div class="form-group">
+                <label class="form-label required">Source Data Period Type</label>
+                <select id="source_mode" class="form-control" onchange="updateSourceFields()">
+                    <option value="year">Full Year</option>
+                    <option value="month">Specific Month</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="source_year_wrapper">
+                <label class="form-label required">Source Year</label>
+                <select id="source_year" class="form-control">
+                    <option value="2022">2022</option>
+                    <option value="2023">2023</option>
+                    <option value="2024" selected>2024</option>
+                    <option value="2025">2025</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="source_month_wrapper" style="display: none;">
+                <label class="form-label required">Source Month</label>
+                <input type="month" id="source_month" class="form-control" value="2024-01">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required">Review Source Year</label>
+                <select id="review_source_year" class="form-control" required>
+                    <option value="2022">2022</option>
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025" selected>2025</option>
+                </select>
+                <small class="text-muted" style="font-size: 0.75rem;">Only Patient Type "D" from this year will be used for review.</small>
+            </div>
+
+            <!-- Automation Dates -->
+            <div class="form-group">
+                <label class="form-label required">Automation Start Date</label>
+                <div class="date-wrapper">
+                    <input type="date" id="auto_start" class="form-control" onchange="generateRows()" required>
+                    <i class="bi bi-calendar3"></i>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label required">Automation End Date</label>
+                <div class="date-wrapper">
+                    <input type="date" id="auto_end" class="form-control" onchange="generateRows()" required>
+                    <i class="bi bi-calendar3"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid-container">
+            <div class="form-group">
+                <label class="form-label required">Day Start Time</label>
+                <input type="time" id="start_time" class="form-control" value="08:00" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label required">Daily Stop Time</label>
+                <input type="time" id="stop_time" class="form-control" value="13:59" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label required">Interval Per Patient</label>
+                <div class="time-input-group">
+                    <input type="text" id="interval" class="form-control" value="00:15" placeholder="MM:SS" required pattern="[0-5][0-9]:[0-5][0-9]">
+                </div>
+                <small class="text-muted" style="font-size: 0.75rem;">Format: MM:SS (e.g. 01:30 = 1m 30s)</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <input type="text" id="description" class="form-control" placeholder="e.g. September 2026 Monthly Trigger Plan">
+            </div>
+        </div>
+        
+        <div class="info-alert mt-2">
+            <i class="bi bi-info-circle-fill mt-1"></i>
+            <div>
+                <strong>Source Data Period</strong> is only used to select existing patient records. It does not affect the registration date of newly created patients.<br>
+                New auto-trigger patients are registered using the actual <strong>Automation Date</strong>.
+            </div>
+        </div>
+    </div>
+    
+    <!-- Target Table -->
+    <div class="table-container">
+        <div class="table-header-toolbar">
+            <h3 class="table-header-title">SET DAILY MINIMUM AND MAXIMUM TARGETS</h3>
+            <div class="month-nav">
+                <button onclick="shiftMonth(-1)"><i class="bi bi-chevron-left"></i></button>
+                <span id="current_month_label">No Date Selected</span>
+                <button onclick="shiftMonth(1)"><i class="bi bi-chevron-right"></i></button>
+            </div>
+        </div>
+        
+        <div class="table-scroll">
+            <table class="table target-table" id="targetTable">
+                <thead>
+                    <tr>
+                        <th rowspan="2" class="sticky-col" style="min-width: 100px;">Date</th>
+                        <th rowspan="2" class="sticky-col" style="min-width: 60px;">Day</th>
+                        {% for dept in departments %}
+                        <th colspan="2" class="dept-header" data-dept-id="{{ dept.id }}">{{ dept.name }}</th>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        {% for dept in departments %}
+                        <th class="dept-header">MIN</th>
+                        <th>MAX</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody id="targetTbody">
+                    <tr>
+                        <td colspan="100%" class="text-center text-muted py-5" style="background:#fff;">
+                            Please select <b>Automation Start Date</b> and <b>Automation End Date</b> to generate target rows.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="footer-grid">
+        <div class="notes-card">
+            <h6>IMPORTANT NOTES</h6>
+            <ul class="notes-list">
+                <li>Source period only selects source patients.</li>
+                <li>Registration date is always automation date.</li>
+                <li>Minimum target must be reached first, then system will try to reach maximum.</li>
+                <li>Duplicate patients will be moved to Trash/Draft (No Patient ID / OP Number).</li>
+                <li>Phone number is not required for auto-trigger patients (will be blank).</li>
+            </ul>
+        </div>
+        
+        <div class="summary-card">
+            <h6>PLAN SUMMARY</h6>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <span class="lbl">Total Departments</span>
+                    <span class="val" id="sum_dept">{{ departments|length }}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="lbl">Total Days</span>
+                    <span class="val" id="sum_days">0</span>
+                </div>
+                <div class="summary-item">
+                    <span class="lbl">Total Minimum Target</span>
+                    <span class="val" id="sum_min">0</span>
+                </div>
+                <div class="summary-item">
+                    <span class="lbl">Total Maximum Target</span>
+                    <span class="val" id="sum_max">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Plan Summary (Preview)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="previewBody">
+          <!-- Populated via JS -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-success" onclick="saveConfiguration()"><i class="bi bi-check-circle"></i> Save Configuration</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const departments = [];
+    {% for dept in departments %}
+    departments.push({ id: {{ dept.id }}, name: "{{ dept.name|escapejs }}" });
+    {% endfor %}
+    
+    let currentViewMonth = null;
+    let allGeneratedDates = [];
+
+    function updateSourceFields() {
+        const mode = document.getElementById('source_mode').value;
+        if (mode === 'year') {
+            document.getElementById('source_year_wrapper').style.display = 'block';
+            document.getElementById('source_month_wrapper').style.display = 'none';
+        } else {
+            document.getElementById('source_year_wrapper').style.display = 'none';
+            document.getElementById('source_month_wrapper').style.display = 'block';
+        }
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function addOneCalendarMonth(d) {
+        const res = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const curDay = res.getDate();
+        res.setMonth(res.getMonth() + 1);
+        if (res.getDate() !== curDay) {
+            res.setDate(0); // clamp to last day of target month
+        }
+        return res;
+    }
+
+    function generateRows() {
+        const startStr = document.getElementById('auto_start').value;
+        const endStr = document.getElementById('auto_end').value;
+        const tbody = document.getElementById('targetTbody');
+        
+        if (!startStr || !endStr) {
+            tbody.innerHTML = '<tr><td colspan="100%" class="text-center text-muted py-5">Please select Automation Start Date and Automation End Date to generate target rows.</td></tr>';
+            allGeneratedDates = [];
+            updateSummary();
+            return;
+        }
+        
+        const startDate = new Date(startStr);
+        const endDate = new Date(endStr);
+        
+        if (endDate < startDate) {
+            alert("Automation period must be between 1 day and 1 month.");
+            tbody.innerHTML = '<tr><td colspan="100%" class="text-center text-danger py-5 font-bold"><i class="bi bi-exclamation-triangle me-2"></i>Automation period must be between 1 day and 1 month.</td></tr>';
+            allGeneratedDates = [];
+            updateSummary();
+            return;
+        }
+
+        const maxAllowed = addOneCalendarMonth(startDate);
+        if (endDate > maxAllowed) {
+            alert("Automation period must be between 1 day and 1 month.");
+            tbody.innerHTML = '<tr><td colspan="100%" class="text-center text-danger py-5 font-bold"><i class="bi bi-exclamation-triangle me-2"></i>Automation period must be between 1 day and 1 month.</td></tr>';
+            allGeneratedDates = [];
+            updateSummary();
+            return;
+        }
+        
+        allGeneratedDates = [];
+        let currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            allGeneratedDates.push(new Date(currentDate));
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        currentViewMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+        renderTargetTable();
+    }
+    
+    function shiftMonth(offset) {
+        if (!currentViewMonth || allGeneratedDates.length === 0) return;
+        
+        // Preserve values before shifting
+        saveCurrentInputsToMemory();
+        
+        currentViewMonth.setMonth(currentViewMonth.getMonth() + offset);
+        renderTargetTable();
+    }
+    
+    // Store values dynamically
+    const memoryTargets = {};
+    
+    function saveCurrentInputsToMemory() {
+        const trs = document.querySelectorAll('#targetTbody tr.data-row');
+        trs.forEach(tr => {
+            const dateStr = tr.dataset.date;
+            if (!memoryTargets[dateStr]) memoryTargets[dateStr] = {};
+            
+            departments.forEach(d => {
+                const minIn = tr.querySelector(`.min-input[data-dept="${d.id}"]`);
+                const maxIn = tr.querySelector(`.max-input[data-dept="${d.id}"]`);
+                if (minIn && maxIn) {
+                    memoryTargets[dateStr][d.id] = {
+                        min: parseInt(minIn.value),
+                        max: parseInt(maxIn.value)
+                    };
+                }
+            });
+        });
+        updateSummary();
+    }
+    
+    function renderTargetTable() {
+        const tbody = document.getElementById('targetTbody');
+        tbody.innerHTML = '';
+        
+        const monthYearStr = currentViewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        document.getElementById('current_month_label').textContent = monthYearStr;
+        
+        const viewYear = currentViewMonth.getFullYear();
+        const viewMonth = currentViewMonth.getMonth();
+        
+        const daysInMonth = allGeneratedDates.filter(d => d.getFullYear() === viewYear && d.getMonth() === viewMonth);
+        
+        if (daysInMonth.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="100%" class="text-center text-muted py-5">No automation dates in this month.</td></tr>';
+            return;
+        }
+        
+        daysInMonth.forEach(d => {
+            const dateStr = d.toISOString().split('T')[0];
+            const displayDate = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+            const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+            
+            const tr = document.createElement('tr');
+            tr.className = 'data-row';
+            tr.dataset.date = dateStr;
+            
+            let html = `
+                <td class="sticky-col">${displayDate}</td>
+                <td class="sticky-col">${dayName}</td>
+            `;
+            
+            departments.forEach(dept => {
+                const mem = (memoryTargets[dateStr] && memoryTargets[dateStr][dept.id]) ? memoryTargets[dateStr][dept.id] : { min: 100, max: 200 };
+                
+                html += `
+                    <td class="dept-cell"><input type="number" class="input-sm min-input" data-date="${dateStr}" data-dept="${dept.id}" min="0" value="${mem.min}" oninput="validateMinMax(this)"></td>
+                    <td><input type="number" class="input-sm max-input" data-date="${dateStr}" data-dept="${dept.id}" min="0" value="${mem.max}" oninput="validateMinMax(this)"></td>
+                `;
+            });
+            
+            tr.innerHTML = html;
+            tbody.appendChild(tr);
+        });
+        
+        updateSummary();
+    }
+    
+    function validateMinMax(input) {
+        const td = input.closest('td');
+        const tr = td.closest('tr');
+        const deptId = input.dataset.dept;
+        
+        const minInput = tr.querySelector(`.min-input[data-dept="${deptId}"]`);
+        const maxInput = tr.querySelector(`.max-input[data-dept="${deptId}"]`);
+        
+        let minVal = parseInt(minInput.value);
+        let maxVal = parseInt(maxInput.value);
+        
+        minInput.classList.remove('input-error');
+        maxInput.classList.remove('input-error');
+        
+        if (isNaN(minVal) || minVal < 0) minInput.classList.add('input-error');
+        if (isNaN(maxVal) || maxVal < 0) maxInput.classList.add('input-error');
+        if (minVal > maxVal) {
+            maxInput.classList.add('input-error');
+        }
+        
+        updateSummary();
+    }
+    
+    function updateSummary() {
+        if (allGeneratedDates.length === 0) {
+            document.getElementById('sum_days').textContent = 0;
+            document.getElementById('sum_min').textContent = 0;
+            document.getElementById('sum_max').textContent = 0;
+            return;
+        }
+        
+        // ensure current table inputs are in memory
+        const trs = document.querySelectorAll('#targetTbody tr.data-row');
+        trs.forEach(tr => {
+            const dateStr = tr.dataset.date;
+            if (!memoryTargets[dateStr]) memoryTargets[dateStr] = {};
+            departments.forEach(d => {
+                const minIn = tr.querySelector(`.min-input[data-dept="${d.id}"]`);
+                const maxIn = tr.querySelector(`.max-input[data-dept="${d.id}"]`);
+                if (minIn && maxIn) {
+                    memoryTargets[dateStr][d.id] = { min: parseInt(minIn.value)||0, max: parseInt(maxIn.value)||0 };
+                }
+            });
+        });
+        
+        let totalMin = 0;
+        let totalMax = 0;
+        
+        allGeneratedDates.forEach(d => {
+            const dateStr = d.toISOString().split('T')[0];
+            departments.forEach(dept => {
+                const mem = (memoryTargets[dateStr] && memoryTargets[dateStr][dept.id]) ? memoryTargets[dateStr][dept.id] : { min: 100, max: 200 };
+                totalMin += mem.min;
+                totalMax += mem.max;
+            });
+        });
+        
+        document.getElementById('sum_days').textContent = allGeneratedDates.length.toLocaleString();
+        document.getElementById('sum_min').textContent = totalMin.toLocaleString();
+        document.getElementById('sum_max').textContent = totalMax.toLocaleString();
+    }
+    
+    function getSourceDates() {
+        const mode = document.getElementById('source_mode').value;
+        let fromDate, toDate;
+        
+        if (mode === 'year') {
+            const year = document.getElementById('source_year').value;
+            fromDate = `${year}-01-01`;
+            toDate = `${year}-12-31`;
+        } else {
+            const yyyymm = document.getElementById('source_month').value;
+            if (!yyyymm) return null;
+            const [year, month] = yyyymm.split('-');
+            fromDate = `${year}-${month}-01`;
+            const lastDay = new Date(year, month, 0).getDate();
+            toDate = `${year}-${month}-${lastDay}`;
+        }
+        return { fromDate, toDate };
+    }
+    
+    function validateGlobalFields() {
+        const source = getSourceDates();
+        if (!source || !source.fromDate || !source.toDate) return "Invalid Source Data Period.";
+        
+        const autoStart = document.getElementById('auto_start').value;
+        const autoEnd = document.getElementById('auto_end').value;
+        const startTime = document.getElementById('start_time').value;
+        const stopTime = document.getElementById('stop_time').value;
+        const interval = document.getElementById('interval').value;
+        
+        if (!autoStart || !autoEnd || !startTime || !stopTime || !interval) {
+            return "Please fill in all required configuration fields.";
+        }
+        
+        if (!/^[0-5][0-9]:[0-5][0-9]$/.test(interval)) {
+            return "Interval must be in MM:SS format (e.g., 01:30).";
+        }
+        
+        if (allGeneratedDates.length === 0) {
+            return "Target dates are not generated.";
+        }
+        
+        // Ensure inputs are synced to memory
+        saveCurrentInputsToMemory();
+        
+        // Validate all memory targets
+        for (let d of allGeneratedDates) {
+            const dateStr = d.toISOString().split('T')[0];
+            for (let dept of departments) {
+                const t = memoryTargets[dateStr] ? memoryTargets[dateStr][dept.id] : {min: 100, max: 200};
+                if (t.min < 0 || t.max < 0 || t.max < t.min) {
+                    return `Invalid targets on ${dateStr} for ${dept.name}. Minimum cannot be greater than Maximum.`;
+                }
+            }
+        }
+        
+        return null;
+    }
+    
+    function previewPlan() {
+        const err = validateGlobalFields();
+        if (err) {
+            alert(err);
+            return;
+        }
+        
+        const source = getSourceDates();
+        const autoStart = document.getElementById('auto_start').value;
+        const autoEnd = document.getElementById('auto_end').value;
+        
+        let deptSummary = {};
+        departments.forEach(d => {
+            deptSummary[d.id] = { name: d.name, min: 0, max: 0 };
+        });
+        
+        let totalMin = 0, totalMax = 0;
+        
+        allGeneratedDates.forEach(d => {
+            const dateStr = d.toISOString().split('T')[0];
+            departments.forEach(dept => {
+                const t = memoryTargets[dateStr] ? memoryTargets[dateStr][dept.id] : {min: 100, max: 200};
+                deptSummary[dept.id].min += t.min;
+                deptSummary[dept.id].max += t.max;
+                totalMin += t.min;
+                totalMax += t.max;
+            });
+        });
+        
+        let html = `
+            <div class="row mb-4">
+                <div class="col-sm-6">
+                    <p class="mb-1"><small class="text-muted">Source Data Period</small><br>
+                    <strong>${source.fromDate}</strong> to <strong>${source.toDate}</strong></p>
+                    <p class="mb-1"><small class="text-muted">Automation Date Range</small><br>
+                    <strong>${autoStart}</strong> to <strong>${autoEnd}</strong></p>
+                </div>
+                <div class="col-sm-6">
+                    <p class="mb-1"><small class="text-muted">Daily Time</small><br>
+                    <strong>${document.getElementById('start_time').value}</strong> to <strong>${document.getElementById('stop_time').value}</strong></p>
+                    <p class="mb-1"><small class="text-muted">Interval</small><br>
+                    <strong>${document.getElementById('interval').value} (MM:SS)</strong></p>
+                </div>
+            </div>
+            
+            <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                    <tr><th>Department</th><th class="text-end">Total Min</th><th class="text-end">Total Max</th></tr>
+                </thead>
+                <tbody>
+        `;
+        
+        Object.values(deptSummary).forEach(s => {
+            html += `<tr><td>${s.name}</td><td class="text-end">${s.min.toLocaleString()}</td><td class="text-end">${s.max.toLocaleString()}</td></tr>`;
+        });
+        
+        const revYear = document.getElementById('review_source_year') ? document.getElementById('review_source_year').value : '';
+        html += `
+                </tbody>
+                <tfoot class="table-light fw-bold">
+                    <tr><td>TOTALS (${allGeneratedDates.length} Days)</td><td class="text-end text-success">${totalMin.toLocaleString()}</td><td class="text-end text-primary">${totalMax.toLocaleString()}</td></tr>
+                </tfoot>
+            </table>
+            <div class="alert alert-info py-2 mt-3" style="font-size: 0.85rem;">
+                <i class="bi bi-info-circle me-1"></i> <strong>Review Source Year:</strong> ${revYear} | <strong>Cumulative Range:</strong> ${totalMin.toLocaleString()} to ${totalMax.toLocaleString()} patients across ${allGeneratedDates.length} day(s).
+            </div>
+        `;
+        
+        document.getElementById('previewBody').innerHTML = html;
+        const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+        modal.show();
+    }
+    
+    function saveConfiguration() {
+        const err = validateGlobalFields();
+        if (err) {
+            alert(err);
+            return;
+        }
+        
+        const source = getSourceDates();
+        const intervalStr = document.getElementById('interval').value; // MM:SS
+        const [mins, secs] = intervalStr.split(':');
+        const totalIntervalMins = parseInt(mins) + (parseInt(secs) / 60.0);
+        
+        const revYearVal = document.getElementById('review_source_year') ? document.getElementById('review_source_year').value : (document.getElementById('review_source_month') ? document.getElementById('review_source_month').value : '');
+
+        const payload = {
+            source_from_date: source.fromDate,
+            source_to_date: source.toDate,
+            review_source_month_year: revYearVal,
+            automation_start_date: document.getElementById('auto_start').value,
+            automation_end_date: document.getElementById('auto_end').value,
+            trigger_start_time: document.getElementById('start_time').value,
+            trigger_stop_time: document.getElementById('stop_time').value,
+            interval_mins: totalIntervalMins,
+            description: document.getElementById('description').value,
+            daily_targets: []
+        };
+        
+        allGeneratedDates.forEach(d => {
+            const dateStr = d.toISOString().split('T')[0];
+            departments.forEach(dept => {
+                const t = memoryTargets[dateStr] ? memoryTargets[dateStr][dept.id] : {min: 100, max: 200};
+                payload.daily_targets.push({
+                    date: dateStr,
+                    department_id: dept.id,
+                    min: t.min,
+                    max: t.max
+                });
+            });
+        });
+        
+        fetch('{% url "lab:api_save_monthly_trigger_v2" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert("Configuration saved successfully and is now Scheduled!");
+                window.location.href = '{% url "lab:auto_trigger_monthly" %}'; // redirect to history
+            } else {
+                alert(data.message || 'Error saving configuration');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Error communicating with server.");
+        });
+    }
+    
+    // Initial call to set correct source fields visibility
+    updateSourceFields();
+</script>
+{% endblock %}

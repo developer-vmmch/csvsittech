@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Operation Notes — {{ case.ot_number }}{% endblock %}
+{% block extra_head %}<style>
+.form-section{background:white;border-radius:12px;border:1px solid #e2e8f0;padding:1.5rem;margin-bottom:1.25rem;}
+.form-section h3{font-size:.9rem;font-weight:700;color:#1e293b;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:.5rem;}
+.form-label{display:block;font-size:.8rem;font-weight:600;color:#475569;margin-bottom:.3rem;}
+.form-input{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:.55rem .75rem;font-size:.9rem;outline:none;transition:.2s;}
+.form-input:focus{border-color:#0284c7;box-shadow:0 0 0 3px rgba(2,132,199,.12);}
+</style>{% endblock %}
+{% block content %}
+<div class="p-4 sm:p-6 max-w-4xl mx-auto">
+  <div class="flex items-center gap-3 mb-6">
+    <a href="{% url 'ot:case_detail' case.pk %}" class="text-slate-400 hover:text-slate-600"><i class="bi bi-arrow-left text-xl"></i></a>
+    <div>
+      <h1 class="text-xl font-bold text-slate-800"><i class="bi bi-journal-text text-purple-500"></i> Operation Notes</h1>
+      <p class="text-sm text-slate-500">{{ case.ot_number }} — {{ case.patient.name }} | {{ case.procedure.name }}</p>
+    </div>
+  </div>
+  {% if messages %}{% for msg in messages %}<div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium {% if msg.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">{{ msg }}</div>{% endfor %}{% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <!-- Diagnoses -->
+    <div class="form-section">
+      <h3><i class="bi bi-clipboard2-pulse text-blue-500"></i> Diagnoses</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Pre-operative Diagnosis</label>
+          <textarea name="preoperative_diagnosis" rows="3" class="form-input" placeholder="Pre-op diagnosis...">{{ op.preoperative_diagnosis|default:'' }}</textarea>
+        </div>
+        <div>
+          <label class="form-label">Post-operative Diagnosis</label>
+          <textarea name="postoperative_diagnosis" rows="3" class="form-input" placeholder="Post-op diagnosis...">{{ op.postoperative_diagnosis|default:'' }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Procedure -->
+    <div class="form-section">
+      <h3><i class="bi bi-scissors text-rose-500"></i> Procedure Details</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="form-label">Procedure Performed</label>
+          <textarea name="procedure_performed" rows="3" class="form-input" placeholder="Exact procedure performed...">{{ op.procedure_performed|default:'' }}</textarea>
+        </div>
+        <div>
+          <label class="form-label">Operative Findings</label>
+          <textarea name="findings" rows="3" class="form-input" placeholder="Intraoperative findings...">{{ op.findings|default:'' }}</textarea>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="form-label">Detailed Description</label>
+          <textarea name="procedure_details" rows="5" class="form-input" placeholder="Step-by-step operative description...">{{ op.procedure_details|default:'' }}</textarea>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div>
+          <label class="form-label">Incision Time</label>
+          <input type="datetime-local" name="incision_time" class="form-input"
+            value="{% if op.incision_time %}{{ op.incision_time|date:'Y-m-d\TH:i' }}{% endif %}">
+        </div>
+        <div>
+          <label class="form-label">EBL (ml)</label>
+          <input type="number" name="estimated_blood_loss_ml" class="form-input" min="0" placeholder="0" value="{{ op.estimated_blood_loss_ml|default:'' }}">
+        </div>
+        <div>
+          <label class="form-label">Drain Placed</label>
+          <div class="flex items-center gap-2 mt-2">
+            <input type="checkbox" name="drain_placed" id="drainPlaced" class="w-4 h-4" {% if op.drain_placed %}checked{% endif %} onchange="document.getElementById('drainDetails').style.display=this.checked?'block':'none'">
+            <label for="drainPlaced" class="text-sm">Yes</label>
+          </div>
+        </div>
+        <div id="drainDetails" style="display:{% if op.drain_placed %}block{% else %}none{% endif %};">
+          <label class="form-label">Drain Details</label>
+          <input type="text" name="drain_details" class="form-input" value="{{ op.drain_details|default:'' }}" placeholder="Type, location...">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+        <div>
+          <label class="form-label">Fluids</label>
+          <textarea name="fluids" rows="2" class="form-input" placeholder="IV fluids given...">{{ op.fluids|default:'' }}</textarea>
+        </div>
+        <div>
+          <label class="form-label">Medications Summary</label>
+          <textarea name="medications_summary" rows="2" class="form-input" placeholder="Antibiotics, analgesics given...">{{ op.medications_summary|default:'' }}</textarea>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="form-label">Implants</label>
+          <input type="text" name="implants" class="form-input" value="{{ op.implants|default:'' }}" placeholder="Prosthetics, implants used (if any)">
+        </div>
+      </div>
+    </div>
+
+    <!-- Complications -->
+    <div class="form-section">
+      <h3><i class="bi bi-exclamation-triangle text-amber-500"></i> Complications</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Complications</label>
+          <textarea name="complications" rows="3" class="form-input" placeholder="None / describe if any...">{{ op.complications|default:'' }}</textarea>
+        </div>
+        <div>
+          <label class="form-label">Action Taken</label>
+          <textarea name="complication_action" rows="3" class="form-input" placeholder="Steps taken to manage complication...">{{ op.complication_action|default:'' }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Specimen -->
+    <div class="form-section">
+      <h3><i class="bi bi-eyedropper text-teal-500"></i> Specimen (Add New)</h3>
+      {% if specimens %}
+      <div class="mb-4 text-xs">
+        <table class="w-full"><thead><tr class="text-slate-500 border-b border-slate-100">
+          <th class="py-1 text-left">Specimen</th><th class="py-1 text-left">Destination</th><th class="py-1 text-left">Status</th>
+        </tr></thead><tbody>
+        {% for sp in specimens %}
+        <tr class="border-b border-slate-50">
+          <td class="py-1 font-medium">{{ sp.specimen_name }}</td>
+          <td class="py-1 text-slate-600">{{ sp.destination }}</td>
+          <td class="py-1 text-green-700 font-semibold">{{ sp.get_status_display }}</td>
+        </tr>
+        {% endfor %}
+        </tbody></table>
+      </div>
+      {% endif %}
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+        <div>
+          <label class="form-label">Specimen Name</label>
+          <input type="text" name="specimen_name" class="form-input" placeholder="e.g. Appendix">
+        </div>
+        <div>
+          <label class="form-label">Type</label>
+          <input type="text" name="specimen_type" class="form-input" placeholder="Tissue / Fluid / etc.">
+        </div>
+        <div>
+          <label class="form-label">Send To</label>
+          <input type="text" name="specimen_destination" class="form-input" value="Pathology" placeholder="Pathology">
+        </div>
+      </div>
+      <p class="text-xs text-slate-400 mt-1">Leave blank if no specimen collected. Save again to add multiple specimens.</p>
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold text-base transition-colors flex items-center justify-center gap-2">
+        <i class="bi bi-floppy"></i> Save Operation Notes
+      </button>
+      <a href="{% url 'ot:case_detail' case.pk %}" class="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition-colors">Back</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

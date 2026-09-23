@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Lab Result View | {{ patient.name }} | VMMCerp{% endblock %}
+{% block page_heading %}Laboratory Result View{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- Action Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <a href="{% url 'lab:service_request_list' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Orders
+            </a>
+            <span class="ms-2 fw-semibold text-muted">Service Request #{{ service_request.id }} (Sample ID: {{ service_request.sample_id }})</span>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'lab:lab_result_print' service_request.id %}" target="_blank" class="btn btn-sm btn-primary">
+                <i class="bi bi-printer me-1"></i>Print Report
+            </a>
+        </div>
+    </div>
+
+    <!-- Patient Header Card -->
+    <div class="card mb-3 border-0 shadow-sm" style="border-radius: 8px; background: #ffffff;">
+        <div class="card-body p-3">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-3">
+                    <small class="text-muted text-uppercase d-block fw-semibold" style="font-size: 0.75rem;">Patient Name</small>
+                    <h6 class="fw-bold text-dark mb-0">{{ patient.name }}</h6>
+                    <small class="text-muted font-monospace">{{ patient.patient_id }}</small>
+                </div>
+                <div class="col-6 col-md-2">
+                    <small class="text-muted text-uppercase d-block fw-semibold" style="font-size: 0.75rem;">Age / Gender</small>
+                    <span class="fw-medium text-dark">{{ age_display }} / {{ patient.gender }}</span>
+                </div>
+                <div class="col-6 col-md-2">
+                    <small class="text-muted text-uppercase d-block fw-semibold" style="font-size: 0.75rem;">Department</small>
+                    <span class="fw-medium text-dark">{{ department.name|default:"General Medicine" }}</span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <small class="text-muted text-uppercase d-block fw-semibold" style="font-size: 0.75rem;">Primary Diagnosis</small>
+                    <span class="badge bg-primary-subtle text-primary px-2 py-1 fs-6">
+                        {{ primary_diagnosis.name|default:"General Clinical Evaluation" }}
+                    </span>
+                </div>
+                <div class="col-6 col-md-2 text-md-end">
+                    <small class="text-muted text-uppercase d-block fw-semibold" style="font-size: 0.75rem;">Request Date</small>
+                    <span class="text-dark">{{ service_request.request_date|date:"d M Y" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Investigations Results Card -->
+    {% for rep in investigations %}
+    <div class="card mb-3 border-0 shadow-sm" style="border-radius: 8px; background: #ffffff;">
+        <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center border-bottom">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-dark border font-monospace">{{ rep.investigation.code }}</span>
+                <h6 class="fw-bold text-dark mb-0">{{ rep.investigation.name }}</h6>
+            </div>
+            <div>
+                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                    {{ rep.status|default:"Completed" }}
+                </span>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover table-sm align-middle mb-0" style="font-size: 0.85rem;">
+                <thead class="table-light text-muted small text-uppercase">
+                    <tr>
+                        <th style="width: 50px;">S.No</th>
+                        <th>Parameter</th>
+                        <th style="width: 130px;" class="text-end">Result Value</th>
+                        <th style="width: 100px;">Unit</th>
+                        <th style="width: 180px;">Reference Range</th>
+                        <th style="width: 110px;" class="text-center">Evaluation Flag</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in rep.parameters %}
+                    <tr>
+                        <td class="text-muted">{{ forloop.counter }}</td>
+                        <td>
+                            <span class="fw-semibold text-dark">{{ p.parameter_name }}</span>
+                            <small class="text-muted d-block font-monospace" style="font-size: 0.75rem;">{{ p.code }}</small>
+                        </td>
+                        <td class="text-end fw-bold text-dark font-monospace fs-6">{{ p.result_value }}</td>
+                        <td>{{ p.unit|default:"—" }}</td>
+                        <td class="text-muted">{{ p.reference_range }}</td>
+                        <td class="text-center">
+                            {% if p.flag == 'Normal' %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Normal</span>
+                            {% elif p.flag == 'High' %}
+                            <span class="badge bg-danger text-white px-2 py-1">High (Above)</span>
+                            {% elif p.flag == 'Low' %}
+                            <span class="badge bg-warning text-dark px-2 py-1">Low (Below)</span>
+                            {% elif p.flag == 'Critical' %}
+                            <span class="badge bg-danger text-white px-2 py-1 animate-pulse">Critical</span>
+                            {% else %}
+                            <span class="badge bg-light text-dark border">{{ p.flag }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted">{{ p.remarks|default:"—" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-3 text-muted">No parameters recorded for this investigation.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card border-0 shadow-sm p-4 text-center text-muted" style="border-radius: 8px;">
+        <i class="bi bi-file-earmark-x fs-1 d-block mb-2"></i>
+        No investigations linked to this service request.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

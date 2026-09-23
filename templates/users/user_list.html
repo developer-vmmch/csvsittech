@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}System Users & Administration | VMMCerp{% endblock %}
+{% block page_heading %}User Login Administration{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">System Login Users</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Manage ERP system login accounts, user roles, and access credentials.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <a href="{% url 'users:roles_overview' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
+                <i class="bi bi-shield-lock-fill" style="color: var(--accent-purple);"></i> Roles Overview
+            </a>
+            <a href="{% url 'users:staff_list' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
+                <i class="bi bi-people-fill" style="color: var(--accent-green);"></i> Staff Members
+            </a>
+            <a href="{% url 'users:role_permissions' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
+                <i class="bi bi-sliders" style="color: var(--accent-blue);"></i> Role Access Matrix
+            </a>
+            <a href="{% url 'users:add' %}" class="btn btn-primary">
+                <i class="bi bi-person-plus-fill"></i> Create New User
+            </a>
+        </div>
+    </div>
+
+    {% if system_users %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Email / Phone</th>
+                    <th>Role</th>
+                    <th>Department</th>
+                    <th>Employee ID</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in system_users %}
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="bi bi-person-circle" style="font-size: 1.2rem; color: var(--accent-blue);"></i>
+                            <strong>{{ u.username }}</strong>
+                        </div>
+                    </td>
+                    <td>{{ u.get_full_name|default:u.username }}</td>
+                    <td>
+                        <div>{{ u.email|default:"--" }}</div>
+                        <div style="color: var(--text-muted); font-size: 0.8rem;">{{ u.phone_number|default:"" }}</div>
+                    </td>
+                    <td>
+                        {% if u.role == 'ADMIN' %}
+                            <span class="badge badge-purple">Administrator</span>
+                        {% elif u.role == 'MANAGER' %}
+                            <span class="badge badge-blue">Department Manager</span>
+                        {% elif u.role == 'AUDITOR' %}
+                            <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">Auditor</span>
+                        {% elif u.role == 'STAFF' %}
+                            <span class="badge badge-green">Staff Member</span>
+                        {% else %}
+                            <span class="badge badge-blue">{{ u.get_role_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.department|default:"--" }}</td>
+                    <td><strong>{{ u.employee_id|default:"--" }}</strong></td>
+                    <td>
+                        {% if u.is_active %}
+                            <span class="badge badge-green">Active</span>
+                        {% else %}
+                            <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">Disabled</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <a href="{% url 'users:edit' u.id %}" class="btn-edit-sm" title="Edit User Credentials">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            <form method="post" action="{% url 'users:delete' u.id %}" onsubmit="return confirm('Are you sure you want to delete user account {{ u.username }}?');" style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-danger-sm" title="Delete User Account">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        <i class="bi bi-people-fill" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+        <p style="font-size: 1.1rem;">No custom system users created yet.</p>
+        <a href="{% url 'users:add' %}" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">
+            <i class="bi bi-person-plus-fill"></i> Create First User
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

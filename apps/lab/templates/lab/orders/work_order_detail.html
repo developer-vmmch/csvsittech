@@ -1,0 +1,535 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Sample / Test View{% endblock %}
+
+{% block extra_head %}
+<style>
+    :root {
+        --primary-blue: #0b5ed7;
+        --border-color: #e2e8f0;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --btn-green: #059669;
+        --btn-green-hover: #047857;
+        --bg-light: #f8fafc;
+    }
+    
+    body {
+        background-color: #f1f5f9 !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .wo-container {
+        padding: 1.5rem 2rem;
+        max-width: 100%;
+    }
+
+    /* Page Header */
+    .wo-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .wo-header-titles h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0 0 0.25rem 0;
+        letter-spacing: -0.025em;
+    }
+    .wo-header-titles p {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+    
+    .header-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 1rem;
+    }
+
+    .wo-breadcrumb {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+    }
+
+    .top-tabs {
+        display: flex;
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid var(--primary-blue);
+    }
+    .btn-tab {
+        padding: 0.5rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border: none;
+        background: #fff;
+        color: var(--primary-blue);
+        cursor: pointer;
+    }
+    .btn-tab.active {
+        background: var(--primary-blue);
+        color: #fff;
+    }
+
+    /* Info Cards - Horizontal */
+    .info-cards-container {
+        display: flex;
+        background: #fff;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+        padding: 1rem 0;
+    }
+    .info-card {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        padding: 0 1.5rem;
+        gap: 1rem;
+    }
+    .info-divider {
+        width: 1px;
+        background-color: var(--border-color);
+    }
+    .info-card i {
+        font-size: 1.5rem;
+        color: #334155;
+    }
+    .info-text {
+        display: flex;
+        flex-direction: column;
+    }
+    .info-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 0.1rem;
+    }
+    .info-value {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    /* Section Headers */
+    .section-header-flex {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
+    }
+    .pill-total {
+        background: #eff6ff;
+        color: var(--primary-blue);
+        padding: 0.25rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    /* Work Orders Table */
+    .wo-card {
+        background-color: #fff;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        margin-bottom: 1.5rem;
+    }
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
+    .wo-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.85rem;
+    }
+    .wo-table th {
+        background-color: #0b5ed7;
+        color: #fff;
+        font-weight: 600;
+        text-align: left;
+        padding: 1rem;
+        white-space: nowrap;
+        font-size: 0.85rem;
+    }
+    .wo-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        color: var(--text-main);
+        vertical-align: middle;
+        font-weight: 500;
+    }
+    .wo-table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+    
+    /* Inputs */
+    input[type="checkbox"] {
+        width: 1.1rem;
+        height: 1.1rem;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .sample-input {
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 0.25rem 0.5rem;
+        width: 80px;
+        font-size: 0.85rem;
+    }
+    .reject-select {
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 0.25rem;
+        font-size: 0.85rem;
+        background: #fff;
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.6rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: inline-block;
+        text-transform: uppercase;
+    }
+    .status-PENDING { background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; }
+    .status-RECEIVED { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .status-COMPLETED, .status-RESULTED { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+    .status-REJECTED { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+
+    .wo-table tbody tr.status-PENDING td { color: #0f172a; }
+    .wo-table tbody tr.status-RECEIVED td { color: #1d4ed8; }
+    .wo-table tbody tr.status-COMPLETED td, .wo-table tbody tr.status-RESULTED td { color: #15803d; }
+    .wo-table tbody tr.status-REJECTED td { color: #dc2626; }
+    
+    .btn-reject {
+        background: #dc2626;
+        color: #fff;
+        border: none;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    .btn-black {
+        background: #0f172a;
+        color: #fff;
+        border: none;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    /* Bottom Action Bar */
+    .bottom-action-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #fff;
+        padding: 1rem 1.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+    .bottom-action-bar .left-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .bottom-action-bar .right-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .date-input-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .date-input-group input {
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 0.35rem 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .info-banners {
+        display: flex;
+        gap: 1rem;
+    }
+    .info-banner {
+        flex: 1;
+        background: #eff6ff;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #1e293b;
+        font-weight: 500;
+        font-size: 0.875rem;
+    }
+    .info-banner i {
+        color: var(--primary-blue);
+    }
+    
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wo-container">
+    <div class="wo-header">
+        <div class="wo-header-titles">
+            <a href="{% url 'lab:work_orders' %}" style="display:inline-block; margin-bottom: 1rem; text-decoration: none; font-weight: 600; font-size: 0.85rem;"><i class="bi bi-arrow-left"></i> Back to Work Orders</a>
+            <h2>Patient Sample / Test View</h2>
+            <p>Receive samples and view pending tests</p>
+        </div>
+        <div class="header-right">
+            <div class="wo-breadcrumb">
+                Dashboard &gt; Lab Orders &gt; Work Orders &gt; Order #{{ order.id }}
+            </div>
+            <div class="top-tabs">
+                <button class="btn-tab">Pending</button>
+                <button class="btn-tab active">Sample Marking</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-cards-container">
+        <div class="info-card">
+            <i class="bi bi-person"></i>
+            <div class="info-text">
+                <span class="info-label">Patient ID</span>
+                <span class="info-value">{{ order.patient.patient_id }}</span>
+            </div>
+        </div>
+        <div class="info-divider"></div>
+        <div class="info-card">
+            <i class="bi bi-file-earmark-medical"></i>
+            <div class="info-text">
+                <span class="info-label">Service Request</span>
+                <span class="info-value">SR-{{ order.id }}</span>
+            </div>
+        </div>
+        <div class="info-divider"></div>
+        <div class="info-card">
+            <i class="bi bi-hospital"></i>
+            <div class="info-text">
+                <span class="info-label">Sample ID</span>
+                <span class="info-value">{{ order.sample_id|default:"-" }}</span>
+            </div>
+        </div>
+        <div class="info-divider"></div>
+        <div class="info-card">
+            <i class="bi bi-calendar3"></i>
+            <div class="info-text">
+                <span class="info-label">Order Date</span>
+                <span class="info-value">{{ order.request_date|date:"d/M/Y" }}</span>
+            </div>
+        </div>
+        <div class="info-divider"></div>
+        <div class="info-card">
+            <i class="bi bi-truck"></i>
+            <div class="info-text">
+                <span class="info-label">Sample Date</span>
+                <span class="info-value">{{ order.request_date|date:"d/M/Y" }}</span>
+            </div>
+        </div>
+        <div class="info-divider"></div>
+        <div class="info-card">
+            <i class="bi bi-journal-medical"></i>
+            <div class="info-text">
+                <span class="info-label">Visit No</span>
+                <span class="info-value">{{ order.visit_no|default:"1" }}</span>
+            </div>
+        </div>
+        <div class="info-divider"></div>
+        <div class="info-card">
+            <i class="bi bi-clock"></i>
+            <div class="info-text">
+                <span class="info-label">Current Time</span>
+                <span class="info-value">{% now "h:i:s A" %}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-header-flex">
+        <h3 class="section-title">Tests & Investigations</h3>
+        <div class="pill-total">Total Tests: {{ investigations|length }}</div>
+    </div>
+
+    <div class="wo-card">
+        <div class="table-responsive">
+            <table class="wo-table" id="wo-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">S.NO</th>
+                        <th style="width: 40px;">SELECT</th>
+                        <th>TEST CODE</th>
+                        <th>TEST NAME</th>
+                        <th>ACTION</th>
+                        <th>DR. NAME</th>
+                        <th>RESULT NO</th>
+                        <th>SAMPLE</th>
+                        <th>REJECT</th>
+                        <th>PRINT</th>
+                        <th>PRINT</th>
+                        <th>BARCODE</th>
+                        <th>STATUS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in investigations %}
+                    <tr class="status-{{ inv.status }}">
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            <input type="checkbox" name="selected_tests" class="test-select" value="{{ inv.id }}" {% if inv.status != 'PENDING' %}disabled checked{% endif %}>
+                        </td>
+                        <td>{{ inv.investigation.legacy_code|default:inv.investigation.code }}</td>
+                        <td>{{ inv.investigation.name }}</td>
+                        <td>
+                            {% if inv.status == 'RECEIVED' %}
+                                <a href="{% url 'lab:work_order_result_entry' inv.id %}" class="btn btn-outline-primary" style="padding: 0.15rem 0.5rem; font-size: 0.8rem; font-weight: 600;">Enter Result</a>
+                            {% elif inv.status == 'COMPLETED' %}
+                                <a href="{% url 'lab:work_order_result_entry' inv.id %}" class="btn btn-outline-success" style="padding: 0.15rem 0.5rem; font-size: 0.8rem; font-weight: 600;"><i class="bi bi-check-circle"></i> Edit Result</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{% if order.consultant %}{{ order.consultant.get_full_name|default:order.consultant.username }}{% elif order.consultant_name %}{{ order.consultant_name }}{% else %}-{% endif %}</td>
+                        <td>-</td>
+                        <td><input type="text" class="sample-input" value="{{ inv.investigation.sample_type.name|default:'' }}"></td>
+                        <td>
+                            <select class="reject-select">
+                                <option>Sample Not Adequate</option>
+                            </select>
+                        </td>
+                        <td><button class="btn-reject">Reject</button></td>
+                        <td><input type="checkbox"></td>
+                        <td><button class="btn-black">Print</button></td>
+                        <td><span class="status-badge status-{{ inv.status }}">{{ inv.status }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="12" class="text-center text-muted" style="padding: 2rem;">No tests found for this order.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="bottom-action-bar">
+        <div class="left-actions">
+            <div class="date-input-group">
+                <i class="bi bi-calendar3" style="color: var(--primary-blue);"></i>
+                <label style="font-weight: 500; font-size: 0.85rem; color: #1e293b;">Sample date:</label>
+                <input type="datetime-local" value="{% now 'Y-m-d\TH:i' %}">
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: 1rem;">
+                <input type="checkbox" id="select-all-bottom">
+                <label style="font-weight: 700; font-size: 0.85rem; color: #1e293b;">Select All</label>
+            </div>
+        </div>
+        <div class="right-actions">
+            <button class="btn btn-success" style="font-weight: 600; padding: 0.5rem 1.5rem;" id="btn-receive-selected"><i class="bi bi-check"></i> OK</button>
+            <button class="btn btn-outline-primary" style="font-weight: 600; padding: 0.5rem 1.5rem;"><i class="bi bi-upc-scan"></i> Print Barcode</button>
+            <a href="{% url 'lab:work_orders' %}" class="btn btn-light" style="font-weight: 600; padding: 0.5rem 1.5rem; border: 1px solid #cbd5e1;"><i class="bi bi-x"></i> Close</a>
+        </div>
+    </div>
+    
+    <div class="info-banners">
+        <div class="info-banner">
+            <i class="bi bi-clock"></i> Current Sample Date: {% now "d/M/Y" %}
+        </div>
+        <div class="info-banner">
+            <i class="bi bi-clock"></i> Current Sample Time: {% now "h:i:s A" %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#select-all-bottom').change(function() {
+        $('.test-select:not(:disabled)').prop('checked', $(this).prop('checked'));
+    });
+
+    $('.test-select:not(:disabled)').change(function() {
+        const totalPending = $('.test-select:not(:disabled)').length;
+        const totalCheckedPending = $('.test-select:not(:disabled):checked').length;
+        
+        if (totalPending > 0 && totalCheckedPending === totalPending) {
+            $('#select-all-bottom').prop('checked', true);
+        } else {
+            $('#select-all-bottom').prop('checked', false);
+        }
+    });
+
+    // Initialize select-all state and disable if no pending tests
+    const pendingTests = $('.test-select:not(:disabled)').length;
+    if (pendingTests === 0) {
+        $('#select-all-bottom').prop('disabled', true);
+    }
+
+    $('#btn-receive-selected').click(function() {
+        const selectedIds = [];
+        $('.test-select:not(:disabled):checked').each(function() {
+            selectedIds.push(parseInt($(this).val()));
+        });
+
+        if (selectedIds.length === 0) {
+            alert('Please select at least one pending test to receive.');
+            return;
+        }
+
+        const btn = $(this);
+        const orig = btn.html();
+        btn.html('<i class="spinner-border spinner-border-sm"></i> Receiving...').prop('disabled', true);
+
+        $.ajax({
+            url: "{% url 'lab:api_work_order_receive_multiple' %}",
+            type: 'POST',
+            contentType: 'application/json',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            data: JSON.stringify({ test_ids: selectedIds }),
+            success: function(res) {
+                if(res.status === 'success') {
+                    location.reload();
+                } else {
+                    alert('Error: ' + res.message);
+                }
+            },
+            error: function() { 
+                alert('A server error occurred.'); 
+            },
+            complete: function() { 
+                btn.html(orig).prop('disabled', false); 
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
