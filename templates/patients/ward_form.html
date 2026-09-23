@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}{% if object.pk %}Edit Ward: {{ object.name }}{% else %}Add Hospital Ward{% endif %} | Master Module | VMMCerp{% endblock %}
+{% block page_heading %}{% if object.pk %}Edit Hospital Ward{% else %}Create Hospital Ward{% endif %}{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+
+    <!-- Breadcrumb -->
+    <div style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #64748b;">
+        <a href="{% url 'patients:ward_list' %}" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">
+            <i class="bi bi-hospital"></i> Hospital Wards Master
+        </a>
+        <span>/</span>
+        <span style="color: #0f172a; font-weight: 700;">{% if object.pk %}Edit Ward: {{ object.name }}{% else %}Add Ward{% endif %}</span>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 1.25rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="bi bi-hospital" style="color: #0284c7;"></i>
+                    {% if object.pk %}Edit Hospital Ward: {{ object.name }}{% else %}Register New Hospital Ward{% endif %}
+                </h2>
+                <p style="color: #64748b; font-size: 0.85rem; margin-top: 4px; margin-bottom: 0;">
+                    {% if object.pk %}Update ward specifications, total bed capacity, and department placement.{% else %}Define a new inpatient ward, capacity, and ward category for admissions.{% endif %}
+                </p>
+            </div>
+            {% if object.pk %}
+            <div>
+                <span class="badge" style="font-family: monospace; font-size: 0.9rem; padding: 6px 12px; background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;">
+                    CODE: {{ object.code }}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+
+        <form method="post" class="custom-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger" style="background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; padding: 0.85rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; margin-bottom: 1.25rem;">
+                
+                <!-- 1. MAPPED CLINICAL DEPARTMENT (PROMINENT TOP) -->
+                <div class="form-group" style="grid-column: 1 / -1; background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 8px; padding: 1rem 1.25rem;">
+                    <label for="{{ form.department.id_for_label }}" style="font-size: 0.9rem; font-weight: 800; color: #0369a1; margin-bottom: 6px; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="bi bi-building"></i> Mapped Clinical Department <span style="font-size: 0.75rem; font-weight: 600; color: #0284c7; background: #e0f2fe; padding: 2px 6px; border-radius: 4px;">Primary Mapping</span>
+                    </label>
+                    {{ form.department }}
+                    {% if form.department.errors %}
+                    <div style="color: #dc2626; font-size: 0.8rem; margin-top: 4px;">{{ form.department.errors.0 }}</div>
+                    {% endif %}
+                    <small style="color: #0284c7; font-size: 0.78rem; display: block; margin-top: 4px;">
+                        Interlink this ward to a clinical department (e.g. General Medicine, Emergency Medicine, ENT, General Surgery). Leave blank for common / multi-department wards.
+                    </small>
+                </div>
+
+                <!-- 2. WARD CODE & WARD NAME -->
+                <div class="form-group">
+                    <label for="{{ form.code.id_for_label }}" style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">
+                        Ward Code <span class="text-danger">*</span>
+                    </label>
+                    {{ form.code }}
+                    {% if form.code.errors %}
+                    <div style="color: #dc2626; font-size: 0.8rem; margin-top: 4px;">{{ form.code.errors.0 }}</div>
+                    {% endif %}
+                    <small style="color: #94a3b8; font-size: 0.75rem; display: block; margin-top: 4px;">Unique identifier e.g. GEN-01, ICU-01, MMW-02</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}" style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">
+                        Ward Name <span class="text-danger">*</span>
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <div style="color: #dc2626; font-size: 0.8rem; margin-top: 4px;">{{ form.name.errors.0 }}</div>
+                    {% endif %}
+                    <small style="color: #94a3b8; font-size: 0.75rem; display: block; margin-top: 4px;">Official hospital ward name (e.g. Male Medical Ward)</small>
+                </div>
+
+                <!-- 3. WARD CATEGORY & PATIENT GENDER CATEGORY -->
+                <div class="form-group">
+                    <label for="{{ form.ward_type.id_for_label }}" style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">
+                        Ward Category / Type <span class="text-danger">*</span>
+                    </label>
+                    {{ form.ward_type }}
+                    {% if form.ward_type.errors %}
+                    <div style="color: #dc2626; font-size: 0.8rem; margin-top: 4px;">{{ form.ward_type.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group" style="background: #fdf4ff; border: 1px solid #f0abfc; border-radius: 8px; padding: 0.65rem 0.85rem;">
+                    <label for="{{ form.gender_category.id_for_label }}" style="font-size: 0.85rem; font-weight: 800; color: #86198f; margin-bottom: 6px; display: flex; align-items: center; gap: 0.35rem;">
+                        <i class="bi bi-gender-ambiguous"></i> Patient Category / Gender <span class="text-danger">*</span>
+                    </label>
+                    {{ form.gender_category }}
+                    {% if form.gender_category.errors %}
+                    <div style="color: #dc2626; font-size: 0.8rem; margin-top: 4px;">{{ form.gender_category.errors.0 }}</div>
+                    {% endif %}
+                    <small style="color: #a21caf; font-size: 0.75rem; display: block; margin-top: 3px;">Designate if ward is for Male, Female, Paediatric, or All patients</small>
+                </div>
+
+                <!-- 4. TOTAL BEDS & BUILDING LOCATION -->
+                <div class="form-group">
+                    <label for="{{ form.total_beds.id_for_label }}" style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">
+                        Total Bed Capacity
+                    </label>
+                    {{ form.total_beds }}
+                    {% if form.total_beds.errors %}
+                    <div style="color: #dc2626; font-size: 0.8rem; margin-top: 4px;">{{ form.total_beds.errors.0 }}</div>
+                    {% endif %}
+                    <small style="color: #94a3b8; font-size: 0.75rem; display: block; margin-top: 4px;">Number of available physical beds</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.floor_building.id_for_label }}" style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">
+                        Building / Floor / Wing Location
+                    </label>
+                    {{ form.floor_building }}
+                    {% if form.floor_building.errors %}
+                    <div style="color: #dc2626; font-size: 0.8rem; margin-top: 4px;">{{ form.floor_building.errors.0 }}</div>
+                    {% endif %}
+                    <small style="color: #94a3b8; font-size: 0.75rem; display: block; margin-top: 4px;">e.g. Main Hospital Block - 2nd Floor, West Wing</small>
+                </div>
+
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="{{ form.description.id_for_label }}" style="font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">
+                        Description / Clinical Notes
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                    <div style="color: #dc2626; font-size: 0.8rem; margin-top: 4px;">{{ form.description.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group" style="grid-column: 1 / -1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.85rem 1.25rem;">
+                    <div class="form-check" style="display: flex; align-items: center; gap: 0.75rem; margin: 0;">
+                        {{ form.is_active }}
+                        <label for="{{ form.is_active.id_for_label }}" style="font-weight: 700; color: #0f172a; margin-bottom: 0; cursor: pointer;">
+                            Active Ward (Available for Patient Admissions & Reviews)
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Form Action Buttons -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; border-top: 1px solid #e2e8f0; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; gap: 0.75rem;">
+                    <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.75rem; font-weight: 700; border-radius: 8px;">
+                        <i class="bi bi-check-lg"></i> {% if object.pk %}Update Ward{% else %}Save Ward{% endif %}
+                    </button>
+                    <a href="{% url 'patients:ward_list' %}" class="btn btn-outline-secondary" style="padding: 0.65rem 1.5rem; font-weight: 600; border-radius: 8px;">
+                        Cancel
+                    </a>
+                </div>
+
+                {% if object.pk %}
+                <div>
+                    <button type="button" class="btn btn-outline-danger" onclick="document.getElementById('delete-ward-form').submit();" style="padding: 0.65rem 1.25rem; font-weight: 600; border-radius: 8px;">
+                        <i class="bi bi-trash"></i> Delete Ward
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </form>
+
+        {% if object.pk %}
+        <form id="delete-ward-form" method="post" action="{% url 'patients:ward_delete' object.id %}" onsubmit="return confirm('Are you sure you want to permanently delete hospital ward \'{{ object.name|escapejs }}\' ({{ object.code }})?');" style="display: none;">
+            {% csrf_token %}
+        </form>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

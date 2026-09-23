@@ -34,6 +34,7 @@ PERMISSION_MODULES = [
         "sub_modules": [
             {"code": "ward.ward_management", "label": "Ward Management", "actions": ["view", "create", "update"]},
             {"code": "ward.ward_allocation", "label": "Ward Allocation", "actions": ["view", "create", "update"]},
+            {"code": "ward.ward_service_request", "label": "Ward Service Request", "actions": ["view", "create", "update", "cancel", "export"]},
             {"code": "ward.ward_transfer", "label": "Ward Transfer", "actions": ["view", "create", "update"]},
             {"code": "ward.branch_transfer", "label": "Ward Transfer", "actions": ["view", "create", "update", "cancel", "export"]},
             {"code": "ward.branch_transfer_report", "label": "Ward Transfer Report", "actions": ["view", "export"]},

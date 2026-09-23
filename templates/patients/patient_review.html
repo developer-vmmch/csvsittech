@@ -335,8 +335,8 @@
                         {{ visit_form.visit_type }}
                     </div>
                     <div>
-                        <label class="form-label">IP Number:</label>
-                        {{ visit_form.ipno }}
+                        <label class="form-label">Ward:</label>
+                        {{ visit_form.ward }}
                     </div>
                     <div>
                         <label class="form-label">Review Date:</label>
@@ -361,6 +361,7 @@
                         {{ visit_form.reg_fees }}
                     </div>
                     <div style="display: none;">
+                        {{ visit_form.ipno }}
                         {{ visit_form.coll_status }}
                         {{ visit_form.clinical_notes }}
                         {{ visit_form.centre }}
@@ -691,39 +692,21 @@
             }
         });
 
-        // Set default values for hidden fields
+        // Handle Visit Type and Ward interactions
         const ipInput = document.getElementById('id_ipno');
         const visitTypeSel = document.getElementById('id_visit_type');
+        const wardSel = document.getElementById('id_visit_ward');
         
-        function toggleIPField() {
-            if (visitTypeSel && ipInput) {
-                if (visitTypeSel.value === 'IP') {
-                    ipInput.disabled = false;
-                    ipInput.placeholder = "Enter IP No or leave blank for Auto (e.g. {{ next_ipno|default:'600000' }})";
-                    ipInput.style.backgroundColor = '#ffffff';
-                    ipInput.style.color = '#0f172a';
-                    ipInput.style.cursor = 'text';
-                } else {
-                    ipInput.disabled = true;
-                    ipInput.value = '';
-                    ipInput.placeholder = "Not applicable for OP";
-                    ipInput.style.backgroundColor = '#f1f5f9';
-                    ipInput.style.color = '#94a3b8';
-                    ipInput.style.cursor = 'not-allowed';
+        function handleVisitTypeChange() {
+            if (visitTypeSel && wardSel) {
+                if (visitTypeSel.value === 'IP' && (!wardSel.value || wardSel.value === '')) {
+                    wardSel.value = 'General Ward';
                 }
             }
         }
 
         if (visitTypeSel) {
-            visitTypeSel.addEventListener('change', toggleIPField);
-            toggleIPField();
-        }
-
-        const visitForm = document.getElementById('review_visit_form');
-        if (visitForm) {
-            visitForm.addEventListener('submit', function() {
-                if (ipInput) ipInput.disabled = false;
-            });
+            visitTypeSel.addEventListener('change', handleVisitTypeChange);
         }
 
         const deptSel = document.getElementById('id_visit_department') || document.getElementById('id_department_obj');

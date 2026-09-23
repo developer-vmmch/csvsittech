@@ -100,7 +100,64 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" style="text-align: center; color: var(--text-muted);">No units configured for this department.</td>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No units configured for this department.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- MAPPED HOSPITAL WARDS SECTION -->
+    <hr style="margin: 2.5rem 0 2rem; border: none; border-top: 1px solid var(--border-color);">
+    <div class="form-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+            <h2><i class="bi bi-hospital" style="color: #0284c7;"></i> MAPPED HOSPITAL WARDS</h2>
+            <p>Inpatient wards mapped to {{ object.name }}</p>
+        </div>
+        <a href="{% url 'patients:ward_add' %}?department={{ object.pk }}" class="btn btn-secondary">
+            + Add Ward
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Ward Code</th>
+                    <th>Ward Name</th>
+                    <th>Category / Type</th>
+                    <th>Beds</th>
+                    <th>Building / Location</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ward in wards %}
+                <tr>
+                    <td><strong>{{ ward.code }}</strong></td>
+                    <td><strong style="color: var(--accent-blue);">{{ ward.name }}</strong></td>
+                    <td>{{ ward.get_ward_type_display }}</td>
+                    <td><strong>{{ ward.total_beds }}</strong> Beds</td>
+                    <td>{{ ward.floor_building|default:"--" }}</td>
+                    <td>
+                        {% if ward.is_active %}
+                            <span class="badge badge-green">Active</span>
+                        {% else %}
+                            <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <a href="{% url 'patients:ward_edit' ward.id %}" class="btn-icon" title="Edit Ward" style="color: var(--accent-blue);">
+                                <i class="bi bi-pencil-square"></i> Edit
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No hospital wards mapped to this department.</td>
                 </tr>
                 {% endfor %}
             </tbody>

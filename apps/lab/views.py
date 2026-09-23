@@ -1865,27 +1865,34 @@ def api_search_investigation(request):
     diagnosis_ids_str = request.GET.get('diagnosis_ids', '')
     patient_id = request.GET.get('patient_id')
         
-    investigations = Investigation.objects.filter(is_active=True)
+    investigations = Investigation.objects.filter(is_active=True).select_related('sample_type')
     if query:
-        investigations = investigations.filter(
-            Q(name__icontains=query) | Q(code__icontains=query) | Q(short_name__icontains=query)
-        )
+        q_filter = Q(name__icontains=query) | Q(code__icontains=query) | Q(short_name__icontains=query)
+        terms = query.split()
+        if len(terms) > 1:
+            term_q = Q()
+            for t in terms:
+                term_q &= (Q(name__icontains=t) | Q(code__icontains=t) | Q(short_name__icontains=t))
+            q_filter |= term_q
+        investigations = investigations.filter(q_filter)
         
-
     results = []
-    inv_ids = [inv.id for inv in investigations]
+    inv_ids = [inv.id for inv in investigations[:50]]
     
     # Fetch global result pool availability
     from apps.lab.services.result_allocation_service import ResultAllocationService
     pool_stats = ResultAllocationService.get_pool_availability(inv_ids)
     
-    for inv in investigations:
+    for inv in investigations[:50]:
         avail = pool_stats.get(inv.id, {}).get('available', 0)
         results.append({
             'id': inv.id,
             'text': inv.name,
-            'code': inv.code,
+            'name': inv.name,
+            'code': inv.code or '',
+            'short_name': inv.short_name or '',
             'sample': inv.sample_type.name if inv.sample_type else 'Whole Blood',
+            'sample_type': inv.sample_type.name if inv.sample_type else 'Whole Blood',
             'available_count': avail
         })
         
