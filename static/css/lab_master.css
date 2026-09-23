@@ -711,6 +711,15 @@ body.lab-modal-open {
     margin: auto;
 }
 
+.lab-modal-dialog form {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    margin: 0;
+}
+
 .lab-modal-dialog.modal-sm { max-width: 460px; }
 .lab-modal-dialog.modal-lg { max-width: 860px; }
 
@@ -767,6 +776,21 @@ body.lab-modal-open {
     padding: 18px 20px;
     overflow-y: auto;
     flex: 1 1 auto;
+    min-height: 0;
+}
+
+.lab-modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+.lab-modal-body::-webkit-scrollbar-track {
+    background: #f8fafc;
+}
+.lab-modal-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.lab-modal-body::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 .lab-modal-footer {
