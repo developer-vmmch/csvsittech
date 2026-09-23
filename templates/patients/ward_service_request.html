@@ -386,7 +386,7 @@
                             <span class="wsr-search-icon"><i class="bi bi-search"></i></span>
                             <input type="text" id="investigationSearchInput" class="wsr-search-input" placeholder="Type test name or code (e.g. CBC, ESR, RBS, LFT, RFT, Electrolytes, X-Ray)..." autocomplete="off">
                             <button type="button" id="btnAddInvestigation" class="wsr-btn-add" onclick="addSelectedInvestigationFromInput()">
-                                <i class="bi bi-plus-lg"></i> + Add
+                                <i class="bi bi-plus-lg"></i> Add
                             </button>
                         </div>
                         <div id="investigationDropdown" class="inv-search-dropdown"></div>
@@ -780,8 +780,8 @@
 
         const hint = document.getElementById('diagnosisWarningHint');
         if (selectedDiagnoses.length > 0) {
-            hint.innerHTML = `<i class="bi bi-check-circle-fill" style="color:#059669;"></i> Protocol investigations loaded for <strong>${selectedDiagnoses.length} diagnosis mapping(s)</strong>.`;
-            hint.style.color = '#047857';
+            hint.innerHTML = `<i class="bi bi-tag-fill" style="color:#0284c7;"></i> Active diagnosis: <strong>${selectedDiagnoses.length} selected</strong>.`;
+            hint.style.color = '#0369a1';
         } else {
             hint.innerHTML = `<i class="bi bi-info-circle"></i> Selecting a diagnosis auto-populates standard protocol investigations for admitted patients.`;
             hint.style.color = '#b45309';
@@ -807,7 +807,9 @@
         })
         .then(r => r.json())
         .then(data => {
+            const hint = document.getElementById('diagnosisWarningHint');
             if (data.status === 'success' && data.investigations && data.investigations.length > 0) {
+                let newlyAdded = 0;
                 data.investigations.forEach(inv => {
                     if (!selectedInvestigations.some(i => i.id === inv.id)) {
                         selectedInvestigations.push({
@@ -819,10 +821,21 @@
                             qty: 1,
                             source: 'AUTO_SUGGESTED'
                         });
+                        newlyAdded++;
                     }
                 });
                 renderSelectedInvestigationsTable();
+                if (hint) {
+                    hint.innerHTML = `<i class="bi bi-check-circle-fill" style="color:#059669;"></i> Loaded <strong>${data.investigations.length} protocol investigation(s)</strong> for diagnosis mapping.`;
+                    hint.style.color = '#047857';
+                }
+            } else if (hint) {
+                hint.innerHTML = `<i class="bi bi-info-circle" style="color:#64748b;"></i> No automatic protocol mapping found for this diagnosis. Search and add investigations below.`;
+                hint.style.color = '#64748b';
             }
+        })
+        .catch(err => {
+            console.error('Error fetching suggested investigations:', err);
         });
     }
 
