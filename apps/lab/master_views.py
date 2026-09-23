@@ -47,6 +47,7 @@ def lab_master_hub(request):
     diag_dept_map_count = DiagnosisDepartmentMapping.objects.filter(status='Active').count()
     age_group_count = AgeGroup.objects.filter(is_active=True).count()
     rules_count = DiagnosisEligibilityRule.objects.filter(is_active=True).count()
+    lab_dept_count = LabDepartment.objects.filter(is_active=True).count()
 
     validation_summary = run_master_validation()
 
@@ -60,6 +61,7 @@ def lab_master_hub(request):
         'diag_dept_map_count': diag_dept_map_count,
         'age_group_count': age_group_count,
         'rules_count': rules_count,
+        'lab_dept_count': lab_dept_count,
         'validation_summary': validation_summary,
     }
     return render(request, 'lab/master/lab_master_hub.html', context)
@@ -893,7 +895,92 @@ def api_master_age_group_save(request):
 
 
 # ---------------------------------------------------------------------------
-# 10. MASTER VALIDATION VIEW
+# 10. LAB DEPARTMENTS MASTER
+# ---------------------------------------------------------------------------
+
+class MasterLabDepartmentListView(LoginRequiredMixin, ListView):
+    model = LabDepartment
+    template_name = 'lab/master/master_lab_department_list.html'
+    context_object_name = 'departments'
+    paginate_by = 25
+
+    def get_queryset(self):
+        qs = LabDepartment.objects.annotate(
+            investigation_count=Count('investigations')
+        ).order_by('name')
+
+        search = self.request.GET.get('search', '').strip()
+        status = self.request.GET.get('status', '').strip()
+
+        if search:
+            qs = qs.filter(name__icontains=search)
+        if status == 'active':
+            qs = qs.filter(is_active=True)
+        elif status == 'inactive':
+            qs = qs.filter(is_active=False)
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['total_count'] = LabDepartment.objects.count()
+        ctx['active_count'] = LabDepartment.objects.filter(is_active=True).count()
+        ctx['inactive_count'] = ctx['total_count'] - ctx['active_count']
+        return ctx
+
+
+@require_POST
+def api_master_lab_department_save(request):
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        data = request.POST
+
+    dept_id = data.get('id')
+    name = str(data.get('name', '')).strip()
+    is_active = str(data.get('is_active', 'true')).lower() in ('true', '1')
+
+    if not name:
+        return JsonResponse({'success': False, 'message': 'Department name is required.'}, status=400)
+
+    if dept_id:
+        dept = get_object_or_404(LabDepartment, pk=dept_id)
+        if LabDepartment.objects.filter(name__iexact=name).exclude(pk=dept_id).exists():
+            return JsonResponse({'success': False, 'message': f"Lab Department '{name}' already exists."}, status=400)
+    else:
+        if LabDepartment.objects.filter(name__iexact=name).exists():
+            return JsonResponse({'success': False, 'message': f"Lab Department '{name}' already exists."}, status=400)
+        dept = LabDepartment()
+
+    dept.name = name
+    dept.is_active = is_active
+    dept.save()
+
+    return JsonResponse({
+        'success': True,
+        'message': f"Lab Department '{dept.name}' saved successfully.",
+        'department': {
+            'id': dept.id,
+            'name': dept.name,
+            'is_active': dept.is_active
+        }
+    })
+
+
+@require_POST
+def api_master_lab_department_toggle_status(request, pk):
+    dept = get_object_or_404(LabDepartment, pk=pk)
+    dept.is_active = not dept.is_active
+    dept.save(update_fields=['is_active'])
+    return JsonResponse({
+        'success': True,
+        'is_active': dept.is_active,
+        'message': f"Lab Department '{dept.name}' is now {'Active' if dept.is_active else 'Inactive'}."
+    })
+
+
+# ---------------------------------------------------------------------------
+# 11. MASTER VALIDATION VIEW
 # ---------------------------------------------------------------------------
 
 @login_required

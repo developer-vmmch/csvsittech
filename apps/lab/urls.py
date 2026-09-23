@@ -92,6 +92,7 @@ from .atc_views import (
 )
 from .master_views import (
     lab_master_hub,
+    MasterLabDepartmentListView, api_master_lab_department_save, api_master_lab_department_toggle_status,
     MasterInvestigationListView, MasterInvestigationDetailView,
     api_master_investigation_save, api_master_investigation_toggle_status,
     MasterParameterListView, api_master_parameter_save,
@@ -125,6 +126,9 @@ urlpatterns = [
     # DEDICATED LAB MASTER MODULE
     # -----------------------------------------------------------------------
     path('master/', lab_master_hub, name='lab_master_hub'),
+    path('master/departments/', MasterLabDepartmentListView.as_view(), name='master_lab_department_list'),
+    path('master/api/lab-departments/save/', api_master_lab_department_save, name='api_master_lab_department_save'),
+    path('master/api/lab-departments/<int:pk>/toggle-status/', api_master_lab_department_toggle_status, name='api_master_lab_department_toggle_status'),
     path('master/investigations/', MasterInvestigationListView.as_view(), name='master_investigation_list'),
     path('master/investigations/<int:pk>/', MasterInvestigationDetailView.as_view(), name='master_investigation_detail'),
     path('master/api/investigations/save/', api_master_investigation_save, name='api_master_investigation_save'),

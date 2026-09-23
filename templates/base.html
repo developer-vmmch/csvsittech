@@ -347,6 +347,12 @@
                             <span>Hospital Departments</span>
                         </a>
                     </li>
+                    <li class="{% if request.resolver_match.url_name == 'master_lab_department_list' %}active{% endif %}">
+                        <a href="{% url 'lab:master_lab_department_list' %}">
+                            <i class="bi bi-building-gear"></i>
+                            <span>Lab Departments</span>
+                        </a>
+                    </li>
                     {% endif %}
                     {% if not user.is_authenticated or user.get_menu_mapping.master_wards or user.get_menu_mapping.master %}
                     <li class="{% if 'ward_list' in request.resolver_match.url_name or 'ward_add' in request.resolver_match.url_name or 'ward_edit' in request.resolver_match.url_name %}active{% endif %}">
@@ -386,6 +392,12 @@
                                 <a href="{% url 'lab:lab_master_hub' %}">
                                     <i class="bi bi-grid-fill"></i>
                                     <span>Master Hub</span>
+                                </a>
+                            </li>
+                            <li class="{% if request.resolver_match.url_name == 'master_lab_department_list' %}active{% endif %}">
+                                <a href="{% url 'lab:master_lab_department_list' %}">
+                                    <i class="bi bi-building"></i>
+                                    <span>Lab Departments</span>
                                 </a>
                             </li>
                             <li class="{% if request.resolver_match.url_name == 'master_investigation_list' or request.resolver_match.url_name == 'master_investigation_detail' %}active{% endif %}">
