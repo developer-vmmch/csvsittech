@@ -219,77 +219,81 @@
 
                 <!-- Bed Grid for this Ward -->
                 <div style="padding: 1.25rem;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(275px, 1fr)); gap: 1.1rem;">
                         {% for bed in item.bed_slots %}
                         {% if bed.visible %}
                             {% if bed.is_occupied %}
                             <!-- OCCUPIED BED CARD -->
-                            <div class="bed-card bed-occupied" style="border: 1.5px solid #fca5a5; background: #fff5f5; border-radius: 10px; padding: 0.85rem; position: relative; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.05);">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                                    <span style="font-family: monospace; font-weight: 800; font-size: 0.85rem; color: #991b1b; background: #fee2e2; padding: 2px 7px; border-radius: 4px; border: 1px solid #fca5a5;">
-                                        <i class="bi bi-door-closed-fill"></i> {{ bed.bed_number }}
-                                    </span>
-                                    <span class="badge" style="background: #fee2e2; color: #b91c1c; font-size: 0.72rem; font-weight: 700; padding: 3px 6px;">
-                                        🔴 OCCUPIED
-                                    </span>
-                                </div>
-
-                                <div style="margin-bottom: 6px;">
-                                    <strong style="color: #0f172a; font-size: 0.92rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ bed.patient.name }}">
-                                        {{ bed.patient.name }}
-                                    </strong>
-                                    <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; font-size: 0.75rem; color: #475569; margin-top: 3px;">
-                                        <span style="font-weight: 700; color: #0284c7;">UHID: {{ bed.patient.patient_id }}</span>
-                                        <span>•</span>
-                                        <span style="font-weight: 700; color: #7c3aed;">IP: #{{ bed.patient.ipno }}</span>
-                                        <span>•</span>
-                                        <span>{{ bed.patient.age }} / {{ bed.patient.gender|slice:":1" }}</span>
+                            <div class="bed-card bed-occupied" style="border: 1px solid #fca5a5; background: #fff8f8; border-radius: 12px; padding: 0.95rem; position: relative; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.06); display: flex; flex-direction: column; justify-content: space-between; min-height: 195px;">
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                        <span style="font-family: monospace; font-weight: 800; font-size: 0.82rem; color: #991b1b; background: #fee2e2; padding: 3px 8px; border-radius: 6px; border: 1px solid #fca5a5; display: inline-flex; align-items: center; gap: 4px;">
+                                            <i class="bi bi-door-closed-fill"></i> {{ bed.bed_number }}
+                                        </span>
+                                        <span class="badge" style="background: #fee2e2; color: #b91c1c; font-size: 0.72rem; font-weight: 700; padding: 4px 8px; border: 1px solid #fca5a5; border-radius: 20px;">
+                                            🔴 OCCUPIED
+                                        </span>
                                     </div>
-                                </div>
 
-                                <div style="font-size: 0.75rem; color: #64748b; border-top: 1px dashed #fecaca; padding-top: 6px; margin-top: 6px; display: flex; flex-direction: column; gap: 2px;">
-                                    <div style="display: flex; justify-content: space-between;">
-                                        <span><i class="bi bi-building"></i> {{ bed.patient.department|truncatechars:18 }}</span>
-                                        <span style="font-weight: 600; color: #7f1d1d;">Day {{ bed.patient.days_admitted }}</span>
+                                    <div style="margin-bottom: 8px;">
+                                        <div style="font-weight: 800; color: #0f172a; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;" title="{{ bed.patient.name }}">
+                                            {{ bed.patient.name }}
+                                        </div>
+                                        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; font-size: 0.75rem; margin-top: 4px;">
+                                            <span style="font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 1px 6px; border-radius: 4px; font-family: monospace; border: 1px solid #bae6fd;">UHID: {{ bed.patient.patient_id }}</span>
+                                            <span style="font-weight: 700; color: #7c3aed; background: #ede9fe; padding: 1px 6px; border-radius: 4px; font-family: monospace; border: 1px solid #ddd6fe;">IP: #{{ bed.patient.ipno }}</span>
+                                            <span style="color: #475569; font-weight: 600; margin-left: 2px;">{{ bed.patient.age }} / {{ bed.patient.gender|slice:":1" }}</span>
+                                        </div>
                                     </div>
-                                    <div><i class="bi bi-person-badge"></i> {{ bed.patient.unit_doctor|truncatechars:22 }}</div>
+
+                                    <div style="font-size: 0.75rem; color: #64748b; background: #fff1f2; border-radius: 6px; padding: 6px 8px; border: 1px solid #fecdd3; display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <span style="color: #475569; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><i class="bi bi-building"></i> {{ bed.patient.department|truncatechars:18 }}</span>
+                                            <span style="font-weight: 700; color: #991b1b; background: #fee2e2; padding: 1px 6px; border-radius: 4px; font-size: 0.72rem; white-space: nowrap;">Day {{ bed.patient.days_admitted }}</span>
+                                        </div>
+                                        <div style="color: #64748b; font-size: 0.73rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><i class="bi bi-person-badge"></i> {{ bed.patient.unit_doctor|truncatechars:24 }}</div>
+                                    </div>
                                 </div>
 
                                 <!-- Action Buttons on Bed -->
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 6px; border-top: 1px solid #fee2e2; gap: 4px;">
-                                    <a href="{% url 'patients:ward_service_request' %}?patient_id={{ bed.patient.patient_pk }}&visit_id={{ bed.patient.visit_id }}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; white-space: nowrap; color: #0369a1; border-color: #bae6fd; background: #f0f9ff;" title="Create Ward Service Request">
-                                        <i class="bi bi-clipboard-plus"></i> Service Request
-                                    </a>
-                                    
-                                    <a href="{% url 'patients:review' %}?patient_id={{ bed.patient.patient_id }}" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 600;" title="View Review Details">
-                                        <i class="bi bi-eye"></i> View
-                                    </a>
-
-                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="event.stopPropagation(); openPatientInvestigationsModal('{{ bed.patient.patient_pk }}', '{{ bed.patient.patient_id }}', '{{ bed.patient.visit_id }}', '{{ bed.patient.name|escapejs }}', '{{ item.ward.name|escapejs }}', '{{ bed.bed_number }}', '{{ bed.patient.op_number|default:"--" }}', '{{ bed.patient.ipno|default:"--" }}', '{{ bed.patient.age }}', '{{ bed.patient.gender }}', '{{ bed.patient.department|escapejs }}', '{{ bed.patient.unit_doctor|escapejs }}')" style="font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; color: #0369a1; border-color: #bae6fd; background: #f0f9ff;" title="View Patient Investigations & Diagnostic Results">
-                                        <i class="bi bi-flask-fill"></i> Investigation
+                                <div style="margin-top: auto; padding-top: 8px; border-top: 1px solid #fecaca; display: flex; flex-direction: column; gap: 6px;">
+                                    <button type="button" class="btn btn-sm btn-investigation-trigger" onclick="event.stopPropagation(); openPatientInvestigationsModal('{{ bed.patient.patient_pk }}', '{{ bed.patient.patient_id }}', '{{ bed.patient.visit_id }}', '{{ bed.patient.name|escapejs }}', '{{ item.ward.name|escapejs }}', '{{ bed.bed_number }}', '{{ bed.patient.op_number|default:"--" }}', '{{ bed.patient.ipno|default:"--" }}', '{{ bed.patient.age }}', '{{ bed.patient.gender }}', '{{ bed.patient.department|escapejs }}', '{{ bed.patient.unit_doctor|escapejs }}')" style="width: 100%; font-size: 0.78rem; padding: 6px 8px; border-radius: 6px; font-weight: 700; color: #0284c7; background: #e0f2fe; border: 1px solid #7dd3fc; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all 0.15s ease;" title="View Patient Investigations & Laboratory Results">
+                                        <i class="bi bi-flask-fill" style="color: #0284c7;"></i> Investigation Results
                                     </button>
+                                    
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                                        <a href="{% url 'patients:ward_service_request' %}?patient_id={{ bed.patient.patient_pk }}&visit_id={{ bed.patient.visit_id }}" class="btn btn-sm btn-service-req-action" style="font-size: 0.72rem; padding: 5px 6px; border-radius: 6px; font-weight: 700; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px; color: #0369a1; border: 1px solid #bae6fd; background: #ffffff; text-decoration: none;" title="Create Ward Service Request">
+                                            <i class="bi bi-clipboard-plus"></i> Service Req
+                                        </a>
+
+                                        <a href="{% url 'patients:review' %}?patient_id={{ bed.patient.patient_id }}" class="btn btn-sm btn-review-action" style="font-size: 0.72rem; padding: 5px 6px; border-radius: 6px; font-weight: 700; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px; color: #475569; border: 1px solid #cbd5e1; background: #ffffff; text-decoration: none;" title="View Patient Review">
+                                            <i class="bi bi-eye"></i> View Profile
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                             {% else %}
                             <!-- AVAILABLE BED CARD -->
-                            <div class="bed-card bed-available" onclick="openAllocateModal('{{ item.ward.id }}', '{{ item.ward.name|escapejs }}', '{{ bed.bed_number }}')" style="border: 1.5px dashed #86efac; background: #f0fdf4; border-radius: 10px; padding: 0.85rem; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+                            <div class="bed-card bed-available" onclick="openAllocateModal('{{ item.ward.id }}', '{{ item.ward.name|escapejs }}', '{{ bed.bed_number }}')" style="border: 1.5px dashed #86efac; background: #f0fdf4; border-radius: 12px; padding: 0.95rem; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between; min-height: 195px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.04);">
                                 <div>
-                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                                        <span style="font-family: monospace; font-weight: 800; font-size: 0.85rem; color: #166534; background: #dcfce7; padding: 2px 7px; border-radius: 4px; border: 1px solid #bbf7d0;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                        <span style="font-family: monospace; font-weight: 800; font-size: 0.82rem; color: #166534; background: #dcfce7; padding: 3px 8px; border-radius: 6px; border: 1px solid #bbf7d0; display: inline-flex; align-items: center; gap: 4px;">
                                             <i class="bi bi-door-open-fill"></i> {{ bed.bed_number }}
                                         </span>
-                                        <span class="badge" style="background: #dcfce7; color: #15803d; font-size: 0.72rem; font-weight: 700; padding: 3px 6px;">
+                                        <span class="badge" style="background: #dcfce7; color: #15803d; font-size: 0.72rem; font-weight: 700; padding: 4px 8px; border: 1px solid #bbf7d0; border-radius: 20px;">
                                             🟢 AVAILABLE
                                         </span>
                                     </div>
 
-                                    <div style="text-align: center; padding: 0.5rem 0; color: #15803d;">
-                                        <i class="bi bi-plus-circle" style="font-size: 1.4rem; display: block; margin-bottom: 2px;"></i>
-                                        <span style="font-weight: 700; font-size: 0.82rem;">Click to Allocate Bed</span>
+                                    <div style="text-align: center; padding: 0.85rem 0 0.5rem 0; color: #15803d;">
+                                        <div style="width: 40px; height: 40px; border-radius: 50%; background: #dcfce7; color: #16a34a; display: inline-flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 6px;">
+                                            <i class="bi bi-plus-lg"></i>
+                                        </div>
+                                        <div style="font-weight: 700; font-size: 0.85rem; color: #15803d;">Click to Allocate Bed</div>
                                     </div>
                                 </div>
 
-                                <div style="font-size: 0.72rem; text-align: center; color: #16a34a; font-weight: 600;">
+                                <div style="font-size: 0.75rem; text-align: center; color: #16a34a; font-weight: 700; background: #dcfce7; padding: 4px 8px; border-radius: 6px; border: 1px solid #bbf7d0;">
                                     {{ item.ward.get_gender_category_display }}
                                 </div>
                             </div>
@@ -1388,6 +1392,25 @@
     .bed-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 16px rgba(0,0,0,0.08) !important;
+    }
+    .btn-investigation-trigger:hover {
+        background: #0284c7 !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25) !important;
+        border-color: #0284c7 !important;
+    }
+    .btn-investigation-trigger:hover i {
+        color: #ffffff !important;
+    }
+    .btn-service-req-action:hover {
+        background: #f0f9ff !important;
+        color: #0284c7 !important;
+        border-color: #38bdf8 !important;
+    }
+    .btn-review-action:hover {
+        background: #f8fafc !important;
+        color: #0f172a !important;
+        border-color: #94a3b8 !important;
     }
 </style>
 {% endblock %}
