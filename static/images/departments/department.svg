@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg-grad-dept" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#164e63"/>
+      <stop offset="50%" stop-color="#0e7490"/>
+      <stop offset="100%" stop-color="#0891b2"/>
+    </linearGradient>
+    <linearGradient id="tree-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <filter id="glow-dept" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1920" height="1080" fill="url(#bg-grad-dept)"/>
+
+  <!-- Subtle Blueprint Grid -->
+  <g opacity="0.08" stroke="#ffffff" stroke-width="1.5">
+    <line x1="0" y1="200" x2="1920" y2="200"/>
+    <line x1="0" y1="400" x2="1920" y2="400"/>
+    <line x1="0" y1="600" x2="1920" y2="600"/>
+    <line x1="0" y1="800" x2="1920" y2="800"/>
+    <line x1="300" y1="0" x2="300" y2="1080"/>
+    <line x1="600" y1="0" x2="600" y2="1080"/>
+    <line x1="900" y1="0" x2="900" y2="1080"/>
+    <line x1="1200" y1="0" x2="1200" y2="1080"/>
+    <line x1="1500" y1="0" x2="1500" y2="1080"/>
+  </g>
+
+  <!-- Left: Department Organization Hierarchy Architecture -->
+  <g transform="translate(100, 160)">
+    <rect width="560" height="380" rx="16" fill="#083344" stroke="#22d3ee" stroke-width="2" opacity="0.92" filter="url(#glow-dept)"/>
+    <rect x="20" y="20" width="520" height="40" rx="8" fill="#155e75"/>
+    <text x="40" y="46" fill="#cffafe" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="700">HOSPITAL CLINICAL DEPARTMENTS &amp; UNITS DIRECTORY</text>
+
+    <!-- Org Tree Structure -->
+    <g transform="translate(40, 85)">
+      <!-- Root Node -->
+      <rect x="150" y="0" width="180" height="38" rx="8" fill="url(#tree-grad)"/>
+      <text x="240" y="24" text-anchor="middle" fill="#ffffff" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="700">Medical Superintendent</text>
+      
+      <!-- Connectors -->
+      <path d="M 240 38 L 240 65 M 60 65 L 420 65 M 60 65 L 60 90 M 240 65 L 240 90 M 420 65 L 420 90" fill="none" stroke="#22d3ee" stroke-width="2"/>
+
+      <!-- Node 1 -->
+      <rect x="0" y="90" width="120" height="48" rx="6" fill="#164e63" stroke="#06b6d4"/>
+      <text x="60" y="112" text-anchor="middle" fill="#ffffff" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">Clinical Div.</text>
+      <text x="60" y="127" text-anchor="middle" fill="#a5f3fc" font-family="'Plus Jakarta Sans', sans-serif" font-size="10">18 Specialties</text>
+
+      <!-- Node 2 -->
+      <rect x="180" y="90" width="120" height="48" rx="6" fill="#164e63" stroke="#06b6d4"/>
+      <text x="240" y="112" text-anchor="middle" fill="#ffffff" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">Diagnostic Div.</text>
+      <text x="240" y="127" text-anchor="middle" fill="#a5f3fc" font-family="'Plus Jakarta Sans', sans-serif" font-size="10">Lab &amp; Radiology</text>
+
+      <!-- Node 3 -->
+      <rect x="360" y="90" width="120" height="48" rx="6" fill="#164e63" stroke="#06b6d4"/>
+      <text x="420" y="112" text-anchor="middle" fill="#ffffff" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">Inpatient Div.</text>
+      <text x="420" y="127" text-anchor="middle" fill="#a5f3fc" font-family="'Plus Jakarta Sans', sans-serif" font-size="10">Wards &amp; OT</text>
+
+      <!-- Sub-units -->
+      <g transform="translate(0, 160)">
+        <rect x="0" y="0" width="480" height="75" rx="8" fill="#0c4a6e"/>
+        <text x="20" y="24" fill="#38bdf8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="700">ACTIVE SPECIALTY CONFIGURATIONS</text>
+        <text x="20" y="46" fill="#ffffff" font-family="'Plus Jakarta Sans', sans-serif" font-size="11">• General Medicine • Cardiology • Neurology • General Surgery • Orthopedics</text>
+        <text x="20" y="64" fill="#ffffff" font-family="'Plus Jakarta Sans', sans-serif" font-size="11">• Pediatrics • Obstetrics &amp; Gynecology • Ophthalmology • ENT • Dermatology</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Right: Department Facilities & Floor Map -->
+  <g transform="translate(1260, 160)">
+    <rect width="560" height="380" rx="16" fill="#083344" stroke="#06b6d4" stroke-width="2" opacity="0.92" filter="url(#glow-dept)"/>
+    <rect x="20" y="20" width="520" height="40" rx="8" fill="#155e75"/>
+    <text x="40" y="46" fill="#cffafe" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="700">HOSPITAL WING &amp; CLINICAL UNIT MAP</text>
+
+    <!-- Blueprint representation -->
+    <g transform="translate(30, 80)">
+      <rect x="0" y="0" width="500" height="230" rx="10" fill="#0c4a6e" stroke="#0284c7" stroke-dasharray="4 4"/>
+      
+      <!-- Block A -->
+      <rect x="20" y="20" width="210" height="85" rx="6" fill="#164e63" stroke="#38bdf8"/>
+      <text x="35" y="45" fill="#ffffff" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="700">BLOCK A: OPD CLINICS</text>
+      <text x="35" y="65" fill="#a5f3fc" font-family="'Plus Jakarta Sans', sans-serif" font-size="11">Ground &amp; 1st Floor (Units 1-12)</text>
+      <text x="35" y="85" fill="#34d399" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600">Status: Active &amp; Operational</text>
+
+      <!-- Block B -->
+      <rect x="260" y="20" width="220" height="85" rx="6" fill="#164e63" stroke="#38bdf8"/>
+      <text x="275" y="45" fill="#ffffff" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="700">BLOCK B: IPD WARDS</text>
+      <text x="275" y="65" fill="#a5f3fc" font-family="'Plus Jakarta Sans', sans-serif" font-size="11">Floors 2 to 5 (Wards 1-16)</text>
+      <text x="275" y="85" fill="#34d399" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600">Status: 520 Beds Allocated</text>
+
+      <!-- Block C -->
+      <rect x="20" y="125" width="460" height="85" rx="6" fill="#164e63" stroke="#38bdf8"/>
+      <text x="35" y="150" fill="#ffffff" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="700">BLOCK C: OT COMPLEX &amp; CRITICAL CARE ICUs</text>
+      <text x="35" y="170" fill="#a5f3fc" font-family="'Plus Jakarta Sans', sans-serif" font-size="11">8 Modular Operation Theatres | MICU, SICU, NICU, PICU</text>
+      <text x="35" y="190" fill="#34d399" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="600">Status: 24/7 Monitored Command</text>
+    </g>
+  </g>
+</svg>

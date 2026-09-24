@@ -1,281 +1,356 @@
 """
 VMMC ERP Department Configurations and Access Control Utilities.
 Defines the 16 core ERP Login Departments matching the hospital ERP workflow.
+VINAYAKA MISSIONS MEDICAL COLLEGE AND HOSPITAL - KARAIKAL
+Powered by CSVS IT Tech
 """
 
 ERP_LOGIN_DEPARTMENTS = [
     {
         'id': 1,
-        'code': 'front_desk',
-        'slug': 'front-desk',
-        'name': 'Front Desk',
+        'code': 'front_office',
+        'slug': 'front-office',
+        'name': 'Front Office',
+        'login_title': 'Front Office Login',
         'icon': 'bi-person-workspace',
         'color_bg': '#e0f2fe',
         'color_icon': '#0284c7',
-        'badge': 'OPD / Registration',
+        'badge': 'Patient Registration & Enquiry',
+        'full_scope': 'Patient Registration | Enquiry | OP Services',
         'dashboard_url': '/patients/add/',
         'landing_module': 'patients',
+        'bg_image': 'images/departments/front_office.jpg',
         'allowed_prefixes': ['/patients/add/', '/patients/search/', '/patients/', '/dashboard/'],
-        'aliases': ['front desk', 'front_desk', 'front-desk', 'front office', 'front_office', 'front-office', 'opd', 'reception', 'registration'],
-        'description': 'Patient registration, UHID creation, OPD search & appointments',
+        'aliases': ['front office', 'front_office', 'front-office', 'front desk', 'front_desk', 'front-desk', 'opd', 'reception', 'registration', 'enquiry'],
+        'description': 'Enter your credentials to access the Front Office module',
     },
     {
         'id': 2,
         'code': 'consultant',
         'slug': 'consultant',
         'name': 'Consultant',
+        'login_title': 'Consultant Login',
         'icon': 'bi-person-badge',
-        'color_bg': '#dcfce7',
-        'color_icon': '#16a34a',
-        'badge': 'Doctor Window',
+        'color_bg': '#ccfbf1',
+        'color_icon': '#0d9488',
+        'badge': 'Doctor Window & Clinical Care',
+        'full_scope': 'Doctor Consultation | Diagnosis | Treatment',
         'dashboard_url': '/lab/doctor-window/',
         'landing_module': 'consultant',
+        'bg_image': 'images/departments/consultant.jpg',
         'allowed_prefixes': ['/lab/doctor-window/', '/patients/', '/dashboard/'],
-        'aliases': ['consultant', 'doctor', 'physician', 'medical officer', 'specialist'],
-        'description': 'Doctor window, consultation review, diagnostic orders & clinical records',
+        'aliases': ['consultant', 'doctor', 'physician', 'medical officer', 'specialist', 'clinician'],
+        'description': 'Enter your credentials to access the Consultant module',
     },
     {
         'id': 3,
         'code': 'billing',
         'slug': 'billing',
         'name': 'Billing',
+        'login_title': 'Billing Login',
         'icon': 'bi-currency-rupee',
-        'color_bg': '#fef3c7',
-        'color_icon': '#d97706',
-        'badge': 'Cashier / Billing',
+        'color_bg': '#ffedd5',
+        'color_icon': '#ea580c',
+        'badge': 'OP & IP Billing Counters',
+        'full_scope': 'OP Billing | IP Billing | Insurance | Payments',
         'dashboard_url': '/patients/',
         'landing_module': 'billing',
+        'bg_image': 'images/departments/billing.jpg',
         'allowed_prefixes': ['/patients/', '/dashboard/'],
-        'aliases': ['billing', 'cashier', 'accounts billing', 'finance'],
-        'description': 'OPD / IPD billing, cash counter, insurance claims & payments',
+        'aliases': ['billing', 'cashier', 'accounts billing', 'finance cashier', 'op billing', 'ip billing'],
+        'description': 'Enter your credentials to access the Billing module',
     },
     {
         'id': 4,
         'code': 'lab',
         'slug': 'lab',
         'name': 'Lab',
+        'login_title': 'Laboratory Login',
         'icon': 'bi-funnel-fill',
-        'color_bg': '#ffe4e6',
-        'color_icon': '#e11d48',
-        'badge': 'Diagnostics / Lab',
+        'color_bg': '#ede9fe',
+        'color_icon': '#7c3aed',
+        'badge': 'Diagnostics & Sample Analysis',
+        'full_scope': 'Sample Processing | Analysis | Results',
         'dashboard_url': '/lab/work-orders/',
         'landing_module': 'lab_orders',
+        'bg_image': 'images/departments/lab.jpg',
         'allowed_prefixes': ['/lab/', '/dashboard/'],
         'aliases': ['lab', 'laboratory', 'pathology', 'biochemistry', 'microbiology', 'hematology', 'lab_tech'],
-        'description': 'Laboratory investigations, sample collection, test results & verification',
+        'description': 'Enter your credentials to access the Laboratory module',
     },
     {
         'id': 5,
         'code': 'ward',
         'slug': 'ward',
         'name': 'Ward',
+        'login_title': 'Ward Login',
         'icon': 'bi-hospital',
-        'color_bg': '#f3e8ff',
-        'color_icon': '#9333ea',
-        'badge': 'IPD / Wards',
+        'color_bg': '#dcfce7',
+        'color_icon': '#16a34a',
+        'badge': 'Inpatient Care & Bed Matrix',
+        'full_scope': 'Inpatient Care | Nursing | Bed Management',
         'dashboard_url': '/patients/ward/allocation/',
         'landing_module': 'ward',
+        'bg_image': 'images/departments/ward.jpg',
         'allowed_prefixes': ['/patients/ward/', '/patients/branch-transfer/', '/patients/wards/', '/dashboard/'],
-        'aliases': ['ward', 'ipd', 'nursing', 'ward staff', 'inpatient'],
-        'description': 'Inpatient bed matrix allocation, ward management & nurse station',
+        'aliases': ['ward', 'ipd', 'nursing', 'ward staff', 'inpatient', 'nurse'],
+        'description': 'Enter your credentials to access the Ward module',
     },
     {
         'id': 6,
         'code': 'mrd',
         'slug': 'mrd',
         'name': 'MRD',
+        'login_title': 'MRD Login',
         'icon': 'bi-file-earmark-medical-fill',
-        'color_bg': '#ccfbf1',
-        'color_icon': '#0d9488',
-        'badge': 'Medical Records',
+        'color_bg': '#cffafe',
+        'color_icon': '#0891b2',
+        'badge': 'Medical Records & Archiving',
+        'full_scope': 'Medical Records | Patient Files | Documentation',
         'dashboard_url': '/patients/review/',
         'landing_module': 'review',
+        'bg_image': 'images/departments/mrd.jpg',
         'allowed_prefixes': ['/patients/review/', '/patients/', '/dashboard/'],
-        'aliases': ['mrd', 'medical records', 'records', 'medical records department'],
-        'description': 'Medical Records Department, discharge summaries & archive tracking',
+        'aliases': ['mrd', 'medical records', 'records', 'medical records department', 'archive'],
+        'description': 'Enter your credentials to access the MRD module',
     },
     {
         'id': 7,
         'code': 'pharmacy',
         'slug': 'pharmacy',
         'name': 'Pharmacy',
+        'login_title': 'Pharmacy Login',
         'icon': 'bi-capsule',
         'color_bg': '#dbeafe',
         'color_icon': '#2563eb',
-        'badge': 'Drugs / Dispensary',
+        'badge': 'Prescriptions & Dispensary',
+        'full_scope': 'Prescriptions | Dispensing | Pharmacy Management',
         'dashboard_url': '/dashboard/',
         'landing_module': 'dashboard',
+        'bg_image': 'images/departments/pharmacy.jpg',
         'allowed_prefixes': ['/dashboard/', '/patients/'],
-        'aliases': ['pharmacy', 'pharmacist', 'dispensary', 'drugs'],
-        'description': 'Prescription dispensing, drug inventory & pharmacy stock',
+        'aliases': ['pharmacy', 'pharmacist', 'dispensary', 'drugs', 'chemist'],
+        'description': 'Enter your credentials to access the Pharmacy module',
     },
     {
         'id': 8,
         'code': 'inventory',
         'slug': 'inventory',
         'name': 'Inventory',
+        'login_title': 'Inventory Login',
         'icon': 'bi-box-seam-fill',
-        'color_bg': '#ffedd5',
-        'color_icon': '#ea580c',
-        'badge': 'Stores / Stock',
+        'color_bg': '#fef3c7',
+        'color_icon': '#d97706',
+        'badge': 'Central Stores & Supplies',
+        'full_scope': 'Stock | Supplies | Purchase | Inventory Control',
         'dashboard_url': '/dashboard/',
         'landing_module': 'inventory',
+        'bg_image': 'images/departments/inventory.jpg',
         'allowed_prefixes': ['/dashboard/'],
-        'aliases': ['inventory', 'stores', 'central stores', 'purchase', 'warehouse'],
-        'description': 'Central stores, purchase indents, stock ledger & supplies',
+        'aliases': ['inventory', 'stores', 'central stores', 'purchase', 'warehouse', 'stock'],
+        'description': 'Enter your credentials to access the Inventory module',
     },
     {
         'id': 9,
         'code': 'blood_bank',
         'slug': 'blood-bank',
         'name': 'Blood Bank',
+        'login_title': 'Blood Bank Login',
         'icon': 'bi-droplet-fill',
         'color_bg': '#fee2e2',
         'color_icon': '#dc2626',
-        'badge': 'Transfusion / Bank',
+        'badge': 'Blood Storage & Transfusion',
+        'full_scope': 'Blood Storage | Donor Services | Blood Management',
         'dashboard_url': '/dashboard/',
         'landing_module': 'dashboard',
+        'bg_image': 'images/departments/blood_bank.jpg',
         'allowed_prefixes': ['/dashboard/', '/lab/'],
-        'aliases': ['blood bank', 'blood_bank', 'blood-bank', 'transfusion'],
-        'description': 'Blood donor management, screening, component cross-matching & reserves',
+        'aliases': ['blood bank', 'blood_bank', 'blood-bank', 'transfusion', 'blood donor'],
+        'description': 'Enter your credentials to access the Blood Bank module',
     },
     {
         'id': 10,
         'code': 'radiology',
         'slug': 'radiology',
         'name': 'Radiology',
+        'login_title': 'Radiology Login',
         'icon': 'bi-lungs-fill',
-        'color_bg': '#ede9fe',
-        'color_icon': '#7c3aed',
-        'badge': 'Imaging / X-Ray',
+        'color_bg': '#f3e8ff',
+        'color_icon': '#9333ea',
+        'badge': 'X-Ray, CT, MRI & Imaging',
+        'full_scope': 'X-Ray | CT | MRI | Diagnostic Imaging',
         'dashboard_url': '/lab/work-orders/',
         'landing_module': 'lab_orders',
+        'bg_image': 'images/departments/radiology.jpg',
         'allowed_prefixes': ['/lab/', '/dashboard/'],
-        'aliases': ['radiology', 'xray', 'x-ray', 'imaging', 'scan', 'ct scan', 'mri', 'ultrasound'],
-        'description': 'X-Ray, CT Scan, MRI, Ultrasound imaging & radiology reporting',
+        'aliases': ['radiology', 'xray', 'x-ray', 'imaging', 'scan', 'ct scan', 'mri', 'ultrasound', 'radiologist'],
+        'description': 'Enter your credentials to access the Radiology module',
     },
     {
         'id': 11,
         'code': 'ot',
         'slug': 'ot',
         'name': 'OT',
+        'login_title': 'OT Login',
         'icon': 'bi-activity',
         'color_bg': '#d1fae5',
         'color_icon': '#059669',
-        'badge': 'Operation Theater',
+        'badge': 'Operation Theatre & Surgery',
+        'full_scope': 'Operation Theatre | Surgical Workflow | OT Management',
         'dashboard_url': '/ot/',
         'landing_module': 'ot',
+        'bg_image': 'images/departments/ot.jpg',
         'allowed_prefixes': ['/ot/', '/dashboard/'],
-        'aliases': ['ot', 'operation theater', 'surgery', 'surgical', 'operation theatre'],
-        'description': 'Operation Theater booking, scheduling, surgeon notes & PAC',
+        'aliases': ['ot', 'operation theater', 'surgery', 'surgical', 'operation theatre', 'surgeon'],
+        'description': 'Enter your credentials to access the OT module',
     },
     {
         'id': 12,
         'code': 'summary',
         'slug': 'summary',
         'name': 'Summary',
+        'login_title': 'Summary Login',
         'icon': 'bi-card-checklist',
         'color_bg': '#e0e7ff',
         'color_icon': '#4f46e5',
-        'badge': 'Clinical Summary',
+        'badge': 'Discharge & Overview',
+        'full_scope': 'Hospital Overview | Operations | Key Information',
         'dashboard_url': '/patients/discharge/',
         'landing_module': 'discharge',
+        'bg_image': 'images/departments/summary.jpg',
         'allowed_prefixes': ['/patients/discharge/', '/dashboard/'],
-        'aliases': ['summary', 'clinical summary', 'discharge summary', 'audit'],
-        'description': 'Patient discharge summary, case sheet summaries & audits',
+        'aliases': ['summary', 'clinical summary', 'discharge summary', 'audit summary', 'overview'],
+        'description': 'Enter your credentials to access the Summary module',
     },
     {
         'id': 13,
         'code': 'accounts',
         'slug': 'accounts',
         'name': 'Accounts',
+        'login_title': 'Accounts Login',
         'icon': 'bi-calculator-fill',
         'color_bg': '#e0f2fe',
-        'color_icon': '#0284c7',
-        'badge': 'Finance / Audit',
+        'color_icon': '#0369a1',
+        'badge': 'Finance & Audit Management',
+        'full_scope': 'Finance | Accounts | Payments | Financial Management',
         'dashboard_url': '/dashboard/',
         'landing_module': 'dashboard',
+        'bg_image': 'images/departments/accounts.svg',
         'allowed_prefixes': ['/dashboard/'],
-        'aliases': ['accounts', 'finance', 'accounting', 'auditor'],
-        'description': 'Financial ledgers, receipts, payment vouchers & reconciliation',
+        'aliases': ['accounts', 'finance', 'accounting', 'auditor', 'internal audit', 'financial'],
+        'description': 'Enter your credentials to access the Accounts module',
     },
     {
         'id': 14,
         'code': 'report',
         'slug': 'report',
         'name': 'Report',
+        'login_title': 'Report Login',
         'icon': 'bi-bar-chart-fill',
         'color_bg': '#dcfce7',
-        'color_icon': '#16a34a',
-        'badge': 'Analytics / Reports',
+        'color_icon': '#15803d',
+        'badge': 'Analytics & Workload Reports',
+        'full_scope': 'Reports | Analytics | Operational Information',
         'dashboard_url': '/lab/reports/dashboard/',
         'landing_module': 'lab_reports',
+        'bg_image': 'images/departments/report.svg',
         'allowed_prefixes': ['/lab/reports/', '/dashboard/'],
-        'aliases': ['report', 'reports', 'analytics', 'statistics', 'census'],
-        'description': 'Hospital analytics, OPD/IPD statistics, workload & audit reports',
+        'aliases': ['report', 'reports', 'analytics', 'statistics', 'census', 'reporting'],
+        'description': 'Enter your credentials to access the Report module',
     },
     {
         'id': 15,
         'code': 'mis',
         'slug': 'mis',
         'name': 'MIS',
+        'login_title': 'MIS Login',
         'icon': 'bi-pie-chart-fill',
-        'color_bg': '#fee2e2',
+        'color_bg': '#ffedd5',
         'color_icon': '#ea580c',
-        'badge': 'Executive / MIS',
+        'badge': 'Executive KPIs & Intelligence',
+        'full_scope': 'Management Information | KPIs | Hospital Intelligence',
         'dashboard_url': '/dashboard/',
         'landing_module': 'dashboard',
+        'bg_image': 'images/departments/mis.svg',
         'allowed_prefixes': ['/dashboard/'],
-        'aliases': ['mis', 'management', 'executive', 'kpi', 'admin'],
-        'description': 'Management Information System, key executive metrics & KPIs',
+        'aliases': ['mis', 'management', 'executive', 'kpi', 'admin', 'intelligence', 'command center'],
+        'description': 'Enter your credentials to access the MIS module',
     },
     {
         'id': 16,
-        'code': 'clinical_department',
-        'slug': 'clinical-department',
-        'name': 'Clinical Department',
+        'code': 'department',
+        'slug': 'department',
+        'name': 'Department',
+        'login_title': 'Department Login',
         'icon': 'bi-building-fill',
         'color_bg': '#cffafe',
         'color_icon': '#0891b2',
-        'badge': 'Specialties & Units',
+        'badge': 'Specialties & Administration',
+        'full_scope': 'Department Management | Configuration | Administration',
         'dashboard_url': '/patients/departments/',
         'landing_module': 'department_list',
+        'bg_image': 'images/departments/department.svg',
         'allowed_prefixes': ['/patients/departments/', '/patients/wards/', '/dashboard/'],
-        'aliases': ['clinical department', 'clinical_department', 'clinical-department', 'department', 'departments', 'hospital departments', 'clinical departments'],
-        'description': 'Clinical medical departments, specialty units & doctor assignments',
+        'aliases': ['department', 'departments', 'clinical department', 'clinical_department', 'clinical-department', 'hospital departments', 'clinical departments', 'admin office'],
+        'description': 'Enter your credentials to access the Department module',
     },
 ]
 
 
-def seed_default_landing_departments_if_needed():
-    """Seed the 16 core ERP departments into the database if the table is empty."""
+def sync_and_seed_landing_departments():
+    """Seed or update the 16 core ERP departments in the database."""
     try:
         from apps.users.models import LandingDepartment
-        if not LandingDepartment.objects.exists():
-            for dept in ERP_LOGIN_DEPARTMENTS:
-                LandingDepartment.objects.create(
-                    code=dept['code'],
-                    slug=dept['slug'],
-                    name=dept['name'],
-                    icon=dept['icon'],
-                    color_bg=dept['color_bg'],
-                    color_icon=dept['color_icon'],
-                    badge=dept['badge'],
-                    dashboard_url=dept['dashboard_url'],
-                    landing_module=dept.get('landing_module', ''),
-                    allowed_prefixes=dept.get('allowed_prefixes', []),
-                    aliases=dept.get('aliases', []),
-                    description=dept.get('description', ''),
-                    order=dept.get('id', 1) * 10,
-                    is_active=True,
-                    is_system=True,
-                )
-    except Exception:
-        pass
+        for dept in ERP_LOGIN_DEPARTMENTS:
+            obj, created = LandingDepartment.objects.get_or_create(
+                slug=dept['slug'],
+                defaults={
+                    'code': dept['code'],
+                    'name': dept['name'],
+                    'icon': dept['icon'],
+                    'color_bg': dept['color_bg'],
+                    'color_icon': dept['color_icon'],
+                    'badge': dept['badge'],
+                    'dashboard_url': dept['dashboard_url'],
+                    'landing_module': dept.get('landing_module', ''),
+                    'allowed_prefixes': dept.get('allowed_prefixes', []),
+                    'aliases': dept.get('aliases', []),
+                    'description': dept.get('description', ''),
+                    'order': dept.get('id', 1) * 10,
+                    'is_active': True,
+                    'is_system': True,
+                }
+            )
+            if not created:
+                obj.code = dept['code']
+                obj.name = dept['name']
+                obj.icon = dept['icon']
+                obj.color_bg = dept['color_bg']
+                obj.color_icon = dept['color_icon']
+                obj.badge = dept['badge']
+                obj.dashboard_url = dept['dashboard_url']
+                obj.landing_module = dept.get('landing_module', '')
+                obj.allowed_prefixes = dept.get('allowed_prefixes', [])
+                obj.aliases = dept.get('aliases', [])
+                obj.description = dept.get('description', '')
+                obj.order = dept.get('id', 1) * 10
+                obj.is_active = True
+                obj.is_system = True
+                obj.save()
+
+        # Delete legacy obsolete slugs if any
+        LandingDepartment.objects.filter(slug__in=['front-desk', 'clinical-department']).delete()
+    except Exception as e:
+        print(f"Error seeding departments: {e}")
+
+
+def seed_default_landing_departments_if_needed():
+    sync_and_seed_landing_departments()
 
 
 def get_all_departments(active_only=True):
-    """Returns the list of ERP login departments from the database or static config."""
+    """Returns the list of ERP login departments from the static config enhanced with DB state."""
+    dept_map = {d['slug']: d for d in ERP_LOGIN_DEPARTMENTS}
     try:
         from apps.users.models import LandingDepartment
         seed_default_landing_departments_if_needed()
@@ -283,7 +358,21 @@ def get_all_departments(active_only=True):
         if active_only:
             qs = qs.filter(is_active=True)
         if qs.exists():
-            return [d.to_dict() for d in qs.order_by('order', 'id')]
+            res = []
+            for d in qs.order_by('order', 'id'):
+                dict_repr = d.to_dict()
+                matched_static = dept_map.get(dict_repr['slug']) or next((x for x in ERP_LOGIN_DEPARTMENTS if x['code'] == dict_repr['code']), None)
+                if matched_static:
+                    dict_repr['badge'] = matched_static.get('badge', dict_repr.get('badge', ''))
+                    dict_repr['full_scope'] = matched_static.get('full_scope', dict_repr.get('badge', ''))
+                    dict_repr['bg_image'] = matched_static.get('bg_image', '')
+                    dict_repr['login_title'] = matched_static.get('login_title', f"{dict_repr['name']} Login")
+                else:
+                    dict_repr['bg_image'] = 'images/departments/front_office.jpg'
+                    dict_repr['login_title'] = f"{dict_repr['name']} Login"
+                    dict_repr['full_scope'] = dict_repr.get('badge', '')
+                res.append(dict_repr)
+            return res
     except Exception:
         pass
     return ERP_LOGIN_DEPARTMENTS
@@ -294,29 +383,31 @@ def get_department_by_slug(slug):
     if not slug:
         return None
     slug_norm = str(slug).strip().lower().replace('_', '-')
-    try:
-        from apps.users.models import LandingDepartment
-        seed_default_landing_departments_if_needed()
-        dept_obj = LandingDepartment.objects.filter(slug__iexact=slug_norm).first()
-        if not dept_obj:
-            dept_obj = LandingDepartment.objects.filter(code__iexact=slug_norm.replace('-', '_')).first()
-        if dept_obj:
-            return dept_obj.to_dict()
-
-        for d in LandingDepartment.objects.all():
-            aliases = d.aliases if isinstance(d.aliases, list) else []
-            for alias in aliases:
-                if str(alias).lower().replace(' ', '-').replace('_', '-') == slug_norm:
-                    return d.to_dict()
-    except Exception:
-        pass
-
+    
     for dept in ERP_LOGIN_DEPARTMENTS:
         if dept['slug'] == slug_norm or dept['code'] == slug_norm.replace('-', '_'):
             return dept
         for alias in dept.get('aliases', []):
             if alias.lower().replace(' ', '-').replace('_', '-') == slug_norm:
                 return dept
+
+    try:
+        from apps.users.models import LandingDepartment
+        dept_obj = LandingDepartment.objects.filter(slug__iexact=slug_norm).first()
+        if not dept_obj:
+            dept_obj = LandingDepartment.objects.filter(code__iexact=slug_norm.replace('-', '_')).first()
+        if dept_obj:
+            d = dept_obj.to_dict()
+            static_match = next((x for x in ERP_LOGIN_DEPARTMENTS if x['code'] == d['code'] or x['slug'] == d['slug']), None)
+            if static_match:
+                d['badge'] = static_match.get('badge', d.get('badge', ''))
+                d['full_scope'] = static_match.get('full_scope', d.get('badge', ''))
+                d['bg_image'] = static_match.get('bg_image', '')
+                d['login_title'] = static_match.get('login_title', f"{d['name']} Login")
+            return d
+    except Exception:
+        pass
+
     return None
 
 
@@ -325,31 +416,13 @@ def get_department_by_code(code):
     if not code:
         return None
     code_norm = str(code).strip().lower().replace('-', '_')
-    try:
-        from apps.users.models import LandingDepartment
-        seed_default_landing_departments_if_needed()
-        dept_obj = LandingDepartment.objects.filter(code__iexact=code_norm).first()
-        if not dept_obj:
-            dept_obj = LandingDepartment.objects.filter(slug__iexact=code_norm.replace('_', '-')).first()
-        if dept_obj:
-            return dept_obj.to_dict()
-
-        for d in LandingDepartment.objects.all():
-            aliases = d.aliases if isinstance(d.aliases, list) else []
-            for alias in aliases:
-                if str(alias).lower().replace(' ', '_').replace('-', '_') == code_norm:
-                    return d.to_dict()
-    except Exception:
-        pass
-
     for dept in ERP_LOGIN_DEPARTMENTS:
         if dept['code'] == code_norm or dept['slug'] == code_norm.replace('_', '-'):
             return dept
         for alias in dept.get('aliases', []):
             if alias.lower().replace(' ', '_').replace('-', '_') == code_norm:
                 return dept
-    return None
-
+    return get_department_by_slug(code)
 
 
 def user_can_access_department(user, dept_dict_or_slug):
@@ -361,7 +434,6 @@ def user_can_access_department(user, dept_dict_or_slug):
     if not user or not user.is_authenticated:
         return False
 
-    # Superuser or Admin role has universal master access
     if user.is_superuser or getattr(user, 'role', '') == 'ADMIN':
         return True
 
@@ -376,42 +448,35 @@ def user_can_access_department(user, dept_dict_or_slug):
     user_dept = (getattr(user, 'department', '') or '').strip().lower()
     user_role = (getattr(user, 'role', '') or '').strip().lower()
 
-    # Universal access keywords
     if user_dept in ['all', 'all departments', 'administrator', 'admin', 'superadmin', 'management']:
         return True
 
-    # Exact code or slug match
     if user_dept in [dept['code'].lower(), dept['slug'].lower(), dept['name'].lower()]:
         return True
 
-    # Check aliases
     for alias in dept.get('aliases', []):
         if alias.lower() == user_dept:
             return True
 
-    # Check role-based mappings
     role_to_dept = {
-        'manager': ['clinical_department', 'department', 'front_office', 'consultant', 'ward', 'mrd', 'report', 'mis'],
-        'doctor': ['consultant', 'ward', 'ot', 'summary', 'clinical_department'],
-        'consultant': ['consultant', 'ward', 'ot', 'summary', 'clinical_department'],
+        'manager': ['clinical_department', 'department', 'front_office', 'consultant', 'ward', 'mrd', 'report', 'mis', 'accounts', 'billing', 'inventory'],
+        'doctor': ['consultant', 'ward', 'ot', 'summary', 'clinical_department', 'department'],
+        'consultant': ['consultant', 'ward', 'ot', 'summary', 'clinical_department', 'department'],
         'lab_tech': ['lab', 'blood_bank', 'report'],
         'radiologist': ['radiology', 'lab', 'report'],
         'pharmacist': ['pharmacy', 'inventory'],
         'accountant': ['accounts', 'billing'],
         'cashier': ['billing', 'accounts'],
         'nurse': ['ward', 'ot', 'front_office'],
-        'staff': ['front_office', 'ward', 'billing', 'mrd', 'summary'],
+        'staff': ['front_office', 'ward', 'billing', 'mrd', 'summary', 'pharmacy', 'inventory', 'blood_bank', 'radiology', 'ot', 'accounts', 'report', 'mis', 'department'],
     }
 
     allowed_depts_for_role = role_to_dept.get(user_role, [])
     if dept['code'] in allowed_depts_for_role or dept['slug'] in allowed_depts_for_role:
         return True
 
-    # If user belongs to a clinical department (e.g. "GENERAL MEDICINE", "CARDIOLOGY"),
-    # they are allowed into Consultant, Ward, Clinical Department, and Summary
-    clinical_allowed = ['clinical_department', 'consultant', 'ward', 'department', 'summary', 'front_office']
+    clinical_allowed = ['clinical_department', 'department', 'consultant', 'ward', 'summary', 'front_office']
     if user_dept and dept['code'] in clinical_allowed:
-        # Check if department matches any clinical department name in DB
         try:
             from apps.patients.models import Department
             if Department.objects.filter(name__iexact=user.department).exists():
@@ -538,19 +603,13 @@ def user_can_access_role(user, role_dict_or_slug):
     if not role_dict:
         return False
 
-    # Superuser has master access to all roles
     if user.is_superuser:
         return True
 
     user_role = (getattr(user, 'role', '') or '').strip().upper()
     target_role = (role_dict.get('code', '') or '').strip().upper()
 
-    if user_role == target_role:
-        return True
-
-    # Admin role can access other roles for management
-    if user_role == 'ADMIN':
+    if user_role == target_role or user_role == 'ADMIN':
         return True
 
     return False
-
