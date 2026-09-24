@@ -368,7 +368,7 @@
                         {% endif %}
                     </a>
                     {% if mod.has_submodules %}
-                    <ul class="top-nav-dropdown {% if forloop.revcounter <= 2 %}dropdown-right{% endif %}" style="min-width: 250px;">
+                    <ul class="top-nav-dropdown {% if dynamic_nav_modules|length > 4 and forloop.revcounter <= 2 %}dropdown-right{% endif %}" style="min-width: 250px;">
                         {% for sub in mod.submodules %}
                         <li class="top-nav-dropdown-item">
                             <a href="{{ sub.url_path }}" class="top-nav-dropdown-link">
@@ -559,6 +559,17 @@
                 if (dropdown) {
                     item.addEventListener('mouseenter', () => {
                         item.classList.add('is-open');
+                        // Ensure dropdown doesn't overflow screen left or right
+                        requestAnimationFrame(() => {
+                            const rect = dropdown.getBoundingClientRect();
+                            if (rect.left < 10) {
+                                dropdown.style.left = '0px';
+                                dropdown.style.right = 'auto';
+                            } else if (rect.right > window.innerWidth - 10) {
+                                dropdown.style.left = 'auto';
+                                dropdown.style.right = '0px';
+                            }
+                        });
                     });
                     item.addEventListener('mouseleave', () => {
                         item.classList.remove('is-open');

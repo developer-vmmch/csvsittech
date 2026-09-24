@@ -22,18 +22,37 @@ urlpatterns = [
     path('review/', PatientReviewView.as_view(), name='review'),
     path('discharge/', PatientDischargeView.as_view(), name='discharge'),
     path('discharge/<int:pk>/slip/', PatientDischargeSlipView.as_view(), name='discharge_slip'),
+    
+    # Ward Allocation
     path('ward/allocation/', WardAllocationView.as_view(), name='ward_allocation'),
+    path('ward-allocation/', WardAllocationView.as_view(), name='ward_allocation_direct'),
     path('ward/allocation/api/search-patient/', api_search_patient_for_allocation, name='api_search_patient_allocation'),
     path('ward/allocation/api/available-beds/', api_available_ward_beds, name='api_available_ward_beds'),
     path('ward/allocation/api/patient-investigations/', api_patient_investigations_results, name='api_patient_investigations_results'),
+    
+    # Ward Service Request
     path('ward/service-request/', WardServiceRequestView.as_view(), name='ward_service_request'),
+    path('ward-service-request/', WardServiceRequestView.as_view(), name='ward_service_request_direct'),
     path('ward/service-request/api/patients/', api_ward_service_request_patients, name='api_ward_service_request_patients'),
+    
+    # Ward Branch Transfer (both /ward/branch-transfer/ and /branch-transfer/ aliases supported)
     path('ward/branch-transfer/', BranchTransferListView.as_view(), name='branch_transfer'),
     path('ward/branch-transfer/report/', BranchTransferReportView.as_view(), name='branch_transfer_report'),
     path('ward/branch-transfer/report/export/', export_branch_transfers_csv, name='branch_transfer_report_export'),
     path('ward/branch-transfer/api/patient-info/', api_patient_active_admission, name='api_branch_transfer_patient_info'),
+    
+    path('branch-transfer/', BranchTransferListView.as_view(), name='branch_transfer_alias'),
+    path('branch-transfer/report/', BranchTransferReportView.as_view(), name='branch_transfer_report_alias'),
+    path('branch-transfer/report/export/', export_branch_transfers_csv, name='branch_transfer_report_export_alias'),
+    path('branch-transfer/api/patient-info/', api_patient_active_admission, name='api_branch_transfer_patient_info_alias'),
+    
+    # Reports aliases
     path('review/report/', PatientReviewReportView.as_view(), name='review_report'),
+    path('reports/review/', PatientReviewReportView.as_view(), name='reports_review'),
     path('op-census/', OPCensusView.as_view(), name='op_census'),
+    path('reports/op-census/', OPCensusView.as_view(), name='reports_op_census'),
+    
+    # Patient Search & CRUD
     path('search/', PatientSearchView.as_view(), name='search'),
     path('add/', PatientCreateView.as_view(), name='add'),
     path('<int:pk>/edit/', PatientUpdateView.as_view(), name='edit'),
@@ -41,20 +60,24 @@ urlpatterns = [
     path('<int:pk>/history/print/', PatientMedicalHistoryPrintView.as_view(), name='medical_history_print'),
     path('<int:pk>/delete/', PatientDeleteView.as_view(), name='delete'),
     
+    # Companies
     path('companies/', PatientCompanyListView.as_view(), name='company_list'),
     path('companies/add/', PatientCompanyCreateView.as_view(), name='company_add'),
     path('companies/<int:pk>/delete/', PatientCompanyDeleteView.as_view(), name='company_delete'),
     
+    # Departments
     path('departments/', DepartmentListView.as_view(), name='department_list'),
     path('departments/add/', DepartmentCreateView.as_view(), name='department_add'),
     path('departments/<int:pk>/edit/', DepartmentUpdateView.as_view(), name='department_edit'),
     path('departments/<int:pk>/delete/', DepartmentDeleteView.as_view(), name='department_delete'),
 
+    # Wards
     path('wards/', WardListView.as_view(), name='ward_list'),
     path('wards/add/', WardCreateView.as_view(), name='ward_add'),
     path('wards/<int:pk>/edit/', WardUpdateView.as_view(), name='ward_edit'),
     path('wards/<int:pk>/delete/', WardDeleteView.as_view(), name='ward_delete'),
     
+    # Units
     path('units/add/', DepartmentUnitCreateView.as_view(), name='unit_add'),
     path('units/<int:pk>/edit/', DepartmentUnitUpdateView.as_view(), name='unit_edit'),
     path('units/<int:pk>/delete/', DepartmentUnitDeleteView.as_view(), name='unit_delete'),
