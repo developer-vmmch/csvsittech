@@ -55,20 +55,53 @@ class User(AbstractUser):
 
     def has_perm_code(self, perm_code):
         """
-        Check if user has a specific permission code, e.g. 'patients.patient_list.view'.
-        Super Admin always returns True.
+        Check if user has a specific granular permission code:
+        e.g. 'patients.patient_list.view', 'patients.patient_list.update',
+             'patients.patient_list.delete', 'patients.patient_list.import',
+             'patients.patient_list.export'
+        Super Admin / Administrator always returns True.
         """
         if self.is_superuser or self.role == self.Roles.ADMIN:
             return True
-            
+
+        if not perm_code:
+            return False
+
         from apps.users.models import RoleMenuPermission
         db_perms = RoleMenuPermission.get_permissions_for_role(self.role)
         if db_perms and isinstance(db_perms, dict):
-            return db_perms.get(perm_code, False)
-            
+            # 1. Exact match
+            if perm_code in db_perms:
+                return bool(db_perms[perm_code])
+
+            # 2. Aliases for edit / update
+            if perm_code.endswith('.edit'):
+                alt = perm_code[:-5] + '.update'
+                if alt in db_perms:
+                    return bool(db_perms[alt])
+            elif perm_code.endswith('.update'):
+                alt = perm_code[:-7] + '.edit'
+                if alt in db_perms:
+                    return bool(db_perms[alt])
+
+            # 3. Normalized underscore format
+            norm = perm_code.replace('.', '_')
+            if norm in db_perms:
+                return bool(db_perms[norm])
+
+            # 4. Fallback to base module permission if action is 'view'
+            if perm_code.endswith('.view'):
+                base = perm_code[:-5].replace('.', '_')
+                base_raw = perm_code[:-5]
+                if base in db_perms:
+                    return bool(db_perms[base])
+                if base_raw in db_perms:
+                    return bool(db_perms[base_raw])
+
         # Default fallback for specific legacy roles if not configured in DB
-        if self.role == self.Roles.MANAGER and perm_code.startswith('auto_trigger.'):
-            return True
+        if self.role == self.Roles.MANAGER:
+            if perm_code.startswith('auto_trigger.') or perm_code.endswith('.view') or perm_code.endswith('.create') or perm_code.endswith('.update'):
+                return True
 
         # Check aliases e.g. ATC_EDIT -> auto_trigger.atc.update
         aliases = {
@@ -300,3 +333,117 @@ class RoleMenuPermission(models.Model):
         except Exception:
             pass
         return None
+
+
+class NavModule(models.Model):
+    code = models.CharField(max_length=50, unique=True, help_text="Unique identifier key (e.g. patients, lab, custom_mod)")
+    name = models.CharField(max_length=100, help_text="Display title in top navbar")
+    icon = models.CharField(max_length=50, default="bi-folder2", help_text="Bootstrap icon class")
+    url_path = models.CharField(max_length=255, default="#", help_text="Default URL or target link")
+    color = models.CharField(max_length=20, default="#0284c7", help_text="Hex color or badge accent")
+    badge = models.CharField(max_length=50, blank=True, null=True, help_text="Short category badge")
+    description = models.TextField(blank=True, null=True)
+    order = models.PositiveIntegerField(default=10)
+    is_active = models.BooleanField(default=True)
+    is_system = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = "Nav Module"
+        verbose_name_plural = "Nav Modules"
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+    @property
+    def active_submodules(self):
+        return self.submodules.filter(is_active=True).order_by('order', 'id')
+
+
+class NavSubmodule(models.Model):
+    module = models.ForeignKey(NavModule, on_delete=models.CASCADE, related_name='submodules')
+    code = models.CharField(max_length=60, unique=True, help_text="Permission / lookup key")
+    name = models.CharField(max_length=100, help_text="Submodule link title")
+    icon = models.CharField(max_length=50, default="bi-dot", help_text="Bootstrap icon class")
+    url_path = models.CharField(max_length=255, default="#", help_text="Target URL or pattern")
+    description = models.TextField(blank=True, null=True)
+    order = models.PositiveIntegerField(default=10)
+    is_active = models.BooleanField(default=True)
+    is_system = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = "Nav Submodule"
+        verbose_name_plural = "Nav Submodules"
+
+    def __str__(self):
+        return f"{self.module.name} -> {self.name} ({self.code})"
+
+
+class LandingDepartment(models.Model):
+    """
+    Model representing a Hospital Department Card on the First Landing Screen.
+    Allows administrators to dynamically create, edit, reorder, customize styling/icons,
+    and enable/disable department login portals.
+    """
+    code = models.CharField(max_length=50, unique=True, help_text="Internal identifier code (e.g. front_desk, consultant)")
+    slug = models.SlugField(max_length=60, unique=True, help_text="URL slug for login portal (e.g. front-desk)")
+    name = models.CharField(max_length=100, help_text="Department display title on landing card")
+    icon = models.CharField(max_length=50, default="bi-hospital", help_text="Bootstrap icon class (e.g. bi-person-workspace)")
+    color_bg = models.CharField(max_length=20, default="#e0f2fe", help_text="Icon badge background hex color")
+    color_icon = models.CharField(max_length=20, default="#0284c7", help_text="Icon foreground hex color")
+    badge = models.CharField(max_length=80, blank=True, null=True, help_text="Subtitle or category badge on the card")
+    dashboard_url = models.CharField(max_length=255, default="/dashboard/", help_text="Destination dashboard URL after successful login")
+    landing_module = models.CharField(max_length=60, blank=True, null=True, help_text="Permission module code")
+    allowed_prefixes = models.JSONField(default=list, blank=True, help_text="List of URL path prefixes allowed for this department")
+    aliases = models.JSONField(default=list, blank=True, help_text="List of staff user department keywords matching this department")
+    description = models.TextField(blank=True, null=True, help_text="Department duties, scope and notes")
+    order = models.PositiveIntegerField(default=10, help_text="Sort order on landing grid")
+    is_active = models.BooleanField(default=True, help_text="Whether visible on the landing page")
+    is_system = models.BooleanField(default=False, help_text="System-protected default department")
+    nav_permissions = models.JSONField(default=dict, blank=True, help_text="Department-specific Top Navigation Bar modules and submodules access mapping")
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = "Landing Department"
+        verbose_name_plural = "Landing Departments"
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+    def get_nav_permissions(self):
+        if isinstance(self.nav_permissions, dict) and self.nav_permissions:
+            return self.nav_permissions
+        return {}
+
+    def to_dict(self):
+        def _to_list(val):
+            if isinstance(val, list):
+                return val
+            if isinstance(val, str) and val.strip():
+                return [x.strip() for x in val.split(',') if x.strip()]
+            return []
+
+        return {
+            'id': self.id,
+            'code': self.code,
+            'slug': self.slug,
+            'name': self.name,
+            'icon': self.icon or 'bi-hospital',
+            'color_bg': self.color_bg or '#e0f2fe',
+            'color_icon': self.color_icon or '#0284c7',
+            'badge': self.badge or '',
+            'dashboard_url': self.dashboard_url or '/dashboard/',
+            'landing_module': self.landing_module or '',
+            'allowed_prefixes': _to_list(self.allowed_prefixes),
+            'aliases': _to_list(self.aliases),
+            'description': self.description or '',
+            'order': self.order,
+            'is_active': self.is_active,
+            'is_system': self.is_system,
+            'nav_permissions': self.get_nav_permissions(),
+        }
+
+

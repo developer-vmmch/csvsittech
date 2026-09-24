@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load permission_tags %}
 
 {% block title %}Patient Companies | VMMCerp{% endblock %}
 {% block page_heading %}Patient Companies Directory{% endblock %}
@@ -10,9 +11,11 @@
             <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">Patient Corporate & Scheme Directory</h2>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Manage corporate accounts, insurance TPAs, and government schemes.</p>
         </div>
+        {% if request.user|can_create:'patients.patient_companies' %}
         <a href="{% url 'patients:company_add' %}" class="btn btn-primary">
             <i class="bi bi-building-add"></i> Add New Company
         </a>
+        {% endif %}
     </div>
 
     {% if companies %}
@@ -27,7 +30,9 @@
                     <th>Phone</th>
                     <th>Discount (%)</th>
                     <th>Status</th>
+                    {% if request.user|can_delete:'patients.patient_companies' or request.user|can_edit:'patients.patient_companies' %}
                     <th>Actions</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -46,14 +51,18 @@
                             <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">Inactive</span>
                         {% endif %}
                     </td>
+                    {% if request.user|can_delete:'patients.patient_companies' or request.user|can_edit:'patients.patient_companies' %}
                     <td>
+                        {% if request.user|can_delete:'patients.patient_companies' %}
                         <form method="post" action="{% url 'patients:company_delete' comp.id %}" onsubmit="return confirm('Are you sure you want to delete {{ comp.name }}?');" style="margin: 0;">
                             {% csrf_token %}
                             <button type="submit" class="btn-danger-sm" title="Delete Company">
                                 <i class="bi bi-trash"></i> Delete
                             </button>
                         </form>
+                        {% endif %}
                     </td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
@@ -61,11 +70,13 @@
     </div>
     {% else %}
     <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
-        <i class="bi bi-building-exclamation" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
-        <p style="font-size: 1.1rem;">No patient companies or schemes registered yet.</p>
+        <i class="bi bi-building-slash" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+        <p style="font-size: 1.1rem;">No corporate or insurance companies registered yet.</p>
+        {% if request.user|can_create:'patients.patient_companies' %}
         <a href="{% url 'patients:company_add' %}" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">
-            <i class="bi bi-building-add"></i> Add First Patient Company
+            <i class="bi bi-building-add"></i> Register First Company
         </a>
+        {% endif %}
     </div>
     {% endif %}
 </div>

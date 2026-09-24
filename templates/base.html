@@ -1,938 +1,573 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}VMMCerp - Enterprise Management System{% endblock %}</title>
+    <title>{% block title %}Vinayaka Missions Medical College and Hospital - Karaikal | Hospital Information Management
+        System{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/vmmc-select.css' %}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              'bg-dark': '#f8fafc',
-              'bg-card': '#ffffff',
-              'brand-teal': '#0d9488',
-              'brand-blue': '#0284c7',
-              'brand-indigo': '#025a68',
-              'sidebar-bg': '#071d2b',
-              'sidebar-border': '#0f2e42',
-              'sidebar-active': '#0e7490',
-              'sidebar-text': '#94a3b8',
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-blue': '#0284c7',
+                        'brand-navy': '#071d2b',
+                        'header-blue': '#0b2569',
+                    }
+                }
             }
-          }
         }
-      }
     </script>
     <style>
-      /* Application Shell & Sidebar Layout */
-      html, body {
-          height: 100% !important;
-          height: 100dvh !important;
-          max-height: 100dvh !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          overflow: hidden !important;
-      }
-      .app-shell {
-          display: flex !important;
-          width: 100% !important;
-          height: 100% !important;
-          height: 100vh !important;
-          height: 100dvh !important;
-          max-height: 100dvh !important;
-          overflow: hidden !important;
-      }
-      #mainSidebar {
-          height: 100% !important;
-          height: 100vh !important;
-          height: 100dvh !important;
-          max-height: 100dvh !important;
-          position: sticky !important;
-          top: 0 !important;
-          display: flex !important;
-          flex-direction: column !important;
-          overflow-y: auto !important;
-          overflow-x: hidden !important;
-          flex-shrink: 0 !important;
-          scrollbar-width: thin;
-          scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-      }
-      #mainSidebar::-webkit-scrollbar {
-          width: 5px;
-      }
-      #mainSidebar::-webkit-scrollbar-track {
-          background: transparent;
-      }
-      #mainSidebar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 4px;
-      }
-      #mainSidebar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.35);
-      }
-      .sidebar-brand {
-          position: sticky;
-          top: 0;
-          background-color: #071d2b;
-          z-index: 20;
-      }
-      .nav-list {
-          padding-bottom: 4.5rem !important;
-      }
-      .main-layout {
-          flex: 1 1 0% !important;
-          min-width: 0 !important;
-          height: 100% !important;
-          height: 100vh !important;
-          height: 100dvh !important;
-          max-height: 100dvh !important;
-          overflow-y: auto !important;
-          overflow-x: hidden !important;
-          display: flex !important;
-          flex-direction: column !important;
-      }
-      
-      /* Handle submenu expansion smoothly */
-      .has-submenu.open .submenu-list { display: flex !important; }
-      .submenu-list { display: none; flex-direction: column; }
-      
-      /* Collapsed Sidebar Rules for desktop */
-      #mainSidebar.sidebar-collapsed {
-          width: 72px !important;
-          min-width: 72px !important;
-      }
-      #mainSidebar.sidebar-collapsed .brand-name,
-      #mainSidebar.sidebar-collapsed .nav-section-title,
-      #mainSidebar.sidebar-collapsed .nav-item a span,
-      #mainSidebar.sidebar-collapsed .submenu-chevron,
-      #mainSidebar.sidebar-collapsed .submenu-list {
-          display: none !important;
-      }
-      #mainSidebar.sidebar-collapsed .sidebar-brand {
-          justify-content: center !important;
-          padding-left: 0 !important;
-          padding-right: 0 !important;
-      }
-      #mainSidebar.sidebar-collapsed .brand-logo {
-          margin: 0 auto !important;
-      }
-      #mainSidebar.sidebar-collapsed .nav-item a {
-          justify-content: center !important;
-          padding: 0.75rem 0 !important;
-          gap: 0 !important;
-      }
-      #mainSidebar.sidebar-collapsed .nav-item a i {
-          font-size: 1.25rem !important;
-          margin: 0 auto !important;
-      }
+        html,
+        body {
+            height: 100%;
+            margin: 0 !important;
+            padding: 0 !important;
+            background-color: #ffffff;
+            color: #0f172a;
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .site-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* ==========================================================
+         TOP HEADER BANNER (VMMC KARAIKAL STYLE)
+         ========================================================== */
+        .hospital-top-banner {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 8px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .hospital-banner-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .hospital-brand-link {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none !important;
+        }
+
+        .hospital-logo-img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+            flex-shrink: 0;
+        }
+
+        .hospital-brand-text {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .hospital-main-title {
+            font-family: 'Times New Roman', Georgia, serif, sans-serif;
+            font-size: 1.45rem;
+            font-weight: 800;
+            font-style: italic;
+            color: #0b2569;
+            letter-spacing: 0.2px;
+            line-height: 1.2;
+            margin: 0;
+        }
+
+        .hospital-sub-title {
+            font-family: 'Times New Roman', Georgia, serif, sans-serif;
+            font-size: 0.88rem;
+            font-weight: 700;
+            font-style: italic;
+            color: #0284c7;
+            margin-top: 1px;
+            letter-spacing: 0.2px;
+            line-height: 1.2;
+        }
+
+        .hospital-banner-right {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .header-info-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 5px 14px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #1e293b;
+            white-space: nowrap;
+        }
+
+        .header-info-separator {
+            color: #94a3b8;
+            font-weight: 400;
+            margin: 0 2px;
+        }
+
+        /* ==========================================================
+         HORIZONTAL BLACK NAVIGATION BAR
+         ========================================================== */
+        .top-navbar-container {
+            background: #000000;
+            position: sticky;
+            top: 0;
+            width: 100%;
+            z-index: 1040;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+            overflow: visible !important;
+        }
+
+        .top-navbar-nav {
+            display: flex;
+            align-items: stretch;
+            list-style: none;
+            margin: 0 auto;
+            width: 100%;
+            padding: 0 24px;
+            overflow: visible !important;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .top-nav-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .top-nav-link {
+            color: #ffffff !important;
+            text-decoration: none !important;
+            font-size: 0.82rem;
+            font-weight: 600;
+            padding: 8px 13px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+            transition: background 0.15s ease, color 0.15s ease;
+            border-right: 1px solid rgba(255, 255, 255, 0.12);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .top-nav-item:first-child .top-nav-link {
+            border-left: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .top-nav-item:hover>.top-nav-link,
+        .top-nav-item.is-open>.top-nav-link {
+            background: #1e293b;
+            color: #38bdf8 !important;
+        }
+
+        .top-nav-item.active>.top-nav-link {
+            background: #132742;
+            color: #38bdf8 !important;
+            border-bottom: 2px solid #38bdf8;
+        }
+
+        /* Submenu Dropdowns */
+        .top-nav-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            min-width: 240px;
+            background: #ffffff !important;
+            border: 1px solid #cbd5e1;
+            border-top: 3px solid #0284c7;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24) !important;
+            z-index: 99999 !important;
+            padding: 6px 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .top-nav-dropdown.dropdown-right {
+            left: auto;
+            right: 0;
+        }
+
+        .top-nav-item:hover>.top-nav-dropdown,
+        .top-nav-item:focus-within>.top-nav-dropdown,
+        .top-nav-item.is-open>.top-nav-dropdown {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+
+        .top-nav-dropdown-item {
+            margin: 0;
+        }
+
+        .top-nav-dropdown-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 16px;
+            color: #1e293b;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: background 0.12s ease, color 0.12s ease;
+            white-space: nowrap;
+        }
+
+        .top-nav-dropdown-link i {
+            font-size: 0.95rem;
+            color: #0284c7;
+            width: 16px;
+            text-align: center;
+        }
+
+        .top-nav-dropdown-link:hover {
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 700;
+        }
+
+        .top-nav-dropdown-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 5px 0;
+        }
+
+        /* Nested Submenus in Dropdown */
+        .top-nav-nested-item {
+            position: relative;
+        }
+
+        .top-nav-nested-menu {
+            display: none;
+            position: absolute;
+            left: 100%;
+            top: 0;
+            min-width: 220px;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-top: 2px solid #0284c7;
+            border-radius: 0 8px 8px 8px;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+            z-index: 1060;
+            padding: 6px 0;
+            list-style: none;
+        }
+
+        .top-nav-nested-item:hover>.top-nav-nested-menu {
+            display: block;
+        }
+
+        /* ==========================================================
+         MAIN CONTENT & FOOTER
+         ========================================================== */
+        .main-site-content {
+            flex: 1 0 auto;
+            width: 100%;
+            max-width: 100%;
+            padding: 16px 24px 40px;
+            background-color: #f8fafc;
+        }
+
+        .hospital-bottom-footer {
+            background: #0033cc;
+            background: linear-gradient(90deg, #002299 0%, #0033cc 50%, #002299 100%);
+            color: #ffffff;
+            text-align: center;
+            padding: 6px 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            flex-shrink: 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .hospital-bottom-footer a {
+            color: #ffffff;
+            text-decoration: underline;
+        }
     </style>
-    
+
     {% block extra_head %}{% endblock %}
 </head>
+
 <body class="font-sans antialiased">
 
-    <!-- Mobile Sidebar Backdrop -->
-    <div id="mobileSidebarBackdrop" class="hidden"></div>
-
-    <div class="app-shell flex h-screen h-dvh w-full overflow-hidden">
-        <!-- Sidebar Navigation -->
-        <aside id="mainSidebar" class="-translate-x-full">
-            <div class="sidebar-brand">
-                <div class="brand-logo">V</div>
-                <span class="brand-name">VMMC ERP</span>
+    <div class="site-wrapper">
+        <!-- 1. Top Header Banner -->
+        <header class="hospital-top-banner">
+            <!-- Left: Medical College Emblem Logo + Hospital Branding Name -->
+            <div class="hospital-banner-left">
+                <a href="{% url 'core:dashboard' %}" class="hospital-brand-link"
+                    title="Vinayaka Missions Medical College and Hospital">
+                    <img src="{% static 'images/vmmc_logo.svg' %}"
+                        alt="Vinayaka Missions Medical College & Hospital Logo" class="hospital-logo-img">
+                    <div class="hospital-brand-text">
+                        <span class="hospital-main-title">Vinayaka Missions Medical College and Hospital</span>
+                        <span class="hospital-sub-title">Karaikal &bull; Hospital Information Management System</span>
+                    </div>
+                </a>
             </div>
 
-        <ul class="nav-list">
-            {% if not user.is_authenticated or user.get_menu_mapping.dashboard %}
-            <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                <a href="{% url 'core:dashboard' %}" title="Dashboard">
-                    <i class="bi bi-grid-1x2"></i>
-                    <span>Dashboard</span>
-                </a>
-            </li>
-            {% endif %}
-
-            <!-- Patient Management Module (Collapsible Submenu) -->
-            <li class="nav-item has-submenu {% if request.resolver_match.namespace == 'patients' %}open active-parent{% endif %}">
-                <a href="javascript:void(0);" class="submenu-toggle" title="Patient Registration & Management">
-                    <i class="bi bi-person-vcard-fill" style="color: var(--accent-green);"></i>
-                    <span>Patients</span>
-                    <i class="bi bi-chevron-down submenu-chevron"></i>
-                </a>
-                <ul class="submenu-list">
-                    {% if not user.is_authenticated or user.get_menu_mapping.add_patient %}
-                    <li class="{% if request.resolver_match.url_name == 'add' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                        <a href="{% url 'patients:add' %}">
-                            <i class="bi bi-person-plus-fill"></i>
-                            <span>Add Patient</span>
-                        </a>
-                    </li>
-                    {% endif %}
-
-                    {% if not user.is_authenticated or user.get_menu_mapping.search_patient %}
-                    <li class="{% if request.resolver_match.url_name == 'search' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                        <a href="{% url 'patients:search' %}">
-                            <i class="bi bi-search"></i>
-                            <span>Search Patient</span>
-                        </a>
-                    </li>
-                    {% endif %}
-
-                    {% if not user.is_authenticated or user.get_menu_mapping.patient_list %}
-                    <li class="{% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                        <a href="{% url 'patients:list' %}">
-                            <i class="bi bi-people"></i>
-                            <span>Patient List</span>
-                        </a>
-                    </li>
-                    {% endif %}
-
-                    {% if not user.is_authenticated or user.get_menu_mapping.patient_import %}
-                    <li class="{% if request.resolver_match.url_name == 'import' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                        <a href="{% url 'patients:import' %}">
-                            <i class="bi bi-cloud-arrow-up"></i>
-                            <span>Patient Import</span>
-                        </a>
-                    </li>
-                    {% endif %}
-
-                    {% if not user.is_authenticated or user.get_menu_mapping.review %}
-                    <li class="{% if request.resolver_match.url_name == 'review' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                        <a href="{% url 'patients:review' %}">
-                            <i class="bi bi-clock-history" style="color: #38bdf8;"></i>
-                            <span>Review</span>
-                        </a>
-                    </li>
-                    {% endif %}
-
-                    {% if not user.is_authenticated or user.get_menu_mapping.discharge %}
-                    <li class="{% if request.resolver_match.url_name == 'discharge' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                        <a href="{% url 'patients:discharge' %}">
-                            <i class="bi bi-box-arrow-right" style="color: #f43f5e;"></i>
-                            <span>Discharge</span>
-                        </a>
-                    </li>
-                    {% endif %}
-
-                    {% if not user.is_authenticated or user.get_menu_mapping.review_report %}
-                    <li class="{% if request.resolver_match.url_name == 'review_report' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                        <a href="{% url 'patients:review_report' %}">
-                            <i class="bi bi-file-earmark-bar-graph" style="color: #2dd4bf;"></i>
-                            <span>Review Report</span>
-                        </a>
-                    </li>
-                    {% endif %}
-
-                    {% if not user.is_authenticated or user.get_menu_mapping.op_census %}
-                    <li class="{% if request.resolver_match.url_name == 'op_census' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                        <a href="{% url 'patients:op_census' %}">
-                            <i class="bi bi-bar-chart-line" style="color: #f59e0b;"></i>
-                            <span>OP Census</span>
-                        </a>
-                    </li>
-                    {% endif %}
-
-                    {% if not user.is_authenticated or user.get_menu_mapping.patient_companies %}
-                    <li class="{% if request.resolver_match.url_name == 'company_list' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                        <a href="{% url 'patients:company_list' %}">
-                            <i class="bi bi-building"></i>
-                            <span>Patient Companies</span>
-                        </a>
-                    </li>
-                    {% endif %}
-
-                    {% if not user.is_authenticated or user.get_menu_mapping.department_list %}
-                    <li class="{% if request.resolver_match.url_name == 'department_list' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                        <a href="{% url 'patients:department_list' %}">
-                            <i class="bi bi-diagram-3"></i>
-                            <span>Departments & Units</span>
-                        </a>
-                    </li>
-                    {% endif %}
-
-                    {% if not user.is_authenticated or user.get_menu_mapping.add_department %}
-                    <li class="{% if request.resolver_match.url_name == 'department_add' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                        <a href="{% url 'patients:department_add' %}">
-                            <i class="bi bi-folder-plus"></i>
-                            <span>+ Add Department</span>
-                        </a>
-                    </li>
-                    {% endif %}
-
-                    {% if not user.is_authenticated or user.get_menu_mapping.add_company %}
-                    <li class="{% if request.resolver_match.url_name == 'company_add' and request.resolver_match.namespace == 'patients' %}active{% endif %}">
-                        <a href="{% url 'patients:company_add' %}">
-                            <i class="bi bi-building-add"></i>
-                            <span>+ Add Company</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </li>
-
-            <!-- Ward Module (Collapsible Submenu) -->
-            {% if not user.is_authenticated or user.get_menu_mapping.ward %}
-            <li class="nav-item has-submenu {% if 'branch_transfer' in request.resolver_match.url_name or 'ward' in request.resolver_match.url_name %}open active-parent{% endif %}">
-                <a href="javascript:void(0);" class="submenu-toggle" title="Ward Management & Transfers">
-                    <i class="bi bi-hospital" style="color: #06b6d4;"></i>
-                    <span>Ward</span>
-                    <i class="bi bi-chevron-down submenu-chevron"></i>
-                </a>
-                <ul class="submenu-list">
-                    {% if not user.is_authenticated or user.get_menu_mapping.ward_management or user.get_menu_mapping.ward %}
-                    <li class="{% if 'ward_list' in request.resolver_match.url_name or 'ward_add' in request.resolver_match.url_name or 'ward_edit' in request.resolver_match.url_name %}active{% endif %}">
-                        <a href="{% url 'patients:ward_list' %}" title="Ward Management">
-                            <i class="bi bi-building"></i>
-                            <span>Ward Management</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.ward_allocation %}
-                    <li class="{% if request.resolver_match.url_name == 'ward_allocation' %}active{% endif %}">
-                        <a href="{% url 'patients:ward_allocation' %}" title="Ward & Bed Allocation Matrix">
-                            <i class="bi bi-person-check" style="color: #10b981;"></i>
-                            <span>Ward Allocation</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.ward_service_request %}
-                    <li class="{% if request.resolver_match.url_name == 'ward_service_request' %}active{% endif %}">
-                        <a href="{% url 'patients:ward_service_request' %}" title="Ward Service Request">
-                            <i class="bi bi-clipboard-plus" style="color: #0284c7;"></i>
-                            <span>Ward Service Request</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.ward_transfer or user.get_menu_mapping.branch_transfer %}
-                    <li class="{% if request.resolver_match.url_name == 'branch_transfer' %}active{% endif %}">
-                        <a href="{% url 'patients:branch_transfer' %}" title="Ward Transfer">
-                            <i class="bi bi-arrow-left-right" style="color: #38bdf8;"></i>
-                            <span>Ward Transfer</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.branch_transfer_report %}
-                    <li class="{% if request.resolver_match.url_name == 'branch_transfer_report' %}active{% endif %}">
-                        <a href="{% url 'patients:branch_transfer_report' %}" title="Ward Transfer Report">
-                            <i class="bi bi-file-earmark-bar-graph" style="color: #2dd4bf;"></i>
-                            <span>Ward Transfer Report</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </li>
-            {% endif %}
-
-            <!-- MASTER Module -->
-            {% if not user.is_authenticated or user.get_menu_mapping.master %}
-
-            <li class="nav-item has-submenu {% if 'master' in request.resolver_match.url_name or 'lab_master' in request.resolver_match.url_name or 'parameter' in request.resolver_match.url_name or 'reference_range' in request.resolver_match.url_name or 'diagnosis' in request.resolver_match.url_name or 'age_group' in request.resolver_match.url_name or 'department_list' in request.resolver_match.url_name %}open active-parent{% endif %}">
-
-                <a href="javascript:void(0);" class="submenu-toggle" title="Master">
-                    <i class="bi bi-database" style="color: #ef4444;"></i>
-                    <span>Master</span>
-                    <i class="bi bi-chevron-down submenu-chevron"></i>
-                </a>
-                <ul class="submenu-list">
-                    {% if not user.is_authenticated or user.get_menu_mapping.master_departments %}
-                    <li class="{% if 'department_' in request.resolver_match.url_name %}active{% endif %}">
-                        <a href="{% url 'patients:department_list' %}">
-                            <i class="bi bi-building"></i>
-                            <span>Hospital Departments</span>
-                        </a>
-                    </li>
-                    <li class="{% if request.resolver_match.url_name == 'master_lab_department_list' %}active{% endif %}">
-                        <a href="{% url 'lab:master_lab_department_list' %}">
-                            <i class="bi bi-building-gear"></i>
-                            <span>Lab Departments</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.master_wards or user.get_menu_mapping.master %}
-                    <li class="{% if 'ward_list' in request.resolver_match.url_name or 'ward_add' in request.resolver_match.url_name or 'ward_edit' in request.resolver_match.url_name %}active{% endif %}">
-                        <a href="{% url 'patients:ward_list' %}">
-                            <i class="bi bi-hospital"></i>
-                            <span>Hospital Wards</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.master_investigations %}
-                    <li class="{% if request.resolver_match.url_name == 'investigation_list' %}active{% endif %}">
-                        <a href="{% url 'lab:investigation_list' %}">
-                            <i class="bi bi-file-medical"></i>
-                            <span>Investigations</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.master_parameters %}
-                    <li class="{% if request.resolver_match.url_name == 'parameter_list' %}active{% endif %}">
-                        <a href="{% url 'lab:parameter_list' %}">
-                            <i class="bi bi-list-check"></i>
-                            <span>Parameters</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    
-                    <!-- LAB MASTER Nested Submenu -->
-                    {% if not user.is_authenticated or user.get_menu_mapping.lab_master %}
-                    <li class="has-submenu {% if 'master' in request.resolver_match.url_name or 'lab_master' in request.resolver_match.url_name or 'workload' in request.resolver_match.url_name or 'mapping' in request.resolver_match.url_name %}open{% endif %}" style="margin-top: 0.25rem;">
-                        <a href="javascript:void(0);" class="submenu-toggle" style="padding-left: 2.5rem;" title="Lab Master">
-                            <i class="bi bi-droplet-fill" style="color: #3b82f6;"></i>
-                            <span>Lab Master</span>
-                            <i class="bi bi-chevron-down submenu-chevron"></i>
-                        </a>
-                        <ul class="submenu-list" style="padding-left: 1rem; background-color: rgba(0,0,0,0.1); border-radius: 4px; margin: 0.25rem 0.5rem;">
-                            <li class="{% if request.resolver_match.url_name == 'lab_master_hub' %}active{% endif %}">
-                                <a href="{% url 'lab:lab_master_hub' %}">
-                                    <i class="bi bi-grid-fill"></i>
-                                    <span>Master Hub</span>
-                                </a>
-                            </li>
-                            <li class="{% if request.resolver_match.url_name == 'master_lab_department_list' %}active{% endif %}">
-                                <a href="{% url 'lab:master_lab_department_list' %}">
-                                    <i class="bi bi-building"></i>
-                                    <span>Lab Departments</span>
-                                </a>
-                            </li>
-                            <li class="{% if request.resolver_match.url_name == 'master_investigation_list' or request.resolver_match.url_name == 'master_investigation_detail' %}active{% endif %}">
-                                <a href="{% url 'lab:master_investigation_list' %}">
-                                    <i class="bi bi-file-medical"></i>
-                                    <span>Investigations</span>
-                                </a>
-                            </li>
-                            <li class="{% if request.resolver_match.url_name == 'master_parameter_list' %}active{% endif %}">
-                                <a href="{% url 'lab:master_parameter_list' %}">
-                                    <i class="bi bi-list-check"></i>
-                                    <span>Parameters</span>
-                                </a>
-                            </li>
-                            <li class="{% if request.resolver_match.url_name == 'master_investigation_parameter_mapping' %}active{% endif %}">
-                                <a href="{% url 'lab:master_investigation_parameter_mapping' %}">
-                                    <i class="bi bi-diagram-3"></i>
-                                    <span>Investigation Parameters</span>
-                                </a>
-                            </li>
-                            <li class="{% if request.resolver_match.url_name == 'master_reference_ranges' %}active{% endif %}">
-                                <a href="{% url 'lab:master_reference_ranges' %}">
-                                    <i class="bi bi-rulers"></i>
-                                    <span>Reference Ranges</span>
-                                </a>
-                            </li>
-                            <li class="{% if request.resolver_match.url_name == 'master_diagnosis_list' %}active{% endif %}">
-                                <a href="{% url 'lab:master_diagnosis_list' %}">
-                                    <i class="bi bi-clipboard2-pulse"></i>
-                                    <span>Diagnoses</span>
-                                </a>
-                            </li>
-                            <li class="{% if request.resolver_match.url_name == 'master_diagnosis_investigation_mapping' %}active{% endif %}">
-                                <a href="{% url 'lab:master_diagnosis_investigation_mapping' %}">
-                                    <i class="bi bi-arrow-left-right"></i>
-                                    <span>Diagnosis → Investigation</span>
-                                </a>
-                            </li>
-                            <li class="{% if request.resolver_match.url_name == 'master_diagnosis_department_mapping' %}active{% endif %}">
-                                <a href="{% url 'lab:master_diagnosis_department_mapping' %}">
-                                    <i class="bi bi-building"></i>
-                                    <span>Diagnosis → Department</span>
-                                </a>
-                            </li>
-                            <li class="{% if request.resolver_match.url_name == 'master_age_groups' %}active{% endif %}">
-                                <a href="{% url 'lab:master_age_groups' %}">
-                                    <i class="bi bi-people"></i>
-                                    <span>Age Groups</span>
-                                </a>
-                            </li>
-                            <li class="{% if request.resolver_match.url_name == 'master_validation' %}active{% endif %}">
-                                <a href="{% url 'lab:master_validation' %}">
-                                    <i class="bi bi-shield-check" style="color: #ef4444;"></i>
-                                    <span>Master Validation</span>
-                                </a>
-                            </li>
-                            <li class="{% if request.resolver_match.url_name == 'legacy_mapping' %}active{% endif %}">
-                                <a href="{% url 'lab:legacy_mapping' %}">
-                                    <i class="bi bi-file-earmark-spreadsheet" style="color: #3b82f6;"></i>
-                                    <span>Universal Import / Export</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    {% endif %}
-                </ul>
-            </li>
-            {% endif %}
-
-            <!-- Consultant Module -->
-            {% if not user.is_authenticated or user.get_menu_mapping.consultant %}
-            <li class="nav-item has-submenu">
-                <a href="javascript:void(0);" class="submenu-toggle" title="Consultant">
-                    <i class="bi bi-person-badge" style="color: #ec4899;"></i>
-                    <span>Consultant</span>
-                    <i class="bi bi-chevron-down submenu-chevron"></i>
-                </a>
-                <ul class="submenu-list">
-                    {% if not user.is_authenticated or user.get_menu_mapping.doctor_window %}
-                    <li class="{% if request.resolver_match.url_name == 'doctor_window' %}active{% endif %}">
-                        <a href="{% url 'lab:doctor_window' %}">
-                            <i class="bi bi-window-desktop"></i>
-                            <span>Doctor Window</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.service_request_add %}
-                    <li class="{% if request.resolver_match.url_name == 'service_request_list' or request.resolver_match.url_name == 'service_request_add' %}active{% endif %}">
-                        <a href="{% url 'lab:service_request_add' %}">
-                            <i class="bi bi-file-earmark-medical"></i>
-                            <span>Service Request</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </li>
-            {% endif %}
-
-            <!-- Lab Orders Module -->
-            {% if not user.is_authenticated or user.get_menu_mapping.lab_orders %}
-            <li class="nav-item has-submenu">
-                <a href="javascript:void(0);" class="submenu-toggle" title="Lab Orders & Results">
-                    <i class="bi bi-clipboard2-pulse" style="color: #8b5cf6;"></i>
-                    <span>Lab Orders</span>
-                    <i class="bi bi-chevron-down submenu-chevron"></i>
-                </a>
-                <ul class="submenu-list">
-                    {% if not user.is_authenticated or user.get_menu_mapping.work_orders %}
-                    <li class="{% if request.resolver_match.url_name == 'work_orders' %}active{% endif %}">
-                        <a href="{% url 'lab:work_orders' %}">
-                            <i class="bi bi-list-task"></i>
-                            <span>Work Orders</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.order_entry %}
-                    <li class="{% if request.resolver_match.url_name == 'order_entry' %}active{% endif %}">
-                        <a href="{% url 'lab:order_entry' %}">
-                            <i class="bi bi-plus-circle"></i>
-                            <span>New Order</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.result_entry_list %}
-                    <li class="{% if request.resolver_match.url_name == 'result_entry_list' or request.resolver_match.url_name == 'result_entry_detail' %}active{% endif %}">
-                        <a href="{% url 'lab:result_entry_list' %}">
-                            <i class="bi bi-journal-text"></i>
-                            <span>Result Entry</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    <li class="{% if request.resolver_match.url_name == 'lab_result_detail' %}active{% endif %}">
-                        <a href="{% url 'lab:service_request_list' %}">
-                            <i class="bi bi-file-earmark-ruled"></i>
-                            <span>Result View</span>
-                        </a>
-                    </li>
-                </ul>
-            </li>
-            {% endif %}
-
-            <!-- LAB REPORTS Module -->
-            {% if not user.is_authenticated or user.get_menu_mapping.lab_reports %}
-            <li class="nav-item has-submenu {% if 'report' in request.resolver_match.url_name %}open active-parent{% endif %}">
-                <a href="javascript:void(0);" class="submenu-toggle" title="Lab Reports">
-                    <i class="bi bi-file-earmark-bar-graph" style="color: #2dd4bf;"></i>
-                    <span>Lab Reports</span>
-                    <i class="bi bi-chevron-down submenu-chevron"></i>
-                </a>
-                <ul class="submenu-list">
-                    {% if not user.is_authenticated or user.get_menu_mapping.report_dashboard %}
-                    <li class="{% if request.resolver_match.url_name == 'report_dashboard' %}active{% endif %}">
-                        <a href="{% url 'lab:report_dashboard' %}">
-                            <i class="bi bi-speedometer2"></i>
-                            <span>Dashboard</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.report_daily %}
-                    <li class="{% if request.resolver_match.url_name == 'report_daily' %}active{% endif %}">
-                        <a href="{% url 'lab:report_daily' %}">
-                            <i class="bi bi-calendar-day"></i>
-                            <span>Daily Report</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.report_monthly %}
-                    <li class="{% if request.resolver_match.url_name == 'report_monthly' %}active{% endif %}">
-                        <a href="{% url 'lab:report_monthly' %}">
-                            <i class="bi bi-calendar-month"></i>
-                            <span>Monthly Report</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.report_sub_department %}
-                    <li class="{% if request.resolver_match.url_name == 'report_sub_department' %}active{% endif %}">
-                        <a href="{% url 'lab:report_sub_department' %}">
-                            <i class="bi bi-diagram-2"></i>
-                            <span>Sub Department Report</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.report_investigation %}
-                    <li class="{% if request.resolver_match.url_name == 'report_investigation' %}active{% endif %}">
-                        <a href="{% url 'lab:report_investigation' %}">
-                            <i class="bi bi-file-medical"></i>
-                            <span>Investigation Report</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.report_hospital_department %}
-                    <li class="{% if request.resolver_match.url_name == 'report_hospital_department' %}active{% endif %}">
-                        <a href="{% url 'lab:report_hospital_department' %}">
-                            <i class="bi bi-building"></i>
-                            <span>Hospital Department-wise Lab Report</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.report_benchmark %}
-                    <li class="{% if request.resolver_match.url_name == 'report_benchmark' %}active{% endif %}">
-                        <a href="{% url 'lab:report_benchmark' %}">
-                            <i class="bi bi-graph-up-arrow"></i>
-                            <span>Benchmark Report</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.report_abnormal %}
-                    <li class="{% if request.resolver_match.url_name == 'report_abnormal' %}active{% endif %}">
-                        <a href="{% url 'lab:report_abnormal' %}">
-                            <i class="bi bi-exclamation-triangle"></i>
-                            <span>Abnormal Result Report</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </li>
-            {% endif %}
-
-            <!-- Auto Trigger Module -->
-            {% if not user.is_authenticated or user.get_menu_mapping.auto_trigger %}
-            <li class="nav-item has-submenu {% if 'auto_trigger' in request.resolver_match.url_name or request.resolver_match.url_name == 'investigation_marking' %}open active-parent{% endif %}">
-                <a href="javascript:void(0);" class="submenu-toggle" title="Auto Trigger">
-                    <i class="bi bi-cpu" style="color: #f59e0b;"></i>
-                    <span>Auto Trigger</span>
-                    <i class="bi bi-chevron-down submenu-chevron"></i>
-                </a>
-                <ul class="submenu-list">
-                    {% if not user.is_authenticated or user.get_menu_mapping.auto_trigger_configuration %}
-                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_configuration' %}active{% endif %}">
-                        <a href="{% url 'lab:auto_trigger_configuration' %}">
-                            <i class="bi bi-sliders"></i>
-                            <span>Auto Trigger Configuration</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.auto_trigger_history %}
-                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_history' %}active{% endif %}">
-                        <a href="{% url 'lab:auto_trigger_history' %}">
-                            <i class="bi bi-clock-history"></i>
-                            <span>Auto Trigger History</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.auto_trigger_monthly_create %}
-                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_monthly_create' %}active{% endif %}">
-                        <a href="{% url 'lab:auto_trigger_monthly_create' %}">
-                            <i class="bi bi-calendar-plus"></i>
-                            <span>Monthly Trigger</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.auto_trigger_monthly %}
-                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_monthly' %}active{% endif %}">
-                        <a href="{% url 'lab:auto_trigger_monthly' %}">
-                            <i class="bi bi-calendar-month"></i>
-                            <span>Monthly Trigger History</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.auto_trigger_monthly_census %}
-                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_monthly_census' %}active{% endif %}">
-                        <a href="{% url 'lab:auto_trigger_monthly_census' %}">
-                            <i class="bi bi-bar-chart"></i>
-                            <span>Monthly Census</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.auto_trigger_automate_test %}
-                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_automate_test' %}active{% endif %}">
-                        <a href="{% url 'lab:auto_trigger_automate_test' %}">
-                            <i class="bi bi-robot"></i>
-                            <span>Automate Test</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.auto_trigger_result_view %}
-                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_result_view' %}active{% endif %}">
-                        <a href="{% url 'lab:auto_trigger_result_view' %}">
-                            <i class="bi bi-journal-check"></i>
-                            <span>Result View</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    <!-- ATC Submodules -->
-                    {% if not user.is_authenticated or user.get_menu_mapping.auto_trigger_atc %}
-                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_atc' %}active{% endif %}" style="border-top: 1px solid rgba(255,255,255,0.08); margin-top: 4px; padding-top: 4px;">
-                        <a href="{% url 'lab:auto_trigger_atc' %}" style="color: #34d399; font-weight: 600;">
-                            <i class="bi bi-play-circle-fill" style="color: #10b981;"></i>
-                            <span>ATC</span>
-                        </a>
-                    </li>
-                    <li class="{% if request.resolver_match.url_name == 'investigation_marking' %}active{% endif %}">
-                        <a href="{% url 'lab:investigation_marking' %}" style="color: #38bdf8; font-weight: 600;">
-                            <i class="bi bi-flask" style="color: #0284c7;"></i>
-                            <span>Investigation Marking</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.auto_trigger_atc_status %}
-                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_atc_status' %}active{% endif %}">
-                        <a href="{% url 'lab:auto_trigger_atc_status' %}">
-                            <i class="bi bi-activity" style="color: #38bdf8;"></i>
-                            <span>ATC Live Status</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.auto_trigger_atc_settings %}
-                    <li class="{% if request.resolver_match.url_name == 'auto_trigger_atc_settings' %}active{% endif %}">
-                        <a href="{% url 'lab:auto_trigger_atc_settings' %}">
-                            <i class="bi bi-gear" style="color: #94a3b8;"></i>
-                            <span>ATC Settings</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </li>
-            {% endif %}
-
-            <!-- OT Module -->
-            {% if not user.is_authenticated or user.get_menu_mapping.ot %}
-            <li class="nav-item has-submenu {% if request.resolver_match.namespace == 'ot' %}open active-parent{% endif %}">
-                <a href="javascript:void(0);" class="submenu-toggle" title="Operation Theatre">
-                    <i class="bi bi-scissors" style="color: #f43f5e;"></i>
-                    <span>OT</span>
-                    <i class="bi bi-chevron-down submenu-chevron"></i>
-                </a>
-                <ul class="submenu-list">
-                    {% if not user.is_authenticated or user.get_menu_mapping.ot_dashboard %}
-                    <li class="{% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == 'ot' %}active{% endif %}">
-                        <a href="{% url 'ot:dashboard' %}">
-                            <i class="bi bi-grid-1x2"></i>
-                            <span>OT Dashboard</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.ot_booking %}
-                    <li class="{% if request.resolver_match.url_name == 'booking_list' or request.resolver_match.url_name == 'booking_create' or request.resolver_match.url_name == 'case_detail' %}active{% endif %}">
-                        <a href="{% url 'ot:booking_list' %}">
-                            <i class="bi bi-calendar-plus"></i>
-                            <span>OT Booking</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.ot_schedule %}
-                    <li class="{% if request.resolver_match.url_name == 'schedule' %}active{% endif %}">
-                        <a href="{% url 'ot:schedule' %}">
-                            <i class="bi bi-calendar-week"></i>
-                            <span>OT Schedule</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.ot_live %}
-                    <li class="{% if request.resolver_match.url_name == 'live' %}active{% endif %}">
-                        <a href="{% url 'ot:live' %}">
-                            <i class="bi bi-activity" style="color: #ef4444;"></i>
-                            <span>Live OT</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.ot_history %}
-                    <li class="{% if request.resolver_match.url_name == 'history' %}active{% endif %}">
-                        <a href="{% url 'ot:history' %}">
-                            <i class="bi bi-clock-history"></i>
-                            <span>OT History</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if not user.is_authenticated or user.get_menu_mapping.ot_master %}
-                    <li class="{% if request.resolver_match.url_name == 'master' %}active{% endif %}">
-                        <a href="{% url 'ot:master' %}">
-                            <i class="bi bi-database-gear"></i>
-                            <span>OT Master</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </li>
-            {% endif %}
-
-            <!-- General Administration Module (Collapsible Submenu) -->
-            {% if not user.is_authenticated or user.get_menu_mapping.system_section %}
-            <li class="nav-item has-submenu {% if request.resolver_match.namespace == 'users' %}open active-parent{% endif %}">
-                <a href="javascript:void(0);" class="submenu-toggle" title="Administration & User Control">
-                    <i class="bi bi-shield-lock-fill" style="color: var(--accent-blue);"></i>
-                    <span>Administration</span>
-                    <i class="bi bi-chevron-down submenu-chevron"></i>
-                </a>
-                <ul class="submenu-list">
-                    {% if not user.is_authenticated or user.get_menu_mapping.administration %}
-                    <li class="{% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'users' %}active{% endif %}">
-                        <a href="{% url 'users:list' %}">
-                            <i class="bi bi-person-gear"></i>
-                            <span>User Accounts</span>
-                        </a>
-                    </li>
-                    {% endif %}
-
-                    {% if not user.is_authenticated or user.get_menu_mapping.users_roles %}
-                    <li class="{% if request.resolver_match.url_name == 'roles_overview' or request.resolver_match.url_name == 'role_permissions' %}active{% endif %}">
-                        <a href="{% url 'users:roles_overview' %}">
-                            <i class="bi bi-person-badge"></i>
-                            <span>Users & Roles</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </li>
-            {% endif %}
-
-            {% if not user.is_authenticated or user.get_menu_mapping.inventory %}
-            <li class="nav-item">
-                <a href="#" title="Inventory">
-                    <i class="bi bi-box-seam"></i>
-                    <span>Inventory</span>
-                </a>
-            </li>
-            {% endif %}
-
-            {% if not user.is_authenticated or user.get_menu_mapping.settings %}
-            <li class="nav-item">
-                <a href="#" title="Settings">
-                    <i class="bi bi-gear"></i>
-                    <span>Settings</span>
-                </a>
-            </li>
-            {% endif %}
-        </ul>
-    </aside>
-
-    <!-- Main Content Layout -->
-    <div class="main-layout">
-        <header class="app-header">
-            <!-- Left: hamburger + page title -->
-            <div class="header-left">
-                <!-- Sidebar Toggle: always visible. Mobile = drawer open/close. Desktop = collapse/expand. -->
-                <button
-                    id="sidebarToggle"
-                    type="button"
-                    class="sidebar-toggle-btn"
-                    title="Toggle Sidebar"
-                    aria-label="Toggle sidebar"
-                    aria-expanded="false"
-                >
-                    <i class="bi bi-list"></i>
-                </button>
-                <h1 class="page-heading-title">{% block page_heading %}Dashboard{% endblock %}</h1>
-            </div>
-
-            <!-- Right: clock + user + logout -->
-            <div class="header-right">
-                <!-- Live Clock Widget — desktop -->
-                <div id="liveClockWidget" class="live-clock-widget">
-                    <i class="bi bi-clock-fill"></i>
-                    <span id="liveDateText" class="live-date">--/--/----</span>
-                    <span class="clock-divider">|</span>
-                    <span id="liveTimeText" class="live-time">--:--:-- --</span>
+            <!-- Right: Date & Time | User Name (Single Horizontal Line) -->
+            <div class="hospital-banner-right">
+                <div class="header-info-line">
+                    <span class="header-datetime-text">
+                        <i class="bi bi-clock text-sky-600 mr-1.5"></i>
+                        <span id="liveDateTimeText">--/--/---- --:--:-- --</span>
+                    </span>
+                    <span class="header-info-separator">|</span>
+                    <span class="header-user-text">
+                        <i class="bi bi-person-circle text-sky-600 mr-1.5"></i>
+                        <span>{{ user.username|default:"Administrator" }}</span>
+                        {% if user.role %}
+                        <span class="badge ml-1" style="background: #e0f2fe; color: #0369a1; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">{{ user.get_role_display }}</span>
+                        {% endif %}
+                    </span>
                 </div>
-                <!-- Mobile-only compact clock (time only) -->
-                <div id="liveClockMobile" class="live-clock-mobile">
-                    <i class="bi bi-clock-fill"></i>
-                    <span id="liveTimeMobile">--:--</span>
-                </div>
-
-                <!-- User Badge -->
-                <div class="user-badge">
-                    <div class="avatar">{{ user.username|default:"A"|slice:":1"|upper }}</div>
-                    <span>{{ user.username|default:"Administrator" }}</span>
-                    {% if user.role %}
-                        <span class="badge badge-purple user-role-badge">{{ user.get_role_display }}</span>
-                    {% endif %}
-                </div>
-
-                {% if user.is_authenticated %}
-                <form method="post" action="{% url 'logout' %}" class="logout-form">
-                    {% csrf_token %}
-                    <button type="submit" class="btn-danger-sm" title="Sign Out">
-                        <i class="bi bi-box-arrow-right"></i>
-                        <span>Logout</span>
-                    </button>
-                </form>
-                {% else %}
-                <a href="{% url 'login' %}" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.82rem;">
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    <span>Login</span>
-                </a>
-                {% endif %}
             </div>
         </header>
 
-        <main class="content-body">
-            <div class="content-container">
-            {% if messages %}
-                <div class="mb-4">
-                    {% for message in messages %}
-                        {% if forloop.last %}
-                        <div class="alert alert-{{ message.tags }}" style="margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between;">
-                            <div><i class="bi bi-check-circle-fill"></i> {{ message|safe }}</div>
-                        </div>
+        <!-- 2. Horizontal Black Navigation Bar (Dynamically Rendered) -->
+        <nav class="top-navbar-container" aria-label="Main Navigation">
+            <ul class="top-navbar-nav">
+                {% for mod in dynamic_nav_modules %}
+                <li class="top-nav-item">
+                    <a href="{{ mod.url_path|default:'#' }}" class="top-nav-link" title="{{ mod.name }}">
+                        <span>{{ mod.name }}</span>
+                        {% if mod.has_submodules %}
+                        <i class="bi bi-caret-down-fill" style="font-size: 0.62rem; margin-left: 3px;"></i>
                         {% endif %}
-                    {% endfor %}
+                    </a>
+                    {% if mod.has_submodules %}
+                    <ul class="top-nav-dropdown {% if forloop.revcounter <= 2 %}dropdown-right{% endif %}" style="min-width: 250px;">
+                        {% for sub in mod.submodules %}
+                        <li class="top-nav-dropdown-item">
+                            <a href="{{ sub.url_path }}" class="top-nav-dropdown-link">
+                                <i class="bi {{ sub.icon }}"></i>
+                                <span>{{ sub.name }}</span>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </li>
+                {% endfor %}
+
+                <!-- Logout / Login -->
+                <li class="top-nav-item" style="margin-left: auto;">
+                    {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'logout' %}" style="margin: 0; display: flex;">
+                        {% csrf_token %}
+                        <button type="submit" class="top-nav-link"
+                            style="background: none; border: none; cursor: pointer; border-left: 1px solid rgba(255,255,255,0.12);">
+                            <i class="bi bi-box-arrow-right text-danger"></i>
+                            <span>Logout</span>
+                        </button>
+                    </form>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="top-nav-link"
+                        style="border-left: 1px solid rgba(255,255,255,0.12);">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        <span>Login</span>
+                    </a>
+                    {% endif %}
+                </li>
+            </ul>
+        </nav>
+
+        <!-- 3. Main Body Content (Full Width) -->
+        <main class="main-site-content">
+            {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                {% if forloop.last %}
+                <div class="alert alert-{{ message.tags }}"
+                    style="margin-bottom: 1rem; padding: 10px 14px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div><i class="bi bi-check-circle-fill"></i> {{ message|safe }}</div>
                 </div>
+                {% endif %}
+                {% endfor %}
+            </div>
             {% endif %}
 
             {% block content %}{% endblock %}
-            </div>
         </main>
+
+        <!-- 4. Bottom Blue Footer Banner -->
+        <footer class="hospital-bottom-footer">
+            Copyright © 2026 Vinayaka Missions Medical College and Hospital - Karaikal. All rights reserved.
+        </footer>
     </div>
-    </div> <!-- end app-shell -->
 
     <!-- Floating Back-to-Top Button -->
-    <button id="scrollToTopBtn" class="btn-scroll-top" title="Scroll to Top">
+    <button id="scrollToTopBtn" class="btn-scroll-top" title="Scroll to Top"
+        style="position: fixed; bottom: 35px; right: 20px; z-index: 999;">
         <i class="bi bi-arrow-up-short"></i>
     </button>
+
+    <!-- BMI Calculator Modal -->
+    <div id="bmiModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden border border-slate-200">
+            <div class="bg-[#0b2569] text-white px-5 py-3 flex justify-between items-center">
+                <h5 class="font-bold flex items-center gap-2"><i class="bi bi-calculator"></i> BMI Calculator</h5>
+                <button type="button" onclick="closeBmiModal()"
+                    class="text-white/80 hover:text-white text-lg">&times;</button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Height (cm)</label>
+                    <input type="number" id="bmiHeight" placeholder="e.g. 170"
+                        class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Weight (kg)</label>
+                    <input type="number" id="bmiWeight" placeholder="e.g. 68"
+                        class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 focus:outline-none text-sm">
+                </div>
+                <button type="button" onclick="calculateBmi()"
+                    class="w-full bg-[#0284c7] hover:bg-[#0369a1] text-white font-semibold py-2 px-4 rounded text-sm transition-colors">
+                    Calculate BMI
+                </button>
+                <div id="bmiResult"
+                    class="hidden p-3 rounded text-center text-sm font-bold bg-slate-50 border border-slate-200"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Medical Dictionary Modal -->
+    <div id="medDictModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full overflow-hidden border border-slate-200">
+            <div class="bg-[#0b2569] text-white px-5 py-3 flex justify-between items-center">
+                <h5 class="font-bold flex items-center gap-2"><i class="bi bi-book"></i> Medical Dictionary & Quick
+                    Glossary</h5>
+                <button type="button" onclick="closeMedDictModal()"
+                    class="text-white/80 hover:text-white text-lg">&times;</button>
+            </div>
+            <div class="p-5 space-y-3">
+                <input type="text" id="dictSearchInput" onkeyup="filterDictTerms()"
+                    placeholder="Search medical term (e.g. CBC, Biopsy, Glycemia)..."
+                    class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:ring-1 focus:ring-blue-600 focus:outline-none">
+                <div id="dictTermsList"
+                    class="max-h-60 overflow-y-auto divide-y divide-slate-100 text-xs text-slate-700 border border-slate-200 rounded p-2">
+                    <div class="py-1.5"><strong class="text-blue-900">CBC:</strong> Complete Blood Count</div>
+                    <div class="py-1.5"><strong class="text-blue-900">LFT:</strong> Liver Function Test</div>
+                    <div class="py-1.5"><strong class="text-blue-900">RFT / KFT:</strong> Renal / Kidney Function Test
+                    </div>
+                    <div class="py-1.5"><strong class="text-blue-900">HbA1c:</strong> Glycated Hemoglobin Test</div>
+                    <div class="py-1.5"><strong class="text-blue-900">Lipid Profile:</strong> Cholesterol, HDL, LDL,
+                        Triglycerides Panel</div>
+                    <div class="py-1.5"><strong class="text-blue-900">ESR:</strong> Erythrocyte Sedimentation Rate</div>
+                    <div class="py-1.5"><strong class="text-blue-900">USG:</strong> Ultrasonography</div>
+                    <div class="py-1.5"><strong class="text-blue-900">ECG / EKG:</strong> Electrocardiogram</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="{% static 'js/main.js' %}"></script>
     <script src="{% static 'js/vmmc-select.js' %}"></script>
     <script>
         function updateLiveHeaderClock() {
             const now = new Date();
-            const dateOptions = { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' };
-            const dateStr = now.toLocaleDateString('en-GB', dateOptions);
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
             const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
             const timeStr = now.toLocaleTimeString('en-US', timeOptions);
-            const shortTimeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-            
-            const dateEl = document.getElementById('liveDateText');
-            const timeEl = document.getElementById('liveTimeText');
-            const mobileEl = document.getElementById('liveTimeMobile');
-            if (dateEl) dateEl.textContent = dateStr;
-            if (timeEl) timeEl.textContent = timeStr;
-            if (mobileEl) mobileEl.textContent = shortTimeStr;
+            const fullDateTime = `${day}/${month}/${year} ${timeStr}`;
+
+            const dateTimeEl = document.getElementById('liveDateTimeText');
+            if (dateTimeEl) dateTimeEl.textContent = fullDateTime;
         }
         updateLiveHeaderClock();
         setInterval(updateLiveHeaderClock, 1000);
+
+        function openBmiModal() {
+            const modal = document.getElementById('bmiModal');
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        }
+        function closeBmiModal() {
+            const modal = document.getElementById('bmiModal');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        }
+        function calculateBmi() {
+            const h = parseFloat(document.getElementById('bmiHeight').value) / 100;
+            const w = parseFloat(document.getElementById('bmiWeight').value);
+            const res = document.getElementById('bmiResult');
+            if (h > 0 && w > 0) {
+                const bmi = (w / (h * h)).toFixed(1);
+                let cat = 'Normal weight';
+                let col = 'text-green-700 bg-green-50 border-green-200';
+                if (bmi < 18.5) { cat = 'Underweight'; col = 'text-amber-700 bg-amber-50 border-amber-200'; }
+                else if (bmi >= 25 && bmi < 29.9) { cat = 'Overweight'; col = 'text-orange-700 bg-orange-50 border-orange-200'; }
+                else if (bmi >= 30) { cat = 'Obese'; col = 'text-red-700 bg-red-50 border-red-200'; }
+                res.className = `p-3 rounded text-center text-sm font-bold border ${col}`;
+                res.innerHTML = `BMI: ${bmi} &mdash; <span class="font-normal">${cat}</span>`;
+                res.classList.remove('hidden');
+            }
+        }
+        function openMedDictModal() {
+            const modal = document.getElementById('medDictModal');
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        }
+        function closeMedDictModal() {
+            const modal = document.getElementById('medDictModal');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        }
+        function filterDictTerms() {
+            const term = document.getElementById('dictSearchInput').value.toLowerCase();
+            const items = document.querySelectorAll('#dictTermsList > div');
+            items.forEach(it => {
+                it.style.display = it.textContent.toLowerCase().includes(term) ? '' : 'none';
+            });
+        }
+
+        // Dropdown Hover & Click Enhancement
+        document.addEventListener('DOMContentLoaded', () => {
+            const navItems = document.querySelectorAll('.top-nav-item');
+            navItems.forEach(item => {
+                const dropdown = item.querySelector('.top-nav-dropdown');
+                if (dropdown) {
+                    item.addEventListener('mouseenter', () => {
+                        item.classList.add('is-open');
+                    });
+                    item.addEventListener('mouseleave', () => {
+                        item.classList.remove('is-open');
+                    });
+                }
+            });
+        });
     </script>
     {% block extra_js %}{% endblock %}
 </body>
+
 </html>

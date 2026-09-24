@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load permission_tags %}
 
 {% block title %}Staff Role Management | VMMCerp{% endblock %}
 {% block page_heading %}Staff Members Directory{% endblock %}
@@ -87,12 +88,16 @@
             </p>
         </div>
         <div style="display: flex; gap: 0.75rem; align-items: center;">
+            {% if request.user|can_view:'administration.roles' %}
             <a href="{% url 'users:role_permissions' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
                 <i class="bi bi-shield-check" style="color: var(--accent-blue);"></i> Role Access Matrix
             </a>
+            {% endif %}
+            {% if request.user|can_create:'administration.user_management' %}
             <a href="{% url 'users:add' %}?role=STAFF" class="btn btn-primary">
                 <i class="bi bi-person-plus-fill"></i> + Add Staff Member
             </a>
+            {% endif %}
         </div>
     </div>
 
@@ -107,7 +112,9 @@
                     <th>Department</th>
                     <th>Employee ID</th>
                     <th>Status</th>
+                    {% if request.user|can_edit:'administration.user_management' or request.user|can_delete:'administration.user_management' %}
                     <th>Actions</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -133,19 +140,25 @@
                             <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">Disabled</span>
                         {% endif %}
                     </td>
+                    {% if request.user|can_edit:'administration.user_management' or request.user|can_delete:'administration.user_management' %}
                     <td>
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            {% if request.user|can_edit:'administration.user_management' %}
                             <a href="{% url 'users:edit' u.id %}" class="btn-edit-sm" title="Edit Credentials">
                                 <i class="bi bi-pencil"></i> Edit
                             </a>
+                            {% endif %}
+                            {% if request.user|can_delete:'administration.user_management' %}
                             <form method="post" action="{% url 'users:delete' u.id %}" onsubmit="return confirm('Are you sure you want to delete staff account {{ u.username }}?');" style="margin: 0;">
                                 {% csrf_token %}
                                 <button type="submit" class="btn-danger-sm" title="Delete Staff Account">
                                     <i class="bi bi-trash"></i> Delete
                                 </button>
                             </form>
+                            {% endif %}
                         </div>
                     </td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
@@ -155,9 +168,11 @@
     <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
         <i class="bi bi-people" style="font-size: 3rem; display: block; margin-bottom: 1rem; color: var(--accent-green);"></i>
         <p style="font-size: 1.1rem; color: var(--text-color);">No Staff Member accounts created yet.</p>
+        {% if request.user|can_create:'administration.user_management' %}
         <a href="{% url 'users:add' %}?role=STAFF" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">
             <i class="bi bi-person-plus-fill"></i> Add First Staff Member
         </a>
+        {% endif %}
     </div>
     {% endif %}
 </div>
