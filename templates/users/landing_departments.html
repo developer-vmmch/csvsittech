@@ -1,0 +1,1319 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Landing Page Departments Manager | VMMC ERP{% endblock %}
+{% block page_heading %}Landing Page Departments Manager{% endblock %}
+
+{% block content %}
+<style>
+    .landing-mgmt-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        margin-bottom: 4rem;
+    }
+
+    /* Hero Header Card */
+    .landing-mgmt-hero {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem 1.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.25rem;
+    }
+
+    .landing-mgmt-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+    }
+
+    .landing-mgmt-subtitle {
+        color: #64748b;
+        font-size: 0.88rem;
+        margin: 0.35rem 0 0 0;
+    }
+
+    .admin-nav-tabs {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .admin-tab-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.5rem 0.9rem;
+        border-radius: 8px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .admin-tab-btn.active {
+        background: #0284c7;
+        color: #ffffff;
+        box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
+    }
+
+    .admin-tab-btn.inactive {
+        background: #f8fafc;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+
+    .admin-tab-btn.inactive:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+        border-color: #cbd5e1;
+    }
+
+    /* KPI Stats Grid */
+    .kpi-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+    }
+
+    .kpi-stat-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1.1rem 1.25rem;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.2s ease;
+    }
+
+    .kpi-stat-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .kpi-stat-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        flex-shrink: 0;
+    }
+
+    .kpi-stat-info h4 {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.2;
+    }
+
+    .kpi-stat-info p {
+        margin: 0.15rem 0 0 0;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    /* Action Control Toolbar */
+    .action-toolbar {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .toolbar-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        flex: 1;
+    }
+
+    .search-box {
+        position: relative;
+        min-width: 260px;
+        max-width: 380px;
+        flex: 1;
+    }
+
+    .search-box input {
+        width: 100%;
+        padding: 0.55rem 0.85rem 0.55rem 2.25rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.86rem;
+        background: #f8fafc;
+        transition: all 0.2s;
+    }
+
+    .search-box input:focus {
+        background: #ffffff;
+        border-color: #0284c7;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+
+    .search-box i {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 0.95rem;
+    }
+
+    .filter-pills {
+        display: flex;
+        gap: 0.35rem;
+        background: #f1f5f9;
+        padding: 0.25rem;
+        border-radius: 8px;
+    }
+
+    .filter-pill {
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #64748b;
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+
+    .filter-pill.active {
+        background: #ffffff;
+        color: #0f172a;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    }
+
+    .toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-create-dept {
+        background: #0284c7;
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        padding: 0.55rem 1.15rem;
+        font-size: 0.86rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(2, 132, 199, 0.25);
+        transition: all 0.2s;
+    }
+
+    .btn-create-dept:hover {
+        background: #0369a1;
+        transform: translateY(-1px);
+    }
+
+    .btn-outline-tool {
+        background: #ffffff;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 0.55rem 0.95rem;
+        font-size: 0.84rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .btn-outline-tool:hover {
+        background: #f8fafc;
+        color: #0f172a;
+        border-color: #94a3b8;
+    }
+
+    /* Cards Grid View */
+    .landing-depts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .dept-admin-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .dept-admin-card:hover {
+        border-color: #bae6fd;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.08);
+        transform: translateY(-2px);
+    }
+
+    .dept-admin-card.inactive-card {
+        opacity: 0.65;
+        background: #f8fafc;
+        border-style: dashed;
+    }
+
+    .dept-admin-card-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .dept-admin-icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .dept-admin-main-meta {
+        flex: 1;
+    }
+
+    .dept-admin-name {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 0.2rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .dept-admin-badge {
+        display: inline-block;
+        font-size: 0.74rem;
+        font-weight: 600;
+        color: #0284c7;
+        background: #e0f2fe;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+    }
+
+    .dept-admin-order-pill {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #64748b;
+        background: #f1f5f9;
+        padding: 0.2rem 0.55rem;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .dept-admin-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        margin: 0.65rem 0 1rem 0;
+        font-size: 0.82rem;
+        color: #475569;
+        border-top: 1px solid #f1f5f9;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 0.65rem 0;
+    }
+
+    .dept-detail-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    .dept-detail-label {
+        font-weight: 600;
+        color: #64748b;
+        min-width: 65px;
+    }
+
+    .dept-detail-val {
+        color: #0f172a;
+        font-family: monospace;
+        font-size: 0.8rem;
+        background: #f8fafc;
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        border: 1px solid #f1f5f9;
+    }
+
+    .dept-admin-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-top: auto;
+    }
+
+    .card-actions-group {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .btn-action-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.15s;
+        font-size: 0.85rem;
+        text-decoration: none;
+    }
+
+    .btn-action-icon:hover {
+        background: #f1f5f9;
+        color: #0284c7;
+        border-color: #bae6fd;
+    }
+
+    .btn-action-icon.edit:hover {
+        background: #e0f2fe;
+        color: #0369a1;
+        border-color: #7dd3fc;
+    }
+
+    .btn-action-icon.delete:hover {
+        background: #fee2e2;
+        color: #dc2626;
+        border-color: #fca5a5;
+    }
+
+    .btn-action-icon.launch:hover {
+        background: #dcfce7;
+        color: #16a34a;
+        border-color: #86efac;
+    }
+
+    /* Switch Component */
+    .switch-toggle {
+        position: relative;
+        display: inline-block;
+        width: 38px;
+        height: 22px;
+    }
+
+    .switch-toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .switch-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #cbd5e1;
+        transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 22px;
+    }
+
+    .switch-slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    input:checked + .switch-slider {
+        background-color: #0284c7;
+    }
+
+    input:checked + .switch-slider:before {
+        transform: translateX(16px);
+    }
+
+    /* Modals Styling */
+    .custom-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(4px);
+        z-index: 1050;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .custom-modal-backdrop.show {
+        display: flex;
+    }
+
+    .custom-modal-dialog {
+        background: #ffffff;
+        border-radius: 14px;
+        width: 100%;
+        max-width: 650px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+        animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalFadeIn {
+        from { opacity: 0; transform: scale(0.96) translateY(10px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-head {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .modal-head h3 {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-modal-close {
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        color: #94a3b8;
+        cursor: pointer;
+        line-height: 1;
+        transition: color 0.15s;
+    }
+
+    .btn-modal-close:hover {
+        color: #0f172a;
+    }
+
+    .modal-content-body {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.15rem;
+    }
+
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .form-group-item label {
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 0.35rem;
+    }
+
+    .form-group-item input[type="text"],
+    .form-group-item input[type="number"],
+    .form-group-item textarea,
+    .form-group-item select {
+        width: 100%;
+        padding: 0.55rem 0.85rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.88rem;
+        background: #ffffff;
+        color: #0f172a;
+        transition: border 0.15s;
+    }
+
+    .form-group-item input:focus,
+    .form-group-item textarea:focus,
+    .form-group-item select:focus {
+        outline: none;
+        border-color: #0284c7;
+        box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
+    }
+
+    .help-hint {
+        font-size: 0.74rem;
+        color: #64748b;
+        margin-top: 0.25rem;
+    }
+
+    /* Live Preview Component inside Modal */
+    .preview-card-box {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+
+    .preset-palette-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: 0.4rem;
+    }
+
+    .palette-chip {
+        padding: 0.25rem 0.55rem;
+        border-radius: 4px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        border: 1px solid rgba(0,0,0,0.1);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        transition: transform 0.15s;
+    }
+
+    .palette-chip:hover {
+        transform: scale(1.05);
+    }
+
+    .modal-foot {
+        padding: 1rem 1.5rem;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+    }
+</style>
+
+<div class="landing-mgmt-wrapper">
+
+    <!-- 1. Hero Header & Navigation Tabs -->
+    <div class="landing-mgmt-hero">
+        <div>
+            <h1 class="landing-mgmt-title">
+                <i class="bi bi-grid-1x2-fill text-sky-600"></i>
+                Landing Page Departments Manager
+            </h1>
+            <p class="landing-mgmt-subtitle">
+                Create, edit, reorder, customize card styling and icons, or manage login departments appearing on the front landing screen.
+            </p>
+        </div>
+
+        <div class="admin-nav-tabs">
+            <a href="{% url 'users:list' %}" class="admin-tab-btn inactive">
+                <i class="bi bi-people-fill"></i> Users & Staff
+            </a>
+            <a href="{% url 'users:roles_overview' %}" class="admin-tab-btn inactive">
+                <i class="bi bi-person-badge"></i> Roles Overview
+            </a>
+            <a href="{% url 'users:role_permissions' %}" class="admin-tab-btn inactive">
+                <i class="bi bi-shield-lock-fill"></i> Role Access Matrix
+            </a>
+            <a href="{% url 'users:navbar_mapping' %}" class="admin-tab-btn inactive">
+                <i class="bi bi-diagram-3-fill"></i> Nav Bar Mapping
+            </a>
+            <a href="{% url 'users:landing_departments' %}" class="admin-tab-btn active">
+                <i class="bi bi-grid-1x2-fill"></i> Landing Departments
+            </a>
+        </div>
+    </div>
+
+    <!-- 2. KPI Overview Stats -->
+    <div class="kpi-stats-grid">
+        <div class="kpi-stat-card">
+            <div class="kpi-stat-icon" style="background: #e0f2fe; color: #0284c7;">
+                <i class="bi bi-hospital"></i>
+            </div>
+            <div class="kpi-stat-info">
+                <h4>{{ stats.total }}</h4>
+                <p>Total Departments</p>
+            </div>
+        </div>
+        <div class="kpi-stat-card">
+            <div class="kpi-stat-icon" style="background: #dcfce7; color: #16a34a;">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div class="kpi-stat-info">
+                <h4>{{ stats.active }}</h4>
+                <p>Active on Landing</p>
+            </div>
+        </div>
+        <div class="kpi-stat-card">
+            <div class="kpi-stat-icon" style="background: #fee2e2; color: #dc2626;">
+                <i class="bi bi-eye-slash-fill"></i>
+            </div>
+            <div class="kpi-stat-info">
+                <h4>{{ stats.inactive }}</h4>
+                <p>Hidden / Inactive</p>
+            </div>
+        </div>
+        <div class="kpi-stat-card">
+            <div class="kpi-stat-icon" style="background: #f3e8ff; color: #9333ea;">
+                <i class="bi bi-shield-check"></i>
+            </div>
+            <div class="kpi-stat-info">
+                <h4>{{ stats.system }}</h4>
+                <p>Core System Depts</p>
+            </div>
+        </div>
+        <div class="kpi-stat-card">
+            <div class="kpi-stat-icon" style="background: #ffedd5; color: #ea580c;">
+                <i class="bi bi-plus-square-fill"></i>
+            </div>
+            <div class="kpi-stat-info">
+                <h4>{{ stats.custom }}</h4>
+                <p>Custom Added</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Toolbar: Search, Filters & Action Buttons -->
+    <div class="action-toolbar">
+        <div class="toolbar-left">
+            <form method="GET" action="{% url 'users:landing_departments' %}" style="display: flex; gap: 0.5rem; flex: 1;">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="Search department name, slug, badge..." onkeyup="filterDepartmentCards(this.value)">
+                </div>
+            </form>
+
+            <div class="filter-pills">
+                <a href="?status=all{% if search_query %}&q={{ search_query }}{% endif %}" class="filter-pill {% if status_filter == 'all' or not status_filter %}active{% endif %}">All</a>
+                <a href="?status=active{% if search_query %}&q={{ search_query }}{% endif %}" class="filter-pill {% if status_filter == 'active' %}active{% endif %}">Active</a>
+                <a href="?status=inactive{% if search_query %}&q={{ search_query }}{% endif %}" class="filter-pill {% if status_filter == 'inactive' %}active{% endif %}">Inactive</a>
+                <a href="?status=custom{% if search_query %}&q={{ search_query }}{% endif %}" class="filter-pill {% if status_filter == 'custom' %}active{% endif %}">Custom</a>
+            </div>
+        </div>
+
+        <div class="toolbar-right">
+            <a href="{% url 'department_select' %}" target="_blank" class="btn-outline-tool" title="View front landing screen">
+                <i class="bi bi-box-arrow-up-right"></i> Front Screen
+            </a>
+            <button type="button" class="btn-outline-tool" onclick="openResetModal()" title="Reset to default 16 departments">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset Defaults
+            </button>
+            <button type="button" class="btn-create-dept" onclick="openCreateModal()">
+                <i class="bi bi-plus-lg"></i> Add Department
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. Departments Cards Grid -->
+    <div class="landing-depts-grid" id="departmentsGridContainer">
+        {% for dept in departments %}
+        <div class="dept-admin-card {% if not dept.is_active %}inactive-card{% endif %}" data-dept-name="{{ dept.name|lower }}" data-dept-slug="{{ dept.slug|lower }}" data-dept-code="{{ dept.code|lower }}" id="dept-card-{{ dept.id }}">
+            <div class="dept-admin-card-header">
+                <div class="dept-admin-icon-box" style="background-color: {{ dept.color_bg }}; color: {{ dept.color_icon }};">
+                    <i class="bi {{ dept.icon }}"></i>
+                </div>
+                <div class="dept-admin-main-meta">
+                    <h3 class="dept-admin-name">
+                        {{ dept.name }}
+                        {% if dept.is_system %}
+                        <span class="badge" style="font-size: 0.65rem; background: #f1f5f9; color: #64748b; font-weight: normal;" title="System core department">Core</span>
+                        {% endif %}
+                    </h3>
+                    <span class="dept-admin-badge">{{ dept.badge|default:"General Hospital" }}</span>
+                </div>
+                <div class="dept-admin-order-pill" title="Grid Sort Order">
+                    #{{ dept.order }}
+                </div>
+            </div>
+
+            <div class="dept-admin-details">
+                <div class="dept-detail-row">
+                    <span class="dept-detail-label">Slug:</span>
+                    <span class="dept-detail-val">/login/{{ dept.slug }}/</span>
+                </div>
+                <div class="dept-detail-row">
+                    <span class="dept-detail-label">Landing:</span>
+                    <span class="dept-detail-val" title="{{ dept.dashboard_url }}">{{ dept.dashboard_url|truncatechars:28 }}</span>
+                </div>
+                {% if dept.description %}
+                <div style="font-size: 0.78rem; color: #64748b; line-height: 1.35; margin-top: 0.2rem;">
+                    {{ dept.description|truncatechars:65 }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="dept-admin-card-footer">
+                <div style="display: flex; align-items: center; gap: 0.45rem;">
+                    <label class="switch-toggle" title="Toggle visible on landing page">
+                        <input type="checkbox" {% if dept.is_active %}checked{% endif %} onchange="toggleDepartmentStatus({{ dept.id }}, this)">
+                        <span class="switch-slider"></span>
+                    </label>
+                    <span style="font-size: 0.78rem; font-weight: 600; color: {% if dept.is_active %}#16a34a{% else %}#94a3b8{% endif %};" id="status-label-{{ dept.id }}">
+                        {% if dept.is_active %}Active{% else %}Hidden{% endif %}
+                    </span>
+                </div>
+
+                <div class="card-actions-group">
+                    <a href="{% url 'dept_login' dept.slug %}" target="_blank" class="btn-action-icon launch" title="Test Login Screen">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                    <button type="button" class="btn-action-icon edit" onclick="openEditModal({{ dept.id }})" title="Edit Department Details">
+                        <i class="bi bi-pencil-fill"></i>
+                    </button>
+                    <button type="button" class="btn-action-icon delete" onclick="openDeleteModal({{ dept.id }}, '{{ dept.name|escapejs }}')" title="Delete Department">
+                        <i class="bi bi-trash3-fill"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div style="grid-column: 1 / -1; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 3rem; text-align: center; color: #64748b;">
+            <i class="bi bi-folder-x" style="font-size: 2.5rem; color: #cbd5e1; display: block; margin-bottom: 0.75rem;"></i>
+            <h4 style="color: #0f172a; margin-bottom: 0.35rem;">No Departments Found</h4>
+            <p style="font-size: 0.88rem; margin-bottom: 1.25rem;">No landing page departments match your current filter or search criteria.</p>
+            <button type="button" class="btn-create-dept" onclick="openCreateModal()">
+                <i class="bi bi-plus-lg"></i> Add New Department
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL 1: CREATE DEPARTMENT MODAL           -->
+<!-- ========================================== -->
+<div class="custom-modal-backdrop" id="createDeptModal">
+    <div class="custom-modal-dialog">
+        <form method="POST" action="{% url 'users:landing_department_create' %}">
+            {% csrf_token %}
+            <div class="modal-head">
+                <h3><i class="bi bi-plus-circle-fill text-sky-600"></i> Add Landing Page Department</h3>
+                <button type="button" class="btn-modal-close" onclick="closeModal('createDeptModal')">&times;</button>
+            </div>
+            <div class="modal-content-body">
+                <!-- Live Preview -->
+                <div class="preview-card-box">
+                    <div style="display: flex; align-items: center; gap: 0.85rem;">
+                        <div id="createPreviewIconBox" class="dept-admin-icon-box" style="background-color: #e0f2fe; color: #0284c7;">
+                            <i id="createPreviewIcon" class="bi bi-hospital"></i>
+                        </div>
+                        <div>
+                            <div id="createPreviewName" style="font-weight: 700; color: #0f172a; font-size: 0.95rem;">New Department</div>
+                            <div id="createPreviewBadge" style="font-size: 0.75rem; color: #0284c7;">Category / Subtitle</div>
+                        </div>
+                    </div>
+                    <span style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Live Card Preview</span>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group-item">
+                        <label>Department Name *</label>
+                        <input type="text" name="name" id="create_name" required placeholder="e.g. Emergency & Trauma" oninput="autoGenerateSlugCode(this.value, 'create')">
+                    </div>
+                    <div class="form-group-item">
+                        <label>Category Badge / Subtitle</label>
+                        <input type="text" name="badge" id="create_badge" placeholder="e.g. Critical Care / 24x7" oninput="updatePreview('create')">
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group-item">
+                        <label>URL Slug * (e.g. emergency-trauma)</label>
+                        <input type="text" name="slug" id="create_slug" required placeholder="e.g. emergency-trauma">
+                        <div class="help-hint">Used in login URL: /login/{slug}/</div>
+                    </div>
+                    <div class="form-group-item">
+                        <label>Internal Code Key *</label>
+                        <input type="text" name="code" id="create_code" required placeholder="e.g. emergency_trauma">
+                        <div class="help-hint">Unique key for permissions & routing</div>
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group-item">
+                        <label>Bootstrap Icon Class</label>
+                        <input type="text" name="icon" id="create_icon" value="bi-hospital" placeholder="e.g. bi-heart-pulse-fill" oninput="updatePreview('create')">
+                        <div class="help-hint">Use any Bootstrap 5 icon class</div>
+                    </div>
+                    <div class="form-group-item">
+                        <label>Grid Sort Order</label>
+                        <input type="number" name="order" value="170" min="1" step="10">
+                        <div class="help-hint">Lower numbers appear first on landing</div>
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group-item">
+                        <label>Icon Box Background Color</label>
+                        <input type="color" name="color_bg" id="create_color_bg" value="#e0f2fe" style="height: 40px; padding: 2px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer;" oninput="updatePreview('create')">
+                    </div>
+                    <div class="form-group-item">
+                        <label>Icon Foreground Color</label>
+                        <input type="color" name="color_icon" id="create_color_icon" value="#0284c7" style="height: 40px; padding: 2px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer;" oninput="updatePreview('create')">
+                    </div>
+                </div>
+
+                <!-- Color Palette Presets -->
+                <div>
+                    <label style="font-size: 0.78rem; font-weight: 700; color: #475569;">Quick Medical Theme Presets:</label>
+                    <div class="preset-palette-chips">
+                        {% for p in color_palettes %}
+                        <div class="palette-chip" style="background: {{ p.bg }}; color: {{ p.icon }};" onclick="applyPresetPalette('create', '{{ p.bg }}', '{{ p.icon }}')">
+                            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:{{ p.icon }};"></span>
+                            {{ p.name }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group-item">
+                        <label>Post-Login Landing URL</label>
+                        <input type="text" name="dashboard_url" value="/dashboard/" placeholder="e.g. /patients/add/ or /lab/work-orders/">
+                    </div>
+                    <div class="form-group-item">
+                        <label>Landing Module Key</label>
+                        <input type="text" name="landing_module" placeholder="e.g. patients, lab, ward">
+                    </div>
+                </div>
+
+                <div class="form-group-item">
+                    <label>Allowed URL Path Prefixes (Comma-separated)</label>
+                    <input type="text" name="allowed_prefixes_raw" placeholder="/patients/, /dashboard/">
+                    <div class="help-hint">Security filter for routes accessible by this department</div>
+                </div>
+
+                <div class="form-group-item">
+                    <label>Staff User Department Matching Aliases (Comma-separated)</label>
+                    <input type="text" name="aliases_raw" placeholder="emergency, trauma, casualty, er">
+                    <div class="help-hint">User department keywords allowed to login here</div>
+                </div>
+
+                <div class="form-group-item">
+                    <label>Description / Department Duties</label>
+                    <textarea name="description" rows="2" placeholder="Brief summary of department functions..."></textarea>
+                </div>
+
+                <div style="display: flex; gap: 1.5rem; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                        <input type="checkbox" name="is_active" value="true" checked> Active on Landing Screen
+                    </label>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn-outline-tool" onclick="closeModal('createDeptModal')">Cancel</button>
+                <button type="submit" class="btn-create-dept">
+                    <i class="bi bi-check-lg"></i> Create Department
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL 2: EDIT DEPARTMENT MODAL             -->
+<!-- ========================================== -->
+<div class="custom-modal-backdrop" id="editDeptModal">
+    <div class="custom-modal-dialog">
+        <form method="POST" id="editDeptForm" action="">
+            {% csrf_token %}
+            <div class="modal-head">
+                <h3><i class="bi bi-pencil-square text-sky-600"></i> Edit Landing Department</h3>
+                <button type="button" class="btn-modal-close" onclick="closeModal('editDeptModal')">&times;</button>
+            </div>
+            <div class="modal-content-body">
+                <!-- Live Preview -->
+                <div class="preview-card-box">
+                    <div style="display: flex; align-items: center; gap: 0.85rem;">
+                        <div id="editPreviewIconBox" class="dept-admin-icon-box" style="background-color: #e0f2fe; color: #0284c7;">
+                            <i id="editPreviewIcon" class="bi bi-hospital"></i>
+                        </div>
+                        <div>
+                            <div id="editPreviewName" style="font-weight: 700; color: #0f172a; font-size: 0.95rem;">Department Name</div>
+                            <div id="editPreviewBadge" style="font-size: 0.75rem; color: #0284c7;">Category / Subtitle</div>
+                        </div>
+                    </div>
+                    <span style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Live Card Preview</span>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group-item">
+                        <label>Department Name *</label>
+                        <input type="text" name="name" id="edit_name" required oninput="updatePreview('edit')">
+                    </div>
+                    <div class="form-group-item">
+                        <label>Category Badge / Subtitle</label>
+                        <input type="text" name="badge" id="edit_badge" oninput="updatePreview('edit')">
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group-item">
+                        <label>URL Slug * (e.g. front-desk)</label>
+                        <input type="text" name="slug" id="edit_slug" required>
+                    </div>
+                    <div class="form-group-item">
+                        <label>Internal Code Key *</label>
+                        <input type="text" name="code" id="edit_code" required>
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group-item">
+                        <label>Bootstrap Icon Class</label>
+                        <input type="text" name="icon" id="edit_icon" oninput="updatePreview('edit')">
+                    </div>
+                    <div class="form-group-item">
+                        <label>Grid Sort Order</label>
+                        <input type="number" name="order" id="edit_order" min="1" step="10">
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group-item">
+                        <label>Icon Box Background Color</label>
+                        <input type="color" name="color_bg" id="edit_color_bg" style="height: 40px; padding: 2px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer;" oninput="updatePreview('edit')">
+                    </div>
+                    <div class="form-group-item">
+                        <label>Icon Foreground Color</label>
+                        <input type="color" name="color_icon" id="edit_color_icon" style="height: 40px; padding: 2px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer;" oninput="updatePreview('edit')">
+                    </div>
+                </div>
+
+                <!-- Color Palette Presets -->
+                <div>
+                    <label style="font-size: 0.78rem; font-weight: 700; color: #475569;">Quick Medical Theme Presets:</label>
+                    <div class="preset-palette-chips">
+                        {% for p in color_palettes %}
+                        <div class="palette-chip" style="background: {{ p.bg }}; color: {{ p.icon }};" onclick="applyPresetPalette('edit', '{{ p.bg }}', '{{ p.icon }}')">
+                            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:{{ p.icon }};"></span>
+                            {{ p.name }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group-item">
+                        <label>Post-Login Landing URL</label>
+                        <input type="text" name="dashboard_url" id="edit_dashboard_url">
+                    </div>
+                    <div class="form-group-item">
+                        <label>Landing Module Key</label>
+                        <input type="text" name="landing_module" id="edit_landing_module">
+                    </div>
+                </div>
+
+                <div class="form-group-item">
+                    <label>Allowed URL Path Prefixes (Comma-separated)</label>
+                    <input type="text" name="allowed_prefixes_raw" id="edit_allowed_prefixes">
+                </div>
+
+                <div class="form-group-item">
+                    <label>Staff User Department Matching Aliases (Comma-separated)</label>
+                    <input type="text" name="aliases_raw" id="edit_aliases">
+                </div>
+
+                <div class="form-group-item">
+                    <label>Description / Department Duties</label>
+                    <textarea name="description" id="edit_description" rows="2"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 1.5rem; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                        <input type="checkbox" name="is_active" id="edit_is_active" value="true"> Active on Landing Screen
+                    </label>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn-outline-tool" onclick="closeModal('editDeptModal')">Cancel</button>
+                <button type="submit" class="btn-create-dept">
+                    <i class="bi bi-check2"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL 3: DELETE CONFIRMATION MODAL         -->
+<!-- ========================================== -->
+<div class="custom-modal-backdrop" id="deleteDeptModal">
+    <div class="custom-modal-dialog" style="max-width: 440px;">
+        <form method="POST" id="deleteDeptForm" action="">
+            {% csrf_token %}
+            <div class="modal-head">
+                <h3 style="color: #dc2626;"><i class="bi bi-exclamation-triangle-fill"></i> Delete Department</h3>
+                <button type="button" class="btn-modal-close" onclick="closeModal('deleteDeptModal')">&times;</button>
+            </div>
+            <div class="modal-content-body">
+                <p style="font-size: 0.92rem; color: #334155; margin: 0;">
+                    Are you sure you want to delete the department <strong id="deleteDeptName" style="color: #0f172a;"></strong>?
+                </p>
+                <p style="font-size: 0.82rem; color: #64748b; margin: 0;">
+                    This department card will be removed from the front login screen. If this is a core system department, you can restore it anytime using "Reset Defaults".
+                </p>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn-outline-tool" onclick="closeModal('deleteDeptModal')">Cancel</button>
+                <button type="submit" class="btn-create-dept" style="background: #dc2626;">
+                    <i class="bi bi-trash3-fill"></i> Confirm Delete
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL 4: RESET DEFAULTS CONFIRMATION MODAL -->
+<!-- ========================================== -->
+<div class="custom-modal-backdrop" id="resetDefaultsModal">
+    <div class="custom-modal-dialog" style="max-width: 460px;">
+        <form method="POST" action="{% url 'users:landing_department_reset_defaults' %}">
+            {% csrf_token %}
+            <div class="modal-head">
+                <h3><i class="bi bi-arrow-counterclockwise text-sky-600"></i> Reset to System Defaults</h3>
+                <button type="button" class="btn-modal-close" onclick="closeModal('resetDefaultsModal')">&times;</button>
+            </div>
+            <div class="modal-content-body">
+                <p style="font-size: 0.92rem; color: #334155; margin: 0;">
+                    Restore the 16 standard Hospital ERP Login Departments to factory configurations?
+                </p>
+                <p style="font-size: 0.82rem; color: #64748b; margin: 0;">
+                    This will recreate Front Desk, Consultant, Billing, Lab, Ward, MRD, Pharmacy, Inventory, Blood Bank, Radiology, OT, Summary, Accounts, Report, MIS, and Clinical Department cards.
+                </p>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn-outline-tool" onclick="closeModal('resetDefaultsModal')">Cancel</button>
+                <button type="submit" class="btn-create-dept">
+                    <i class="bi bi-check2-circle"></i> Reset to Defaults
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- JavaScript Logic -->
+<script>
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.remove('show');
+        }
+    }
+
+    function openCreateModal() {
+        document.getElementById('createDeptModal').classList.add('show');
+        updatePreview('create');
+    }
+
+    function openResetModal() {
+        document.getElementById('resetDefaultsModal').classList.add('show');
+    }
+
+    function autoGenerateSlugCode(val, prefix) {
+        if (!val) return;
+        const slug = val.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const code = val.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        
+        const slugEl = document.getElementById(prefix + '_slug');
+        const codeEl = document.getElementById(prefix + '_code');
+        if (slugEl && (!slugEl.dataset.customized || slugEl.value === '')) {
+            slugEl.value = slug;
+        }
+        if (codeEl && (!codeEl.dataset.customized || codeEl.value === '')) {
+            codeEl.value = code;
+        }
+        updatePreview(prefix);
+    }
+
+    function updatePreview(prefix) {
+        const nameVal = document.getElementById(prefix + '_name')?.value || 'Department Name';
+        const badgeVal = document.getElementById(prefix + '_badge')?.value || 'Category / Subtitle';
+        const iconVal = document.getElementById(prefix + '_icon')?.value || 'bi-hospital';
+        const bgVal = document.getElementById(prefix + '_color_bg')?.value || '#e0f2fe';
+        const iconColorVal = document.getElementById(prefix + '_color_icon')?.value || '#0284c7';
+
+        const nameEl = document.getElementById(prefix + 'PreviewName');
+        const badgeEl = document.getElementById(prefix + 'PreviewBadge');
+        const iconBoxEl = document.getElementById(prefix + 'PreviewIconBox');
+        const iconEl = document.getElementById(prefix + 'PreviewIcon');
+
+        if (nameEl) nameEl.textContent = nameVal;
+        if (badgeEl) badgeEl.textContent = badgeVal;
+        if (iconBoxEl) {
+            iconBoxEl.style.backgroundColor = bgVal;
+            iconBoxEl.style.color = iconColorVal;
+        }
+        if (iconEl) {
+            iconEl.className = 'bi ' + iconVal;
+        }
+    }
+
+    function applyPresetPalette(prefix, bg, iconColor) {
+        const bgEl = document.getElementById(prefix + '_color_bg');
+        const iconEl = document.getElementById(prefix + '_color_icon');
+        if (bgEl) bgEl.value = bg;
+        if (iconEl) iconEl.value = iconColor;
+        updatePreview(prefix);
+    }
+
+    function openEditModal(deptId) {
+        fetch(`/administration/landing-departments/${deptId}/edit/`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('editDeptForm').action = `/administration/landing-departments/${deptId}/edit/`;
+                document.getElementById('edit_name').value = data.name || '';
+                document.getElementById('edit_badge').value = data.badge || '';
+                document.getElementById('edit_slug').value = data.slug || '';
+                document.getElementById('edit_code').value = data.code || '';
+                document.getElementById('edit_icon').value = data.icon || 'bi-hospital';
+                document.getElementById('edit_color_bg').value = data.color_bg || '#e0f2fe';
+                document.getElementById('edit_color_icon').value = data.color_icon || '#0284c7';
+                document.getElementById('edit_order').value = data.order || 10;
+                document.getElementById('edit_dashboard_url').value = data.dashboard_url || '/dashboard/';
+                document.getElementById('edit_landing_module').value = data.landing_module || '';
+                document.getElementById('edit_allowed_prefixes').value = data.allowed_prefixes || '';
+                document.getElementById('edit_aliases').value = data.aliases || '';
+                document.getElementById('edit_description').value = data.description || '';
+                document.getElementById('edit_is_active').checked = data.is_active;
+
+                updatePreview('edit');
+                document.getElementById('editDeptModal').classList.add('show');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Error loading department details.");
+        });
+    }
+
+    function openDeleteModal(deptId, deptName) {
+        document.getElementById('deleteDeptForm').action = `/administration/landing-departments/${deptId}/delete/`;
+        document.getElementById('deleteDeptName').textContent = deptName;
+        document.getElementById('deleteDeptModal').classList.add('show');
+    }
+
+    function toggleDepartmentStatus(deptId, switchEl) {
+        fetch(`/administration/landing-departments/${deptId}/toggle-active/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const card = document.getElementById(`dept-card-${deptId}`);
+                const label = document.getElementById(`status-label-${deptId}`);
+                if (data.is_active) {
+                    card.classList.remove('inactive-card');
+                    label.textContent = 'Active';
+                    label.style.color = '#16a34a';
+                } else {
+                    card.classList.add('inactive-card');
+                    label.textContent = 'Hidden';
+                    label.style.color = '#94a3b8';
+                }
+            } else {
+                switchEl.checked = !switchEl.checked;
+                alert(data.message || 'Failed to update department status.');
+            }
+        })
+        .catch(err => {
+            switchEl.checked = !switchEl.checked;
+            console.error(err);
+        });
+    }
+
+    function filterDepartmentCards(query) {
+        const q = (query || '').toLowerCase().trim();
+        const cards = document.querySelectorAll('.dept-admin-card');
+        cards.forEach(card => {
+            const name = card.dataset.deptName || '';
+            const slug = card.dataset.deptSlug || '';
+            const code = card.dataset.deptCode || '';
+            if (name.includes(q) || slug.includes(q) || code.includes(q)) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    // Close modal on Escape or backdrop click
+    window.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.custom-modal-backdrop.show').forEach(m => m.classList.remove('show'));
+        }
+    });
+
+    document.querySelectorAll('.custom-modal-backdrop').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('show');
+            }
+        });
+    });
+</script>
+{% endblock %}

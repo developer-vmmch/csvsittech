@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load permission_tags %}
 
 {% block title %}Primary Diagnosis Master | VMMCerp{% endblock %}
 {% block page_heading %}Primary Diagnosis Master{% endblock %}
@@ -33,6 +34,7 @@
 <div id="notificationArea" style="display: none; padding: 1rem; margin-bottom: 1.5rem; border-radius: 6px;"></div>
 
 <!-- Add / Edit Card -->
+{% if request.user|can_create:'lab_master.diagnosis' or request.user|can_edit:'lab_master.diagnosis' %}
 <div class="card" style="margin-bottom: 1rem; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); background: white;">
     <div class="card-header" style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 0.75rem 1.25rem; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0;">
         <h5 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #1e40af; display: flex; align-items: center; gap: 0.5rem;">
@@ -41,12 +43,16 @@
         <div style="display: flex; align-items: center; gap: 1rem;">
             <span style="color: #ef4444; font-size: 0.85rem;">* Required fields</span>
             <div style="display: flex; gap: 0.5rem;">
+                {% if request.user|can_import:'lab_master.diagnosis' %}
                 <button class="btn btn-sm" style="background-color: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; font-weight: 600; border-radius: 6px; padding: 0.35rem 0.75rem;" onclick="document.getElementById('importModal').style.display='block'">
                     <i class="bi bi-arrow-up"></i> Import
                 </button>
+                {% endif %}
+                {% if request.user|can_export:'lab_master.diagnosis' %}
                 <a href="?export=excel" class="btn btn-sm" style="background-color: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; font-weight: 600; border-radius: 6px; padding: 0.35rem 0.75rem;">
                     <i class="bi bi-arrow-down"></i> Export
                 </a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -92,6 +98,7 @@
         </form>
     </div>
 </div>
+{% endif %}
 
 <!-- List Card -->
 <div class="card" style="border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); background: white;">
@@ -133,7 +140,9 @@
                         <th style="color: #1e293b; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding: 0.4rem 0.75rem; width: 15%;">ICD Code</th>
                         <th style="color: #1e293b; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding: 0.4rem 0.75rem; width: 20%;">Category</th>
                         <th style="color: #1e293b; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding: 0.4rem 0.75rem; width: 15%;">Status</th>
+                        {% if request.user|can_edit:'lab_master.diagnosis' or request.user|can_delete:'lab_master.diagnosis' %}
                         <th style="color: #1e293b; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding: 0.4rem 0.75rem; width: 20%;">Action</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -150,16 +159,22 @@
                                 <span style="background-color: #fee2e2; color: #991b1b; padding: 0.25rem 0.75rem; border-radius: 9999px; font-weight: 600; font-size: 0.85rem;">Inactive</span>
                             {% endif %}
                         </td>
+                        {% if request.user|can_edit:'lab_master.diagnosis' or request.user|can_delete:'lab_master.diagnosis' %}
                         <td style="padding: 0.4rem 0.75rem;">
                             <div style="display: flex; gap: 0.5rem;">
+                                {% if request.user|can_edit:'lab_master.diagnosis' %}
                                 <button type="button" class="btn btn-sm btn-primary" style="background-color: #0d6efd; border-radius: 4px; padding: 0.25rem 0.75rem; font-size: 0.85rem;" onclick="editDiagnosis('{{ diag.id }}', '{{ diag.name|escapejs }}', '{{ diag.code|escapejs }}', '{{ diag.chapter|escapejs }}', {{ diag.is_active|yesno:'true,false' }})">
                                     <i class="bi bi-pencil-fill"></i> Edit
                                 </button>
+                                {% endif %}
+                                {% if request.user|can_delete:'lab_master.diagnosis' %}
                                 <button type="button" class="btn btn-sm btn-danger" style="background-color: #ef4444; border-radius: 4px; padding: 0.25rem 0.75rem; font-size: 0.85rem;" onclick="deleteDiagnosis('{{ diag.id }}')">
                                     <i class="bi bi-trash-fill"></i> Delete
                                 </button>
+                                {% endif %}
                             </div>
                         </td>
+                        {% endif %}
                     </tr>
                     {% empty %}
                     <tr id="emptyRow">

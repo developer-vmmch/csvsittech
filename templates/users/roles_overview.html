@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load permission_tags %}
 
 {% block title %}System Roles Overview | VMMCerp{% endblock %}
 {% block page_heading %}Role Profiles Management{% endblock %}
@@ -91,22 +92,35 @@
             </p>
         </div>
         <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            {% if request.user|can_create:'administration.roles' %}
             <a href="{% url 'users:role_add' %}" class="btn btn-primary" style="font-size: 0.85rem; background: var(--accent-purple); border-color: var(--accent-purple);">
                 <i class="bi bi-shield-plus"></i> + Add New Role
             </a>
-            <a href="{% url 'users:role_permissions' %}" class="btn btn-primary" style="font-size: 0.85rem;">
+            {% endif %}
+            {% if request.user|can_view:'administration.navbar_mapping' %}
+            <a href="{% url 'users:navbar_mapping' %}" class="btn btn-primary" style="font-size: 0.85rem; background: #0284c7;">
+                <i class="bi bi-diagram-3-fill"></i> Nav Bar Mapping
+            </a>
+            {% endif %}
+            {% if request.user|can_view:'administration.landing_departments' %}
+            <a href="{% url 'users:landing_departments' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
+                <i class="bi bi-grid-1x2-fill"></i> Landing Depts
+            </a>
+            {% endif %}
+            {% if request.user|can_view:'administration.roles' %}
+            <a href="{% url 'users:role_permissions' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
                 <i class="bi bi-grid-3x3-gap-fill"></i> Role Access Matrix
             </a>
-            <a href="{% url 'users:profile_permissions' %}" class="btn btn-primary" style="font-size: 0.85rem; background: var(--accent-blue);">
-                <i class="bi bi-shield-lock"></i> Permissions
-            </a>
+            {% endif %}
+            {% if request.user|can_view:'administration.user_management' %}
             <a href="{% url 'users:list' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
                 <i class="bi bi-person-lines-fill"></i> View All Users
             </a>
+            {% endif %}
         </div>
     </div>
 
-    <!-- Grid of 4 Role Cards -->
+    <!-- Grid of Role Cards -->
     <div class="roles-grid">
         {% for r in roles %}
         <div class="role-card">
@@ -132,18 +146,24 @@
 
             <div class="role-footer">
                 {% if r.code == 'STAFF' %}
+                    {% if request.user|can_view:'administration.user_management' %}
                     <a href="{% url 'users:staff_list' %}" class="btn-edit-sm" style="font-size: 0.8rem;">
                         <i class="bi bi-people"></i> Staff Directory
                     </a>
+                    {% endif %}
                 {% else %}
+                    {% if request.user|can_view:'administration.user_management' %}
                     <a href="{% url 'users:list' %}" class="btn-edit-sm" style="font-size: 0.8rem;">
                         <i class="bi bi-person"></i> View Accounts
                     </a>
+                    {% endif %}
                 {% endif %}
 
-                <a href="{% url 'users:role_permissions' %}" style="color: var(--accent-blue); text-decoration: none; font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                {% if request.user|can_view:'administration.roles' %}
+                <a href="{% url 'users:role_permissions' %}?mode=granular&role={{ r.code }}" style="color: var(--accent-blue); text-decoration: none; font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
                     Permissions <i class="bi bi-chevron-right"></i>
                 </a>
+                {% endif %}
             </div>
         </div>
         {% endfor %}

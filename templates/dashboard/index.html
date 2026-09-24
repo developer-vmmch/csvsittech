@@ -36,6 +36,55 @@
 {% block content %}
 <div class="w-full min-w-0 max-w-full">
     
+    <!-- Quick Directory & Utility Links -->
+    <div class="bg-white rounded-lg border border-amber-200/80 shadow-sm p-4 sm:p-5 mb-6 bg-gradient-to-r from-amber-50/40 to-white">
+        <div class="flex flex-col lg:flex-row gap-8 items-start">
+            <!-- Important Contact No's Table -->
+            <div class="w-full lg:w-auto min-w-[340px] max-w-md">
+                <div class="font-serif font-bold text-slate-900 text-sm tracking-wide mb-2 flex items-center gap-2">
+                    <i class="bi bi-telephone-inbound text-amber-700"></i>
+                    <span>Important Contact No's</span>
+                </div>
+                <div class="border border-amber-300 rounded overflow-hidden shadow-xs bg-white text-xs">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-amber-100/70 text-slate-800 font-bold border-b border-amber-300">
+                                <th class="py-1.5 px-3 border-r border-amber-300">Department</th>
+                                <th class="py-1.5 px-3 border-r border-amber-300">Int'com</th>
+                                <th class="py-1.5 px-3">Phone/Mob no</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-amber-200/60 font-medium text-slate-700">
+                            <tr><td class="py-1 px-3 border-r border-amber-200/60 font-semibold text-slate-900">Director Medical:</td><td class="py-1 px-3 border-r border-amber-200/60">101</td><td class="py-1 px-3">+91 94433 00001</td></tr>
+                            <tr class="bg-amber-50/30"><td class="py-1 px-3 border-r border-amber-200/60 font-semibold text-slate-900">Admin:</td><td class="py-1 px-3 border-r border-amber-200/60">102</td><td class="py-1 px-3">+91 94433 00002</td></tr>
+                            <tr><td class="py-1 px-3 border-r border-amber-200/60 font-semibold text-slate-900">Finance:</td><td class="py-1 px-3 border-r border-amber-200/60">105</td><td class="py-1 px-3">+91 94433 00003</td></tr>
+                            <tr class="bg-amber-50/30"><td class="py-1 px-3 border-r border-amber-200/60 font-semibold text-slate-900">IT:</td><td class="py-1 px-3 border-r border-amber-200/60">110</td><td class="py-1 px-3">+91 94433 00004</td></tr>
+                            <tr><td class="py-1 px-3 border-r border-amber-200/60 font-semibold text-slate-900">Electrical:</td><td class="py-1 px-3 border-r border-amber-200/60">115</td><td class="py-1 px-3">+91 94433 00005</td></tr>
+                            <tr class="bg-amber-50/30"><td class="py-1 px-3 border-r border-amber-200/60 font-semibold text-slate-900">Biomedical:</td><td class="py-1 px-3 border-r border-amber-200/60">118</td><td class="py-1 px-3">+91 94433 00006</td></tr>
+                            <tr><td class="py-1 px-3 border-r border-amber-200/60 font-semibold text-slate-900">Cash Counter:</td><td class="py-1 px-3 border-r border-amber-200/60">120</td><td class="py-1 px-3">+91 94433 00007</td></tr>
+                            <tr class="bg-amber-50/30"><td class="py-1 px-3 border-r border-amber-200/60 font-semibold text-slate-900">Pharmacy:</td><td class="py-1 px-3 border-r border-amber-200/60">125</td><td class="py-1 px-3">+91 94433 00008</td></tr>
+                            <tr><td class="py-1 px-3 border-r border-amber-200/60 font-semibold text-slate-900">Lift:</td><td class="py-1 px-3 border-r border-amber-200/60">130</td><td class="py-1 px-3">+91 94433 00009</td></tr>
+                            <tr class="bg-amber-50/30"><td class="py-1 px-3 border-r border-amber-200/60 font-semibold text-slate-900">Security:</td><td class="py-1 px-3 border-r border-amber-200/60">100</td><td class="py-1 px-3">+91 94433 00010</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Quick Utility Links -->
+            <div class="flex flex-col gap-3 pt-6">
+                <div class="text-sm font-serif font-bold text-slate-800">Quick Utilities</div>
+                <div class="flex flex-col gap-2">
+                    <a href="javascript:void(0)" onclick="openBmiModal()" class="text-blue-700 hover:text-blue-900 underline underline-offset-2 font-serif text-sm font-semibold flex items-center gap-1.5">
+                        <i class="bi bi-calculator"></i> BMI Calculator
+                    </a>
+                    <a href="javascript:void(0)" onclick="openMedDictModal()" class="text-blue-700 hover:text-blue-900 underline underline-offset-2 font-serif text-sm font-semibold flex items-center gap-1.5">
+                        <i class="bi bi-book"></i> Medical Dictionary
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Top Statistics Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 mb-6">
         <!-- Card 1 -->

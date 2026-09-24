@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load permission_tags %}
 
 {% block title %}Departments & Units | VMMCerp{% endblock %}
 {% block page_heading %}Department & Unit Mapping{% endblock %}
@@ -11,12 +12,14 @@
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Manage medical departments and mapped clinical units/doctors.</p>
         </div>
         <div style="display: flex; gap: 0.75rem;">
+            {% if request.user|can_create:'patients.department_list' %}
             <a href="{% url 'patients:department_add' %}" class="btn btn-primary">
                 <i class="bi bi-folder-plus"></i> Add Department
             </a>
             <a href="{% url 'patients:unit_add' %}" class="btn btn-secondary">
                 <i class="bi bi-person-plus"></i> + Map Unit / Doctor
             </a>
+            {% endif %}
         </div>
     </div>
 
@@ -29,7 +32,9 @@
                     <th>Department Name</th>
                     <th>Mapped Units & Doctors</th>
                     <th>Status</th>
+                    {% if request.user|can_edit:'patients.department_list' or request.user|can_delete:'patients.department_list' %}
                     <th>Actions</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -49,21 +54,26 @@
                             <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">Inactive</span>
                         {% endif %}
                     </td>
+                    {% if request.user|can_edit:'patients.department_list' or request.user|can_delete:'patients.department_list' %}
                     <td>
                         <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            {% if request.user|can_edit:'patients.department_list' %}
                             <a href="{% url 'patients:department_edit' dept.id %}" class="btn-icon" title="Edit Department" style="color: var(--accent-blue);">
                                 <i class="bi bi-pencil-square"></i> Edit
                             </a>
                             <a href="{% url 'patients:unit_add' %}?department={{ dept.id }}" class="action-link-add" title="Add Unit">+ Add Unit</a>
-                            <!-- Soft delete or delete based on logic, leaving as delete for now -->
+                            {% endif %}
+                            {% if request.user|can_delete:'patients.department_list' %}
                             <form method="post" action="{% url 'patients:department_delete' dept.id %}" onsubmit="return confirm('Are you sure you want to delete department {{ dept.name }}?');" style="margin: 0;">
                                 {% csrf_token %}
-                                <button type="submit" class="btn-danger-sm" title="Delete Department">
+                                <button type="submit" class="btn-icon" style="color: #ef4444; background: none; border: none; cursor: pointer; padding: 0;" title="Delete Department">
                                     <i class="bi bi-trash"></i> Delete
                                 </button>
                             </form>
+                            {% endif %}
                         </div>
                     </td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
@@ -71,11 +81,13 @@
     </div>
     {% else %}
     <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
-        <i class="bi bi-diagram-3" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
-        <p style="font-size: 1.1rem;">No departments configured.</p>
+        <i class="bi bi-folder-x" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+        <p style="font-size: 1.1rem;">No clinical departments created yet.</p>
+        {% if request.user|can_create:'patients.department_list' %}
         <a href="{% url 'patients:department_add' %}" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">
-            <i class="bi bi-folder-plus"></i> Add First Department
+            <i class="bi bi-folder-plus"></i> Create Department
         </a>
+        {% endif %}
     </div>
     {% endif %}
 </div>
