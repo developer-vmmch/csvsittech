@@ -7,6 +7,7 @@ urlpatterns = [
 
     # Booking
     path('booking/', views.booking_list, name='booking_list'),
+    path('bookings/', views.booking_list, name='booking_list_alias'),
     path('booking/create/', views.booking_create, name='booking_create'),
     path('booking/<int:pk>/', views.case_detail, name='case_detail'),
     path('booking/<int:pk>/preop/', views.preop_form, name='preop_form'),

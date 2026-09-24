@@ -14,6 +14,8 @@ app_name = 'users'
 
 urlpatterns = [
     path('', UserListView.as_view(), name='list'),
+    path('users/', UserListView.as_view(), name='user_list_alias'),
+    path('roles/', RoleOverviewView.as_view(), name='roles_alias'),
     path('staff/', StaffListView.as_view(), name='staff_list'),
     path('roles-overview/', RoleOverviewView.as_view(), name='roles_overview'),
     path('landing-departments/', LandingDepartmentManagerView.as_view(), name='landing_departments'),

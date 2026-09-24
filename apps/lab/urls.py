@@ -126,7 +126,10 @@ urlpatterns = [
     # DEDICATED LAB MASTER MODULE
     # -----------------------------------------------------------------------
     path('master/', lab_master_hub, name='lab_master_hub'),
+    path('master/hub/', lab_master_hub, name='lab_master_hub_direct'),
+    path('master/dashboard/', lab_master_dashboard, name='lab_master_dashboard'),
     path('master/departments/', MasterLabDepartmentListView.as_view(), name='master_lab_department_list'),
+    path('master/lab-departments/', MasterLabDepartmentListView.as_view(), name='master_lab_department_alias'),
     path('master/api/lab-departments/save/', api_master_lab_department_save, name='api_master_lab_department_save'),
     path('master/api/lab-departments/<int:pk>/toggle-status/', api_master_lab_department_toggle_status, name='api_master_lab_department_toggle_status'),
     path('master/api/lab-departments/<int:pk>/delete/', api_master_lab_department_delete, name='api_master_lab_department_delete'),
@@ -139,6 +142,7 @@ urlpatterns = [
     path('master/api/parameters/save/', api_master_parameter_save, name='api_master_parameter_save'),
 
     path('master/investigation-parameters/', MasterInvestigationParameterMappingView.as_view(), name='master_investigation_parameter_mapping'),
+    path('master/investigation-parameter-mapping/', MasterInvestigationParameterMappingView.as_view(), name='master_inv_param_map_alias'),
     path('master/api/investigation-parameters/save/', api_master_inv_param_save, name='api_master_inv_param_save'),
     path('master/api/investigation-parameters/<int:pk>/delete/', api_master_inv_param_delete, name='api_master_inv_param_delete'),
 
@@ -152,10 +156,12 @@ urlpatterns = [
     path('master/api/diagnoses/rules/<int:pk>/delete/', api_master_diagnosis_delete_rule, name='api_master_diagnosis_delete_rule'),
 
     path('master/diagnosis-investigations/', MasterDiagnosisInvestigationMappingView.as_view(), name='master_diagnosis_investigation_mapping'),
+    path('master/diagnosis-investigation-mapping/', MasterDiagnosisInvestigationMappingView.as_view(), name='master_diag_inv_map_alias'),
     path('master/api/diagnosis-investigations/save/', api_master_diag_inv_map_save, name='api_master_diag_inv_map_save'),
     path('master/api/diagnosis-investigations/<int:pk>/delete/', api_master_diag_inv_map_delete, name='api_master_diag_inv_map_delete'),
 
     path('master/diagnosis-departments/', MasterDiagnosisDepartmentMappingView.as_view(), name='master_diagnosis_department_mapping'),
+    path('master/diagnosis-department-mapping/', MasterDiagnosisDepartmentMappingView.as_view(), name='master_diag_dept_map_alias'),
     path('master/api/diagnosis-departments/save/', api_master_diag_dept_map_save, name='api_master_diag_dept_map_save'),
 
     path('master/age-groups/', MasterAgeGroupListView.as_view(), name='master_age_groups'),
@@ -426,8 +432,31 @@ urlpatterns = [
     path('api/atc/active/', api_atc_active_job, name='api_atc_active_job'),
     path('api/atc/date-statuses/', api_atc_date_statuses, name='api_atc_date_statuses'),
 
-    # Investigation Marking Module (Under Auto Trigger)
+    # Lab Reports aliases
+    path('reports/', report_dashboard, name='report_dashboard_alias'),
+    path('reports/daily/', report_daily, name='report_daily_alias'),
+    path('reports/monthly/', report_monthly, name='report_monthly_alias'),
+    path('reports/sub-department/', report_sub_department, name='report_sub_department_alias'),
+    path('reports/investigation/', report_investigation, name='report_investigation_alias'),
+    path('reports/hospital-department/', report_hospital_department, name='report_hospital_department_alias'),
+    path('reports/benchmark/', report_benchmark, name='report_benchmark_alias'),
+    path('reports/abnormal/', report_abnormal, name='report_abnormal_alias'),
+
+    # Transaction aliases
+    path('service-request/add/', ServiceRequestCreateView.as_view(), name='service_request_add_direct'),
+    path('service-requests/', ServiceRequestListView.as_view(), name='service_requests_alias'),
+    path('order-entry/', OrderEntryView.as_view(), name='order_entry_alias'),
+    path('result-entry/', ResultEntryListView.as_view(), name='result_entry_alias'),
+
+    # Auto Trigger & Marking aliases
+    path('auto-trigger/monthly-create/', AutoTriggerMonthlyCreateView.as_view(), name='auto_trigger_monthly_create_alias'),
+    path('auto-trigger/monthly-census/', AutoTriggerMonthlyCensusView.as_view(), name='auto_trigger_monthly_census_alias'),
+    path('auto-trigger/atc-status/', ATCLiveStatusView.as_view(), name='auto_trigger_atc_status_alias'),
+    path('auto-trigger/atc-settings/', ATCSettingsView.as_view(), name='auto_trigger_atc_settings_alias'),
+
+    # Investigation Marking Module
     path('auto-trigger/investigation-marking/', investigation_marking_view, name='investigation_marking'),
+    path('investigation-marking/', investigation_marking_view, name='investigation_marking_direct'),
     path('api/investigation-marking/load/', api_marking_load, name='api_marking_load'),
     path('api/investigation-marking/add-department/', api_marking_add_department, name='api_marking_add_department'),
     path('api/investigation-marking/remove-department/', api_marking_remove_department, name='api_marking_remove_department'),
