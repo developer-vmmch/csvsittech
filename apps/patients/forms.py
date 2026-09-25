@@ -155,17 +155,19 @@ class PatientRegistrationForm(forms.ModelForm):
         self.fields['patient_company'].queryset = PatientCompany.objects.filter(is_active=True)
         self.fields['department_obj'].queryset = Department.objects.filter(is_active=True)
 
-        # Enforce required validation on mandatory fields requested by user
+        # Mode-based dynamic requirements
+        reg_mode = (self.data.get('registration_mode') or 'NORMAL').upper() if self.data else 'NORMAL'
+        
         self.fields['patient_id'].required = False
         self.fields['age_years'].required = False
         self.fields['age_months'].required = False
         self.fields['age_days'].required = False
-        self.fields['title'].required = True
+        self.fields['title'].required = (reg_mode != 'EMERGENCY')
         self.fields['name'].required = True
         self.fields['gender'].required = True
-        self.fields['guardian_name'].required = True
-        self.fields['street'].required = True
-        self.fields['village_area'].required = True
+        self.fields['guardian_name'].required = (reg_mode == 'NORMAL')
+        self.fields['street'].required = (reg_mode == 'NORMAL')
+        self.fields['village_area'].required = (reg_mode == 'NORMAL')
         self.fields['mobile_no'].required = False
         self.fields['aadhar_card'].required = False
         self.fields['abha_id'].required = False
@@ -212,10 +214,48 @@ class PatientRegistrationForm(forms.ModelForm):
         val = self.cleaned_data.get('age_days')
         return val if val is not None else 0
 
+    email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={'class': 'form-input', 'id': 'id_email', 'placeholder': 'Email address'})
+    )
+    passport_number = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-input', 'id': 'id_passport_number', 'placeholder': 'Passport number'})
+    )
+    identification_mark = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-input', 'id': 'id_identification_mark', 'placeholder': 'Identification mark'})
+    )
+    employee_id = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-input', 'id': 'id_employee_id', 'placeholder': 'Employee ID'})
+    )
+    purpose = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-input', 'id': 'id_purpose', 'placeholder': 'Purpose of registration'})
+    )
+    emergency_medicine_type = forms.ChoiceField(
+        required=False,
+        choices=[
+            ('', 'Select Emergency Medicine Type'),
+            ('Trauma / Accident', 'Trauma / Accident'),
+            ('Acute Medical Emergency', 'Acute Medical Emergency'),
+            ('Cardiac / Resuscitation', 'Cardiac / Resuscitation'),
+            ('Poisoning / Toxicity', 'Poisoning / Toxicity'),
+            ('Burns / Inhalation', 'Burns / Inhalation'),
+            ('Pediatric Emergency', 'Pediatric Emergency'),
+            ('General Casualty', 'General Casualty')
+        ],
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_emergency_medicine_type'})
+    )
+
     def clean_mobile_no(self):
         mobile = (self.cleaned_data.get('mobile_no') or '').strip()
         if not mobile:
             return ""
+        reg_mode = (self.data.get('registration_mode') or 'NORMAL').upper()
+        if reg_mode == 'NRI':
+            return mobile
         if not mobile.isdigit() or len(mobile) != 10:
             raise forms.ValidationError("Mobile number must be exactly 10 digits.")
         return mobile
@@ -237,6 +277,15 @@ class PatientRegistrationForm(forms.ModelForm):
         if years == 0 and months == 0 and days == 0:
             self.add_error('age_years', "Patient age must be selected.")
 
+        reg_mode = (self.data.get('registration_mode') or 'NORMAL').upper()
+        if reg_mode == 'NRI':
+            passport = (cleaned_data.get('passport_number') or self.data.get('passport_number') or '').strip()
+            if not passport:
+                self.add_error('passport_number', "Passport number is mandatory for NRI registration.")
+            purpose = (cleaned_data.get('purpose') or self.data.get('purpose') or '').strip()
+            if not purpose:
+                self.add_error('purpose', "Purpose is mandatory for NRI registration.")
+
         if self.instance and self.instance.pk and self.instance.is_admitted_inpatient:
             raise forms.ValidationError("The patient is already admitted as an inpatient.")
 
@@ -249,7 +298,7 @@ class PatientRegistrationForm(forms.ModelForm):
             'aadhar_card', 'visit_through', 'category', 'marital_status', 'religion',
             'guardian_relationship', 'guardian_name', 'patient_company', 'abha_id', 'ofc_code',
             'street', 'village_area', 'country', 'state', 'city', 'pincode',
-            'mobile_no', 'blood_group', 'complaint', 'occupation', 'income',
+            'mobile_no', 'email', 'blood_group', 'complaint', 'occupation', 'income',
             'department_obj', 'unit_obj', 'pan_no'
         ]
         widgets = {
@@ -260,8 +309,10 @@ class PatientRegistrationForm(forms.ModelForm):
                 ('-', '-'), ('Mr', 'Mr'), ('Mrs', 'Mrs'), ('Miss', 'Miss'), ('Master', 'Master'), ('Dr', 'Dr'), ('Baby', 'Baby')
             ], attrs={'class': 'form-select', 'id': 'id_title', 'required': 'required'}),
             'name': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_name', 'placeholder': 'Patient Full Name', 'required': 'required'}),
-            'gender': forms.Select(attrs={'class': 'form-select', 'id': 'id_gender', 'required': 'required'}),
-            'dob': forms.DateInput(attrs={'class': 'form-input', 'type': 'date', 'onclick': 'if(this.showPicker) this.showPicker();'}),
+            'gender': forms.Select(choices=[
+                ('', 'Select'), ('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')
+            ], attrs={'class': 'form-select', 'id': 'id_gender', 'required': 'required'}),
+            'dob': forms.DateInput(attrs={'class': 'form-input', 'type': 'date', 'id': 'id_dob'}),
             'age_years': forms.NumberInput(attrs={'class': 'form-input small-input', 'id': 'id_age_years', 'placeholder': 'Y', 'min': '0'}),
             'age_months': forms.NumberInput(attrs={'class': 'form-input small-input', 'id': 'id_age_months', 'placeholder': 'M', 'min': '0'}),
             'age_days': forms.NumberInput(attrs={'class': 'form-input small-input', 'id': 'id_age_days', 'placeholder': 'D', 'min': '0'}),
@@ -271,10 +322,10 @@ class PatientRegistrationForm(forms.ModelForm):
             'patient_company': forms.Select(attrs={'class': 'form-select', 'id': 'id_patient_company'}),
             'marital_status': forms.Select(choices=[
                 ('', 'Select'), ('Single', 'Single'), ('Married', 'Married'), ('Divorced', 'Divorced'), ('Widowed', 'Widowed')
-            ], attrs={'class': 'form-select'}),
+            ], attrs={'class': 'form-select', 'id': 'id_marital_status'}),
             'religion': forms.Select(choices=[
                 ('', 'Select'), ('Hindu', 'Hindu'), ('Christian', 'Christian'), ('Muslim', 'Muslim'), ('Sikh', 'Sikh'), ('Other', 'Other')
-            ], attrs={'class': 'form-select'}),
+            ], attrs={'class': 'form-select', 'id': 'id_religion'}),
             'guardian_relationship': forms.Select(choices=[
                 ('-', '-'),
                 ('S/O', 'S/O (Son of)'),
@@ -287,23 +338,24 @@ class PatientRegistrationForm(forms.ModelForm):
             ], attrs={'class': 'form-select', 'id': 'id_guardian_rel'}),
             'guardian_name': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_guardian_name', 'placeholder': 'Guardian Name', 'required': 'required'}),
             'abha_id': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_abha_id', 'placeholder': 'ABHA Number / ID', 'maxlength': '50'}),
-            'ofc_code': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'OFC Code'}),
+            'ofc_code': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_ofc_code', 'placeholder': 'OFC Code'}),
             'street': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_street', 'placeholder': 'Street / Address', 'required': 'required'}),
-            'village_area': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_village_area'}),
+            'village_area': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_village_area', 'placeholder': 'Village / Area'}),
             'country': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_country'}),
             'state': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_state'}),
             'city': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_city', 'required': 'required'}),
-            'pincode': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_pincode'}),
-            'mobile_no': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_mobile_no', 'placeholder': '10-digit mobile number', 'maxlength': '10'}),
+            'pincode': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_pincode', 'placeholder': 'Pincode'}),
+            'mobile_no': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_mobile_no', 'placeholder': '10-digit mobile number'}),
+            'email': forms.EmailInput(attrs={'class': 'form-input', 'id': 'id_email', 'placeholder': 'Email address'}),
             'blood_group': forms.Select(choices=[
                 ('', 'Select'), ('A+', 'A+'), ('A-', 'A-'), ('B+', 'B+'), ('B-', 'B-'), ('O+', 'O+'), ('O-', 'O-'), ('AB+', 'AB+'), ('AB-', 'AB-')
-            ], attrs={'class': 'form-select'}),
-            'complaint': forms.Textarea(attrs={'class': 'form-textarea', 'rows': 2, 'placeholder': 'Primary complaint / symptoms'}),
-            'occupation': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Occupation'}),
-            'income': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Annual / Monthly Income'}),
+            ], attrs={'class': 'form-select', 'id': 'id_blood_group'}),
+            'complaint': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_complaint', 'placeholder': 'Primary complaint'}),
+            'occupation': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_occupation', 'placeholder': 'Occupation'}),
+            'income': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_income', 'placeholder': 'Annual / Monthly Income'}),
             'department_obj': forms.Select(attrs={'class': 'form-select', 'id': 'id_department'}),
             'unit_obj': forms.Select(attrs={'class': 'form-select', 'id': 'id_unit'}),
-            'pan_no': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'PAN Card Number'}),
+            'pan_no': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_pan_no', 'placeholder': 'PAN Number'}),
         }
 
 
