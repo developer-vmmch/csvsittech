@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Admission Request | Front Office{% endblock %}
+
+{% block extra_head %}
+<style>
+    .ar-form-card {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 16px 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        margin-bottom: 20px;
+    }
+    .ar-form-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .ar-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.8rem;
+    }
+    .ar-table th {
+        background: #0b2569;
+        color: #ffffff;
+        font-weight: 700;
+        padding: 8px 10px;
+        text-align: left;
+        white-space: nowrap;
+    }
+    .ar-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #e2e8f0;
+        color: #1e293b;
+        vertical-align: middle;
+    }
+    .ar-table tbody tr:hover {
+        background: #f8fafc;
+    }
+    .patient-lookup-box {
+        position: relative;
+    }
+    .patient-lookup-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        z-index: 1050;
+        max-height: 250px;
+        overflow-y: auto;
+        display: none;
+    }
+    .lookup-item {
+        padding: 8px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        cursor: pointer;
+        font-size: 0.8rem;
+    }
+    .lookup-item:hover {
+        background: #e0f2fe;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+
+    <!-- Header Breadcrumb Banner -->
+    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-2.5 shadow-sm">
+        <div>
+            <div class="text-[11px] text-slate-500 font-semibold uppercase">Front Office / Inpatient Operations</div>
+            <h1 class="text-base md:text-lg font-black text-[#0b2569] m-0 flex items-center gap-2">
+                <i class="bi bi-door-open-fill text-purple-600"></i> Inpatient Ward Admission Requests
+            </h1>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-xs text-slate-500">Total: <strong class="text-slate-800">{{ total_count }}</strong></span>
+            <span class="text-xs text-amber-600">Pending: <strong>{{ pending_count }}</strong></span>
+            <span class="text-xs text-sky-600">Approved: <strong>{{ approved_count }}</strong></span>
+            <span class="text-xs text-emerald-600">Admitted: <strong>{{ admitted_count }}</strong></span>
+        </div>
+    </div>
+
+    <!-- Create / Edit Admission Request Form Card -->
+    <div class="ar-form-card">
+        <div class="ar-form-header">
+            <h2 class="text-sm font-bold text-[#0b2569] m-0 flex items-center gap-2" id="admFormTitle">
+                <i class="bi bi-person-plus-fill text-purple-600"></i> Create Patient Admission Request
+            </h2>
+            <span class="text-xs text-slate-400">Search existing registered patient to link request</span>
+        </div>
+
+        <form method="post" action="{% url 'core:admission_request' %}" id="admRequestForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" id="admAction" value="create">
+            <input type="hidden" name="request_id" id="admRequestId" value="">
+
+            <!-- Row 1: Patient Search & Demographics Autofill -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-purple-50/50 p-3 rounded-lg border border-purple-100 mb-3">
+                <div class="patient-lookup-box md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">
+                        Find Patient (UHID / Name / Mobile) <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input type="text" id="patientLookupInput" placeholder="Type UHID, Name, or 10-digit mobile..."
+                            class="w-full text-xs px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-purple-400 focus:outline-none" autocomplete="off">
+                        <i class="bi bi-search absolute right-3 top-2.5 text-slate-400 text-xs"></i>
+                    </div>
+                    <div id="patientLookupResults" class="patient-lookup-results"></div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Patient ID / UHID <span class="text-red-500">*</span></label>
+                    <input type="text" name="patient_id" id="id_patient_id" class="w-full text-xs px-3 py-2 bg-slate-100 border border-slate-300 rounded font-mono font-bold text-purple-700" readonly required>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Patient Name</label>
+                    <input type="text" id="id_patient_name" class="w-full text-xs px-3 py-2 bg-slate-100 border border-slate-300 rounded font-bold text-slate-800" readonly placeholder="Auto-populated">
+                </div>
+            </div>
+
+            <!-- Row 2: Admission Clinical Assignment -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Department</label>
+                    <select name="department" id="id_department" class="w-full text-xs px-3 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-purple-400">
+                        <option value="">-- Select Department --</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Requested Ward</label>
+                    <select name="ward" id="id_ward" class="w-full text-xs px-3 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-purple-400">
+                        <option value="">-- Select Ward --</option>
+                        {% for w in wards %}
+                        <option value="{{ w.id }}">{{ w.name }} ({{ w.code }}) - {{ w.capacity }} Beds</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Bed / Room No</label>
+                    <input type="text" name="bed_room" id="id_bed_room" placeholder="e.g. Bed 04 / Room 102" class="w-full text-xs px-3 py-2 border border-slate-300 rounded">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Admission Type</label>
+                    <select name="admission_type" id="id_admission_type" class="w-full text-xs px-3 py-2 border border-slate-300 rounded">
+                        {% for type_code, type_name in admission_types %}
+                        <option value="{{ type_code }}">{{ type_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Row 3: Priority & Clinical Reason -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Priority</label>
+                    <select name="priority" id="id_priority" class="w-full text-xs px-3 py-2 border border-slate-300 rounded">
+                        {% for prio_code, prio_name in priorities %}
+                        <option value="{{ prio_code }}" {% if prio_code == 'Normal' %}selected{% endif %}>{{ prio_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="md:col-span-3">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Clinical Remarks / Reason for Admission</label>
+                    <input type="text" name="reason_remarks" id="id_reason_remarks" placeholder="Diagnosis, symptoms, admitting physician notes..." class="w-full text-xs px-3 py-2 border border-slate-300 rounded">
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <button type="submit" class="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded shadow-sm inline-flex items-center gap-1.5" id="admSubmitBtn">
+                    <i class="bi bi-check2-circle"></i> <span>Submit Admission Request</span>
+                </button>
+                <button type="button" onclick="resetAdmForm()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded border border-slate-300">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset
+                </button>
+                <button type="button" onclick="window.print()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded border border-slate-300">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+        <form method="get" action="{% url 'core:admission_request' %}" class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center gap-1.5">
+                <label class="text-xs font-bold text-slate-700">Department:</label>
+                <select name="department" class="text-xs border border-slate-300 rounded px-2.5 py-1.5">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if selected_dept == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+                <label class="text-xs font-bold text-slate-700">Status:</label>
+                <select name="status" class="text-xs border border-slate-300 rounded px-2.5 py-1.5">
+                    <option value="">All Statuses</option>
+                    {% for stat_code, stat_name in statuses %}
+                    <option value="{{ stat_code }}" {% if selected_status == stat_code %}selected{% endif %}>{{ stat_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+                <label class="text-xs font-bold text-slate-700">Date:</label>
+                <input type="date" name="req_date" value="{{ req_date }}" class="text-xs border border-slate-300 rounded px-2 py-1.5">
+            </div>
+
+            <div class="flex-1 min-w-[150px]">
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search Request No, UHID, Name..." class="w-full text-xs border border-slate-300 rounded px-3 py-1.5">
+            </div>
+
+            <button type="submit" class="px-3 py-1.5 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded">
+                <i class="bi bi-search"></i> Search / Refresh
+            </button>
+            <a href="{% url 'core:admission_request_export' %}?department={{ selected_dept }}&status={{ selected_status }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs rounded">
+                <i class="bi bi-file-earmark-spreadsheet text-emerald-600"></i> Export
+            </a>
+        </form>
+    </div>
+
+    <!-- Requests Table -->
+    <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="ar-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">S.No</th>
+                        <th>Request No</th>
+                        <th>Request Date</th>
+                        <th>Patient ID / UHID</th>
+                        <th>Patient Name</th>
+                        <th>Age / Sex</th>
+                        <th>Department</th>
+                        <th>Ward / Bed</th>
+                        <th>Admission Type</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th style="text-align: center; width: 140px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in page_obj %}
+                    <tr>
+                        <td class="text-center font-semibold text-slate-500">{{ forloop.counter0|add:page_obj.start_index }}</td>
+                        <td class="font-mono font-bold text-purple-700 whitespace-nowrap">{{ item.request_number }}</td>
+                        <td class="whitespace-nowrap text-xs text-slate-600">{{ item.request_date|date:"d/m/Y H:i" }}</td>
+                        <td class="font-mono font-bold text-sky-700 whitespace-nowrap">{{ item.patient.patient_id }}</td>
+                        <td class="font-bold text-slate-800">{{ item.patient.name }}</td>
+                        <td class="text-xs text-slate-600 whitespace-nowrap">{{ item.patient.age_years }}Y / {{ item.patient.gender }}</td>
+                        <td class="text-xs font-semibold text-slate-700">{{ item.department.name|default:"General" }}</td>
+                        <td class="text-xs text-slate-700">
+                            <div>{{ item.ward.name|default:"Unassigned" }}</div>
+                            {% if item.bed_room %}<div class="text-[11px] text-slate-400 font-mono">{{ item.bed_room }}</div>{% endif %}
+                        </td>
+                        <td class="text-xs">{{ item.admission_type }}</td>
+                        <td>
+                            <span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px;
+                                {% if item.priority == 'Emergency' %}background: #fee2e2; color: #991b1b; font-weight: bold;
+                                {% elif item.priority == 'Urgent' %}background: #ffedd5; color: #9a3412;
+                                {% else %}background: #f1f5f9; color: #475569;{% endif %}">
+                                {{ item.priority }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge" style="font-size: 11px; padding: 2px 6px; border-radius: 4px;
+                                {% if item.status == 'Pending' %}background: #fef3c7; color: #92400e; font-weight: bold;
+                                {% elif item.status == 'Approved' %}background: #e0f2fe; color: #0369a1;
+                                {% elif item.status == 'Admitted' %}background: #d1fae5; color: #065f46;
+                                {% elif item.status == 'Rejected' %}background: #fee2e2; color: #991b1b;
+                                {% else %}background: #f1f5f9; color: #475569;{% endif %}">
+                                {{ item.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="flex items-center justify-center gap-1">
+                                {% if item.status == 'Pending' %}
+                                <form method="post" action="{% url 'core:admission_request' %}" class="inline m-0">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="approve">
+                                    <input type="hidden" name="request_id" value="{{ item.id }}">
+                                    <button type="submit" class="px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded" title="Approve Request">
+                                        Approve
+                                    </button>
+                                </form>
+                                <form method="post" action="{% url 'core:admission_request' %}" class="inline m-0">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="reject">
+                                    <input type="hidden" name="request_id" value="{{ item.id }}">
+                                    <button type="submit" class="px-1.5 py-0.5 bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold rounded" title="Reject Request">
+                                        Reject
+                                    </button>
+                                </form>
+                                {% elif item.status == 'Approved' %}
+                                <form method="post" action="{% url 'core:admission_request' %}" class="inline m-0">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="admit">
+                                    <input type="hidden" name="request_id" value="{{ item.id }}">
+                                    <button type="submit" class="px-1.5 py-0.5 bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-bold rounded" title="Mark Admitted">
+                                        Admit
+                                    </button>
+                                </form>
+                                {% endif %}
+                                <button type="button" onclick="editAdmRequest({{ item.id }}, '{{ item.patient.patient_id }}', '{{ item.patient.name|escapejs }}', '{{ item.department_id|default:'' }}', '{{ item.ward_id|default:'' }}', '{{ item.bed_room|escapejs }}', '{{ item.admission_type|escapejs }}', '{{ item.priority|escapejs }}', '{{ item.reason_remarks|escapejs }}')" 
+                                    class="text-slate-600 hover:text-slate-900 p-1" title="Modify">
+                                    <i class="bi bi-pencil-square text-xs"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="12" class="text-center py-8 text-slate-400">
+                            <i class="bi bi-door-closed text-2xl block mb-1"></i>
+                            No admission requests found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <div class="px-4 py-2.5 border-t border-slate-200 flex items-center justify-between text-xs bg-slate-50">
+            <span class="text-slate-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            <div class="flex gap-1">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}&department={{ selected_dept }}&status={{ selected_status }}&q={{ search_query }}" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100">Previous</a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&department={{ selected_dept }}&status={{ selected_status }}&q={{ search_query }}" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+    // Patient Search Autocomplete
+    const lookupInput = document.getElementById('patientLookupInput');
+    const lookupResults = document.getElementById('patientLookupResults');
+    let timer;
+
+    lookupInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        if (query.length < 2) {
+            lookupResults.style.display = 'none';
+            return;
+        }
+
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            fetch(`{% url 'core:api_patient_search' %}?q=${encodeURIComponent(query)}`)
+                .then(r => r.json())
+                .then(data => {
+                    lookupResults.innerHTML = '';
+                    if (data.patients && data.patients.length > 0) {
+                        data.patients.forEach(p => {
+                            const div = document.createElement('div');
+                            div.className = 'lookup-item';
+                            div.innerHTML = `
+                                <div class="flex justify-between items-center">
+                                    <span class="font-bold text-slate-800">${p.name}</span>
+                                    <span class="font-mono text-purple-700 text-xs font-bold">${p.patient_id}</span>
+                                </div>
+                                <div class="text-[11px] text-slate-500">${p.gender}, ${p.age} &bull; Mob: ${p.mobile} &bull; Dept: ${p.department}</div>
+                            `;
+                            div.onclick = () => {
+                                selectPatient(p);
+                            };
+                            lookupResults.appendChild(div);
+                        });
+                        lookupResults.style.display = 'block';
+                    } else {
+                        lookupResults.innerHTML = '<div class="p-2.5 text-center text-xs text-slate-400">No patient found.</div>';
+                        lookupResults.style.display = 'block';
+                    }
+                });
+        }, 200);
+    });
+
+    function selectPatient(p) {
+        document.getElementById('id_patient_id').value = p.patient_id;
+        document.getElementById('id_patient_name').value = `${p.name} (${p.gender}, ${p.age})`;
+        if (p.department_id) {
+            document.getElementById('id_department').value = p.department_id;
+        }
+        lookupInput.value = `${p.patient_id} - ${p.name}`;
+        lookupResults.style.display = 'none';
+    }
+
+    function resetAdmForm() {
+        document.getElementById('admRequestForm').reset();
+        document.getElementById('admAction').value = 'create';
+        document.getElementById('admRequestId').value = '';
+        document.getElementById('id_patient_id').value = '';
+        document.getElementById('id_patient_name').value = '';
+        document.getElementById('admFormTitle').innerHTML = '<i class="bi bi-person-plus-fill text-purple-600"></i> Create Patient Admission Request';
+        document.getElementById('admSubmitBtn').innerHTML = '<i class="bi bi-check2-circle"></i> <span>Submit Admission Request</span>';
+    }
+
+    function editAdmRequest(id, pid, name, deptId, wardId, bed, type, prio, remarks) {
+        document.getElementById('admAction').value = 'update';
+        document.getElementById('admRequestId').value = id;
+        document.getElementById('id_patient_id').value = pid;
+        document.getElementById('id_patient_name').value = name;
+        document.getElementById('patientLookupInput').value = `${pid} - ${name}`;
+        if (deptId) document.getElementById('id_department').value = deptId;
+        if (wardId) document.getElementById('id_ward').value = wardId;
+        document.getElementById('id_bed_room').value = bed;
+        document.getElementById('id_admission_type').value = type;
+        document.getElementById('id_priority').value = prio;
+        document.getElementById('id_reason_remarks').value = remarks;
+
+        document.getElementById('admFormTitle').innerHTML = `<i class="bi bi-pencil-square text-amber-600"></i> Modify Admission Request #${id}`;
+        document.getElementById('admSubmitBtn').innerHTML = '<i class="bi bi-save"></i> <span>Update Admission Request</span>';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!lookupInput.contains(e.target) && !lookupResults.contains(e.target)) {
+            lookupResults.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

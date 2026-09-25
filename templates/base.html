@@ -295,6 +295,8 @@
             max-width: 100%;
             padding: 16px 24px 40px;
             background-color: #f8fafc;
+            animation: vmmcPageFadeIn var(--vmmc-anim-smooth) var(--vmmc-ease-out) forwards;
+            will-change: opacity, transform;
         }
 
         .hospital-bottom-footer {
@@ -313,6 +315,222 @@
         .hospital-bottom-footer a {
             color: #ffffff;
             text-decoration: underline;
+        }
+
+        /* ==========================================================
+         VMMC ERP SUBTLE & PROFESSIONAL UI ANIMATION SYSTEM
+         ========================================================== */
+        :root {
+            --vmmc-anim-fast: 150ms;
+            --vmmc-anim-normal: 280ms;
+            --vmmc-anim-smooth: 350ms;
+            --vmmc-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --vmmc-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Page & Header Entrance Keyframes */
+        @keyframes vmmcPageFadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes vmmcHeaderSlide {
+            0% {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes vmmcDropdownFadeDown {
+            0% {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes vmmcModalFadeZoom {
+            0% {
+                opacity: 0;
+                transform: scale(0.985) translateY(4px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* Header Entrance Animations */
+        .hospital-top-banner {
+            animation: vmmcHeaderSlide var(--vmmc-anim-normal) var(--vmmc-ease-out) forwards;
+        }
+
+        .top-navbar-container {
+            animation: vmmcHeaderSlide var(--vmmc-anim-normal) var(--vmmc-ease-out) forwards;
+        }
+
+        /* Smooth Card, Panel & Widget Hover Transitions */
+        .panel,
+        .card,
+        .fo-panel,
+        .fo-kpi-card,
+        .fo-module-card,
+        .type-card,
+        .census-summary-card,
+        .log-section-card,
+        .ar-form-card,
+        .crm-form-card,
+        .reg-filter-card,
+        .stat-card,
+        .analytics-card,
+        .dept-card,
+        .overview-card {
+            transition: transform 0.2s var(--vmmc-ease-out),
+                        box-shadow 0.2s var(--vmmc-ease-out),
+                        border-color 0.15s ease,
+                        background-color 0.15s ease;
+        }
+
+        .panel:hover,
+        .card:hover,
+        .fo-kpi-card:hover,
+        .fo-module-card:hover,
+        .type-card:hover,
+        .census-summary-card:hover,
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(2, 132, 199, 0.10);
+        }
+
+        /* Smooth Button Micro-Interactions */
+        button,
+        .btn,
+        .btn-primary,
+        .btn-secondary,
+        .btn-fo-primary,
+        .btn-fo-secondary,
+        .btn-action,
+        .filter-tab-btn,
+        input[type="submit"],
+        input[type="button"] {
+            transition: transform 0.12s var(--vmmc-ease-out),
+                        background-color 0.15s ease,
+                        border-color 0.15s ease,
+                        box-shadow 0.15s ease,
+                        filter 0.15s ease,
+                        color 0.12s ease;
+        }
+
+        button:hover:not(:disabled),
+        .btn:hover:not(:disabled),
+        .btn-primary:hover:not(:disabled),
+        .btn-secondary:hover:not(:disabled),
+        .btn-fo-primary:hover:not(:disabled),
+        .btn-fo-secondary:hover:not(:disabled),
+        .btn-action:hover:not(:disabled),
+        .filter-tab-btn:hover:not(:disabled),
+        input[type="submit"]:hover:not(:disabled),
+        input[type="button"]:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        button:active:not(:disabled),
+        .btn:active:not(:disabled),
+        .btn-primary:active:not(:disabled),
+        .btn-secondary:active:not(:disabled),
+        .btn-fo-primary:active:not(:disabled),
+        .btn-fo-secondary:active:not(:disabled),
+        .btn-action:active:not(:disabled),
+        input[type="submit"]:active:not(:disabled),
+        input[type="button"]:active:not(:disabled) {
+            transform: translateY(1px) scale(0.99);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Smooth Form Controls Focus & Transitions */
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        input[type="time"],
+        input[type="email"],
+        input[type="password"],
+        select,
+        textarea,
+        .form-control,
+        .form-input,
+        .form-control-compact {
+            transition: border-color 0.15s ease,
+                        box-shadow 0.15s ease,
+                        background-color 0.15s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="date"]:focus,
+        input[type="time"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        select:focus,
+        textarea:focus,
+        .form-control:focus,
+        .form-input:focus,
+        .form-control-compact:focus {
+            border-color: #0284c7 !important;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+            outline: none !important;
+        }
+
+        /* Subtle Table Row Hover Transitions */
+        table tbody tr {
+            transition: background-color 0.15s ease;
+        }
+
+        table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Modal & Popup Animations */
+        #bmiModal.flex > div,
+        #medDictModal.flex > div,
+        .modal-content,
+        .quick-search-results,
+        .patient-lookup-results {
+            animation: vmmcModalFadeZoom 200ms var(--vmmc-ease-out) forwards;
+        }
+
+        /* Back to Top Smooth Transition */
+        .btn-scroll-top {
+            transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.15s ease;
+        }
+        .btn-scroll-top:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Prefers-Reduced-Motion Accessibility Support */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+                transform: none !important;
+            }
         }
     </style>
 

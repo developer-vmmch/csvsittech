@@ -52,18 +52,29 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('{% static department.bg_image %}');
+            background-image: url('{% static department.bg_image %}?v=20260925vmmc');
             background-size: cover;
             background-position: center center;
             background-repeat: no-repeat;
             z-index: 0;
             opacity: 0;
-            animation: bgSceneFadeIn 0.8s ease-out forwards;
+            transform: scale(1.03);
+            animation: bgSlowZoom 5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            will-change: transform, opacity;
         }
 
-        @keyframes bgSceneFadeIn {
-            from { opacity: 0; transform: scale(1.02); }
-            to { opacity: 1; transform: scale(1); }
+        @keyframes bgSlowZoom {
+            0% {
+                opacity: 0;
+                transform: scale(1.03);
+            }
+            20% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
         /* Subtle lighting gradient to guarantee text contrast without darkening the realistic photo */
@@ -73,7 +84,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.05) 25%, rgba(0, 0, 0, 0.1) 100%);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.40) 0%, rgba(255, 255, 255, 0.05) 25%, rgba(0, 0, 0, 0.12) 100%);
             pointer-events: none;
             z-index: 1;
         }
@@ -91,12 +102,18 @@
             align-items: center;
             justify-content: space-between;
             box-shadow: 0 2px 12px rgba(7, 35, 90, 0.06);
-            animation: headerEntrance 0.5s ease-out forwards;
+            animation: headerFadeInTop 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        @keyframes headerEntrance {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes headerFadeInTop {
+            from {
+                opacity: 0;
+                transform: translateY(-15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .header-left-brand {
@@ -216,15 +233,24 @@
             box-shadow: 0 25px 65px -12px rgba(0, 0, 0, 0.25), 0 0 1px 1px rgba(0, 0, 0, 0.04);
             text-align: center;
             position: relative;
-            animation: cardSlideIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(25px) scale(0.98);
+            animation: loginCardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+            will-change: opacity, transform;
         }
 
-        @keyframes cardSlideIn {
-            from { opacity: 0; transform: translateX(25px) scale(0.97); }
-            to { opacity: 1; transform: translateX(0) scale(1); }
+        @keyframes loginCardEntrance {
+            from {
+                opacity: 0;
+                transform: translateY(25px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
-        /* Circular Department Icon Badge */
+        /* Circular Department Icon Badge with Pop Animation */
         .dept-badge-circle {
             width: 74px;
             height: 74px;
@@ -237,11 +263,26 @@
             font-size: 2.3rem;
             margin: 0 auto 1.15rem auto;
             box-shadow: 0 4px 14px rgba(37, 99, 235, 0.15);
-            transition: transform 0.3s ease;
+            opacity: 0;
+            transform: scale(0.85);
+            animation: iconBadgePop 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.35s forwards;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        @keyframes iconBadgePop {
+            from {
+                opacity: 0;
+                transform: scale(0.85);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
         .dept-badge-circle:hover {
             transform: scale(1.06);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
         }
 
         /* Titles */
@@ -287,12 +328,47 @@
             40%, 80% { transform: translateX(4px); }
         }
 
-        /* Login Form Inputs */
+        /* Login Form Inputs & Staggered Animation */
         .login-form {
             display: flex;
             flex-direction: column;
             gap: 1.15rem;
             text-align: left;
+        }
+
+        @keyframes fieldFadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stagger-field-1 {
+            opacity: 0;
+            transform: translateY(12px);
+            animation: fieldFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.45s forwards;
+        }
+
+        .stagger-field-2 {
+            opacity: 0;
+            transform: translateY(12px);
+            animation: fieldFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.55s forwards;
+        }
+
+        .stagger-field-3 {
+            opacity: 0;
+            transform: translateY(12px);
+            animation: fieldFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.65s forwards;
+        }
+
+        .stagger-field-4 {
+            opacity: 0;
+            transform: translateY(12px);
+            animation: fieldFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.75s forwards;
         }
 
         .input-wrapper {
@@ -319,7 +395,7 @@
             font-weight: 500;
             color: #0f172a;
             background: #ffffff;
-            transition: all 0.22s ease;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
             font-family: inherit;
         }
 
@@ -346,14 +422,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: color 0.2s ease;
+            transition: color 0.2s ease, transform 0.15s ease;
         }
 
         .toggle-password-btn:hover {
             color: #2563eb;
+            transform: scale(1.1);
         }
 
-        /* Primary Blue Button */
+        /* Primary Blue Button with Smooth Hover */
         .btn-submit-login {
             background: #2563eb;
             color: #ffffff;
@@ -365,7 +442,7 @@
             font-weight: 700;
             letter-spacing: 0.02em;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background 0.18s ease, box-shadow 0.18s ease;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -405,17 +482,18 @@
             border-radius: 10px;
             background: #f1f5f9;
             border: 1px solid #e2e8f0;
-            transition: all 0.2s ease;
+            transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
         }
 
         .link-back-selection:hover {
             background: #e0f2fe;
             color: #0369a1;
             border-color: #bae6fd;
-            transform: translateX(-3px);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(3, 105, 161, 0.12);
         }
 
-        /* 4. Full-Width Dark Navy Footer */
+        /* 4. Full-Width Dark Navy Footer with Fade-in Animation */
         .page-footer {
             position: relative;
             z-index: 10;
@@ -429,6 +507,20 @@
             gap: 1.25rem;
             box-shadow: 0 -3px 20px rgba(0, 0, 0, 0.2);
             font-size: 0.82rem;
+            animation: footerFadeInBottom 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+            opacity: 0;
+            transform: translateY(15px);
+        }
+
+        @keyframes footerFadeInBottom {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .footer-left {
@@ -565,7 +657,7 @@
 <body>
 
     <!-- 1. Department-Specific Realistic Background Backdrop -->
-    <div class="dept-bg-backdrop"></div>
+    <div class="dept-bg-backdrop" style="background-image: url('{% static department.bg_image %}?v=20260925vmmc');"></div>
     <div class="dept-bg-overlay"></div>
 
     <!-- 2. Top Header -->
@@ -621,7 +713,7 @@
                 <input type="hidden" name="next" value="{{ next|default:'' }}">
 
                 <!-- Username -->
-                <div class="input-wrapper">
+                <div class="input-wrapper stagger-field-1">
                     <i class="bi bi-person input-icon-left"></i>
                     <input type="text" id="usernameInput" name="username" class="form-input"
                            value="{{ username|default:'' }}"
@@ -630,7 +722,7 @@
                 </div>
 
                 <!-- Password -->
-                <div class="input-wrapper">
+                <div class="input-wrapper stagger-field-2">
                     <i class="bi bi-lock input-icon-left"></i>
                     <input type="password" id="passwordInput" name="password" class="form-input"
                            placeholder="Password"
@@ -641,14 +733,14 @@
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" class="btn-submit-login">
+                <button type="submit" class="btn-submit-login stagger-field-3">
                     <i class="bi bi-box-arrow-in-right"></i>
                     <span>Login</span>
                 </button>
             </form>
 
             <!-- Secondary Navigation Links -->
-            <div class="login-secondary-links">
+            <div class="login-secondary-links stagger-field-4">
                 <a href="{% url 'department_select' %}" class="link-back-selection">
                     <i class="bi bi-arrow-left"></i>
                     <span>Back to Departments</span>
