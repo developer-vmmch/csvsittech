@@ -434,7 +434,8 @@ def user_can_access_department(user, dept_dict_or_slug):
     if not user or not user.is_authenticated:
         return False
 
-    if user.is_superuser or getattr(user, 'role', '') == 'ADMIN':
+    user_role_raw = (getattr(user, 'role', '') or '').strip().upper()
+    if user.is_superuser or user_role_raw in ['ADMIN', 'DEVELOPER', 'DEVELOPER_ROLE']:
         return True
 
     if isinstance(dept_dict_or_slug, dict):
@@ -609,7 +610,7 @@ def user_can_access_role(user, role_dict_or_slug):
     user_role = (getattr(user, 'role', '') or '').strip().upper()
     target_role = (role_dict.get('code', '') or '').strip().upper()
 
-    if user_role == target_role or user_role == 'ADMIN':
+    if user_role in ['ADMIN', 'DEVELOPER', 'DEVELOPER_ROLE'] or user_role == target_role:
         return True
 
     return False

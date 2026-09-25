@@ -583,7 +583,7 @@ class RoleMenuPermissionsView(LoginRequiredMixin, MenuAccessRequiredMixin, View)
         ]
 
     def get(self, request, *args, **kwargs):
-        if not (request.user.is_superuser or request.user.role == User.Roles.ADMIN):
+        if not (request.user.is_superuser or request.user.is_admin_role):
             messages.error(request, "Access restricted to system administrators.")
             return redirect('patients:list')
 
@@ -732,7 +732,7 @@ class RoleMenuPermissionsView(LoginRequiredMixin, MenuAccessRequiredMixin, View)
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
-        if not (request.user.is_superuser or request.user.role == User.Roles.ADMIN):
+        if not (request.user.is_superuser or request.user.is_admin_role):
             messages.error(request, "Access restricted to system administrators.")
             return redirect('patients:list')
 
@@ -1553,7 +1553,7 @@ class NavBarMappingView(LoginRequiredMixin, MenuAccessRequiredMixin, View):
         return roles
 
     def get(self, request, *args, **kwargs):
-        if not (request.user.is_superuser or request.user.role == User.Roles.ADMIN):
+        if not (request.user.is_superuser or request.user.is_admin_role):
             messages.error(request, "Access restricted to system administrators.")
             return redirect('patients:list')
 
@@ -1703,7 +1703,7 @@ class NavBarMappingView(LoginRequiredMixin, MenuAccessRequiredMixin, View):
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
-        if not (request.user.is_superuser or request.user.role == User.Roles.ADMIN):
+        if not (request.user.is_superuser or request.user.is_admin_role):
             messages.error(request, "Access restricted to system administrators.")
             return redirect('patients:list')
 
@@ -1749,7 +1749,7 @@ class NavBarMappingView(LoginRequiredMixin, MenuAccessRequiredMixin, View):
 
 def nav_module_create(request):
     """Create a new top-level navigation module."""
-    if not (request.user.is_superuser or getattr(request.user, 'role', '') == User.Roles.ADMIN):
+    if not (request.user.is_superuser or request.user.is_admin_role):
         messages.error(request, "Access restricted to system administrators.")
         return redirect('patients:list')
 
@@ -1803,7 +1803,7 @@ def nav_module_create(request):
 
 def nav_module_edit(request, pk):
     """Edit an existing navigation module's details."""
-    if not (request.user.is_superuser or getattr(request.user, 'role', '') == User.Roles.ADMIN):
+    if not (request.user.is_superuser or request.user.is_admin_role):
         messages.error(request, "Access restricted to system administrators.")
         return redirect('patients:list')
 
@@ -1842,7 +1842,7 @@ def nav_module_edit(request, pk):
 
 def nav_module_rename(request, pk):
     """Quickly rename a top-level module."""
-    if not (request.user.is_superuser or getattr(request.user, 'role', '') == User.Roles.ADMIN):
+    if not (request.user.is_superuser or request.user.is_admin_role):
         if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax'):
             return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
         messages.error(request, "Access restricted to system administrators.")
@@ -1872,7 +1872,7 @@ def nav_module_rename(request, pk):
 
 def nav_module_delete(request, pk):
     """Remove a navigation module and its submodules."""
-    if not (request.user.is_superuser or getattr(request.user, 'role', '') == User.Roles.ADMIN):
+    if not (request.user.is_superuser or request.user.is_admin_role):
         messages.error(request, "Access restricted to system administrators.")
         return redirect('patients:list')
 
@@ -1888,7 +1888,7 @@ def nav_module_delete(request, pk):
 
 def nav_submodule_create(request):
     """Create a new submodule under a specified parent module."""
-    if not (request.user.is_superuser or getattr(request.user, 'role', '') == User.Roles.ADMIN):
+    if not (request.user.is_superuser or request.user.is_admin_role):
         messages.error(request, "Access restricted to system administrators.")
         return redirect('patients:list')
 
@@ -1940,7 +1940,7 @@ def nav_submodule_create(request):
 
 def nav_submodule_edit(request, pk):
     """Edit an existing submodule's details."""
-    if not (request.user.is_superuser or getattr(request.user, 'role', '') == User.Roles.ADMIN):
+    if not (request.user.is_superuser or request.user.is_admin_role):
         messages.error(request, "Access restricted to system administrators.")
         return redirect('patients:list')
 
@@ -1976,7 +1976,7 @@ def nav_submodule_edit(request, pk):
 
 def nav_submodule_rename(request, pk):
     """Quickly rename a submodule name."""
-    if not (request.user.is_superuser or getattr(request.user, 'role', '') == User.Roles.ADMIN):
+    if not (request.user.is_superuser or request.user.is_admin_role):
         if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax'):
             return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
         messages.error(request, "Access restricted to system administrators.")
@@ -2006,7 +2006,7 @@ def nav_submodule_rename(request, pk):
 
 def nav_submodule_remap(request, pk):
     """Remap / move a submodule to a different parent module."""
-    if not (request.user.is_superuser or getattr(request.user, 'role', '') == User.Roles.ADMIN):
+    if not (request.user.is_superuser or request.user.is_admin_role):
         messages.error(request, "Access restricted to system administrators.")
         return redirect('patients:list')
 
@@ -2026,7 +2026,7 @@ def nav_submodule_remap(request, pk):
 
 def nav_submodule_delete(request, pk):
     """Delete a submodule."""
-    if not (request.user.is_superuser or getattr(request.user, 'role', '') == User.Roles.ADMIN):
+    if not (request.user.is_superuser or request.user.is_admin_role):
         messages.error(request, "Access restricted to system administrators.")
         return redirect('patients:list')
 
@@ -2042,7 +2042,7 @@ def nav_submodule_delete(request, pk):
 
 def nav_reset_defaults(request):
     """Restore default system navigation modules and submodules."""
-    if not (request.user.is_superuser or getattr(request.user, 'role', '') == User.Roles.ADMIN):
+    if not (request.user.is_superuser or request.user.is_admin_role):
         messages.error(request, "Access restricted to system administrators.")
         return redirect('patients:list')
 
@@ -2092,7 +2092,7 @@ class LandingDepartmentManagerView(LoginRequiredMixin, View):
     Enables creating, editing, deleting, ordering, and toggling departments for the landing login screen.
     """
     def get(self, request):
-        if not (request.user.is_superuser or getattr(request.user, 'role', '') == User.Roles.ADMIN):
+        if not (request.user.is_superuser or request.user.is_admin_role):
             messages.error(request, "Access restricted to system administrators.")
             return redirect('patients:list')
 
@@ -2173,7 +2173,7 @@ class LandingDepartmentManagerView(LoginRequiredMixin, View):
 
 def landing_department_create(request):
     """Create a new Landing Page Department."""
-    if not (request.user.is_superuser or getattr(request.user, 'role', '') == User.Roles.ADMIN):
+    if not (request.user.is_superuser or request.user.is_admin_role):
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'message': 'Access denied.'}, status=403)
         messages.error(request, "Access restricted to system administrators.")
@@ -2199,7 +2199,7 @@ def landing_department_create(request):
 
 def landing_department_edit(request, pk):
     """Edit an existing Landing Page Department."""
-    if not (request.user.is_superuser or getattr(request.user, 'role', '') == User.Roles.ADMIN):
+    if not (request.user.is_superuser or request.user.is_admin_role):
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'message': 'Access denied.'}, status=403)
         messages.error(request, "Access restricted to system administrators.")
@@ -2249,7 +2249,7 @@ def landing_department_edit(request, pk):
 
 def landing_department_delete(request, pk):
     """Delete a Landing Page Department."""
-    if not (request.user.is_superuser or getattr(request.user, 'role', '') == User.Roles.ADMIN):
+    if not (request.user.is_superuser or request.user.is_admin_role):
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'message': 'Access denied.'}, status=403)
         messages.error(request, "Access restricted to system administrators.")
@@ -2267,7 +2267,7 @@ def landing_department_delete(request, pk):
 
 def landing_department_toggle_active(request, pk):
     """Quick AJAX toggle to enable/disable department card on landing page."""
-    if not (request.user.is_superuser or getattr(request.user, 'role', '') == User.Roles.ADMIN):
+    if not (request.user.is_superuser or request.user.is_admin_role):
         return JsonResponse({'success': False, 'message': 'Access denied.'}, status=403)
 
     dept = get_object_or_404(LandingDepartment, pk=pk)
@@ -2283,7 +2283,7 @@ def landing_department_toggle_active(request, pk):
 
 def landing_department_reset_defaults(request):
     """Reset landing page departments to factory system defaults (16 departments)."""
-    if not (request.user.is_superuser or getattr(request.user, 'role', '') == User.Roles.ADMIN):
+    if not (request.user.is_superuser or request.user.is_admin_role):
         messages.error(request, "Access restricted to system administrators.")
         return redirect('patients:list')
 
