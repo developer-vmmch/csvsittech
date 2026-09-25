@@ -38,8 +38,9 @@ class DepartmentAccessMiddleware:
             # Let Django's LoginRequiredMixin or login_required handle or redirect to login
             return None
 
-        # Superusers and System Administrators have full access everywhere
-        if request.user.is_superuser or getattr(request.user, 'role', '') == 'ADMIN':
+        # Superusers, System Administrators, and Developers have full access everywhere
+        role_str = (getattr(request.user, 'role', '') or '').strip().upper()
+        if request.user.is_superuser or role_str in ['ADMIN', 'DEVELOPER', 'DEVELOPER_ROLE']:
             return None
 
         # Identify if path belongs to a specific restricted module

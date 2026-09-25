@@ -4,6 +4,7 @@ from django.db import models
 class User(AbstractUser):
     class Roles(models.TextChoices):
         ADMIN = 'ADMIN', 'Administrator'
+        DEVELOPER = 'DEVELOPER', 'Developer'
         MANAGER = 'MANAGER', 'Department Manager'
         STAFF = 'STAFF', 'Staff Member'
         AUDITOR = 'AUDITOR', 'Auditor'
@@ -21,6 +22,8 @@ class User(AbstractUser):
         built_in = dict(self.Roles.choices)
         if self.role in built_in:
             return built_in[self.role]
+        if str(self.role).upper() in ['DEVELOPER', 'DEVELOPER_ROLE']:
+            return 'Developer'
         try:
             cr = CustomRole.objects.filter(code__iexact=self.role).first()
             if cr:
@@ -51,7 +54,8 @@ class User(AbstractUser):
 
     @property
     def is_admin_role(self):
-        return self.is_superuser or self.role == self.Roles.ADMIN
+        role_str = (self.role or '').strip().upper()
+        return self.is_superuser or role_str in [self.Roles.ADMIN, self.Roles.DEVELOPER, 'DEVELOPER', 'DEVELOPER_ROLE']
 
     def has_perm_code(self, perm_code):
         """
@@ -59,9 +63,10 @@ class User(AbstractUser):
         e.g. 'patients.patient_list.view', 'patients.patient_list.update',
              'patients.patient_list.delete', 'patients.patient_list.import',
              'patients.patient_list.export'
-        Super Admin / Administrator always returns True.
+        Super Admin / Administrator / Developer always returns True.
         """
-        if self.is_superuser or self.role == self.Roles.ADMIN:
+        role_str = (self.role or '').strip().upper()
+        if self.is_superuser or role_str in [self.Roles.ADMIN, self.Roles.DEVELOPER, 'DEVELOPER', 'DEVELOPER_ROLE']:
             return True
 
         if not perm_code:
@@ -193,7 +198,8 @@ class User(AbstractUser):
             'system_section', 'administration', 'users_roles', 'inventory', 'settings',
         ]
 
-        if self.is_superuser or self.role == self.Roles.ADMIN:
+        role_str = (self.role or '').strip().upper()
+        if self.is_superuser or role_str in [self.Roles.ADMIN, self.Roles.DEVELOPER, 'DEVELOPER', 'DEVELOPER_ROLE']:
             return {k: True for k in all_keys}
 
         db_perms = RoleMenuPermission.get_permissions_for_role(self.role)
@@ -296,6 +302,9 @@ class User(AbstractUser):
 
     def can_access_menu(self, menu_key):
         """Checks whether the user's role profile has access to a given menu key."""
+        role_str = (self.role or '').strip().upper()
+        if self.is_superuser or role_str in [self.Roles.ADMIN, self.Roles.DEVELOPER, 'DEVELOPER', 'DEVELOPER_ROLE']:
+            return True
         mapping = self.get_menu_mapping()
         return mapping.get(menu_key, False)
 

@@ -1,610 +1,788 @@
 {% extends "base.html" %}
 
-{% block title %}Patient Registration | VMMCerp{% endblock %}
+{% block title %}Patient Registration | VMMC ERP{% endblock %}
 {% block page_heading %}Patient Registration{% endblock %}
 
 {% block content %}
 <style>
-    .hims-wrapper {
-        max-width: 1300px;
+    /* =========================================================================
+       ULTRA-COMPACT SINGLE-SCREEN VMMC ERP PATIENT REGISTRATION
+       Zero vertical/horizontal scrolling on 1366x768, 1440x900, 1920x1080
+       Continuous single-surface flow without outer nested cards
+       ========================================================================= */
+    .patient-reg-screen {
+        width: 100%;
+        max-width: 100%;
         margin: 0 auto;
-    }
-    .hims-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 0.65rem 1.25rem;
-        margin-bottom: 0.85rem;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-    }
-    .reg-title {
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 0;
-    }
-    .last-id-banner {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: #f8fafc;
-        padding: 0.25rem 0.75rem;
-        border-radius: 6px;
-        border: 1px solid #e2e8f0;
-    }
-    .last-id-label {
-        color: #64748b;
-        font-size: 0.8rem;
-    }
-    .last-id-value {
-        font-size: 1.05rem;
-        font-weight: 800;
-        color: #16a34a;
-        font-family: monospace;
-    }
-    .staff-tag {
-        background: #f3e8ff;
-        color: #7c3aed;
-        font-size: 0.7rem;
-        padding: 0.15rem 0.45rem;
-        border-radius: 4px;
-        font-weight: 600;
-        border: 1px solid #e9d5ff;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: inherit;
     }
 
-    /* Section Boxes */
-    .hims-section-box {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 0.85rem 1.25rem;
-        margin-bottom: 0.85rem;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-    }
-    .mandatory-section-box {
-        border-top: 3px solid #0284c7;
-        background: #ffffff;
-    }
-    .optional-section-box {
-        border-top: 3px solid #64748b;
-        background: #ffffff;
-    }
-    .section-box-header {
+    /* 1. Top Header Row: PATIENT REGISTRATION (left) & 4 Radio Modes (right) */
+    .reg-top-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.65rem;
-        padding-bottom: 0.4rem;
-        border-bottom: 1px solid #f1f5f9;
+        padding: 4px 10px;
+        margin-bottom: 4px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
     }
-    .section-box-title {
-        font-size: 0.92rem;
-        font-weight: 700;
-        color: #1e293b;
-        display: flex;
+    .reg-title-text {
+        display: inline-flex;
         align-items: center;
-        gap: 0.4rem;
+        gap: 6px;
+        font-size: 1.02rem;
+        font-weight: 800;
+        color: #0f3675;
+        letter-spacing: 0.4px;
         margin: 0;
+        text-transform: uppercase;
     }
-    .badge-mandatory {
-        background: #eff6ff;
+    .reg-title-text i {
         color: #0284c7;
-        border: 1px solid #bfdbfe;
-        font-size: 0.7rem;
-        font-weight: 700;
-        padding: 2px 7px;
-        border-radius: 5px;
-    }
-    .badge-optional {
-        background: #f8fafc;
-        color: #64748b;
-        border: 1px solid #e2e8f0;
-        font-size: 0.7rem;
-        font-weight: 600;
-        padding: 2px 7px;
-        border-radius: 5px;
+        font-size: 1.15rem;
     }
 
-    /* Compact Fields Grid */
-    .hims-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.25rem;
-    }
-    .hims-field-row {
+    /* Top Radio Button Selector in single horizontal row */
+    .reg-mode-selectors {
         display: flex;
         align-items: center;
-        margin-bottom: 0.4rem;
+        gap: 16px;
     }
-    .hims-label {
-        width: 36%;
-        font-size: 0.78rem;
-        font-weight: 600;
-        color: #334155;
+    .mode-radio-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #1e293b;
+        cursor: pointer;
+        user-select: none;
+        margin: 0;
+        letter-spacing: 0.2px;
     }
-    .hims-input-group {
-        width: 64%;
+    .mode-radio-item input[type="radio"] {
+        accent-color: #0284c7;
+        width: 14px;
+        height: 14px;
+        cursor: pointer;
+        margin: 0;
+    }
+    .mode-radio-item:hover {
+        color: #0284c7;
+    }
+    .mode-radio-item input:checked + span {
+        color: #0284c7;
+    }
+
+    /* 2. Main Two-Column Continuous Form Surface (No outer nested boxes) */
+    .reg-form-surface {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 6px 14px 4px 14px;
+        margin-bottom: 4px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    }
+    .reg-two-col-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 26px;
+        row-gap: 0;
+    }
+
+    /* Individual Field Rows - Ultra compact 24px height */
+    .reg-field-row {
         display: flex;
-        gap: 0.35rem;
+        align-items: center;
+        min-height: 24px;
+        margin-bottom: 2px;
     }
-    .hims-field-row input.form-input,
-    .hims-field-row select.form-select,
-    .hims-field-row select,
-    .hims-field-row input[type="text"],
-    .hims-field-row input[type="date"],
-    .hims-field-row input[type="number"],
-    .hims-field-row textarea,
-    .hims-input-group input,
-    .hims-input-group select {
+    .reg-field-label {
+        width: 124px;
+        min-width: 124px;
+        font-size: 0.77rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+        line-height: 1.1;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+    .req-star {
+        color: #ef4444;
+        font-weight: 700;
+        margin-left: 2px;
+    }
+    .reg-field-input-wrap {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+
+    /* Inputs, Selects, and Textareas */
+    .patient-reg-screen input.form-input,
+    .patient-reg-screen select.form-select,
+    .patient-reg-screen select,
+    .patient-reg-screen input[type="text"],
+    .patient-reg-screen input[type="date"],
+    .patient-reg-screen input[type="number"],
+    .patient-reg-screen input[type="email"],
+    .patient-reg-screen textarea {
         width: 100%;
         box-sizing: border-box;
-        padding: 0.3rem 0.55rem !important;
-        font-size: 0.82rem !important;
-        height: 32px !important;
-        border-radius: 6px !important;
+        height: 24px !important;
+        min-height: 24px;
+        padding: 1px 6px !important;
+        font-size: 0.79rem !important;
+        border-radius: 4px !important;
         border: 1px solid #cbd5e1 !important;
         background-color: #ffffff;
         color: #0f172a;
         outline: none;
-        transition: border-color 0.15s ease-in-out;
+        transition: border-color 0.12s ease, box-shadow 0.12s ease;
     }
-    .hims-field-row input:focus,
-    .hims-field-row select:focus {
+    .patient-reg-screen textarea.form-textarea-compact {
+        height: 24px !important;
+        min-height: 24px !important;
+        resize: vertical;
+        padding: 2px 6px !important;
+        font-size: 0.79rem !important;
+        line-height: 1.2;
+    }
+    .patient-reg-screen input.form-input:focus,
+    .patient-reg-screen select.form-select:focus,
+    .patient-reg-screen textarea:focus {
         border-color: #0284c7 !important;
         box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15) !important;
     }
-    .hims-age-group {
-        width: 64%;
+    .patient-reg-screen .is-invalid {
+        border-color: #ef4444 !important;
+        background-color: #fef2f2 !important;
+    }
+
+    /* Age Triple Input Box */
+    .age-triple-wrap {
         display: flex;
         align-items: center;
-        gap: 0.3rem;
+        gap: 3px;
     }
-    .hims-age-group input {
-        width: 50px !important;
-        height: 32px !important;
-        padding: 0.2rem 0.3rem !important;
-        font-size: 0.82rem !important;
+    .age-triple-wrap input {
+        width: 40px !important;
+        height: 24px !important;
         text-align: center;
-        border-radius: 6px !important;
-        border: 1px solid #cbd5e1 !important;
-    }
-    .hims-age-group .unit {
-        color: #64748b;
-        font-weight: 700;
-        font-size: 0.75rem;
-        margin-right: 0.35rem;
-    }
-    .hims-btn-small {
-        background: #f1f5f9;
-        border: 1px solid #cbd5e1;
-        color: #334155;
-        padding: 0.2rem 0.6rem;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 0.75rem;
+        padding: 1px !important;
         font-weight: 600;
-        height: 32px;
+    }
+    .age-unit-label {
+        font-size: 0.74rem;
+        font-weight: 700;
+        color: #0284c7;
+        margin-right: 5px;
+    }
+
+    /* Form Action Buttons (Go, Complaint, Refresh) */
+    .btn-dark-go {
+        background: #0f172a;
+        color: #ffffff;
+        font-size: 0.73rem;
+        font-weight: 700;
+        height: 24px;
+        padding: 0 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+        line-height: 1;
+    }
+    .btn-dark-go:hover {
+        background: #1e293b;
+    }
+    .btn-dark-complaint {
+        background: #0f172a;
+        color: #ffffff;
+        font-size: 0.73rem;
+        font-weight: 700;
+        height: 24px;
+        padding: 0 9px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s ease;
+        line-height: 1;
+    }
+    .btn-dark-complaint:hover {
+        background: #1e293b;
+    }
+    .btn-icon-refresh {
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        height: 24px;
+        width: 24px;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
+        color: #0284c7;
+        cursor: pointer;
+        font-size: 0.82rem;
+        transition: all 0.15s ease;
+        padding: 0;
+        flex-shrink: 0;
     }
-    .hims-btn-small:hover {
-        background: #0284c7;
-        color: #ffffff;
+    .btn-icon-refresh:hover {
+        background: #e0f2fe;
+        color: #0369a1;
         border-color: #0284c7;
     }
 
-    /* Mid Action Bar */
-    .hims-mid-action-bar {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 0.55rem 1rem;
-        margin-bottom: 0.85rem;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        align-items: center;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    /* Last Patient ID in bold blue */
+    .last-pid-text {
+        font-size: 1.02rem;
+        font-weight: 800;
+        color: #0033cc;
+        letter-spacing: 0.4px;
     }
-    .hims-action-btn {
-        padding: 0.38rem 0.95rem;
-        border-radius: 6px;
+    .inline-text-label {
+        font-size: 0.77rem;
+        font-weight: 600;
+        color: #1e293b;
+        white-space: nowrap;
+        margin: 0 4px;
+    }
+
+    /* 3. Bottom Action Bar */
+    .reg-bottom-actions {
         background: #ffffff;
         border: 1px solid #cbd5e1;
-        color: #334155;
+        border-radius: 6px;
+        padding: 4px 10px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 5px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+    .btn-hims-act {
+        padding: 0.24rem 0.72rem;
+        border-radius: 4px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #1e293b;
         font-weight: 600;
-        font-size: 0.8rem;
+        font-size: 0.76rem;
         cursor: pointer;
-        transition: all 0.15s ease;
+        transition: all 0.12s ease;
         display: inline-flex;
         align-items: center;
-        gap: 0.35rem;
+        gap: 4px;
+        height: 27px;
+        text-decoration: none;
+        user-select: none;
     }
-    .hims-action-btn:hover {
+    .btn-hims-act:hover {
         background: #f1f5f9;
         border-color: #94a3b8;
+        color: #0f172a;
     }
-    .primary-save-btn {
-        background: #0284c7 !important;
+    .btn-hims-save {
+        background: #0040c0 !important;
         color: #ffffff !important;
-        border: 1px solid #0284c7 !important;
+        border: 1px solid #0033cc !important;
         font-weight: 700 !important;
-        box-shadow: 0 1px 3px rgba(2, 132, 199, 0.25);
+        box-shadow: 0 1px 3px rgba(0, 51, 204, 0.25);
     }
-    .primary-save-btn:hover {
-        background: #0369a1 !important;
-        border-color: #0369a1 !important;
+    .btn-hims-save:hover {
+        background: #0033aa !important;
+        border-color: #002299 !important;
+        color: #ffffff !important;
     }
-    .required-star {
+    .btn-hims-back {
+        margin-left: auto;
+        color: #334155;
+    }
+    .btn-hims-back:hover {
+        background: #e2e8f0;
+        color: #0f172a;
+    }
+
+    /* Mode Dynamic States */
+    .mode-hidden {
+        display: none !important;
+    }
+    .mode-company-highlight {
+        background: #f0fdf4 !important;
+    }
+    .mode-emergency-highlight {
+        background: #fff1f2 !important;
+    }
+
+    /* Field Errors */
+    .js-field-error {
         color: #ef4444;
-        font-weight: bold;
+        font-size: 0.71rem;
+        font-weight: 600;
+        margin-top: 1px;
+        display: block;
+    }
+
+    @media (max-width: 1024px) {
+        .reg-two-col-layout {
+            grid-template-columns: 1fr;
+            gap: 2px;
+        }
+        .reg-top-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+        }
+        .btn-hims-back {
+            margin-left: 0;
+        }
     }
 </style>
 
-<div class="hims-wrapper">
+<div class="patient-reg-screen">
 
-    <!-- Error Banner for JS validation -->
-    <div id="jsValidationBanner" class="alert alert-danger" style="display: none; margin-bottom: 0.85rem; padding: 0.65rem 1rem; font-size: 0.82rem;">
-        <i class="bi bi-exclamation-triangle-fill"></i>
-        <span id="jsValidationMessage"><strong>Validation Error:</strong> Please correct the highlighted errors in the form fields.</span>
+    <!-- Form Validation Error Banner -->
+    <div id="jsValidationBanner" class="alert alert-danger" style="display: none; margin-bottom: 4px; padding: 4px 10px; font-size: 0.78rem; border-radius: 4px;">
+        <i class="bi bi-exclamation-triangle-fill mr-1"></i>
+        <span id="jsValidationMessage"><strong>Validation Error:</strong> Please fill in all required fields marked with (*).</span>
     </div>
 
-    <!-- Registration Card Header -->
-    <div class="hims-card">
-        <div class="hims-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; padding-bottom: 0; border-bottom: none;">
-            <h2 class="reg-title">
-                {% if is_edit %}
-                <i class="bi bi-pencil-square text-blue-600"></i> EDIT PATIENT: {{ object.name }} (ID: {{ object.patient_id }})
-                {% else %}
-                <i class="bi bi-person-vcard text-blue-600"></i> PATIENT REGISTRATION
-                {% endif %}
-            </h2>
-            <div class="last-id-banner">
-                <span class="last-id-label">{% if is_edit %}Patient ID:{% else %}Last Patient ID:{% endif %}</span>
-                <span class="last-id-value">
-                    {% if is_edit %}
-                    {{ object.patient_id }}
-                    {% else %}
-                    {{ last_patient_id }}
-                    {% endif %}
-                </span>
-                <span class="staff-tag">VMMC STAFF</span>
-            </div>
-        </div>
-    </div>
-
-    <form method="post" class="hims-form" id="patientRegForm" novalidate>
+    <form method="post" id="patientRegForm" novalidate>
         {% csrf_token %}
 
-        <!-- ======================================================= -->
-        <!-- BOX 1: MANDATORY & PRIMARY DETAILS                     -->
-        <!-- ======================================================= -->
-        <div class="hims-section-box mandatory-section-box">
-            <div class="section-box-header">
-                <h3 class="section-box-title">
-                    <i class="bi bi-asterisk text-red-500" style="font-size: 0.9rem;"></i>
-                    Mandatory & Primary Information
-                </h3>
-                <span class="badge-mandatory">Required for Registration</span>
+        <!-- 1. TOP HEADER ROW (PATIENT REGISTRATION & 4 RADIO MODES IN SINGLE HORIZONTAL ROW) -->
+        <div class="reg-top-header">
+            <div class="reg-title-text">
+                {% if is_edit %}
+                <i class="bi bi-pencil-square"></i> EDIT PATIENT: {{ object.name }} (ID: {{ object.patient_id }})
+                {% else %}
+                <i class="bi bi-person-vcard"></i> PATIENT REGISTRATION
+                {% endif %}
             </div>
 
-            <div class="hims-grid">
-                <!-- Left Column (6 Fields) -->
-                <div class="hims-col">
-                    <div class="hims-field-row">
-                        <label class="hims-label">Centre <span class="required-star">*</span>:</label>
-                        <div style="width: 64%;">
-                            {{ form.centre }}
-                            {% if form.centre.errors %}
-                            <span class="field-error">{{ form.centre.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Title / Name <span class="required-star">*</span>:</label>
-                        <div style="width: 64%;">
-                            <div class="hims-input-group" style="width: 100%;">
-                                <div style="width: 28%; min-width: 80px;">{{ form.title }}</div>
-                                <div style="width: 72%;">{{ form.name }}</div>
-                            </div>
-                            {% if form.title.errors %}
-                            <span class="field-error">{{ form.title.errors.0 }}</span>
-                            {% endif %}
-                            {% if form.name.errors %}
-                            <span class="field-error">{{ form.name.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Gender <span class="required-star">*</span>:</label>
-                        <div style="width: 64%;">
-                            {{ form.gender }}
-                            {% if form.gender.errors %}
-                            <span class="field-error">{{ form.gender.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Age <span class="required-star">*</span>:</label>
-                        <div style="width: 64%;">
-                            <div class="hims-age-group">
-                                {{ form.age_years }} <span class="unit">Y</span>
-                                {{ form.age_months }} <span class="unit">M</span>
-                                {{ form.age_days }} <span class="unit">D</span>
-                            </div>
-                            {% if form.age_years.errors %}
-                            <span class="field-error">{{ form.age_years.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Guardian Name <span class="required-star">*</span>:</label>
-                        <div style="width: 64%;">
-                            <div class="hims-input-group" style="width: 100%;">
-                                <div style="width: 28%; min-width: 80px;">{{ form.guardian_relationship }}</div>
-                                <div style="width: 72%;">{{ form.guardian_name }}</div>
-                            </div>
-                            {% if form.guardian_name.errors %}
-                            <span class="field-error">{{ form.guardian_name.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Aadhar Card:</label>
-                        <div style="width: 64%;">
-                            {{ form.aadhar_card }}
-                            {% if form.aadhar_card.errors %}
-                            <span class="field-error">{{ form.aadhar_card.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right Column (6 Fields) -->
-                <div class="hims-col">
-                    <div class="hims-field-row">
-                        <label class="hims-label">Mobile No:</label>
-                        <div style="width: 64%;">
-                            {{ form.mobile_no }}
-                            {% if form.mobile_no.errors %}
-                            <span class="field-error">{{ form.mobile_no.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">ABHA No:</label>
-                        <div style="width: 64%;">
-                            {{ form.abha_id }}
-                            {% if form.abha_id.errors %}
-                            <span class="field-error">{{ form.abha_id.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Address / Street <span class="required-star">*</span>:</label>
-                        <div style="width: 64%;">
-                            {{ form.street }}
-                            {% if form.street.errors %}
-                            <span class="field-error">{{ form.street.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Village / Area <span class="required-star">*</span>:</label>
-                        <div style="width: 64%;">
-                            {{ form.village_area }}
-                            {% if form.village_area.errors %}
-                            <span class="field-error">{{ form.village_area.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Department <span class="required-star">*</span>:</label>
-                        <div style="width: 64%;">
-                            {{ form.department_obj }}
-                            {% if form.department_obj.errors %}
-                            <span class="field-error">{{ form.department_obj.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Unit / Doctor <span class="required-star">*</span>:</label>
-                        <div style="width: 64%;">
-                            {{ form.unit_obj }}
-                            {% if form.unit_obj.errors %}
-                            <span class="field-error">{{ form.unit_obj.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
+            <div class="reg-mode-selectors">
+                <label class="mode-radio-item" title="Standard Outpatient / Inpatient Registration">
+                    <input type="radio" name="registration_mode" value="NORMAL" id="modeNormal" checked>
+                    <span>NORMAL</span>
+                </label>
+                <label class="mode-radio-item" title="Company, Scheme & Corporate Registration">
+                    <input type="radio" name="registration_mode" value="COMPANY" id="modeCompany">
+                    <span>COMPANY</span>
+                </label>
+                <label class="mode-radio-item" title="Non-Resident Indian / International Patient Registration">
+                    <input type="radio" name="registration_mode" value="NRI" id="modeNRI">
+                    <span>NRI</span>
+                </label>
+                <label class="mode-radio-item" title="Emergency & Casualty Fast Admission">
+                    <input type="radio" name="registration_mode" value="EMERGENCY" id="modeEmergency">
+                    <span>EMERGENCY</span>
+                </label>
             </div>
         </div>
 
-        <!-- ======================================================= -->
-        <!-- ACTION BUTTONS (DIRECTLY BELOW THE MANDATORY BOX)       -->
-        <!-- ======================================================= -->
-        <div class="hims-mid-action-bar">
-            <button type="submit" name="save" class="hims-action-btn primary-save-btn">
-                <i class="bi bi-floppy-fill"></i> Save Patient
-            </button>
-            <button type="button" class="hims-action-btn">Modify</button>
-            <button type="reset" class="hims-action-btn">Reset</button>
-            <button type="submit" name="print" class="hims-action-btn">
-                <i class="bi bi-printer"></i> Print
-            </button>
-            <button type="button" class="hims-action-btn">Label - 1</button>
-            <button type="button" class="hims-action-btn">Label-A4</button>
-            <button type="submit" name="print_op" class="hims-action-btn">
-                <i class="bi bi-printer-fill"></i> Print OP
-            </button>
-            <a href="{% url 'patients:list' %}" class="hims-action-btn" style="margin-left: auto; text-decoration: none;">
-                <i class="bi bi-arrow-left"></i> Back to Directory
-            </a>
+        <!-- Hidden Centre for backend compatibility -->
+        <div style="display: none;">
+            {{ form.centre }}
         </div>
 
-        <!-- ======================================================= -->
-        <!-- BOX 2: ADDITIONAL / OPTIONAL DETAILS (BELOW BOX)        -->
-        <!-- ======================================================= -->
-        <div class="hims-section-box optional-section-box">
-            <div class="section-box-header">
-                <h3 class="section-box-title">
-                    <i class="bi bi-card-list text-slate-500"></i>
-                    Additional & Optional Information
-                </h3>
-                <span class="badge-optional">Optional Fields</span>
-            </div>
+        <!-- 2. MAIN TWO-COLUMN CONTINUOUS REGISTRATION FORM (NO OUTER NESTED BOXES) -->
+        <div class="reg-form-surface">
+            <div class="reg-two-col-layout">
 
-            <div class="hims-grid">
-                <!-- Left Column (Optional) -->
-                <div class="hims-col">
-                    <div class="hims-field-row">
-                        <label class="hims-label">IPNO:</label>
-                        <div class="hims-input-group">
+                <!-- ======================================================= -->
+                <!-- LEFT COLUMN FIELDS                                      -->
+                <!-- ======================================================= -->
+                <div class="reg-col-left">
+
+                    <!-- 1. IPNO -->
+                    <div class="reg-field-row" id="row_ipno">
+                        <label class="reg-field-label" for="id_ipno">IPNO</label>
+                        <div class="reg-field-input-wrap" style="max-width: 160px;">
                             {{ form.ipno }}
-                            <button type="button" class="hims-btn-small">Go</button>
                         </div>
                     </div>
 
-                    <div class="hims-field-row">
-                        <label class="hims-label">Patient Id:</label>
-                        <div style="width: 62%;">
+                    <!-- 2. Patient Id + Go Button -->
+                    <div class="reg-field-row" id="row_patient_id">
+                        <label class="reg-field-label" for="id_patient_id">Patient Id:</label>
+                        <div class="reg-field-input-wrap" style="display: flex; gap: 5px;">
                             {% if is_edit %}
                             {{ form.patient_id }}
                             {% else %}
-                            <input type="text" id="id_patient_id_display" class="form-input" value="Auto-Generated on Save" disabled
-                                style="background-color: #f1f5f9; color: #64748b; font-style: italic;">
+                            <input type="text" id="id_patient_id_display" class="form-input" value="Auto-Generated on Save" readonly
+                                style="background-color: #f8fafc; color: #475569; font-weight: 500;">
                             {{ form.patient_id.as_hidden }}
                             {% endif %}
+                            <button type="button" class="btn-dark-go" id="btnGoPatientId">Go</button>
                         </div>
                     </div>
 
-                    <div class="hims-field-row">
-                        <label class="hims-label">DOB:</label>
-                        <div style="width: 62%;">
+                    <!-- 3. Title -->
+                    <div class="reg-field-row" id="row_title">
+                        <label class="reg-field-label" for="id_title">Title:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 130px;">
+                            {{ form.title }}
+                        </div>
+                    </div>
+
+                    <!-- 4. Name (Mandatory) -->
+                    <div class="reg-field-row" id="row_name">
+                        <label class="reg-field-label" for="id_name">Name: <span class="req-star">*</span></label>
+                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
+                            {{ form.name }}
+                            {% if form.name.errors %}<span class="js-field-error">{{ form.name.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 5. Gender (Mandatory) -->
+                    <div class="reg-field-row" id="row_gender">
+                        <label class="reg-field-label" for="id_gender">Gender: <span class="req-star">*</span></label>
+                        <div class="reg-field-input-wrap" style="max-width: 130px; flex-direction: column; align-items: flex-start;">
+                            {{ form.gender }}
+                            {% if form.gender.errors %}<span class="js-field-error">{{ form.gender.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 6. DOB + Calc Age Refresh -->
+                    <div class="reg-field-row" id="row_dob">
+                        <label class="reg-field-label" for="id_dob">DOB:</label>
+                        <div class="reg-field-input-wrap" style="display: flex; gap: 5px; max-width: 210px;">
                             {{ form.dob }}
+                            <button type="button" class="btn-icon-refresh" id="btnCalcAgeFromDOB" title="Calculate Age from Date of Birth">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </button>
                         </div>
                     </div>
 
-                    <div class="hims-field-row">
-                        <label class="hims-label">Visit Through:</label>
-                        <div style="width: 62%;">
+                    <!-- 7. Age (Years / Months / Days) (Mandatory) -->
+                    <div class="reg-field-row" id="row_age">
+                        <label class="reg-field-label" for="id_age_years">Age: <span class="req-star">*</span></label>
+                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
+                            <div class="age-triple-wrap">
+                                {{ form.age_years }} <span class="age-unit-label">Y</span>
+                                {{ form.age_months }} <span class="age-unit-label">M</span>
+                                {{ form.age_days }} <span class="age-unit-label">D</span>
+                            </div>
+                            {% if form.age_years.errors %}<span class="js-field-error">{{ form.age_years.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 8. Aadhar Card (Hidden in NRI Mode) -->
+                    <div class="reg-field-row" id="row_aadhar">
+                        <label class="reg-field-label" for="id_aadhar_card">Aadhar Card:</label>
+                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
+                            {{ form.aadhar_card }}
+                            {% if form.aadhar_card.errors %}<span class="js-field-error">{{ form.aadhar_card.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 9. Passport Number (Mandatory in NRI Mode) -->
+                    <div class="reg-field-row" id="row_passport">
+                        <label class="reg-field-label" for="id_passport_number" id="lblPassport">Passport Number:</label>
+                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
+                            {{ form.passport_number }}
+                            {% if form.passport_number.errors %}<span class="js-field-error">{{ form.passport_number.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 10. Identification Mark -->
+                    <div class="reg-field-row" id="row_identification">
+                        <label class="reg-field-label" for="id_identification_mark">Identification Mark:</label>
+                        <div class="reg-field-input-wrap">
+                            {{ form.identification_mark }}
+                        </div>
+                    </div>
+
+                    <!-- 11. Visit Through -->
+                    <div class="reg-field-row" id="row_visit_through">
+                        <label class="reg-field-label" for="id_visit_through">Visit Through:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 200px;">
                             {{ form.visit_through }}
                         </div>
                     </div>
 
-                    <div class="hims-field-row">
-                        <label class="hims-label">Company / Scheme:</label>
-                        <div style="width: 62%;">
-                            {{ form.patient_company }}
-                        </div>
-                    </div>
-
-                    <div class="hims-field-row">
-                        <label class="hims-label">Category:</label>
-                        <div style="width: 62%;">
+                    <!-- 12. Category -->
+                    <div class="reg-field-row" id="row_category">
+                        <label class="reg-field-label" for="id_category">Category:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 200px;">
                             {{ form.category }}
                         </div>
                     </div>
 
-                    <div class="hims-field-row">
-                        <label class="hims-label">Marital Status:</label>
-                        <div style="width: 62%;">
+                    <!-- 13. Marital Status -->
+                    <div class="reg-field-row" id="row_marital_status">
+                        <label class="reg-field-label" for="id_marital_status">Marital Status:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 150px;">
                             {{ form.marital_status }}
                         </div>
                     </div>
 
-                    <div class="hims-field-row">
-                        <label class="hims-label">Religion:</label>
-                        <div style="width: 62%;">
+                    <!-- 14. Religion -->
+                    <div class="reg-field-row" id="row_religion">
+                        <label class="reg-field-label" for="id_religion">Religion:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 150px;">
                             {{ form.religion }}
                         </div>
                     </div>
 
-                    <div class="hims-field-row">
-                        <label class="hims-label">OFC Code:</label>
-                        <div style="width: 62%;">
+                    <!-- 15. Guardian Name (Relationship + Name) -->
+                    <div class="reg-field-row" id="row_guardian">
+                        <label class="reg-field-label" for="id_guardian_name">Guardian Name:</label>
+                        <div class="reg-field-input-wrap" style="display: flex; gap: 4px;">
+                            <div style="width: 80px; min-width: 80px;">
+                                {{ form.guardian_relationship }}
+                            </div>
+                            <div style="flex: 1;">
+                                {{ form.guardian_name }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 16. Company Name + Employee ID -->
+                    <div class="reg-field-row" id="row_company">
+                        <label class="reg-field-label" for="id_patient_company" id="lblCompany">Company Name:</label>
+                        <div class="reg-field-input-wrap" style="display: flex; align-items: center; gap: 4px;">
+                            <div style="flex: 1;">
+                                {{ form.patient_company }}
+                            </div>
+                            <span class="inline-text-label">Employee ID:</span>
+                            <div style="width: 120px; min-width: 100px;">
+                                {{ form.employee_id }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 17. ABHAID -->
+                    <div class="reg-field-row" id="row_abha">
+                        <label class="reg-field-label" for="id_abha_id">ABHAID</label>
+                        <div class="reg-field-input-wrap" style="max-width: 220px;">
+                            {{ form.abha_id }}
+                        </div>
+                    </div>
+
+                    <!-- 18. OFC Code -->
+                    <div class="reg-field-row" id="row_ofc">
+                        <label class="reg-field-label" for="id_ofc_code">OFC Code</label>
+                        <div class="reg-field-input-wrap" style="max-width: 220px;">
                             {{ form.ofc_code }}
                         </div>
                     </div>
+
+                    <!-- 19. Purpose (Mandatory in NRI Mode) -->
+                    <div class="reg-field-row mode-hidden" id="row_purpose">
+                        <label class="reg-field-label" for="id_purpose" id="lblPurpose">Purpose: <span class="req-star">*</span></label>
+                        <div class="reg-field-input-wrap">
+                            {{ form.purpose }}
+                        </div>
+                    </div>
+
                 </div>
 
-                <!-- Right Column (Optional) -->
-                <div class="hims-col">
-                    <div class="hims-field-row">
-                        <label class="hims-label">Country:</label>
-                        <div style="width: 62%;">
-                            {{ form.country }}
+                <!-- ======================================================= -->
+                <!-- RIGHT COLUMN FIELDS                                     -->
+                <!-- ======================================================= -->
+                <div class="reg-col-right">
+
+                    <!-- 1. Last Patient Id -->
+                    <div class="reg-field-row" id="row_last_pid">
+                        <label class="reg-field-label">Last Patient Id:</label>
+                        <div class="reg-field-input-wrap">
+                            <span class="last-pid-text">{{ last_patient_id|default:"26176168" }}</span>
                         </div>
                     </div>
 
-                    <div class="hims-field-row">
-                        <label class="hims-label">State:</label>
-                        <div style="width: 62%;">
-                            {{ form.state }}
+                    <!-- 2. Mobile No (without 91) -->
+                    <div class="reg-field-row" id="row_mobile">
+                        <label class="reg-field-label" for="id_mobile_no" id="lblMobile">Mobile No (without 91):</label>
+                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
+                            {{ form.mobile_no }}
+                            {% if form.mobile_no.errors %}<span class="js-field-error">{{ form.mobile_no.errors.0 }}</span>{% endif %}
                         </div>
                     </div>
 
-                    <div class="hims-field-row">
-                        <label class="hims-label">City:</label>
-                        <div style="width: 62%;">
-                            {{ form.city }}
+                    <!-- 3. Email -->
+                    <div class="reg-field-row" id="row_email">
+                        <label class="reg-field-label" for="id_email">Email:</label>
+                        <div class="reg-field-input-wrap">
+                            {{ form.email }}
                         </div>
                     </div>
 
-                    <div class="hims-field-row">
-                        <label class="hims-label">Pincode:</label>
-                        <div style="width: 62%;">
+                    <!-- 4. Street / Address -->
+                    <div class="reg-field-row" id="row_street">
+                        <label class="reg-field-label" for="id_street">Street: <span class="req-star" id="star_street">*</span></label>
+                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
+                            <textarea name="street" id="id_street" class="form-input form-textarea-compact" rows="1" placeholder="Street / Address">{{ form.street.value|default:'' }}</textarea>
+                            {% if form.street.errors %}<span class="js-field-error">{{ form.street.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 5. Village / Area -->
+                    <div class="reg-field-row" id="row_village_area">
+                        <label class="reg-field-label" for="id_village_area">Village / Area: <span class="req-star" id="star_village">*</span></label>
+                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
+                            <textarea name="village_area" id="id_village_area" class="form-input form-textarea-compact" rows="1" placeholder="Village / Area">{{ form.village_area.value|default:'' }}</textarea>
+                            {% if form.village_area.errors %}<span class="js-field-error">{{ form.village_area.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 6. Country (Dynamic for NORMAL vs NRI) -->
+                    <div class="reg-field-row" id="row_country">
+                        <label class="reg-field-label" for="id_country_select" id="lblCountry">Country:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 230px;">
+                            <select name="country" id="id_country_select" class="form-select">
+                                <option value="India" selected>India</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 7. State (Dynamic for NORMAL vs NRI) -->
+                    <div class="reg-field-row" id="row_state">
+                        <label class="reg-field-label" for="id_state_select" id="lblState">State:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 230px;">
+                            <select name="state" id="id_state_select" class="form-select">
+                                <option value="Puducherry" selected>Puducherry</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 8. City (Dynamic for NORMAL vs NRI) -->
+                    <div class="reg-field-row" id="row_city">
+                        <label class="reg-field-label" for="id_city_select" id="lblCity">City:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 230px;">
+                            <select name="city" id="id_city_select" class="form-select">
+                                <option value="Karaikal" selected>Karaikal</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 9. Pincode -->
+                    <div class="reg-field-row" id="row_pincode">
+                        <label class="reg-field-label" for="id_pincode">Pincode:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 180px;">
                             {{ form.pincode }}
                         </div>
                     </div>
 
-                    <div class="hims-field-row">
-                        <label class="hims-label">Bloodgroup:</label>
-                        <div style="width: 62%;">
+                    <!-- 10. Blood Group -->
+                    <div class="reg-field-row" id="row_blood_group">
+                        <label class="reg-field-label" for="id_blood_group">Bloodgroup:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 130px;">
                             {{ form.blood_group }}
                         </div>
                     </div>
 
-                    <div class="hims-field-row">
-                        <label class="hims-label">Diagnosis:</label>
-                        <div style="width: 62%;">
+                    <!-- 11. Complaint + Add New Complaint -->
+                    <div class="reg-field-row" id="row_complaint">
+                        <label class="reg-field-label" for="id_complaint">Complaint:</label>
+                        <div class="reg-field-input-wrap" style="display: flex; gap: 5px;">
                             {{ form.complaint }}
-                            <button type="button" class="hims-btn-small" style="margin-top: 4px; float: right;">Add New Complaint</button>
+                            <button type="button" class="btn-dark-complaint" id="btnAddComplaint">Add New Complaint</button>
                         </div>
                     </div>
 
-                    <div class="hims-field-row" style="clear: both;">
-                        <label class="hims-label">Occupation:</label>
-                        <div style="width: 62%;">
+                    <!-- 12. Occupation -->
+                    <div class="reg-field-row" id="row_occupation">
+                        <label class="reg-field-label" for="id_occupation">Occupation:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 220px;">
                             {{ form.occupation }}
                         </div>
                     </div>
 
-                    <div class="hims-field-row">
-                        <label class="hims-label">Income:</label>
-                        <div style="width: 62%;">
+                    <!-- 13. Income -->
+                    <div class="reg-field-row" id="row_income">
+                        <label class="reg-field-label" for="id_income">Income:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 220px;">
                             {{ form.income }}
                         </div>
                     </div>
 
-                    <div class="hims-field-row">
-                        <label class="hims-label">PanNo:</label>
-                        <div style="width: 62%;">
+                    <!-- 14. Department (Mandatory) -->
+                    <div class="reg-field-row" id="row_department">
+                        <label class="reg-field-label" for="id_department" id="lblDepartment">Department: <span class="req-star">*</span></label>
+                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
+                            {{ form.department_obj }}
+                            {% if form.department_obj.errors %}<span class="js-field-error">{{ form.department_obj.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 15. Unit / Doctor + Refresh -->
+                    <div class="reg-field-row" id="row_unit">
+                        <label class="reg-field-label" for="id_unit" id="lblUnit">Unit / Doctor: <span class="req-star">*</span></label>
+                        <div class="reg-field-input-wrap" style="display: flex; gap: 5px; flex-direction: column; align-items: flex-start;">
+                            <div style="display: flex; gap: 5px; width: 100%;">
+                                {{ form.unit_obj }}
+                                <button type="button" class="btn-icon-refresh" id="btnRefreshUnits" title="Refresh Mapped Units / Doctors">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </button>
+                            </div>
+                            {% if form.unit_obj.errors %}<span class="js-field-error">{{ form.unit_obj.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 16. PAN Number (Hidden in NRI Mode) -->
+                    <div class="reg-field-row" id="row_pan">
+                        <label class="reg-field-label" for="id_pan_no">PanNo:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 230px;">
                             {{ form.pan_no }}
                         </div>
                     </div>
+
+                    <!-- 17. Emergency Medicine Type (Shown in Emergency Mode) -->
+                    <div class="reg-field-row mode-hidden" id="row_emergency_type">
+                        <label class="reg-field-label" for="id_emergency_medicine_type" id="lblEmerType">Emergency Type: <span class="req-star">*</span></label>
+                        <div class="reg-field-input-wrap">
+                            {{ form.emergency_medicine_type }}
+                        </div>
+                    </div>
+
                 </div>
+
             </div>
+        </div>
+
+        <!-- 3. BOTTOM ACTION BUTTONS ROW -->
+        <div class="reg-bottom-actions">
+            <button type="submit" name="save" class="btn-hims-act btn-hims-save" id="btnSavePatient">
+                <i class="bi bi-floppy-fill"></i> Save Patient
+            </button>
+            <button type="button" class="btn-hims-act" id="btnModify">
+                <i class="bi bi-pencil"></i> Modify
+            </button>
+            <button type="button" class="btn-hims-act" id="btnReset">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset
+            </button>
+            <button type="submit" name="print" class="btn-hims-act" id="btnPrint">
+                <i class="bi bi-printer"></i> Print
+            </button>
+            <button type="button" class="btn-hims-act" id="btnLabel1">
+                <i class="bi bi-tag"></i> Label - 1
+            </button>
+            <button type="button" class="btn-hims-act" id="btnLabelA4">
+                <i class="bi bi-file-earmark-text"></i> Label - A4
+            </button>
+            <button type="submit" name="print_op" class="btn-hims-act" id="btnPrintOP">
+                <i class="bi bi-file-text"></i> Print - OP
+            </button>
+            <button type="button" class="btn-hims-act" id="btnSendSMS">
+                <i class="bi bi-chat-dots"></i> Send SMS
+            </button>
+            <button type="button" class="btn-hims-act" id="btnSendWhatsapp">
+                <i class="bi bi-whatsapp" style="color: #22c55e;"></i> Send Whatsapp
+            </button>
+            <a href="{% url 'patients:list' %}" class="btn-hims-act btn-hims-back">
+                <i class="bi bi-arrow-left"></i> Back to Directory
+            </a>
         </div>
 
     </form>
@@ -615,245 +793,710 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('patientRegForm');
-        const deptSelect = document.getElementById('id_department_select');
-        const unitSelect = document.getElementById('id_unit_select');
         const jsBanner = document.getElementById('jsValidationBanner');
         const jsMessage = document.getElementById('jsValidationMessage');
 
+        const deptSelect = document.getElementById('id_department');
+        const unitSelect = document.getElementById('id_unit');
         const mobileInput = document.getElementById('id_mobile_no');
         const aadharInput = document.getElementById('id_aadhar_card');
+        const panInput = document.getElementById('id_pan_no');
+        const passportInput = document.getElementById('id_passport_number');
+        const purposeInput = document.getElementById('id_purpose');
+        const employeeIdInput = document.getElementById('id_employee_id');
+        const emergencyTypeSelect = document.getElementById('id_emergency_medicine_type');
 
-        // Restrict input fields to digits only
-        function enforceDigitsOnly(el) {
+        const dobInput = document.getElementById('id_dob');
+        const ageYearsInput = document.getElementById('id_age_years');
+        const ageMonthsInput = document.getElementById('id_age_months');
+        const ageDaysInput = document.getElementById('id_age_days');
+
+        const countrySelect = document.getElementById('id_country_select');
+        const stateSelect = document.getElementById('id_state_select');
+        const citySelect = document.getElementById('id_city_select');
+        const pincodeInput = document.getElementById('id_pincode');
+        const streetInput = document.getElementById('id_street');
+        const villageInput = document.getElementById('id_village_area');
+
+        const companySelect = document.getElementById('id_patient_company');
+        const categorySelect = document.getElementById('id_category');
+        const visitThroughSelect = document.getElementById('id_visit_through');
+        const patientIdDisplay = document.getElementById('id_patient_id_display');
+
+        const modeRadios = document.querySelectorAll('input[name="registration_mode"]');
+
+        // All Field Rows
+        const rowIpno = document.getElementById('row_ipno');
+        const rowPatientId = document.getElementById('row_patient_id');
+        const rowTitle = document.getElementById('row_title');
+        const rowName = document.getElementById('row_name');
+        const rowGender = document.getElementById('row_gender');
+        const rowDob = document.getElementById('row_dob');
+        const rowAge = document.getElementById('row_age');
+        const rowAadhar = document.getElementById('row_aadhar');
+        const rowPassport = document.getElementById('row_passport');
+        const rowIdentification = document.getElementById('row_identification');
+        const rowVisitThrough = document.getElementById('row_visit_through');
+        const rowCategory = document.getElementById('row_category');
+        const rowMarital = document.getElementById('row_marital_status');
+        const rowReligion = document.getElementById('row_religion');
+        const rowGuardian = document.getElementById('row_guardian');
+        const rowCompany = document.getElementById('row_company');
+        const rowAbha = document.getElementById('row_abha');
+        const rowOfc = document.getElementById('row_ofc');
+        const rowPurpose = document.getElementById('row_purpose');
+
+        const rowLastPid = document.getElementById('row_last_pid');
+        const rowMobile = document.getElementById('row_mobile');
+        const rowEmail = document.getElementById('row_email');
+        const rowStreet = document.getElementById('row_street');
+        const rowVillageArea = document.getElementById('row_village_area');
+        const rowCountry = document.getElementById('row_country');
+        const rowState = document.getElementById('row_state');
+        const rowCity = document.getElementById('row_city');
+        const rowPincode = document.getElementById('row_pincode');
+        const rowBloodGroup = document.getElementById('row_blood_group');
+        const rowComplaint = document.getElementById('row_complaint');
+        const rowOccupation = document.getElementById('row_occupation');
+        const rowIncome = document.getElementById('row_income');
+        const rowDepartment = document.getElementById('row_department');
+        const rowUnit = document.getElementById('row_unit');
+        const rowPan = document.getElementById('row_pan');
+        const rowEmergencyType = document.getElementById('row_emergency_type');
+
+        const lblPassport = document.getElementById('lblPassport');
+        const lblPurpose = document.getElementById('lblPurpose');
+        const lblMobile = document.getElementById('lblMobile');
+        const starStreet = document.getElementById('star_street');
+        const starVillage = document.getElementById('star_village');
+
+        // =========================================================================
+        // DATASETS: NORMAL (India) vs NRI (International)
+        // =========================================================================
+        const NORMAL_GEODATA = {
+            countries: ['India'],
+            states: {
+                'Puducherry': ['Karaikal', 'Puducherry', 'Mahe', 'Yanam'],
+                'Tamil Nadu': ['Nagapattinam', 'Thiruvarur', 'Mayiladuthurai', 'Thanjavur', 'Chennai', 'Trichy', 'Cuddalore', 'Madurai', 'Coimbatore', 'Salem', 'Other TN'],
+                'Kerala': ['Palakkad', 'Kozhikode', 'Ernakulam', 'Thiruvananthapuram', 'Thrissur', 'Other Kerala'],
+                'Andhra Pradesh': ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Tirupati', 'Other AP'],
+                'Karnataka': ['Bengaluru', 'Mysuru', 'Mangaluru', 'Hubballi', 'Belagavi', 'Other KA'],
+                'Telangana': ['Hyderabad', 'Warangal', 'Nizamabad', 'Khammam', 'Other TS'],
+                'Maharashtra': ['Mumbai', 'Pune', 'Nagpur', 'Nashik', 'Aurangabad', 'Other MH'],
+                'Delhi': ['New Delhi', 'Central Delhi', 'South Delhi', 'North Delhi', 'Other DL'],
+                'Other State': ['Other City']
+            }
+        };
+
+        const NRI_GEODATA = {
+            'United Arab Emirates': {
+                regions: ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'],
+                cities: ['Dubai City', 'Abu Dhabi City', 'Al Ain', 'Sharjah City', 'Ajman City', 'RAK City', 'Fujairah City']
+            },
+            'Saudi Arabia': {
+                regions: ['Riyadh Province', 'Makkah Province', 'Eastern Province', 'Madinah Province', 'Asir'],
+                cities: ['Riyadh', 'Jeddah', 'Mecca', 'Medina', 'Dammam', 'Khobar', 'Jubail']
+            },
+            'Singapore': {
+                regions: ['Central Region', 'East Region', 'North Region', 'North-East Region', 'West Region'],
+                cities: ['Singapore Central', 'Jurong', 'Tampines', 'Woodlands', 'Bedok', 'Ang Mo Kio']
+            },
+            'Malaysia': {
+                regions: ['Federal Territory', 'Penang', 'Johor', 'Selangor', 'Perak', 'Kedah', 'Sabah', 'Sarawak'],
+                cities: ['Kuala Lumpur', 'George Town', 'Johor Bahru', 'Petaling Jaya', 'Ipoh', 'Shah Alam']
+            },
+            'Qatar': {
+                regions: ['Doha', 'Al Rayyan', 'Al Wakrah', 'Al Khor'],
+                cities: ['Doha City', 'Al Rayyan', 'Al Wakrah', 'Lusail', 'Al Khor']
+            },
+            'Kuwait': {
+                regions: ['Al Asimah', 'Hawalli', 'Farwaniya', 'Ahmadi', 'Jahra'],
+                cities: ['Kuwait City', 'Hawalli', 'Salmiya', 'Al Ahmadi', 'Al Farwaniyah']
+            },
+            'Oman': {
+                regions: ['Muscat', 'Dhofar', 'Al Batinah', 'Al Dakhiliyah'],
+                cities: ['Muscat City', 'Salalah', 'Sohar', 'Nizwa', 'Sur']
+            },
+            'United States': {
+                regions: ['California', 'New York', 'Texas', 'Florida', 'Illinois', 'New Jersey', 'Washington', 'Massachusetts'],
+                cities: ['New York City', 'Los Angeles', 'Chicago', 'Houston', 'San Francisco', 'Dallas', 'Boston', 'Seattle']
+            },
+            'United Kingdom': {
+                regions: ['Greater London', 'West Midlands', 'Greater Manchester', 'West Yorkshire', 'Scotland', 'Wales'],
+                cities: ['London', 'Birmingham', 'Manchester', 'Leeds', 'Edinburgh', 'Glasgow', 'Cardiff']
+            },
+            'Australia': {
+                regions: ['New South Wales', 'Victoria', 'Queensland', 'Western Australia', 'South Australia'],
+                cities: ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide', 'Canberra']
+            },
+            'Canada': {
+                regions: ['Ontario', 'Quebec', 'British Columbia', 'Alberta', 'Manitoba'],
+                cities: ['Toronto', 'Montreal', 'Vancouver', 'Calgary', 'Ottawa', 'Edmonton']
+            },
+            'Other Country': {
+                regions: ['International Region / State'],
+                cities: ['International City']
+            }
+        };
+
+        // =========================================================================
+        // GEODATA POPULATORS FOR NORMAL VS NRI
+        // =========================================================================
+        function populateNormalGeo(keepValues = false) {
+            countrySelect.innerHTML = '<option value="India" selected>India</option>';
+            
+            let stateOptions = '<option value="">Select State</option>';
+            Object.keys(NORMAL_GEODATA.states).forEach(st => {
+                const isSelected = (!keepValues && st === 'Puducherry') ? 'selected' : '';
+                stateOptions += `<option value="${st}" ${isSelected}>${st}</option>`;
+            });
+            stateSelect.innerHTML = stateOptions;
+
+            updateNormalCities(keepValues ? citySelect.value : 'Karaikal');
+        }
+
+        function updateNormalCities(defaultCity = 'Karaikal') {
+            const selectedState = stateSelect.value || 'Puducherry';
+            const cities = NORMAL_GEODATA.states[selectedState] || ['Other City'];
+            
+            let cityOptions = '<option value="">Select City</option>';
+            cities.forEach(c => {
+                const isSelected = (c === defaultCity) ? 'selected' : '';
+                cityOptions += `<option value="${c}" ${isSelected}>${c}</option>`;
+            });
+            citySelect.innerHTML = cityOptions;
+        }
+
+        function populateNRIGeo() {
+            let countryOptions = '<option value="" selected>Select Country</option>';
+            Object.keys(NRI_GEODATA).forEach(ctry => {
+                countryOptions += `<option value="${ctry}">${ctry}</option>`;
+            });
+            countrySelect.innerHTML = countryOptions;
+            stateSelect.innerHTML = '<option value="" selected>Select State / Region</option>';
+            citySelect.innerHTML = '<option value="" selected>Select City</option>';
+        }
+
+        function updateNRIRegions() {
+            const selectedCountry = countrySelect.value;
+            if (!selectedCountry || !NRI_GEODATA[selectedCountry]) {
+                stateSelect.innerHTML = '<option value="" selected>Select State / Region</option>';
+                citySelect.innerHTML = '<option value="" selected>Select City</option>';
+                return;
+            }
+
+            const cData = NRI_GEODATA[selectedCountry];
+            let stateOptions = '<option value="" selected>Select State / Region</option>';
+            cData.regions.forEach(r => {
+                stateOptions += `<option value="${r}">${r}</option>`;
+            });
+            stateSelect.innerHTML = stateOptions;
+
+            let cityOptions = '<option value="" selected>Select City</option>';
+            cData.cities.forEach(c => {
+                cityOptions += `<option value="${c}">${c}</option>`;
+            });
+            citySelect.innerHTML = cityOptions;
+        }
+
+        countrySelect.addEventListener('change', function () {
+            const mode = document.querySelector('input[name="registration_mode"]:checked')?.value || 'NORMAL';
+            if (mode === 'NRI') {
+                updateNRIRegions();
+            }
+        });
+
+        stateSelect.addEventListener('change', function () {
+            const mode = document.querySelector('input[name="registration_mode"]:checked')?.value || 'NORMAL';
+            if (mode === 'NORMAL' || mode === 'COMPANY') {
+                updateNormalCities('');
+            }
+        });
+
+        // =========================================================================
+        // DYNAMIC REGISTRATION MODE SWITCHER & MULTIPLE SWITCHING BUG FIX
+        // =========================================================================
+        let currentActiveMode = 'NORMAL';
+
+        function switchRegistrationMode(newMode, isFullReset = false) {
+            clearValidationErrors();
+
+            const prevMode = currentActiveMode;
+            currentActiveMode = newMode;
+
+            // 1. CLEAR MODE-INCOMPATIBLE FIELDS ON SWITCH
+            if (prevMode === 'NORMAL' && newMode === 'NRI') {
+                if (aadharInput) aadharInput.value = '';
+                if (panInput) panInput.value = '';
+                if (passportInput) passportInput.value = '';
+                if (purposeInput) purposeInput.value = '';
+                if (pincodeInput) pincodeInput.value = '';
+                if (mobileInput) mobileInput.value = '';
+            }
+            else if (prevMode === 'NRI' && newMode === 'NORMAL') {
+                if (passportInput) passportInput.value = '';
+                if (purposeInput) purposeInput.value = '';
+                if (pincodeInput) pincodeInput.value = '';
+                if (mobileInput) mobileInput.value = '';
+                if (aadharInput) aadharInput.value = '';
+                if (panInput) panInput.value = '';
+            }
+            else if (newMode === 'EMERGENCY') {
+                if (aadharInput) aadharInput.value = '';
+                if (panInput) panInput.value = '';
+                if (passportInput) passportInput.value = '';
+                if (purposeInput) purposeInput.value = '';
+                if (employeeIdInput) employeeIdInput.value = '';
+                if (pincodeInput) pincodeInput.value = '';
+                if (streetInput) streetInput.value = '';
+                if (villageInput) villageInput.value = '';
+            }
+            else if (prevMode === 'EMERGENCY') {
+                if (emergencyTypeSelect) emergencyTypeSelect.value = '';
+            }
+            else if (newMode === 'COMPANY') {
+                if (aadharInput) aadharInput.value = '';
+                if (panInput) panInput.value = '';
+                if (passportInput) passportInput.value = '';
+                if (purposeInput) purposeInput.value = '';
+            }
+
+            // 2. APPLY VISIBILITY & HIGHLIGHTS BY MODE
+            const allRows = document.querySelectorAll('.reg-field-row');
+            allRows.forEach(r => r.classList.remove('mode-hidden', 'mode-company-highlight', 'mode-emergency-highlight'));
+
+            if (newMode === 'NORMAL') {
+                // NORMAL MODE: Complete form, Normal India address defaults
+                rowPurpose.classList.add('mode-hidden');
+                rowEmergencyType.classList.add('mode-hidden');
+
+                lblPassport.innerHTML = 'Passport Number:';
+                lblMobile.innerHTML = 'Mobile No (without 91):';
+                if (starStreet) starStreet.style.display = 'inline';
+                if (starVillage) starVillage.style.display = 'inline';
+
+                populateNormalGeo(false);
+            }
+            else if (newMode === 'NRI') {
+                // NRI MODE: Clean international state, Aadhar & PAN hidden, Passport & Purpose mandatory
+                rowAadhar.classList.add('mode-hidden');
+                rowPan.classList.add('mode-hidden');
+                rowEmergencyType.classList.add('mode-hidden');
+                rowPurpose.classList.remove('mode-hidden');
+
+                lblPassport.innerHTML = 'Passport Number: <span class="req-star">*</span>';
+                lblPurpose.innerHTML = 'Purpose: <span class="req-star">*</span>';
+                lblMobile.innerHTML = 'Mobile No (International):';
+                if (starStreet) starStreet.style.display = 'inline';
+                if (starVillage) starVillage.style.display = 'inline';
+
+                populateNRIGeo();
+            }
+            else if (newMode === 'COMPANY') {
+                // COMPANY MODE: Show Company fields, hide personal non-company fields
+                rowCompany.classList.add('mode-company-highlight');
+                rowIdentification.classList.add('mode-company-highlight');
+
+                rowAadhar.classList.add('mode-hidden');
+                rowPan.classList.add('mode-hidden');
+                rowPassport.classList.add('mode-hidden');
+                rowPurpose.classList.add('mode-hidden');
+                rowEmergencyType.classList.add('mode-hidden');
+
+                rowMarital.classList.add('mode-hidden');
+                rowReligion.classList.add('mode-hidden');
+                rowAbha.classList.add('mode-hidden');
+                rowOfc.classList.add('mode-hidden');
+                rowOccupation.classList.add('mode-hidden');
+                rowIncome.classList.add('mode-hidden');
+
+                lblPassport.innerHTML = 'Passport Number:';
+                lblMobile.innerHTML = 'Mobile No (without 91):';
+
+                populateNormalGeo(true);
+            }
+            else if (newMode === 'EMERGENCY') {
+                // EMERGENCY MODE: Fast emergency admission fields only
+                rowEmergencyType.classList.remove('mode-hidden');
+                rowEmergencyType.classList.add('mode-emergency-highlight');
+                rowDepartment.classList.add('mode-emergency-highlight');
+
+                // Hide all elective normal fields
+                rowIpno.classList.add('mode-hidden');
+                rowAadhar.classList.add('mode-hidden');
+                rowPan.classList.add('mode-hidden');
+                rowPassport.classList.add('mode-hidden');
+                rowPurpose.classList.add('mode-hidden');
+                rowIdentification.classList.add('mode-hidden');
+                rowMarital.classList.add('mode-hidden');
+                rowReligion.classList.add('mode-hidden');
+                rowAbha.classList.add('mode-hidden');
+                rowOfc.classList.add('mode-hidden');
+                rowCompany.classList.add('mode-hidden');
+                rowOccupation.classList.add('mode-hidden');
+                rowIncome.classList.add('mode-hidden');
+                rowGuardian.classList.add('mode-hidden');
+
+                rowStreet.classList.add('mode-hidden');
+                rowVillageArea.classList.add('mode-hidden');
+                rowCountry.classList.add('mode-hidden');
+                rowState.classList.add('mode-hidden');
+                rowCity.classList.add('mode-hidden');
+                rowPincode.classList.add('mode-hidden');
+                rowEmail.classList.add('mode-hidden');
+
+                // Auto-set Category to CASUALTY / EMERGENCY
+                if (categorySelect) {
+                    if (categorySelect.querySelector('option[value="EMERGENCY"]')) {
+                        categorySelect.value = 'EMERGENCY';
+                    } else if (categorySelect.querySelector('option[value="CASUALTY"]')) {
+                        categorySelect.value = 'CASUALTY';
+                    }
+                }
+
+                // Auto-select Emergency Medicine department
+                if (deptSelect) {
+                    const emrOpt = Array.from(deptSelect.options).find(o => 
+                        o.text.toUpperCase().includes('EMERGENCY') || o.text.toUpperCase().includes('CASUALTY') || o.text.toUpperCase().includes('EMR')
+                    );
+                    if (emrOpt) {
+                        deptSelect.value = emrOpt.value;
+                        deptSelect.dispatchEvent(new Event('change'));
+                    }
+                }
+            }
+
+            updatePatientIdIndicator();
+        }
+
+        modeRadios.forEach(radio => {
+            radio.addEventListener('change', function () {
+                switchRegistrationMode(this.value);
+            });
+        });
+
+        // Initialize default
+        populateNormalGeo(false);
+        switchRegistrationMode('NORMAL');
+
+        // =========================================================================
+        // RESET BUTTON BEHAVIOR (Clears form and restores active mode defaults)
+        // =========================================================================
+        const btnReset = document.getElementById('btnReset');
+        if (btnReset) {
+            btnReset.addEventListener('click', function (e) {
+                e.preventDefault();
+                form.reset();
+                clearValidationErrors();
+
+                // Clear input values
+                document.querySelectorAll('.form-input, .form-select, textarea').forEach(el => {
+                    if (el.id !== 'id_patient_id_display') {
+                        el.value = '';
+                    }
+                });
+
+                const activeMode = document.querySelector('input[name="registration_mode"]:checked')?.value || 'NORMAL';
+                switchRegistrationMode(activeMode, true);
+            });
+        }
+
+        // =========================================================================
+        // INPUT DIGITS ONLY RESTRICTION
+        // =========================================================================
+        function enforceDigits(el, allowInternational = false) {
             if (el) {
                 el.addEventListener('input', function () {
-                    this.value = this.value.replace(/\D/g, '');
+                    const mode = document.querySelector('input[name="registration_mode"]:checked')?.value || 'NORMAL';
+                    if (allowInternational && mode === 'NRI') {
+                        this.value = this.value.replace(/[^\d+ -]/g, '');
+                    } else {
+                        this.value = this.value.replace(/\D/g, '');
+                    }
                 });
             }
         }
-        enforceDigitsOnly(mobileInput);
-        enforceDigitsOnly(aadharInput);
+        enforceDigits(aadharInput, false);
+        enforceDigits(mobileInput, true);
+        enforceDigits(ageYearsInput, false);
+        enforceDigits(ageMonthsInput, false);
+        enforceDigits(ageDaysInput, false);
 
-        // Dynamic unit dropdown fetching
-        if (deptSelect && unitSelect) {
-            deptSelect.addEventListener('change', function () {
-                const deptId = this.value;
-                unitSelect.innerHTML = '<option value="">Loading units...</option>';
+        // =========================================================================
+        // DYNAMIC DEPARTMENT -> UNIT / DOCTOR FETCHING
+        // =========================================================================
+        function fetchUnits(deptId) {
+            if (!unitSelect) return;
+            unitSelect.innerHTML = '<option value="">Loading units...</option>';
 
-                if (!deptId) {
+            if (!deptId) {
+                unitSelect.innerHTML = '<option value="">Select Unit / Doctor</option>';
+                return;
+            }
+
+            fetch(`{% url "patients:api_units" %}?department_id=${deptId}`)
+                .then(r => r.json())
+                .then(data => {
                     unitSelect.innerHTML = '<option value="">Select Unit / Doctor</option>';
-                    return;
-                }
+                    if (data.units && data.units.length > 0) {
+                        data.units.forEach((unit, idx) => {
+                            const opt = document.createElement('option');
+                            opt.value = unit.id;
+                            opt.textContent = unit.unit_name;
+                            if (idx === 0) opt.selected = true;
+                            unitSelect.appendChild(opt);
+                        });
+                    } else {
+                        unitSelect.innerHTML = '<option value="">No units mapped</option>';
+                    }
+                })
+                .catch(() => {
+                    unitSelect.innerHTML = '<option value="">Select Unit / Doctor</option>';
+                });
+        }
 
-                fetch(`{% url "patients:api_units" %}?department_id=${deptId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        unitSelect.innerHTML = '<option value="">Select Unit / Doctor</option>';
-                        if (data.units && data.units.length > 0) {
-                            data.units.forEach(unit => {
-                                const option = document.createElement('option');
-                                option.value = unit.id;
-                                option.textContent = unit.unit_name;
-                                unitSelect.appendChild(option);
-                            });
-                        } else {
-                            unitSelect.innerHTML = '<option value="">No units mapped</option>';
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Error fetching units:', err);
-                        unitSelect.innerHTML = '<option value="">Select Unit / Doctor</option>';
-                    });
+        if (deptSelect) {
+            deptSelect.addEventListener('change', function () {
+                fetchUnits(this.value);
+                updatePatientIdIndicator();
             });
         }
 
-        // Link Company / Scheme and Category / Visit Through
-        const companySelect = document.getElementById('id_patient_company');
-        const visitThroughSelect = document.getElementById('id_visit_through');
-        const categorySelect = document.getElementById('id_category');
-
-        if (companySelect && categorySelect) {
-            companySelect.addEventListener('change', function () {
-                const selectedText = companySelect.options[companySelect.selectedIndex] ? companySelect.options[companySelect.selectedIndex].text.toUpperCase() : '';
-                if (selectedText.includes('EMERGENCY') || selectedText.includes('CASUALTY')) {
-                    if (categorySelect.querySelector('option[value="CASUALTY"]')) {
-                        categorySelect.value = 'CASUALTY';
-                    }
-                } else if (selectedText.includes('STAFF') || selectedText.includes('INDIVIDUAL') || selectedText.includes('SCHEME') || selectedText.includes('INSURANCE') || selectedText.includes('CORPORATION')) {
-                    if (categorySelect.value === 'CASUALTY' || categorySelect.value === 'EMERGENCY') {
-                        categorySelect.value = 'CONSULTATION';
-                    }
-                }
+        const btnRefreshUnits = document.getElementById('btnRefreshUnits');
+        if (btnRefreshUnits && deptSelect) {
+            btnRefreshUnits.addEventListener('click', function () {
+                fetchUnits(deptSelect.value);
             });
         }
 
-        // Emergency ID Indicator & Flow
-        const patientIdDisplay = document.getElementById('id_patient_id_display');
+        // =========================================================================
+        // DOB TO AGE CALCULATION
+        // =========================================================================
+        function calculateAge() {
+            if (!dobInput || !dobInput.value) return;
+            const dob = new Date(dobInput.value);
+            const today = new Date();
+            if (isNaN(dob.getTime())) return;
 
-        function updatePatientIdFlowIndicator() {
+            let years = today.getFullYear() - dob.getFullYear();
+            let months = today.getMonth() - dob.getMonth();
+            let days = today.getDate() - dob.getDate();
+
+            if (days < 0) {
+                months -= 1;
+                const prevMonthLastDay = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+                days += prevMonthLastDay;
+            }
+            if (months < 0) {
+                years -= 1;
+                months += 12;
+            }
+
+            if (years >= 0 && ageYearsInput) ageYearsInput.value = years;
+            if (months >= 0 && ageMonthsInput) ageMonthsInput.value = months;
+            if (days >= 0 && ageDaysInput) ageDaysInput.value = days;
+        }
+
+        if (dobInput) dobInput.addEventListener('change', calculateAge);
+        const btnCalcAge = document.getElementById('btnCalcAgeFromDOB');
+        if (btnCalcAge) btnCalcAge.addEventListener('click', calculateAge);
+
+        // =========================================================================
+        // EMERGENCY ID INDICATOR
+        // =========================================================================
+        function updatePatientIdIndicator() {
             if (!patientIdDisplay) return;
+            const mode = document.querySelector('input[name="registration_mode"]:checked')?.value || 'NORMAL';
             const catVal = (categorySelect ? categorySelect.value || '' : '').toUpperCase();
             const deptText = (deptSelect && deptSelect.selectedIndex >= 0 && deptSelect.options[deptSelect.selectedIndex]) 
                 ? deptSelect.options[deptSelect.selectedIndex].text.toUpperCase() 
                 : '';
             
-            const isEmergency = catVal === 'EMERGENCY' || catVal === 'CASUALTY' || 
+            const isEmergency = mode === 'EMERGENCY' || catVal === 'EMERGENCY' || catVal === 'CASUALTY' || 
                                 deptText.includes('EMERGENCY') || deptText.includes('CASUALTY') || deptText.includes('EMR');
             
             if (isEmergency) {
-                patientIdDisplay.value = 'Auto-Generated Emergency ID (Prefix: E...)';
+                patientIdDisplay.value = 'Auto-Generated (Prefix: E...)';
                 patientIdDisplay.style.backgroundColor = '#fef2f2';
                 patientIdDisplay.style.color = '#dc2626';
                 patientIdDisplay.style.fontWeight = '700';
-                patientIdDisplay.style.borderColor = '#fca5a5';
             } else {
                 patientIdDisplay.value = 'Auto-Generated on Save';
-                patientIdDisplay.style.backgroundColor = '#f1f5f9';
-                patientIdDisplay.style.color = '#64748b';
-                patientIdDisplay.style.fontWeight = 'normal';
-                patientIdDisplay.style.borderColor = '';
+                patientIdDisplay.style.backgroundColor = '#f8fafc';
+                patientIdDisplay.style.color = '#475569';
+                patientIdDisplay.style.fontWeight = '500';
             }
         }
+        if (categorySelect) categorySelect.addEventListener('change', updatePatientIdIndicator);
 
-        if (categorySelect) {
-            categorySelect.addEventListener('change', updatePatientIdFlowIndicator);
+        // =========================================================================
+        // ADD NEW COMPLAINT & MODIFY / GO SHORTCUTS
+        // =========================================================================
+        const btnAddComplaint = document.getElementById('btnAddComplaint');
+        const complaintInput = document.getElementById('id_complaint');
+        if (btnAddComplaint && complaintInput) {
+            btnAddComplaint.addEventListener('click', function () {
+                const text = prompt('Enter additional patient clinical complaint / observation:');
+                if (text && text.trim()) {
+                    if (complaintInput.value.trim()) {
+                        complaintInput.value += ', ' + text.trim();
+                    } else {
+                        complaintInput.value = text.trim();
+                    }
+                    complaintInput.focus();
+                }
+            });
         }
-        if (deptSelect) {
-            deptSelect.addEventListener('change', updatePatientIdFlowIndicator);
+
+        const btnModify = document.getElementById('btnModify');
+        if (btnModify) {
+            btnModify.addEventListener('click', function () {
+                const searchId = prompt('Enter Patient ID or UHID to Modify:');
+                if (searchId && searchId.trim()) {
+                    window.location.href = `{% url "patients:search" %}?q=${encodeURIComponent(searchId.trim())}`;
+                }
+            });
         }
-        updatePatientIdFlowIndicator();
 
-        // Required field definitions (mobile_no removed from mandatory list)
-        const requiredFields = [
-            { id: 'id_title', name: 'Title' },
-            { id: 'id_name', name: 'Patient Name' },
-            { id: 'id_gender', name: 'Gender' },
-            { id: 'id_guardian_name', name: 'Guardian Name' },
-            { id: 'id_street', name: 'Address / Street' },
-            { id: 'id_village_area', name: 'Village / Area' },
-            { id: 'id_department_select', name: 'Department' },
-            { id: 'id_unit_select', name: 'Unit / Doctor' }
-        ];
+        const btnGoPatientId = document.getElementById('btnGoPatientId');
+        if (btnGoPatientId) {
+            btnGoPatientId.addEventListener('click', function () {
+                const searchId = prompt('Enter Patient ID to Search / View:');
+                if (searchId && searchId.trim()) {
+                    window.location.href = `{% url "patients:search" %}?q=${encodeURIComponent(searchId.trim())}`;
+                }
+            });
+        }
 
-        // Helper to create and place error message directly inside field wrapper
-        function createErrorMsg(el, msgText) {
+        // =========================================================================
+        // VALIDATION ENGINE
+        // =========================================================================
+        function createError(el, msg) {
+            if (!el) return;
             el.classList.add('is-invalid');
-            const errMsg = document.createElement('span');
-            errMsg.className = 'js-error-msg';
-            errMsg.style.color = '#f87171';
-            errMsg.style.fontSize = '0.78rem';
-            errMsg.style.marginTop = '4px';
-            errMsg.style.display = 'block';
-            errMsg.style.fontWeight = '600';
-            errMsg.textContent = msgText;
+            const errSpan = document.createElement('span');
+            errSpan.className = 'js-field-error';
+            errSpan.textContent = msg;
 
-            let targetParent = el.parentNode;
-            if (targetParent.classList.contains('hims-input-group') || targetParent.classList.contains('hims-age-group')) {
-                targetParent = targetParent.parentNode;
+            let parent = el.parentElement;
+            if (parent.classList.contains('age-triple-wrap')) {
+                parent = parent.parentElement;
             }
-
-            // Avoid duplicate messages
-            const existing = targetParent.querySelector('.js-error-msg');
-            if (!existing) {
-                targetParent.appendChild(errMsg);
+            if (!parent.querySelector('.js-field-error')) {
+                parent.appendChild(errSpan);
             }
         }
 
-        function clearFieldError(el) {
-            el.classList.remove('is-invalid');
-            let targetParent = el.parentNode;
-            if (targetParent.classList.contains('hims-input-group') || targetParent.classList.contains('hims-age-group')) {
-                targetParent = targetParent.parentNode;
-            }
-            const existing = targetParent.querySelector('.js-error-msg');
-            if (existing) existing.remove();
+        function clearValidationErrors() {
+            document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            document.querySelectorAll('.js-field-error').forEach(el => el.remove());
+            if (jsBanner) jsBanner.style.display = 'none';
         }
 
-        // Remove red highlight on input change
-        requiredFields.forEach(fieldObj => {
-            const el = document.getElementById(fieldObj.id);
-            if (el) {
-                el.addEventListener('input', function () { clearFieldError(this); });
-                el.addEventListener('change', function () { clearFieldError(this); });
-            }
+        document.querySelectorAll('.form-input, .form-select, textarea').forEach(input => {
+            input.addEventListener('input', function () {
+                this.classList.remove('is-invalid');
+                const err = this.parentElement.querySelector('.js-field-error');
+                if (err) err.remove();
+            });
+            input.addEventListener('change', function () {
+                this.classList.remove('is-invalid');
+                const err = this.parentElement.querySelector('.js-field-error');
+                if (err) err.remove();
+            });
         });
-
-        // Real-time live validation for Mobile Number as user types (Only if non-empty)
-        if (mobileInput) {
-            mobileInput.addEventListener('keyup', function () {
-                const val = this.value.trim();
-                clearFieldError(this);
-                if (val.length > 0 && val.length !== 10) {
-                    createErrorMsg(this, 'Mobile number must be exactly 10 digits.');
-                }
-            });
-        }
-
-        // Real-time live validation for Aadhar Card as user types (Only if non-empty)
-        if (aadharInput) {
-            aadharInput.addEventListener('keyup', function () {
-                const val = this.value.trim();
-                clearFieldError(this);
-                if (val.length > 0 && val.length !== 12) {
-                    createErrorMsg(this, 'Aadhar card number must be exactly 12 digits.');
-                }
-            });
-        }
 
         if (form) {
             form.addEventListener('submit', function (e) {
+                clearValidationErrors();
                 let isValid = true;
                 let firstInvalidEl = null;
+                const mode = document.querySelector('input[name="registration_mode"]:checked')?.value || 'NORMAL';
 
-                // Clear previous JS error messages
-                document.querySelectorAll('.js-error-msg').forEach(el => el.remove());
-                document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                // Mandatory across all modes: Name, Gender, Age
+                const nameInput = document.getElementById('id_name');
+                if (!nameInput || !nameInput.value.trim()) {
+                    isValid = false;
+                    createError(nameInput, 'Patient Name is required.');
+                    if (!firstInvalidEl) firstInvalidEl = nameInput;
+                }
 
-                // Check standard required fields
-                requiredFields.forEach(fieldObj => {
-                    const el = document.getElementById(fieldObj.id);
-                    if (el) {
-                        const val = el.value ? el.value.trim() : '';
-                        if (!val || val === '') {
+                const genderSelect = document.getElementById('id_gender');
+                if (!genderSelect || !genderSelect.value.trim()) {
+                    isValid = false;
+                    createError(genderSelect, 'Gender is required.');
+                    if (!firstInvalidEl) firstInvalidEl = genderSelect;
+                }
+
+                const yVal = parseInt(ageYearsInput ? ageYearsInput.value || '0' : '0', 10) || 0;
+                const mVal = parseInt(ageMonthsInput ? ageMonthsInput.value || '0' : '0', 10) || 0;
+                const dVal = parseInt(ageDaysInput ? ageDaysInput.value || '0' : '0', 10) || 0;
+                if (yVal === 0 && mVal === 0 && dVal === 0) {
+                    isValid = false;
+                    createError(ageYearsInput, 'Patient age is required.');
+                    if (!firstInvalidEl) firstInvalidEl = ageYearsInput;
+                }
+
+                // Department & Unit
+                if (deptSelect && !deptSelect.value) {
+                    isValid = false;
+                    createError(deptSelect, 'Department is required.');
+                    if (!firstInvalidEl) firstInvalidEl = deptSelect;
+                }
+                if (unitSelect && !unitSelect.value) {
+                    isValid = false;
+                    createError(unitSelect, 'Unit / Doctor is required.');
+                    if (!firstInvalidEl) firstInvalidEl = unitSelect;
+                }
+
+                // Mode Specific Rules
+                if (mode === 'NORMAL') {
+                    if (mobileInput && mobileInput.value.trim()) {
+                        const mVal = mobileInput.value.trim();
+                        if (mVal.length !== 10 || !/^\d{10}$/.test(mVal)) {
                             isValid = false;
-                            createErrorMsg(el, `${fieldObj.name} is required.`);
-                            if (!firstInvalidEl) firstInvalidEl = el;
+                            createError(mobileInput, 'Mobile number must be exactly 10 digits.');
+                            if (!firstInvalidEl) firstInvalidEl = mobileInput;
                         }
                     }
-                });
-
-                // Age validation (MUST BE Selected)
-                const ageYearsEl = document.getElementById('id_age_years');
-                const ageMonthsEl = document.getElementById('id_age_months');
-                const ageDaysEl = document.getElementById('id_age_days');
-
-                const yearsVal = parseInt(ageYearsEl ? ageYearsEl.value || '0' : '0', 10) || 0;
-                const monthsVal = parseInt(ageMonthsEl ? ageMonthsEl.value || '0' : '0', 10) || 0;
-                const daysVal = parseInt(ageDaysEl ? ageDaysEl.value || '0' : '0', 10) || 0;
-
-                if (yearsVal === 0 && monthsVal === 0 && daysVal === 0) {
-                    isValid = false;
-                    if (ageYearsEl) createErrorMsg(ageYearsEl, 'Patient age must be Selected.');
-                    if (!firstInvalidEl) firstInvalidEl = ageYearsEl;
-                }
-
-                // Mobile number validation (OPTIONAL: ONLY IF ENTERED, MUST BE 10 DIGITS)
-                if (mobileInput) {
-                    const mobileVal = mobileInput.value.trim();
-                    if (mobileVal && !/^\d{10}$/.test(mobileVal)) {
-                        isValid = false;
-                        createErrorMsg(mobileInput, 'Mobile number must be exactly 10 digits.');
-                        if (!firstInvalidEl) firstInvalidEl = mobileInput;
+                    if (aadharInput && aadharInput.value.trim()) {
+                        const aVal = aadharInput.value.trim();
+                        if (aVal.length !== 12 || !/^\d{12}$/.test(aVal)) {
+                            isValid = false;
+                            createError(aadharInput, 'Aadhar card must be exactly 12 digits.');
+                            if (!firstInvalidEl) firstInvalidEl = aadharInput;
+                        }
                     }
                 }
-
-                // Aadhar card validation (OPTIONAL: ONLY IF ENTERED, MUST BE 12 DIGITS)
-                if (aadharInput) {
-                    const aadharVal = aadharInput.value.trim();
-                    if (aadharVal && !/^\d{12}$/.test(aadharVal)) {
+                else if (mode === 'NRI') {
+                    if (!passportInput || !passportInput.value.trim()) {
                         isValid = false;
-                        createErrorMsg(aadharInput, 'Aadhar card number must be exactly 12 digits.');
-                        if (!firstInvalidEl) firstInvalidEl = aadharInput;
+                        createError(passportInput, 'Passport number is mandatory for NRI.');
+                        if (!firstInvalidEl) firstInvalidEl = passportInput;
+                    }
+                    if (!purposeInput || !purposeInput.value.trim()) {
+                        isValid = false;
+                        createError(purposeInput, 'Purpose is mandatory for NRI.');
+                        if (!firstInvalidEl) firstInvalidEl = purposeInput;
+                    }
+                    if (!countrySelect || !countrySelect.value) {
+                        isValid = false;
+                        createError(countrySelect, 'Country is required for NRI.');
+                        if (!firstInvalidEl) firstInvalidEl = countrySelect;
+                    }
+                }
+                else if (mode === 'COMPANY') {
+                    if (!companySelect || !companySelect.value) {
+                        isValid = false;
+                        createError(companySelect, 'Company Name is required.');
+                        if (!firstInvalidEl) firstInvalidEl = companySelect;
+                    }
+                }
+                else if (mode === 'EMERGENCY') {
+                    if (!emergencyTypeSelect || !emergencyTypeSelect.value) {
+                        isValid = false;
+                        createError(emergencyTypeSelect, 'Emergency medicine type is required.');
+                        if (!firstInvalidEl) firstInvalidEl = emergencyTypeSelect;
                     }
                 }
 
@@ -861,14 +1504,12 @@
                     e.preventDefault();
                     if (jsBanner) {
                         jsBanner.style.display = 'flex';
-                        jsMessage.innerHTML = '<strong>Validation Error:</strong> Please correct the errors inside the highlighted form fields.';
+                        jsMessage.innerHTML = '<strong>Validation Error:</strong> Please fill in all required fields highlighted in red.';
                     }
                     if (firstInvalidEl) {
                         firstInvalidEl.focus();
                         firstInvalidEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
-                } else {
-                    if (jsBanner) jsBanner.style.display = 'none';
                 }
             });
         }

@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Patient Type Breakdown & Analysis | Front Office{% endblock %}
+
+{% block extra_head %}
+<style>
+    .type-card {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 14px 16px;
+        transition: transform 0.15s, box-shadow 0.15s;
+        position: relative;
+        overflow: hidden;
+    }
+    .type-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .type-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+    }
+    .type-card.t-normal::before { background: #0284c7; }
+    .type-card.t-company::before { background: #8b5cf6; }
+    .type-card.t-emergency::before { background: #ef4444; }
+    .type-card.t-nri::before { background: #f59e0b; }
+
+    .ptype-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.8rem;
+    }
+    .ptype-table th {
+        background: #0b2569;
+        color: #ffffff;
+        font-weight: 700;
+        padding: 8px 10px;
+        text-align: left;
+        white-space: nowrap;
+    }
+    .ptype-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #e2e8f0;
+        color: #1e293b;
+        vertical-align: middle;
+    }
+    .ptype-table tbody tr:hover {
+        background: #f8fafc;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+
+    <!-- Header Banner -->
+    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-2.5 shadow-sm">
+        <div>
+            <div class="text-[11px] text-slate-500 font-semibold uppercase">Front Office / Patient Categorization</div>
+            <h1 class="text-base md:text-lg font-black text-[#0b2569] m-0 flex items-center gap-2">
+                <i class="bi bi-tags-fill text-indigo-600"></i> Patient Type Analysis (Normal / Company / NRI / Emergency)
+            </h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="badge" style="background: #ede9fe; color: #6d28d9; font-weight: 800; font-size: 0.82rem; padding: 4px 10px; border-radius: 6px;">
+                Total Filtered: {{ total_count }}
+            </span>
+        </div>
+    </div>
+
+    <!-- 4 Patient Type Summary Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="type-card t-normal">
+            <div class="flex justify-between items-center text-xs font-bold text-slate-600">
+                <span>Normal Patients</span>
+                <i class="bi bi-person text-sky-600 text-base"></i>
+            </div>
+            <div class="mt-2 text-2xl font-black text-sky-700">{{ normal_count }}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Individual / Self-pay</div>
+        </div>
+
+        <div class="type-card t-company">
+            <div class="flex justify-between items-center text-xs font-bold text-slate-600">
+                <span>Company / Corporate</span>
+                <i class="bi bi-building text-purple-600 text-base"></i>
+            </div>
+            <div class="mt-2 text-2xl font-black text-purple-700">{{ company_count }}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Insurance / TPA / Schemes</div>
+        </div>
+
+        <div class="type-card t-emergency">
+            <div class="flex justify-between items-center text-xs font-bold text-slate-600">
+                <span>Emergency Cases</span>
+                <i class="bi bi-shield-exclamation text-red-600 text-base"></i>
+            </div>
+            <div class="mt-2 text-2xl font-black text-red-700">{{ emergency_count }}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Casualty / Emergency ID 'E'</div>
+        </div>
+
+        <div class="type-card t-nri">
+            <div class="flex justify-between items-center text-xs font-bold text-slate-600">
+                <span>NRI Patients</span>
+                <i class="bi bi-globe-americas text-amber-600 text-base"></i>
+            </div>
+            <div class="mt-2 text-2xl font-black text-amber-700">{{ nri_count }}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">International / NRI Origin</div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+        <form method="get" action="{% url 'core:patient_type' %}" class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs font-bold text-slate-700">Patient Type:</label>
+                    <select name="patient_type" class="text-xs border border-slate-300 rounded px-2.5 py-1.5 font-bold text-slate-700">
+                        <option value="All" {% if patient_type == 'All' or not patient_type %}selected{% endif %}>All Patient Types</option>
+                        <option value="Normal" {% if patient_type == 'Normal' %}selected{% endif %}>Normal (Self-pay)</option>
+                        <option value="Company" {% if patient_type == 'Company' %}selected{% endif %}>Company / Corporate</option>
+                        <option value="Emergency" {% if patient_type == 'Emergency' %}selected{% endif %}>Emergency / Casualty</option>
+                        <option value="NRI" {% if patient_type == 'NRI' %}selected{% endif %}>NRI (International)</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs font-bold text-slate-700">Department:</label>
+                    <select name="department" class="text-xs border border-slate-300 rounded px-2.5 py-1.5">
+                        <option value="">All Departments</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if dept_selected == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs font-bold text-slate-700">From:</label>
+                    <input type="date" name="from_date" value="{{ from_date }}" class="text-xs border border-slate-300 rounded px-2 py-1.5">
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs font-bold text-slate-700">To:</label>
+                    <input type="date" name="to_date" value="{{ to_date }}" class="text-xs border border-slate-300 rounded px-2 py-1.5">
+                </div>
+
+                <div class="flex-1 min-w-[150px]">
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="Search by name, UHID, phone..." class="w-full text-xs border border-slate-300 rounded px-3 py-1.5">
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-2">
+                <button type="submit" class="px-4 py-1.5 bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs rounded shadow-sm inline-flex items-center gap-1.5">
+                    <i class="bi bi-search"></i> Search
+                </button>
+                <a href="{% url 'core:patient_type_export' %}?from_date={{ from_date }}&to_date={{ to_date }}&patient_type={{ patient_type }}&department={{ dept_selected }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs rounded inline-flex items-center gap-1">
+                    <i class="bi bi-file-earmark-spreadsheet text-emerald-600"></i> Export CSV
+                </a>
+                <a href="{% url 'core:patient_type' %}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs rounded">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Patient Type Table -->
+    <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="ptype-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">S.No</th>
+                        <th>Patient ID / UHID</th>
+                        <th>Patient Name</th>
+                        <th>Patient Type</th>
+                        <th>Registration Date</th>
+                        <th>Mobile No</th>
+                        <th>Department</th>
+                        <th>Doctor / Unit</th>
+                        <th>Visit Type</th>
+                        <th>OP / IP No</th>
+                        <th>Company / Affiliation</th>
+                        <th style="text-align: center;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in page_obj %}
+                    <tr>
+                        <td class="text-center font-semibold text-slate-500">{{ forloop.counter0|add:page_obj.start_index }}</td>
+                        <td class="font-mono font-bold text-sky-700 whitespace-nowrap">{{ p.patient_id }}</td>
+                        <td class="font-bold text-slate-800">{{ p.name }}</td>
+                        <td>
+                            {% if p.category == 'EMERGENCY' or p.category == 'CASUALTY' or p.patient_id|slice:":1" == 'E' %}
+                            <span class="badge" style="background: #fee2e2; color: #991b1b; font-weight: bold; font-size: 11px; padding: 2px 6px; border-radius: 4px;">
+                                Emergency
+                            </span>
+                            {% elif p.patient_company or p.company_name and p.company_name != 'INDIVIDUAL' %}
+                            <span class="badge" style="background: #ede9fe; color: #6d28d9; font-weight: bold; font-size: 11px; padding: 2px 6px; border-radius: 4px;">
+                                Company
+                            </span>
+                            {% elif p.country == 'NRI' %}
+                            <span class="badge" style="background: #fef3c7; color: #92400e; font-weight: bold; font-size: 11px; padding: 2px 6px; border-radius: 4px;">
+                                NRI
+                            </span>
+                            {% else %}
+                            <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: bold; font-size: 11px; padding: 2px 6px; border-radius: 4px;">
+                                Normal
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-xs font-mono whitespace-nowrap">{{ p.registration_date|date:"d/m/Y" }}</td>
+                        <td class="font-mono text-xs text-slate-700">{{ p.mobile_no|default:"-" }}</td>
+                        <td class="text-xs font-semibold text-slate-700">{{ p.department_obj.name|default:p.department }}</td>
+                        <td class="text-xs text-slate-600">{{ p.unit_obj.unit_name|default:p.unit_doctor }}</td>
+                        <td>
+                            <span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px;
+                                {% if p.visit_through == 'IP' %}background: #ede9fe; color: #6d28d9;
+                                {% else %}background: #f1f5f9; color: #475569;{% endif %}">
+                                {{ p.visit_through }}
+                            </span>
+                        </td>
+                        <td class="font-mono text-xs text-slate-600 whitespace-nowrap">
+                            {% if p.ipno %}<span class="text-purple-700 font-bold">IP: {{ p.ipno }}</span>
+                            {% elif p.op_number %}<span class="text-slate-700">OP: {{ p.op_number }}</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="text-xs text-slate-600">{{ p.company_name|default:"INDIVIDUAL" }}</td>
+                        <td class="text-center">
+                            <a href="/patients/?q={{ p.patient_id }}" class="text-xs text-sky-600 hover:underline font-bold">
+                                View &rarr;
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="12" class="text-center py-8 text-slate-400">
+                            No patients found for the selected patient type and date range.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <div class="px-4 py-2.5 border-t border-slate-200 flex items-center justify-between text-xs bg-slate-50">
+            <span class="text-slate-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            <div class="flex gap-1">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}&patient_type={{ patient_type }}&department={{ dept_selected }}&from_date={{ from_date }}&to_date={{ to_date }}&q={{ search_query }}" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100">Previous</a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&patient_type={{ patient_type }}&department={{ dept_selected }}&from_date={{ from_date }}&to_date={{ to_date }}&q={{ search_query }}" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
