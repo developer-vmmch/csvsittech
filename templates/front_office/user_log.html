@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}User Activity Log | Front Office{% endblock %}
+
+{% block extra_head %}
+<style>
+    .log-section-card {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+    .log-section-header {
+        background: #0b2569;
+        color: #ffffff;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .log-section-title {
+        font-size: 0.92rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .log-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.8rem;
+    }
+    .log-table th {
+        background: #f1f5f9;
+        color: #1e293b;
+        font-weight: 700;
+        padding: 8px 12px;
+        text-align: left;
+        border-bottom: 2px solid #cbd5e1;
+        white-space: nowrap;
+    }
+    .log-table td {
+        padding: 8px 12px;
+        border-bottom: 1px solid #e2e8f0;
+        color: #1e293b;
+        vertical-align: middle;
+    }
+    .log-table tbody tr:hover {
+        background: #f8fafc;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+
+    <!-- Header Banner -->
+    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-2.5 shadow-sm">
+        <div>
+            <div class="text-[11px] text-slate-500 font-semibold uppercase">Front Office / Staff Audit Trail</div>
+            <h1 class="text-base md:text-lg font-black text-[#0b2569] m-0 flex items-center gap-2">
+                <i class="bi bi-person-lines-fill text-rose-600"></i> Front Office Staff User Activity Log
+            </h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-500">Log Date: <strong class="text-slate-800">{{ log_date }}</strong></span>
+        </div>
+    </div>
+
+    <!-- Date & User Selection Filter Bar -->
+    <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+        <form method="get" action="{% url 'core:user_log' %}" class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs font-bold text-slate-700">Select Date:</label>
+                    <input type="date" name="date" value="{{ log_date }}" class="text-xs border border-slate-300 rounded px-2.5 py-1.5 font-bold text-slate-700">
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs font-bold text-slate-700">Staff User:</label>
+                    <select name="user_id" class="text-xs border border-slate-300 rounded px-2.5 py-1.5">
+                        <option value="">All Staff Users</option>
+                        {% for u in users %}
+                        <option value="{{ u.id }}" {% if user_id_filter == u.id|stringformat:"s" %}selected{% endif %}>{{ u.username }} ({{ u.get_full_name|default:u.username }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs font-bold text-slate-700">Patient ID / Name:</label>
+                    <input type="text" name="patient_id" value="{{ patient_id_search }}" placeholder="Search UHID / Patient..." class="text-xs border border-slate-300 rounded px-3 py-1.5">
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-2">
+                <button type="submit" class="px-4 py-1.5 bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs rounded shadow-sm inline-flex items-center gap-1.5">
+                    <i class="bi bi-eye"></i> View Logs
+                </button>
+                <a href="{% url 'core:user_log' %}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs rounded">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- 1. REGISTERED - COUNT -->
+    <div class="log-section-card">
+        <div class="log-section-header">
+            <h2 class="log-section-title">
+                <i class="bi bi-person-check-fill text-sky-400"></i> REGISTERED - COUNT
+            </h2>
+            <a href="{% url 'core:user_log_export' %}?section=registered&date={{ log_date }}" class="px-3 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-xs font-bold inline-flex items-center gap-1">
+                <i class="bi bi-file-earmark-spreadsheet text-emerald-300"></i> Export
+            </a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">S.No</th>
+                        <th>User Name</th>
+                        <th>Full Name</th>
+                        <th style="text-align: center;">OP New</th>
+                        <th style="text-align: center;">OP Review</th>
+                        <th style="text-align: center;">IP</th>
+                        <th style="text-align: center; width: 100px;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in reg_table %}
+                    <tr>
+                        <td class="text-center font-semibold text-slate-500">{{ forloop.counter }}</td>
+                        <td class="font-bold text-sky-700">{{ item.user }}</td>
+                        <td class="text-slate-700">{{ item.user_full }}</td>
+                        <td class="text-center font-bold text-slate-800">{{ item.op_new }}</td>
+                        <td class="text-center font-bold text-slate-800">{{ item.op_review }}</td>
+                        <td class="text-center font-bold text-slate-800">{{ item.ip }}</td>
+                        <td class="text-center font-black text-sky-800 bg-sky-50">{{ item.total }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-slate-400">No registration activity recorded for this date.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. BILLED - COUNT -->
+    <div class="log-section-card">
+        <div class="log-section-header" style="background: #047857;">
+            <h2 class="log-section-title">
+                <i class="bi bi-receipt text-emerald-300"></i> BILLED - COUNT
+            </h2>
+            <a href="{% url 'core:user_log_export' %}?section=billed&date={{ log_date }}" class="px-3 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-xs font-bold inline-flex items-center gap-1">
+                <i class="bi bi-file-earmark-spreadsheet text-emerald-300"></i> Export
+            </a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">S.No</th>
+                        <th>User Name</th>
+                        <th>Full Name</th>
+                        <th style="text-align: center;">Cash</th>
+                        <th style="text-align: center;">CA Return</th>
+                        <th style="text-align: center;">Credit</th>
+                        <th style="text-align: center;">CR Return</th>
+                        <th style="text-align: center;">Total Bills</th>
+                        <th style="text-align: right;">Total Reg Fees (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in billed_table %}
+                    <tr>
+                        <td class="text-center font-semibold text-slate-500">{{ forloop.counter }}</td>
+                        <td class="font-bold text-emerald-700">{{ item.user }}</td>
+                        <td class="text-slate-700">{{ item.user_full }}</td>
+                        <td class="text-center font-bold text-slate-800">{{ item.cash }}</td>
+                        <td class="text-center text-slate-400">{{ item.ca_return }}</td>
+                        <td class="text-center font-bold text-slate-800">{{ item.credit }}</td>
+                        <td class="text-center text-slate-400">{{ item.cr_return }}</td>
+                        <td class="text-center font-black text-emerald-800 bg-emerald-50">{{ item.total }}</td>
+                        <td class="text-right font-mono font-bold text-slate-800">₹{{ item.amount|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-slate-400">No billing activity recorded for this date.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. DISCHARGED COUNT -->
+    <div class="log-section-card">
+        <div class="log-section-header" style="background: #9f1239;">
+            <h2 class="log-section-title">
+                <i class="bi bi-box-arrow-right text-rose-300"></i> DISCHARGED COUNT
+            </h2>
+            <a href="{% url 'core:user_log_export' %}?section=discharged&date={{ log_date }}" class="px-3 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-xs font-bold inline-flex items-center gap-1">
+                <i class="bi bi-file-earmark-spreadsheet text-rose-300"></i> Export
+            </a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">S.No</th>
+                        <th>User / Section</th>
+                        <th style="text-align: center;">Normal Discharges</th>
+                        <th style="text-align: center;">LAMA / Other</th>
+                        <th style="text-align: center; width: 120px;">Total Discharges</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in discharged_table %}
+                    <tr>
+                        <td class="text-center font-semibold text-slate-500">{{ forloop.counter }}</td>
+                        <td class="font-bold text-rose-800">{{ item.user_full }}</td>
+                        <td class="text-center font-bold text-slate-800">{{ item.normal_discharge }}</td>
+                        <td class="text-center font-bold text-slate-500">{{ item.other_discharge }}</td>
+                        <td class="text-center font-black text-rose-800 bg-rose-50">{{ item.total }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-slate-400">No discharge records found for this date.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 4. Chronological User Audit Log -->
+    <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+        <div class="px-4 py-2.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase text-slate-700 m-0 flex items-center gap-2">
+                <i class="bi bi-clock-history text-slate-600"></i> Patient Registration Log Details
+            </h3>
+            <span class="text-xs text-slate-500">Timestamped operational log</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Staff User</th>
+                        <th>Action Performed</th>
+                        <th>Patient ID / UHID</th>
+                        <th>Patient Name</th>
+                        <th>Department</th>
+                        <th>Visit Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in activity_records %}
+                    <tr>
+                        <td class="font-mono text-xs text-slate-600">{{ rec.time }}</td>
+                        <td class="font-bold text-slate-800">{{ rec.user }}</td>
+                        <td>
+                            <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 10px; padding: 2px 6px; border-radius: 4px;">
+                                {{ rec.action }}
+                            </span>
+                        </td>
+                        <td class="font-mono font-bold text-sky-700">{{ rec.patient_id }}</td>
+                        <td class="font-semibold text-slate-800">{{ rec.patient_name }}</td>
+                        <td class="text-xs text-slate-600">{{ rec.department }}</td>
+                        <td class="text-xs">{{ rec.visit_type }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-slate-400">No detailed log entries found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}OP-IP Census | Front Office{% endblock %}
+
+{% block extra_head %}
+<style>
+    .census-summary-card {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 14px 16px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .census-summary-card:hover, .census-summary-card.active {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(2, 132, 199, 0.15);
+        border-color: #0284c7;
+    }
+    .census-summary-card.active {
+        background: #f0f9ff;
+    }
+    .census-summary-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: #0284c7;
+    }
+    .census-summary-card.c-emerald::before { background: #10b981; }
+    .census-summary-card.c-amber::before { background: #f59e0b; }
+    .census-summary-card.c-purple::before { background: #8b5cf6; }
+    .census-summary-card.c-rose::before { background: #f43f5e; }
+    .census-summary-card.c-slate::before { background: #64748b; }
+
+    .census-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.8rem;
+    }
+    .census-table th {
+        background: #0b2569;
+        color: #ffffff;
+        font-weight: 700;
+        padding: 8px 10px;
+        text-align: left;
+        white-space: nowrap;
+    }
+    .census-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #e2e8f0;
+        color: #1e293b;
+        vertical-align: middle;
+    }
+    .census-table tbody tr:hover {
+        background: #f8fafc;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+
+    <!-- Header Banner -->
+    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-2.5 shadow-sm">
+        <div>
+            <div class="text-[11px] text-slate-500 font-semibold uppercase">Front Office / Census & Occupancy</div>
+            <h1 class="text-base md:text-lg font-black text-[#0b2569] m-0 flex items-center gap-2">
+                <i class="bi bi-pie-chart-fill text-cyan-600"></i> OP-IP Hospital Census
+            </h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-500">Date: <strong class="text-slate-800">{{ from_date }}</strong></span>
+            <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 800; font-size: 0.82rem; padding: 4px 10px; border-radius: 6px;">
+                Type: {{ patient_type }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Filter & View Controls -->
+    <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+        <form method="get" action="{% url 'core:op_ip_census' %}" class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs font-bold text-slate-700">From Date:</label>
+                    <input type="date" name="from_date" value="{{ from_date }}" class="text-xs border border-slate-300 rounded px-2.5 py-1.5">
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs font-bold text-slate-700">To Date:</label>
+                    <input type="date" name="to_date" value="{{ to_date }}" class="text-xs border border-slate-300 rounded px-2.5 py-1.5">
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs font-bold text-slate-700">Patient Type:</label>
+                    <select name="patient_type" class="text-xs border border-slate-300 rounded px-2.5 py-1.5">
+                        <option value="All" {% if patient_type == 'All' %}selected{% endif %}>All Patients</option>
+                        <option value="OP" {% if patient_type == 'OP' %}selected{% endif %}>Out-Patient (OP)</option>
+                        <option value="IP" {% if patient_type == 'IP' %}selected{% endif %}>In-Patient (IP)</option>
+                        <option value="Both" {% if patient_type == 'Both' %}selected{% endif %}>Both (OP & IP)</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-1.5 pl-3 border-l border-slate-200">
+                    <label class="text-xs font-bold text-slate-700">View Mode:</label>
+                    <select name="view_mode" class="text-xs border border-slate-300 rounded px-2.5 py-1.5">
+                        <option value="summary" {% if view_mode == 'summary' %}selected{% endif %}>Summary View</option>
+                        <option value="details" {% if view_mode == 'details' %}selected{% endif %}>Detailed Record View</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button type="submit" class="px-4 py-1.5 bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs rounded shadow-sm inline-flex items-center gap-1.5">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh Census
+                </button>
+                <button type="button" onclick="window.print()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs rounded inline-flex items-center gap-1">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Interactive Census Summary Cards (Clickable) -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <a href="?from_date={{ from_date }}&to_date={{ to_date }}&patient_type={{ patient_type }}&metric=new_case" 
+            class="census-summary-card c-emerald {% if metric_click == 'new_case' %}active{% endif %}">
+            <div class="flex justify-between items-center text-xs font-bold text-slate-600">
+                <span>New Case</span>
+                <i class="bi bi-person-plus-fill text-emerald-600"></i>
+            </div>
+            <div class="mt-2 text-2xl font-black text-emerald-700">{{ counts.new_cases }}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Click to view records &rarr;</div>
+        </a>
+
+        <a href="?from_date={{ from_date }}&to_date={{ to_date }}&patient_type={{ patient_type }}&metric=review_case" 
+            class="census-summary-card c-amber {% if metric_click == 'review_case' %}active{% endif %}">
+            <div class="flex justify-between items-center text-xs font-bold text-slate-600">
+                <span>Review Case</span>
+                <i class="bi bi-arrow-repeat text-amber-600"></i>
+            </div>
+            <div class="mt-2 text-2xl font-black text-amber-700">{{ counts.review_cases }}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Click to view records &rarr;</div>
+        </a>
+
+        <a href="?from_date={{ from_date }}&to_date={{ to_date }}&patient_type={{ patient_type }}&metric=admission" 
+            class="census-summary-card c-purple {% if metric_click == 'admission' %}active{% endif %}">
+            <div class="flex justify-between items-center text-xs font-bold text-slate-600">
+                <span>Admission</span>
+                <i class="bi bi-door-open-fill text-purple-600"></i>
+            </div>
+            <div class="mt-2 text-2xl font-black text-purple-700">{{ counts.admissions }}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Click to view records &rarr;</div>
+        </a>
+
+        <a href="?from_date={{ from_date }}&to_date={{ to_date }}&patient_type={{ patient_type }}&metric=discharged" 
+            class="census-summary-card c-rose {% if metric_click == 'discharged' %}active{% endif %}">
+            <div class="flex justify-between items-center text-xs font-bold text-slate-600">
+                <span>Discharged</span>
+                <i class="bi bi-box-arrow-right text-rose-600"></i>
+            </div>
+            <div class="mt-2 text-2xl font-black text-rose-700">{{ counts.discharges }}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Click to view records &rarr;</div>
+        </a>
+
+        <a href="?from_date={{ from_date }}&to_date={{ to_date }}&patient_type={{ patient_type }}&metric=inpatient" 
+            class="census-summary-card {% if metric_click == 'inpatient' or not metric_click %}active{% endif %}">
+            <div class="flex justify-between items-center text-xs font-bold text-slate-600">
+                <span>In-Patient</span>
+                <i class="bi bi-hospital text-sky-600"></i>
+            </div>
+            <div class="mt-2 text-2xl font-black text-sky-700">{{ counts.current_inpatients }}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Current active status &rarr;</div>
+        </a>
+
+        <a href="?from_date={{ from_date }}&to_date={{ to_date }}&patient_type={{ patient_type }}&metric=expired" 
+            class="census-summary-card c-slate {% if metric_click == 'expired' %}active{% endif %}">
+            <div class="flex justify-between items-center text-xs font-bold text-slate-600">
+                <span>Expired</span>
+                <i class="bi bi-heartbreak text-slate-600"></i>
+            </div>
+            <div class="mt-2 text-2xl font-black text-slate-700">{{ counts.expired }}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Mortality records &rarr;</div>
+        </a>
+    </div>
+
+    <!-- Detailed Records Table -->
+    <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <h2 class="text-xs font-bold uppercase text-slate-700 m-0 flex items-center gap-2">
+                <i class="bi bi-card-list text-sky-600"></i> 
+                Census Patient Detailed Roster 
+                {% if metric_click %}<span class="text-sky-700">({{ metric_click|upper }})</span>{% endif %}
+            </h2>
+            <span class="text-xs text-slate-500">Showing up to 100 matching patient records</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="census-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">S.No</th>
+                        <th>Patient ID / UHID</th>
+                        <th>Patient Name</th>
+                        <th>Age / Sex</th>
+                        <th>Mobile No</th>
+                        <th>Department</th>
+                        <th>Unit / Doctor</th>
+                        <th>Visit Type</th>
+                        <th>IP Number</th>
+                        <th>Ward / Bed</th>
+                        <th>Reg / Visit Date</th>
+                        <th style="text-align: center;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in detailed_records %}
+                    <tr>
+                        <td class="text-center font-semibold text-slate-500">{{ forloop.counter }}</td>
+                        <td class="font-mono font-bold text-sky-700 whitespace-nowrap">
+                            {% if item.patient_id %}{{ item.patient_id }}{% else %}{{ item.patient.patient_id }}{% endif %}
+                        </td>
+                        <td class="font-bold text-slate-800">
+                            {% if item.name %}{{ item.name }}{% else %}{{ item.patient.name }}{% endif %}
+                        </td>
+                        <td class="text-xs text-slate-600 whitespace-nowrap">
+                            {% if item.age_years %}{{ item.age_years }}Y / {{ item.gender }}{% else %}{{ item.patient.age_years }}Y / {{ item.patient.gender }}{% endif %}
+                        </td>
+                        <td class="font-mono text-xs text-slate-700">
+                            {% if item.mobile_no %}{{ item.mobile_no }}{% else %}{{ item.patient.mobile_no|default:"-" }}{% endif %}
+                        </td>
+                        <td class="text-xs font-semibold text-slate-700">
+                            {% if item.department_obj %}{{ item.department_obj.name }}{% else %}{{ item.department|default:"-" }}{% endif %}
+                        </td>
+                        <td class="text-xs text-slate-600">
+                            {% if item.unit_obj %}{{ item.unit_obj.unit_name }}{% else %}{{ item.unit_doctor|default:"-" }}{% endif %}
+                        </td>
+                        <td>
+                            <span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px;
+                                {% if item.visit_through == 'IP' or item.visit_type == 'IP' %}background: #ede9fe; color: #6d28d9;
+                                {% else %}background: #e0f2fe; color: #0369a1;{% endif %}">
+                                {% if item.visit_through %}{{ item.visit_through }}{% else %}{{ item.visit_type|default:"OP" }}{% endif %}
+                            </span>
+                        </td>
+                        <td class="font-mono text-xs text-purple-700 font-bold whitespace-nowrap">
+                            {{ item.ipno|default:"-" }}
+                        </td>
+                        <td class="text-xs text-slate-600">
+                            {% if item.ward %}{{ item.ward }}{% if item.bed %} (Bed: {{ item.bed }}){% endif %}{% else %}-{% endif %}
+                        </td>
+                        <td class="text-xs font-mono whitespace-nowrap">
+                            {% if item.registration_date %}{{ item.registration_date|date:"d/m/Y" }}{% else %}{{ item.visit_date|date:"d/m/Y" }}{% endif %}
+                        </td>
+                        <td class="text-center">
+                            <a href="/patients/?q={% if item.patient_id %}{{ item.patient_id }}{% else %}{{ item.patient.patient_id }}{% endif %}" class="text-xs text-sky-600 hover:underline font-bold" title="Open Patient Record">
+                                View &rarr;
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="12" class="text-center py-8 text-slate-400">
+                            No records found for the selected census metric.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

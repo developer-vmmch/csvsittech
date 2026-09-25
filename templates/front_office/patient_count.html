@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Patient Count & Footfall Analysis | Front Office{% endblock %}
+
+{% block extra_head %}
+<style>
+    .cnt-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.78rem;
+    }
+    .cnt-table th {
+        background: #0b2569;
+        color: #ffffff;
+        font-weight: 700;
+        padding: 8px 8px;
+        text-align: center;
+        white-space: nowrap;
+        border-right: 1px solid rgba(255,255,255,0.1);
+    }
+    .cnt-table td {
+        padding: 7px 8px;
+        border-bottom: 1px solid #e2e8f0;
+        color: #1e293b;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .cnt-table tbody tr:hover {
+        background: #f8fafc;
+    }
+    .cnt-table tfoot td {
+        background: #f1f5f9;
+        font-weight: 800;
+        border-top: 2px solid #cbd5e1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+
+    <!-- Header Banner -->
+    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-2.5 shadow-sm">
+        <div>
+            <div class="text-[11px] text-slate-500 font-semibold uppercase">Front Office / Analytics & Footfall</div>
+            <h1 class="text-base md:text-lg font-black text-[#0b2569] m-0 flex items-center gap-2">
+                <i class="bi bi-bar-chart-line-fill text-amber-600"></i> Patient Count & Footfall Register
+            </h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-500">Period: <strong class="text-slate-800">{{ from_date }}</strong> to <strong class="text-slate-800">{{ to_date }}</strong></span>
+            <span class="badge" style="background: #fef3c7; color: #92400e; font-weight: 800; font-size: 0.82rem; padding: 4px 10px; border-radius: 6px;">
+                Filter: {{ filter_type }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Filter Toolbar -->
+    <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+        <form method="get" action="{% url 'core:patient_count' %}" class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs font-bold text-slate-700">Category:</label>
+                    <select name="filter_type" class="text-xs border border-slate-300 rounded px-3 py-1.5 font-semibold text-slate-700">
+                        <option value="Both" {% if filter_type == 'Both' or not filter_type %}selected{% endif %}>Both (All Footfall)</option>
+                        <option value="OP New" {% if filter_type == 'OP New' %}selected{% endif %}>OP New Registration</option>
+                        <option value="OP Review" {% if filter_type == 'OP Review' %}selected{% endif %}>OP Review Consultations</option>
+                        <option value="IP" {% if filter_type == 'IP' %}selected{% endif %}>In-Patient (IP)</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs font-bold text-slate-700">From Date:</label>
+                    <input type="date" name="from_date" value="{{ from_date }}" class="text-xs border border-slate-300 rounded px-2.5 py-1.5">
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs font-bold text-slate-700">To Date:</label>
+                    <input type="date" name="to_date" value="{{ to_date }}" class="text-xs border border-slate-300 rounded px-2.5 py-1.5">
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-2">
+                <button type="submit" class="px-4 py-1.5 bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs rounded shadow-sm inline-flex items-center gap-1.5">
+                    <i class="bi bi-eye"></i> Show
+                </button>
+                <a href="{% url 'core:patient_count_export' %}?from_date={{ from_date }}&to_date={{ to_date }}&filter_type={{ filter_type }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs rounded inline-flex items-center gap-1">
+                    <i class="bi bi-file-earmark-spreadsheet text-emerald-600"></i> Export CSV
+                </a>
+                <button type="button" onclick="window.print()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs rounded inline-flex items-center gap-1">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Patient Count Matrix Table -->
+    <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="cnt-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">S.No</th>
+                        <th>Date</th>
+                        <th>No. of Patients</th>
+                        <th>No. of Requests</th>
+                        <th>Registration Patient Count</th>
+                        <th>Prescription Raised</th>
+                        <th>Prescription Patient Count</th>
+                        <th>Sales Bills</th>
+                        <th>Sales Patient Count</th>
+                        <th>Sales Return Bill</th>
+                        <th>Sales Return Patient Count</th>
+                        <th>Walk-in Bills</th>
+                        <th>Walk-in Bills Return</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in records %}
+                    <tr>
+                        <td class="font-semibold text-slate-500">{{ forloop.counter }}</td>
+                        <td class="font-mono font-bold text-slate-800 text-left whitespace-nowrap">{{ rec.date|date:"d/m/Y" }} ({{ rec.date|date:"D" }})</td>
+                        <td class="font-bold text-sky-700 bg-sky-50/50">{{ rec.no_of_patients }}</td>
+                        <td class="font-bold text-purple-700">{{ rec.no_of_requests }}</td>
+                        <td class="font-bold text-emerald-700">{{ rec.reg_patient_count }}</td>
+                        <td class="text-slate-700">{{ rec.presc_raised }}</td>
+                        <td class="text-slate-700">{{ rec.presc_patient_count }}</td>
+                        <td class="text-slate-700">{{ rec.sales_bills }}</td>
+                        <td class="text-slate-700">{{ rec.sales_patient_count }}</td>
+                        <td class="text-slate-500">{{ rec.sales_return_bill }}</td>
+                        <td class="text-slate-500">{{ rec.sales_return_patient_count }}</td>
+                        <td class="text-slate-700">{{ rec.walkin_bills }}</td>
+                        <td class="text-slate-500">{{ rec.walkin_bills_return }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="13" class="text-center py-8 text-slate-400">
+                            No records found for the selected date range.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2" class="text-right text-slate-800 font-black">TOTAL HOSPITAL SUMMARY:</td>
+                        <td class="text-sky-800 font-black text-sm">{{ total_patients_sum }}</td>
+                        <td class="text-purple-800 font-black text-sm">{{ total_requests_sum }}</td>
+                        <td class="text-emerald-800 font-black text-sm">{{ total_reg_count_sum }}</td>
+                        <td colspan="8"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

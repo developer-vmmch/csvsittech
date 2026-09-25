@@ -1,0 +1,584 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Front Office Operations | Vinayaka Missions Medical College & Hospital{% endblock %}
+
+{% block extra_head %}
+<style>
+    .fo-hero-banner {
+        background: linear-gradient(135deg, #0b2569 0%, #0369a1 60%, #0284c7 100%);
+        border-radius: 10px;
+        color: #ffffff;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 14px rgba(11, 37, 105, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .fo-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+    .fo-kpi-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 14px 16px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+    }
+    .fo-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(2, 132, 199, 0.12);
+        border-color: #38bdf8;
+    }
+    .fo-kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: #0284c7;
+    }
+    .fo-kpi-card.accent-emerald::before { background: #10b981; }
+    .fo-kpi-card.accent-amber::before { background: #f59e0b; }
+    .fo-kpi-card.accent-rose::before { background: #f43f5e; }
+    .fo-kpi-card.accent-purple::before { background: #8b5cf6; }
+    .fo-kpi-card.accent-cyan::before { background: #06b6d4; }
+    .fo-kpi-card.accent-indigo::before { background: #6366f1; }
+
+    .fo-modules-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 14px;
+        margin-bottom: 24px;
+    }
+    .fo-module-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        text-decoration: none !important;
+        color: #1e293b;
+        transition: all 0.15s ease;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .fo-module-card:hover {
+        border-color: #0284c7;
+        background: #f0f9ff;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 14px rgba(2, 132, 199, 0.12);
+    }
+    .fo-module-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+    .fo-panel {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 16px 18px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        height: 100%;
+    }
+    .fo-panel-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #0b2569;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .quick-search-box {
+        position: relative;
+        max-width: 400px;
+        width: 100%;
+    }
+    .quick-search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        z-index: 1050;
+        max-height: 280px;
+        overflow-y: auto;
+        display: none;
+    }
+    .search-res-item {
+        padding: 8px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        cursor: pointer;
+        font-size: 0.8rem;
+    }
+    .search-res-item:hover {
+        background: #e0f2fe;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+    <!-- 1. Top Front Office Hero Banner -->
+    <div class="fo-hero-banner">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-white/20 text-white tracking-wider">Hospital Front Desk</span>
+                <span class="text-xs text-sky-200">Live Operations</span>
+            </div>
+            <h1 class="text-xl md:text-2xl font-black tracking-tight text-white m-0 mt-1">
+                FRONT OFFICE
+            </h1>
+            <p class="text-xs text-sky-100 m-0 mt-0.5">
+                Vinayaka Missions Medical College and Hospital &bull; Karaikal Center Operations &bull; {{ today_date|date:"l, d F Y" }}
+            </p>
+        </div>
+
+        <!-- Quick Patient Search Bar -->
+        <div class="quick-search-box">
+            <div class="relative">
+                <input type="text" id="quickPatientSearchInput" placeholder="Quick Search UHID / Name / Mobile..."
+                    class="w-full bg-white text-slate-800 text-xs rounded-lg pl-9 pr-8 py-2.5 shadow-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400">
+                <i class="bi bi-search absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                <button type="button" id="clearQuickSearchBtn" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 hidden">
+                    <i class="bi bi-x-circle-fill text-xs"></i>
+                </button>
+            </div>
+            <div id="quickSearchResults" class="quick-search-results"></div>
+        </div>
+    </div>
+
+    <!-- 2. Real Database KPI Counters -->
+    <div class="fo-kpi-grid">
+        <div class="fo-kpi-card accent-cyan">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Today's OP</span>
+                <i class="bi bi-person-walking text-cyan-600 text-base"></i>
+            </div>
+            <div class="mt-2">
+                <span class="text-2xl font-black text-slate-800">{{ today_op_count }}</span>
+                <span class="text-[11px] text-slate-500 block">Outpatient Footfall</span>
+            </div>
+        </div>
+
+        <div class="fo-kpi-card accent-indigo">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Today's IP</span>
+                <i class="bi bi-hospital text-indigo-600 text-base"></i>
+            </div>
+            <div class="mt-2">
+                <span class="text-2xl font-black text-slate-800">{{ today_ip_count }}</span>
+                <span class="text-[11px] text-slate-500 block">Inpatient Footfall</span>
+            </div>
+        </div>
+
+        <div class="fo-kpi-card accent-emerald">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">New Cases</span>
+                <i class="bi bi-person-plus-fill text-emerald-600 text-base"></i>
+            </div>
+            <div class="mt-2">
+                <span class="text-2xl font-black text-emerald-700">{{ new_cases_count }}</span>
+                <span class="text-[11px] text-slate-500 block">First Registration</span>
+            </div>
+        </div>
+
+        <div class="fo-kpi-card accent-amber">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Review Cases</span>
+                <i class="bi bi-arrow-repeat text-amber-600 text-base"></i>
+            </div>
+            <div class="mt-2">
+                <span class="text-2xl font-black text-amber-700">{{ review_cases_count }}</span>
+                <span class="text-[11px] text-slate-500 block">Re-consultations</span>
+            </div>
+        </div>
+
+        <div class="fo-kpi-card accent-purple">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Admissions</span>
+                <i class="bi bi-door-open-fill text-purple-600 text-base"></i>
+            </div>
+            <div class="mt-2">
+                <span class="text-2xl font-black text-purple-700">{{ today_admissions_count }}</span>
+                <span class="text-[11px] text-slate-500 block">Admitted Today</span>
+            </div>
+        </div>
+
+        <div class="fo-kpi-card accent-rose">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Discharges</span>
+                <i class="bi bi-box-arrow-right text-rose-600 text-base"></i>
+            </div>
+            <div class="mt-2">
+                <span class="text-2xl font-black text-rose-700">{{ today_discharges_count }}</span>
+                <span class="text-[11px] text-slate-500 block">Discharged Today</span>
+            </div>
+        </div>
+
+        <div class="fo-kpi-card">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">In-Patients</span>
+                <i class="bi bi-building-fill-check text-sky-600 text-base"></i>
+            </div>
+            <div class="mt-2">
+                <span class="text-2xl font-black text-sky-700">{{ current_inpatients_count }}</span>
+                <span class="text-[11px] text-slate-500 block">Active Occupancy</span>
+            </div>
+        </div>
+
+        <div class="fo-kpi-card accent-emerald">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Available Beds</span>
+                <i class="bi bi-grid-3x3-gap-fill text-emerald-600 text-base"></i>
+            </div>
+            <div class="mt-2">
+                <span class="text-2xl font-black text-emerald-700">{{ total_available_beds }} / {{ total_hospital_beds }}</span>
+                <span class="text-[11px] text-slate-500 block">Bed Vacancy</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Front Office 8 Core Modules Quick Access -->
+    <div>
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider m-0 flex items-center gap-2">
+                <i class="bi bi-grid-3x3 text-sky-600"></i> Front Office Submodules
+            </h2>
+            <span class="text-xs text-slate-500">8 operational front desk modules</span>
+        </div>
+
+        <div class="fo-modules-grid">
+            <a href="{% url 'core:crm' %}" class="fo-module-card">
+                <div class="fo-module-icon bg-sky-100 text-sky-700">
+                    <i class="bi bi-telephone-inbound-fill"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-xs text-slate-800">1. CRM (Enquiries)</div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">Call & enquiry management, follow-ups & assignment</div>
+                </div>
+            </a>
+
+            <a href="{% url 'core:admission_request' %}" class="fo-module-card">
+                <div class="fo-module-icon bg-purple-100 text-purple-700">
+                    <i class="bi bi-door-open-fill"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-xs text-slate-800">2. Admission Request</div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">Process patient ward admission requests & approval</div>
+                </div>
+            </a>
+
+            <a href="{% url 'core:registration_search' %}" class="fo-module-card">
+                <div class="fo-module-icon bg-emerald-100 text-emerald-700">
+                    <i class="bi bi-search"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-xs text-slate-800">3. Registration Search</div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">Advanced lookup by OP/IP, date, UHID, and doctor</div>
+                </div>
+            </a>
+
+            <a href="{% url 'core:patient_count' %}" class="fo-module-card">
+                <div class="fo-module-icon bg-amber-100 text-amber-700">
+                    <i class="bi bi-bar-chart-line-fill"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-xs text-slate-800">4. Patient Count</div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">Footfall, transactional counts & bill breakdowns</div>
+                </div>
+            </a>
+
+            <a href="{% url 'core:op_ip_census' %}" class="fo-module-card">
+                <div class="fo-module-icon bg-cyan-100 text-cyan-700">
+                    <i class="bi bi-pie-chart-fill"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-xs text-slate-800">5. OP-IP Census</div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">Interactive hospital census summary and detailed records</div>
+                </div>
+            </a>
+
+            <a href="{% url 'core:abha_search' %}" class="fo-module-card">
+                <div class="fo-module-icon bg-teal-100 text-teal-700">
+                    <i class="bi bi-person-badge-fill"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-xs text-slate-800">6. ABHA Search</div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">Aadhaar and ABHA ID patient directory & compliance</div>
+                </div>
+            </a>
+
+            <a href="{% url 'core:patient_type' %}" class="fo-module-card">
+                <div class="fo-module-icon bg-indigo-100 text-indigo-700">
+                    <i class="bi bi-tags-fill"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-xs text-slate-800">7. Patient Type</div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">Filter by Normal, Company, NRI, and Emergency</div>
+                </div>
+            </a>
+
+            <a href="{% url 'core:user_log' %}" class="fo-module-card">
+                <div class="fo-module-icon bg-rose-100 text-rose-700">
+                    <i class="bi bi-person-lines-fill"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-xs text-slate-800">8. User Log</div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">Staff user activity audit (Registered, Billed, Discharged)</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- 4. Quick Utilities & Hospital Directory Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        
+        <!-- Left 2 Cols: Ward Bed Availability & Department Directory -->
+        <div class="lg:col-span-2 space-y-5">
+            
+            <!-- Ward Bed Matrix Summary -->
+            <div class="fo-panel">
+                <div class="fo-panel-title">
+                    <span><i class="bi bi-hospital text-sky-600 mr-1.5"></i> Hospital Ward Bed Availability</span>
+                    <a href="{% url 'patients:ward_allocation' %}" class="text-xs text-sky-600 hover:underline font-semibold">View Live Bed Matrix &rarr;</a>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {% for item in ward_stats %}
+                    <div class="border border-slate-200 rounded-lg p-3 bg-slate-50 hover:bg-white transition-all">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-xs text-slate-800 truncate" title="{{ item.ward.name }}">{{ item.ward.name }}</span>
+                            <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 10px; padding: 2px 6px;">{{ item.ward.code }}</span>
+                        </div>
+                        <div class="flex items-baseline justify-between mt-2">
+                            <span class="text-xs text-slate-500">Occupancy</span>
+                            <span class="text-xs font-bold text-slate-800">{{ item.occupied }} / {{ item.capacity }} beds</span>
+                        </div>
+                        <!-- Progress bar -->
+                        <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mt-1.5">
+                            <div class="bg-sky-600 h-full" style="width: {{ item.percentage }}%;"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                            <span class="text-emerald-600 font-semibold">{{ item.available }} available</span>
+                            <span>{{ item.percentage }}%</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-span-3 text-center py-4 text-xs text-slate-400">No active wards found in database.</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Recent CRM & Admission Requests -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="fo-panel">
+                    <div class="fo-panel-title">
+                        <span><i class="bi bi-telephone-fill text-sky-600 mr-1.5"></i> Recent CRM Enquiries</span>
+                        <a href="{% url 'core:crm' %}" class="text-xs text-sky-600 hover:underline">All Enquiries &rarr;</a>
+                    </div>
+                    <div class="space-y-2">
+                        {% for enq in crm_recent %}
+                        <div class="p-2 border border-slate-100 rounded bg-slate-50 flex items-center justify-between text-xs">
+                            <div>
+                                <div class="font-semibold text-slate-800">{{ enq.caller_name }} ({{ enq.caller_mobile }})</div>
+                                <div class="text-[11px] text-slate-500">{{ enq.category }} &bull; Assigned: {{ enq.assign_to }}</div>
+                            </div>
+                            <span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; 
+                                {% if enq.status == 'Open' %}background: #fee2e2; color: #991b1b;
+                                {% elif enq.status == 'Completed' %}background: #d1fae5; color: #065f46;
+                                {% else %}background: #fef3c7; color: #92400e;{% endif %}">
+                                {{ enq.status }}
+                            </span>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-3 text-xs text-slate-400">No recent CRM enquiries.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="fo-panel">
+                    <div class="fo-panel-title">
+                        <span><i class="bi bi-door-open-fill text-purple-600 mr-1.5"></i> Pending Admission Requests</span>
+                        <a href="{% url 'core:admission_request' %}" class="text-xs text-purple-600 hover:underline">View All &rarr;</a>
+                    </div>
+                    <div class="space-y-2">
+                        {% for adm in recent_admission_requests %}
+                        <div class="p-2 border border-slate-100 rounded bg-slate-50 flex items-center justify-between text-xs">
+                            <div>
+                                <div class="font-semibold text-slate-800">{{ adm.patient.name }} ({{ adm.patient.patient_id }})</div>
+                                <div class="text-[11px] text-slate-500">{{ adm.department.name|default:"General" }} &bull; {{ adm.admission_type }}</div>
+                            </div>
+                            <span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px;
+                                {% if adm.status == 'Pending' %}background: #fef3c7; color: #92400e;
+                                {% elif adm.status == 'Approved' %}background: #e0f2fe; color: #0369a1;
+                                {% elif adm.status == 'Admitted' %}background: #d1fae5; color: #065f46;
+                                {% else %}background: #f1f5f9; color: #475569;{% endif %}">
+                                {{ adm.status }}
+                            </span>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-3 text-xs text-slate-400">No pending admission requests.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right 1 Col: Important Contacts & Quick Utilities -->
+        <div class="space-y-5">
+            
+            <!-- Important Contact Numbers -->
+            <div class="fo-panel">
+                <div class="fo-panel-title">
+                    <span><i class="bi bi-telephone-outbound-fill text-sky-600 mr-1.5"></i> Important Contact Numbers</span>
+                    <span class="badge bg-red-100 text-red-700 text-[10px] font-bold px-1.5 py-0.5 rounded">24x7 Active</span>
+                </div>
+                <div class="space-y-2.5">
+                    {% for contact in important_contacts %}
+                    <div class="flex items-center justify-between p-2 border border-slate-100 rounded-lg hover:bg-slate-50 transition-colors">
+                        <div class="flex items-center gap-2.5">
+                            <i class="bi {{ contact.icon }} {{ contact.color }} text-base"></i>
+                            <div>
+                                <div class="text-xs font-bold text-slate-800">{{ contact.title }}</div>
+                                <div class="text-[11px] font-mono font-semibold text-sky-700">{{ contact.number }}</div>
+                            </div>
+                        </div>
+                        <a href="tel:{{ contact.number }}" class="text-slate-400 hover:text-sky-600" title="Call">
+                            <i class="bi bi-telephone-forward text-sm"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Quick Utilities Widget -->
+            <div class="fo-panel">
+                <div class="fo-panel-title">
+                    <span><i class="bi bi-tools text-sky-600 mr-1.5"></i> Quick Utilities</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="openBmiModal()" class="p-2.5 border border-slate-200 rounded-lg bg-slate-50 hover:bg-sky-50 hover:border-sky-300 text-left transition-all">
+                        <i class="bi bi-calculator text-sky-600 text-lg block mb-1"></i>
+                        <span class="font-bold text-xs text-slate-800 block">BMI Calculator</span>
+                        <span class="text-[10px] text-slate-500">Body mass index</span>
+                    </button>
+
+                    <a href="{% url 'patients:search' %}" class="p-2.5 border border-slate-200 rounded-lg bg-slate-50 hover:bg-sky-50 hover:border-sky-300 text-left transition-all">
+                        <i class="bi bi-person-bounding-box text-emerald-600 text-lg block mb-1"></i>
+                        <span class="font-bold text-xs text-slate-800 block">Patient Lookup</span>
+                        <span class="text-[10px] text-slate-500">Master database</span>
+                    </a>
+
+                    <a href="{% url 'patients:add' %}" class="p-2.5 border border-slate-200 rounded-lg bg-slate-50 hover:bg-sky-50 hover:border-sky-300 text-left transition-all">
+                        <i class="bi bi-person-plus-fill text-purple-600 text-lg block mb-1"></i>
+                        <span class="font-bold text-xs text-slate-800 block">Patient Registration</span>
+                        <span class="text-[10px] text-slate-500">+ Add Patient</span>
+                    </a>
+
+                    <a href="{% url 'patients:department_list' %}" class="p-2.5 border border-slate-200 rounded-lg bg-slate-50 hover:bg-sky-50 hover:border-sky-300 text-left transition-all">
+                        <i class="bi bi-diagram-3 text-amber-600 text-lg block mb-1"></i>
+                        <span class="font-bold text-xs text-slate-800 block">Departments</span>
+                        <span class="text-[10px] text-slate-500">Specialty units</span>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    // Quick Patient Search AJAX Autocomplete
+    const quickInput = document.getElementById('quickPatientSearchInput');
+    const quickResults = document.getElementById('quickSearchResults');
+    const clearBtn = document.getElementById('clearQuickSearchBtn');
+    let debounceTimer;
+
+    quickInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        if (query.length > 0) {
+            clearBtn.classList.remove('hidden');
+        } else {
+            clearBtn.classList.add('hidden');
+            quickResults.style.display = 'none';
+            return;
+        }
+
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            if (query.length >= 2) {
+                fetch(`{% url 'core:api_patient_search' %}?q=${encodeURIComponent(query)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        quickResults.innerHTML = '';
+                        if (data.patients && data.patients.length > 0) {
+                            data.patients.forEach(p => {
+                                const div = document.createElement('div');
+                                div.className = 'search-res-item';
+                                div.innerHTML = `
+                                    <div class="flex justify-between items-center">
+                                        <strong class="text-sky-700">${p.name}</strong>
+                                        <span class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-mono">${p.patient_id}</span>
+                                    </div>
+                                    <div class="text-[11px] text-slate-500 mt-0.5">
+                                        ${p.gender}, ${p.age} &bull; Mob: ${p.mobile} &bull; Dept: ${p.department}
+                                    </div>
+                                `;
+                                div.onclick = () => {
+                                    window.location.href = `/patients/?q=${encodeURIComponent(p.patient_id)}`;
+                                };
+                                quickResults.appendChild(div);
+                            });
+                            quickResults.style.display = 'block';
+                        } else {
+                            quickResults.innerHTML = '<div class="p-3 text-center text-xs text-slate-400">No matching patient found.</div>';
+                            quickResults.style.display = 'block';
+                        }
+                    });
+            }
+        }, 250);
+    });
+
+    clearBtn.addEventListener('click', function() {
+        quickInput.value = '';
+        quickResults.style.display = 'none';
+        clearBtn.classList.add('hidden');
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!quickInput.contains(e.target) && !quickResults.contains(e.target)) {
+            quickResults.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}
