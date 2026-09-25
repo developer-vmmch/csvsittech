@@ -11,7 +11,8 @@ def dynamic_navbar(request):
     if not user or not user.is_authenticated:
         return {'dynamic_nav_modules': []}
 
-    is_admin = user.is_superuser or getattr(user, 'role', '') == 'ADMIN'
+    role_str = (getattr(user, 'role', '') or '').strip().upper()
+    is_admin = user.is_superuser or role_str in ['ADMIN', 'DEVELOPER', 'DEVELOPER_ROLE']
 
     modules = NavModule.objects.filter(is_active=True).prefetch_related('submodules').order_by('order', 'id')
     user_nav_modules = []

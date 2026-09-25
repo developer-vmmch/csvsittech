@@ -17,6 +17,10 @@ class MenuAccessRequiredMixin(AccessMixin):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
 
+        role_str = (getattr(request.user, 'role', '') or '').strip().upper()
+        if request.user.is_superuser or role_str in ['ADMIN', 'DEVELOPER', 'DEVELOPER_ROLE']:
+            return super().dispatch(request, *args, **kwargs)
+
         if self.menu_key and not request.user.can_access_menu(self.menu_key):
             from django.core.exceptions import PermissionDenied
             menu_title = self.get_menu_label()
@@ -53,6 +57,10 @@ class GranularPermissionRequiredMixin(AccessMixin):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
 
+        role_str = (getattr(request.user, 'role', '') or '').strip().upper()
+        if request.user.is_superuser or role_str in ['ADMIN', 'DEVELOPER', 'DEVELOPER_ROLE']:
+            return super().dispatch(request, *args, **kwargs)
+
         if self.permission_required:
             if isinstance(self.permission_required, (list, tuple)):
                 has_perm = any(request.user.has_perm_code(perm) for perm in self.permission_required)
@@ -74,6 +82,10 @@ def granular_permission_required(perm_code):
                     return JsonResponse({'status': 'error', 'message': 'Authentication required.'}, status=401)
                 return redirect('login')
                 
+            role_str = (getattr(request.user, 'role', '') or '').strip().upper()
+            if request.user.is_superuser or role_str in ['ADMIN', 'DEVELOPER', 'DEVELOPER_ROLE']:
+                return view_func(request, *args, **kwargs)
+
             if not request.user.has_perm_code(perm_code):
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json':
                     return JsonResponse({'status': 'error', 'message': f'Access Denied: Required permission {perm_code}.'}, status=403)
