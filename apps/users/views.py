@@ -7,6 +7,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.core.mixins import MenuAccessRequiredMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model, authenticate, login as auth_login, logout as auth_logout
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
+from django.views.decorators.cache import never_cache
+from django.middleware.csrf import rotate_token
 from django.db import models
 from .forms import UserCreationCustomForm, UserEditCustomForm, UserLoginForm, CustomRoleForm, LandingDepartmentForm
 from .models import RoleMenuPermission, CustomRole, NavModule, NavSubmodule, LandingDepartment
@@ -142,6 +146,8 @@ def get_default_landing_url(user):
         return '/dashboard/'
 
 
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+@method_decorator(never_cache, name='dispatch')
 class DepartmentSelectView(View):
     """
     First Screen: Select Department or System Role to Login.
@@ -169,6 +175,9 @@ class DepartmentSelectView(View):
         })
 
 
+@method_decorator(csrf_protect, name='dispatch')
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+@method_decorator(never_cache, name='dispatch')
 class DepartmentLoginView(View):
     """
     Second Screen: Department-Specific Login Screen.
@@ -259,6 +268,9 @@ class DepartmentLoginView(View):
         return redirect(dept.get('dashboard_url', '/dashboard/'))
 
 
+@method_decorator(csrf_protect, name='dispatch')
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+@method_decorator(never_cache, name='dispatch')
 class RoleLoginView(View):
     """
     Role-Specific Login Screen.
@@ -343,10 +355,11 @@ class RoleLoginView(View):
 ERPLoginView = DepartmentSelectView
 
 
+@method_decorator(never_cache, name='dispatch')
 class ERPLogoutView(View):
     """
     Logout view that destroys the authentication session, clears department context,
-    and redirects to the Department Selection screen.
+    rotates CSRF token to prevent session fixation, and redirects to the Department Selection screen.
     """
     def get(self, request):
         return self.post(request)
@@ -354,7 +367,9 @@ class ERPLogoutView(View):
     def post(self, request):
         if request.user.is_authenticated:
             auth_logout(request)
-        request.session.flush()
+        else:
+            request.session.flush()
+        rotate_token(request)
         messages.info(request, "You have been logged out successfully.")
         return redirect('login')
 

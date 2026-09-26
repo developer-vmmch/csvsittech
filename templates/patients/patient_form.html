@@ -347,6 +347,24 @@
             margin-left: 0;
         }
     }
+
+    @media (max-width: 575px) {
+        .reg-field-row {
+            flex-direction: column;
+            align-items: stretch;
+            min-height: auto;
+            margin-bottom: 5px;
+        }
+        .reg-field-label {
+            width: 100%;
+            min-width: 0;
+            margin-bottom: 2px;
+        }
+        .reg-mode-selectors {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+    }
 </style>
 
 <div class="patient-reg-screen">
