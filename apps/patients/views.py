@@ -355,6 +355,12 @@ class PatientCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
         context['reg_date'] = timezone.now().strftime('%d/%b/%Y')
         context['reg_time'] = timezone.now().strftime('%H:%M:%S')
         context['is_edit'] = False
+
+        today = timezone.localdate() if hasattr(timezone, 'localdate') else timezone.now().date()
+        today_qs = Patient.objects.filter(created_at__date=today).select_related('department_obj', 'unit_obj').order_by('-id')
+        context['today_count'] = today_qs.count()
+        context['today_patients'] = today_qs[:50]
+        context['total_count'] = Patient.objects.count()
         return context
 
     def post(self, request, *args, **kwargs):
@@ -381,6 +387,11 @@ class PatientCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
         elif is_emer and not str(patient.patient_id).upper().startswith('E'):
             patient.patient_id = f"E{patient.patient_id}"
 
+        if not patient.op_number:
+            patient.op_number = Patient.generate_next_op_number(is_emergency=is_emer)
+        elif is_emer and not str(patient.op_number).upper().startswith('E'):
+            patient.op_number = f"E{patient.op_number}"
+
         if patient.patient_company:
             patient.company_name = patient.patient_company.name
         else:
@@ -390,6 +401,12 @@ class PatientCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
             patient.department = patient.department_obj.name
         if patient.unit_obj:
             patient.unit_doctor = patient.unit_obj.unit_name
+
+        # Handle patient_type from POST (+ is 'O', - is 'D')
+        pt_val = self.request.POST.get('patient_type', 'O').strip().upper()
+        if pt_val in ['O', 'D']:
+            patient.patient_type = pt_val
+            patient.created_source = pt_val
 
         if patient.visit_through == 'IP' and not patient.ipno:
             patient.ipno = Patient.generate_next_ipno(is_emergency=is_emer)
@@ -434,6 +451,11 @@ class PatientUpdateView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['is_edit'] = True
+        today = timezone.localdate() if hasattr(timezone, 'localdate') else timezone.now().date()
+        today_qs = Patient.objects.filter(created_at__date=today).select_related('department_obj', 'unit_obj').order_by('-id')
+        context['today_count'] = today_qs.count()
+        context['today_patients'] = today_qs[:50]
+        context['total_count'] = Patient.objects.count()
         return context
 
     def form_valid(self, form):
@@ -447,6 +469,11 @@ class PatientUpdateView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
             patient.department = patient.department_obj.name
         if patient.unit_obj:
             patient.unit_doctor = patient.unit_obj.unit_name
+
+        pt_val = self.request.POST.get('patient_type', '').strip().upper()
+        if pt_val in ['O', 'D']:
+            patient.patient_type = pt_val
+            patient.created_source = pt_val
 
         patient.save()
         messages.success(self.request, f"Patient record '{patient.name}' (ID: {patient.patient_id}) updated successfully!")

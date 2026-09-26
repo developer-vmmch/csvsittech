@@ -163,11 +163,13 @@ class PatientRegistrationForm(forms.ModelForm):
         self.fields['age_months'].required = False
         self.fields['age_days'].required = False
         self.fields['title'].required = (reg_mode != 'EMERGENCY')
+        self.fields['title'].error_messages = {'required': 'Title is required.'}
         self.fields['name'].required = True
         self.fields['gender'].required = True
-        self.fields['guardian_name'].required = (reg_mode == 'NORMAL')
-        self.fields['street'].required = (reg_mode == 'NORMAL')
-        self.fields['village_area'].required = (reg_mode == 'NORMAL')
+        self.fields['guardian_name'].required = (reg_mode != 'EMERGENCY')
+        self.fields['guardian_name'].error_messages = {'required': 'Guardian Name is required.'}
+        self.fields['street'].required = False
+        self.fields['village_area'].required = False
         self.fields['mobile_no'].required = False
         self.fields['aadhar_card'].required = False
         self.fields['abha_id'].required = False
@@ -214,6 +216,12 @@ class PatientRegistrationForm(forms.ModelForm):
         val = self.cleaned_data.get('age_days')
         return val if val is not None else 0
 
+    patient_type = forms.ChoiceField(
+        required=False,
+        initial='O',
+        choices=[('O', '+'), ('D', '-')],
+        widget=forms.RadioSelect
+    )
     email = forms.EmailField(
         required=False,
         widget=forms.EmailInput(attrs={'class': 'form-input', 'id': 'id_email', 'placeholder': 'Email address'})
@@ -298,7 +306,7 @@ class PatientRegistrationForm(forms.ModelForm):
             'aadhar_card', 'visit_through', 'category', 'marital_status', 'religion',
             'guardian_relationship', 'guardian_name', 'patient_company', 'abha_id', 'ofc_code',
             'street', 'village_area', 'country', 'state', 'city', 'pincode',
-            'mobile_no', 'email', 'blood_group', 'complaint', 'occupation', 'income',
+            'mobile_no', 'email', 'blood_group', 'patient_type', 'complaint', 'occupation', 'income',
             'department_obj', 'unit_obj', 'pan_no'
         ]
         widgets = {
@@ -336,10 +344,10 @@ class PatientRegistrationForm(forms.ModelForm):
                 ('F/O', 'F/O (Father of)'),
                 ('M/O', 'M/O (Mother of)'),
             ], attrs={'class': 'form-select', 'id': 'id_guardian_rel'}),
-            'guardian_name': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_guardian_name', 'placeholder': 'Guardian Name', 'required': 'required'}),
+            'guardian_name': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_guardian_name', 'placeholder': 'Guardian Name'}),
             'abha_id': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_abha_id', 'placeholder': 'ABHA Number / ID', 'maxlength': '50'}),
             'ofc_code': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_ofc_code', 'placeholder': 'OFC Code'}),
-            'street': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_street', 'placeholder': 'Street / Address', 'required': 'required'}),
+            'street': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_street', 'placeholder': 'Street / Address'}),
             'village_area': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_village_area', 'placeholder': 'Village / Area'}),
             'country': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_country'}),
             'state': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_state'}),
@@ -348,7 +356,7 @@ class PatientRegistrationForm(forms.ModelForm):
             'mobile_no': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_mobile_no', 'placeholder': '10-digit mobile number'}),
             'email': forms.EmailInput(attrs={'class': 'form-input', 'id': 'id_email', 'placeholder': 'Email address'}),
             'blood_group': forms.Select(choices=[
-                ('', 'Select'), ('A+', 'A+'), ('A-', 'A-'), ('B+', 'B+'), ('B-', 'B-'), ('O+', 'O+'), ('O-', 'O-'), ('AB+', 'AB+'), ('AB-', 'AB-')
+                ('', 'Select'), ('A', 'A'), ('B', 'B'), ('AB', 'AB'), ('O', 'O')
             ], attrs={'class': 'form-select', 'id': 'id_blood_group'}),
             'complaint': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_complaint', 'placeholder': 'Primary complaint'}),
             'occupation': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_occupation', 'placeholder': 'Occupation'}),
