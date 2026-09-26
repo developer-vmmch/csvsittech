@@ -405,7 +405,7 @@
                 <div class="reg-col-left">
 
                     <!-- 1. IPNO -->
-                    <div class="reg-field-row" id="row_ipno">
+                    <div class="reg-field-row mode-hidden" id="row_ipno">
                         <label class="reg-field-label" for="id_ipno">IPNO</label>
                         <div class="reg-field-input-wrap" style="max-width: 160px;">
                             {{ form.ipno }}
@@ -427,11 +427,12 @@
                         </div>
                     </div>
 
-                    <!-- 3. Title -->
+                    <!-- 3. Title (Mandatory) -->
                     <div class="reg-field-row" id="row_title">
-                        <label class="reg-field-label" for="id_title">Title:</label>
-                        <div class="reg-field-input-wrap" style="max-width: 130px;">
+                        <label class="reg-field-label" for="id_title" id="lblTitle">Title: <span class="req-star">*</span></label>
+                        <div class="reg-field-input-wrap" style="max-width: 130px; flex-direction: column; align-items: flex-start;">
                             {{ form.title }}
+                            {% if form.title.errors %}<span class="js-field-error">{{ form.title.errors.0 }}</span>{% endif %}
                         </div>
                     </div>
 
@@ -477,7 +478,7 @@
                         </div>
                     </div>
 
-                    <!-- 8. Aadhar Card (Hidden in NRI Mode) -->
+                    <!-- 8. Aadhar Card -->
                     <div class="reg-field-row" id="row_aadhar">
                         <label class="reg-field-label" for="id_aadhar_card">Aadhar Card:</label>
                         <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
@@ -486,8 +487,17 @@
                         </div>
                     </div>
 
-                    <!-- 9. Passport Number (Mandatory in NRI Mode) -->
-                    <div class="reg-field-row" id="row_passport">
+                    <!-- 9. Mobile No (without 91) - Left Column Last Lane -->
+                    <div class="reg-field-row" id="row_mobile">
+                        <label class="reg-field-label" for="id_mobile_no" id="lblMobile">Mobile No (without 91):</label>
+                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
+                            {{ form.mobile_no }}
+                            {% if form.mobile_no.errors %}<span class="js-field-error">{{ form.mobile_no.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 10. Passport Number (Mandatory in NRI Mode) -->
+                    <div class="reg-field-row mode-hidden" id="row_passport">
                         <label class="reg-field-label" for="id_passport_number" id="lblPassport">Passport Number:</label>
                         <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
                             {{ form.passport_number }}
@@ -495,61 +505,48 @@
                         </div>
                     </div>
 
-                    <!-- 10. Identification Mark -->
-                    <div class="reg-field-row" id="row_identification">
+                    <!-- 11. Identification Mark -->
+                    <div class="reg-field-row mode-hidden" id="row_identification">
                         <label class="reg-field-label" for="id_identification_mark">Identification Mark:</label>
                         <div class="reg-field-input-wrap">
                             {{ form.identification_mark }}
                         </div>
                     </div>
 
-                    <!-- 11. Visit Through -->
-                    <div class="reg-field-row" id="row_visit_through">
+                    <!-- 12. Visit Through -->
+                    <div class="reg-field-row mode-hidden" id="row_visit_through">
                         <label class="reg-field-label" for="id_visit_through">Visit Through:</label>
                         <div class="reg-field-input-wrap" style="max-width: 200px;">
                             {{ form.visit_through }}
                         </div>
                     </div>
 
-                    <!-- 12. Category -->
-                    <div class="reg-field-row" id="row_category">
+                    <!-- 13. Category -->
+                    <div class="reg-field-row mode-hidden" id="row_category">
                         <label class="reg-field-label" for="id_category">Category:</label>
                         <div class="reg-field-input-wrap" style="max-width: 200px;">
                             {{ form.category }}
                         </div>
                     </div>
 
-                    <!-- 13. Marital Status -->
-                    <div class="reg-field-row" id="row_marital_status">
+                    <!-- 14. Marital Status -->
+                    <div class="reg-field-row mode-hidden" id="row_marital_status">
                         <label class="reg-field-label" for="id_marital_status">Marital Status:</label>
                         <div class="reg-field-input-wrap" style="max-width: 150px;">
                             {{ form.marital_status }}
                         </div>
                     </div>
 
-                    <!-- 14. Religion -->
-                    <div class="reg-field-row" id="row_religion">
+                    <!-- 15. Religion -->
+                    <div class="reg-field-row mode-hidden" id="row_religion">
                         <label class="reg-field-label" for="id_religion">Religion:</label>
                         <div class="reg-field-input-wrap" style="max-width: 150px;">
                             {{ form.religion }}
                         </div>
                     </div>
 
-                    <!-- 15. Guardian Name (Relationship + Name) -->
-                    <div class="reg-field-row" id="row_guardian">
-                        <label class="reg-field-label" for="id_guardian_name">Guardian Name:</label>
-                        <div class="reg-field-input-wrap" style="display: flex; gap: 4px;">
-                            <div style="width: 80px; min-width: 80px;">
-                                {{ form.guardian_relationship }}
-                            </div>
-                            <div style="flex: 1;">
-                                {{ form.guardian_name }}
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- 16. Company Name + Employee ID -->
-                    <div class="reg-field-row" id="row_company">
+                    <div class="reg-field-row mode-hidden" id="row_company">
                         <label class="reg-field-label" for="id_patient_company" id="lblCompany">Company Name:</label>
                         <div class="reg-field-input-wrap" style="display: flex; align-items: center; gap: 4px;">
                             <div style="flex: 1;">
@@ -563,7 +560,7 @@
                     </div>
 
                     <!-- 17. ABHAID -->
-                    <div class="reg-field-row" id="row_abha">
+                    <div class="reg-field-row mode-hidden" id="row_abha">
                         <label class="reg-field-label" for="id_abha_id">ABHAID</label>
                         <div class="reg-field-input-wrap" style="max-width: 220px;">
                             {{ form.abha_id }}
@@ -571,7 +568,7 @@
                     </div>
 
                     <!-- 18. OFC Code -->
-                    <div class="reg-field-row" id="row_ofc">
+                    <div class="reg-field-row mode-hidden" id="row_ofc">
                         <label class="reg-field-label" for="id_ofc_code">OFC Code</label>
                         <div class="reg-field-input-wrap" style="max-width: 220px;">
                             {{ form.ofc_code }}
@@ -593,25 +590,32 @@
                 <!-- ======================================================= -->
                 <div class="reg-col-right">
 
-                    <!-- 1. Last Patient Id -->
-                    <div class="reg-field-row" id="row_last_pid">
+                    <!-- 1. Guardian Name (Relationship + Name) - Right Side Top (Mandatory) -->
+                    <div class="reg-field-row" id="row_guardian">
+                        <label class="reg-field-label" for="id_guardian_name" id="lblGuardian">Guardian Name: <span class="req-star">*</span></label>
+                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
+                            <div style="display: flex; gap: 4px; width: 100%;">
+                                <div style="width: 80px; min-width: 80px;">
+                                    {{ form.guardian_relationship }}
+                                </div>
+                                <div style="flex: 1;">
+                                    {{ form.guardian_name }}
+                                </div>
+                            </div>
+                            {% if form.guardian_name.errors %}<span class="js-field-error">{{ form.guardian_name.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 2. Last Patient Id -->
+                    <div class="reg-field-row mode-hidden" id="row_last_pid">
                         <label class="reg-field-label">Last Patient Id:</label>
                         <div class="reg-field-input-wrap">
                             <span class="last-pid-text">{{ last_patient_id|default:"26176168" }}</span>
                         </div>
                     </div>
 
-                    <!-- 2. Mobile No (without 91) -->
-                    <div class="reg-field-row" id="row_mobile">
-                        <label class="reg-field-label" for="id_mobile_no" id="lblMobile">Mobile No (without 91):</label>
-                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
-                            {{ form.mobile_no }}
-                            {% if form.mobile_no.errors %}<span class="js-field-error">{{ form.mobile_no.errors.0 }}</span>{% endif %}
-                        </div>
-                    </div>
-
                     <!-- 3. Email -->
-                    <div class="reg-field-row" id="row_email">
+                    <div class="reg-field-row mode-hidden" id="row_email">
                         <label class="reg-field-label" for="id_email">Email:</label>
                         <div class="reg-field-input-wrap">
                             {{ form.email }}
@@ -619,7 +623,7 @@
                     </div>
 
                     <!-- 4. Street / Address -->
-                    <div class="reg-field-row" id="row_street">
+                    <div class="reg-field-row mode-hidden" id="row_street">
                         <label class="reg-field-label" for="id_street">Street: <span class="req-star" id="star_street">*</span></label>
                         <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
                             <textarea name="street" id="id_street" class="form-input form-textarea-compact" rows="1" placeholder="Street / Address">{{ form.street.value|default:'' }}</textarea>
@@ -674,16 +678,28 @@
                         </div>
                     </div>
 
-                    <!-- 10. Blood Group -->
+                    <!-- 10. Blood Group + Category (+ for O / - for D) -->
                     <div class="reg-field-row" id="row_blood_group">
                         <label class="reg-field-label" for="id_blood_group">Bloodgroup:</label>
-                        <div class="reg-field-input-wrap" style="max-width: 130px;">
-                            {{ form.blood_group }}
+                        <div class="reg-field-input-wrap" style="display: flex; align-items: center; gap: 6px;">
+                            <div style="width: 105px; min-width: 90px;">
+                                {{ form.blood_group }}
+                            </div>
+                            <div class="rh-segmented-wrap" style="display: inline-flex; align-items: center; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 1px; height: 24px;" title="Entry Category (+ = O, - = D)">
+                                <label class="rh-seg-btn" id="lbl_pt_plus" style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 20px; padding: 0 7px; font-size: 0.95rem; font-weight: 800; border-radius: 3px; cursor: pointer; user-select: none; margin: 0; transition: all 0.15s ease; background: #0284c7; color: #ffffff;" title="Category O (Normal Entry)">
+                                    <input type="radio" name="patient_type" value="O" {% if not form.instance.patient_type or form.instance.patient_type == 'O' %}checked{% endif %} style="display: none;">
+                                    +
+                                </label>
+                                <label class="rh-seg-btn" id="lbl_pt_minus" style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 20px; padding: 0 7px; font-size: 0.95rem; font-weight: 800; border-radius: 3px; cursor: pointer; user-select: none; margin: 0; transition: all 0.15s ease; background: transparent; color: #475569;" title="Category D (Auto Trigger Entry)">
+                                    <input type="radio" name="patient_type" value="D" {% if form.instance.patient_type == 'D' %}checked{% endif %} style="display: none;">
+                                    -
+                                </label>
+                            </div>
                         </div>
                     </div>
 
                     <!-- 11. Complaint + Add New Complaint -->
-                    <div class="reg-field-row" id="row_complaint">
+                    <div class="reg-field-row mode-hidden" id="row_complaint">
                         <label class="reg-field-label" for="id_complaint">Complaint:</label>
                         <div class="reg-field-input-wrap" style="display: flex; gap: 5px;">
                             {{ form.complaint }}
@@ -692,7 +708,7 @@
                     </div>
 
                     <!-- 12. Occupation -->
-                    <div class="reg-field-row" id="row_occupation">
+                    <div class="reg-field-row mode-hidden" id="row_occupation">
                         <label class="reg-field-label" for="id_occupation">Occupation:</label>
                         <div class="reg-field-input-wrap" style="max-width: 220px;">
                             {{ form.occupation }}
@@ -700,7 +716,7 @@
                     </div>
 
                     <!-- 13. Income -->
-                    <div class="reg-field-row" id="row_income">
+                    <div class="reg-field-row mode-hidden" id="row_income">
                         <label class="reg-field-label" for="id_income">Income:</label>
                         <div class="reg-field-input-wrap" style="max-width: 220px;">
                             {{ form.income }}
@@ -709,7 +725,7 @@
 
                     <!-- 14. Department (Mandatory) -->
                     <div class="reg-field-row" id="row_department">
-                        <label class="reg-field-label" for="id_department" id="lblDepartment">Department: <span class="req-star">*</span></label>
+                        <label class="reg-field-label" for="id_department_select" id="lblDepartment">Department: <span class="req-star">*</span></label>
                         <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
                             {{ form.department_obj }}
                             {% if form.department_obj.errors %}<span class="js-field-error">{{ form.department_obj.errors.0 }}</span>{% endif %}
@@ -718,7 +734,7 @@
 
                     <!-- 15. Unit / Doctor + Refresh -->
                     <div class="reg-field-row" id="row_unit">
-                        <label class="reg-field-label" for="id_unit" id="lblUnit">Unit / Doctor: <span class="req-star">*</span></label>
+                        <label class="reg-field-label" for="id_unit_select" id="lblUnit">Unit / Doctor: <span class="req-star">*</span></label>
                         <div class="reg-field-input-wrap" style="display: flex; gap: 5px; flex-direction: column; align-items: flex-start;">
                             <div style="display: flex; gap: 5px; width: 100%;">
                                 {{ form.unit_obj }}
@@ -731,7 +747,7 @@
                     </div>
 
                     <!-- 16. PAN Number (Hidden in NRI Mode) -->
-                    <div class="reg-field-row" id="row_pan">
+                    <div class="reg-field-row mode-hidden" id="row_pan">
                         <label class="reg-field-label" for="id_pan_no">PanNo:</label>
                         <div class="reg-field-input-wrap" style="max-width: 230px;">
                             {{ form.pan_no }}
@@ -771,21 +787,122 @@
             <button type="button" class="btn-hims-act" id="btnLabelA4">
                 <i class="bi bi-file-earmark-text"></i> Label - A4
             </button>
-            <button type="submit" name="print_op" class="btn-hims-act" id="btnPrintOP">
+            <button type="submit" name="print_op" class="btn-hims-act mode-hidden" id="btnPrintOP">
                 <i class="bi bi-file-text"></i> Print - OP
             </button>
-            <button type="button" class="btn-hims-act" id="btnSendSMS">
+            <button type="button" class="btn-hims-act mode-hidden" id="btnSendSMS">
                 <i class="bi bi-chat-dots"></i> Send SMS
             </button>
-            <button type="button" class="btn-hims-act" id="btnSendWhatsapp">
+            <button type="button" class="btn-hims-act mode-hidden" id="btnSendWhatsapp">
                 <i class="bi bi-whatsapp" style="color: #22c55e;"></i> Send Whatsapp
             </button>
-            <a href="{% url 'patients:list' %}" class="btn-hims-act btn-hims-back">
-                <i class="bi bi-arrow-left"></i> Back to Directory
-            </a>
+            <div style="margin-left: auto; display: inline-flex; align-items: center; gap: 8px;">
+                <div class="total-patient-count-box" title="Today's Registered Patients Total Count" style="display: inline-flex; align-items: center; gap: 5px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 9px; height: 27px; box-sizing: border-box;">
+                    <span style="font-size: 0.74rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.2px;">Today Total Count:</span>
+                    <span style="font-size: 0.88rem; font-weight: 800; color: #0033cc; letter-spacing: 0.3px;" id="dispTodayTotalCount">{{ today_count|default:"0" }}</span>
+                </div>
+                <a href="{% url 'patients:list' %}" class="btn-hims-act btn-hims-back" style="margin-left: 0;">
+                    <i class="bi bi-arrow-left"></i> Back to Directory
+                </a>
+            </div>
         </div>
 
     </form>
+
+    <!-- 4. TODAY'S REGISTERED PATIENT LIST SECTION -->
+    <div class="today-patients-panel" style="margin-top: 6px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; flex-wrap: wrap; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.88rem; font-weight: 800; color: #0f3675; text-transform: uppercase; letter-spacing: 0.3px; display: inline-flex; align-items: center; gap: 5px;">
+                    <i class="bi bi-calendar2-check-fill" style="color: #0284c7;"></i> Today's Registered Patients
+                </span>
+                <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.73rem; padding: 2px 8px; border-radius: 12px; border: 1px solid #bae6fd;">
+                    {{ today_count|default:today_patients|length }} Today
+                </span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="text" id="todayPatientSearch" placeholder="Search by Patient ID..." 
+                    style="height: 24px; font-size: 0.76rem; padding: 1px 8px; border: 1px solid #cbd5e1; border-radius: 4px; width: 220px; outline: none;">
+                <a href="{% url 'patients:list' %}" class="btn-hims-act" style="height: 24px; font-size: 0.73rem; padding: 0 8px; text-decoration: none;">
+                    <i class="bi bi-list-ul"></i> Full Directory
+                </a>
+            </div>
+        </div>
+
+        <div style="max-height: 260px; overflow-y: auto; overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 4px;">
+            <table class="today-patients-table" style="width: 100%; border-collapse: collapse; font-size: 0.77rem; background: #ffffff;">
+                <thead>
+                    <tr style="background: #f8fafc; color: #1e293b; font-weight: 700; border-bottom: 1px solid #cbd5e1; text-align: left; position: sticky; top: 0; z-index: 1;">
+                        <th style="padding: 5px 8px; width: 35px;">#</th>
+                        <th style="padding: 5px 8px;">Patient ID</th>
+                        <th style="padding: 5px 8px;">OP Number</th>
+                        <th style="padding: 5px 8px;">Patient Name</th>
+                        <th style="padding: 5px 8px;">Age / Gender</th>
+                        <th style="padding: 5px 8px;">Guardian</th>
+                        <th style="padding: 5px 8px;">Mobile No</th>
+                        <th style="padding: 5px 8px;">Village / Area</th>
+                        <th style="padding: 5px 8px;">Department</th>
+                        <th style="padding: 5px 8px;">Unit / Doctor</th>
+                        <th style="padding: 5px 8px;">Reg Time</th>
+                        <th style="padding: 5px 8px; text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="todayPatientsTableBody">
+                    {% for p in today_patients %}
+                    <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.1s ease;" class="today-row" data-patient-id="{{ p.patient_id }}" data-op-number="{{ p.op_number|default:'' }}">
+                        <td style="padding: 4px 8px; color: #64748b; font-weight: 600;">{{ forloop.counter }}</td>
+                        <td style="padding: 4px 8px; font-weight: 700;" class="td-patient-id">
+                            <a href="{% url 'patients:edit' p.pk %}" style="color: #0033cc; text-decoration: none; font-weight: 800;">
+                                {{ p.patient_id }}
+                            </a>
+                        </td>
+                        <td style="padding: 4px 8px; font-weight: 700; color: #0284c7;" class="td-op-number">
+                            {{ p.op_number|default:"-" }}
+                        </td>
+                        <td style="padding: 4px 8px; font-weight: 600; color: #0f172a;">
+                            {{ p.title|default:'' }} {{ p.name }}
+                        </td>
+                        <td style="padding: 4px 8px; color: #334155;">
+                            {{ p.age_display|default:p.age_years }} / {{ p.gender|slice:":1" }}
+                        </td>
+                        <td style="padding: 4px 8px; color: #475569;">
+                            {% if p.guardian_name %}{{ p.guardian_relationship|default:'' }} {{ p.guardian_name }}{% else %}-{% endif %}
+                        </td>
+                        <td style="padding: 4px 8px; color: #334155;">
+                            {{ p.mobile_no|default:"-" }}
+                        </td>
+                        <td style="padding: 4px 8px; color: #475569;">
+                            {{ p.village_area|default:p.city|default:"-" }}
+                        </td>
+                        <td style="padding: 4px 8px; color: #0f3675; font-weight: 600;">
+                            {{ p.department_obj.name|default:p.department|default:"-" }}
+                        </td>
+                        <td style="padding: 4px 8px; color: #475569;">
+                            {{ p.unit_obj.unit_name|default:p.unit_doctor|default:"-" }}
+                        </td>
+                        <td style="padding: 4px 8px; color: #64748b; white-space: nowrap;">
+                            {{ p.created_at|date:"h:i A" }}
+                        </td>
+                        <td style="padding: 4px 8px; text-align: center; white-space: nowrap;">
+                            <a href="{% url 'patients:print' p.pk %}" target="_blank" title="Print OP Card" style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 4px; background: #f1f5f9; color: #334155; text-decoration: none; margin-right: 2px;">
+                                <i class="bi bi-printer" style="font-size: 0.75rem;"></i>
+                            </a>
+                            <a href="{% url 'patients:edit' p.pk %}" title="Edit / View Patient" style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 4px; background: #e0f2fe; color: #0284c7; text-decoration: none;">
+                                <i class="bi bi-pencil" style="font-size: 0.75rem;"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" style="text-align: center; padding: 14px; color: #64748b; font-style: italic;">
+                            <i class="bi bi-info-circle" style="margin-right: 4px;"></i> No patients registered today yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -794,10 +911,8 @@
     document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('patientRegForm');
         const jsBanner = document.getElementById('jsValidationBanner');
-        const jsMessage = document.getElementById('jsValidationMessage');
-
-        const deptSelect = document.getElementById('id_department');
-        const unitSelect = document.getElementById('id_unit');
+        const deptSelect = document.getElementById('id_department_select') || document.getElementById('id_department_obj') || document.getElementById('id_department');
+        const unitSelect = document.getElementById('id_unit_select') || document.getElementById('id_unit_obj') || document.getElementById('id_unit');
         const mobileInput = document.getElementById('id_mobile_no');
         const aadharInput = document.getElementById('id_aadhar_card');
         const panInput = document.getElementById('id_pan_no');
@@ -869,6 +984,10 @@
         const lblMobile = document.getElementById('lblMobile');
         const starStreet = document.getElementById('star_street');
         const starVillage = document.getElementById('star_village');
+
+        const btnPrintOP = document.getElementById('btnPrintOP');
+        const btnSendSMS = document.getElementById('btnSendSMS');
+        const btnSendWhatsapp = document.getElementById('btnSendWhatsapp');
 
         // =========================================================================
         // DATASETS: NORMAL (India) vs NRI (International)
@@ -1053,6 +1172,7 @@
             }
             else if (prevMode === 'EMERGENCY') {
                 if (emergencyTypeSelect) emergencyTypeSelect.value = '';
+                if (categorySelect) categorySelect.value = 'CONSULTATION';
             }
             else if (newMode === 'COMPANY') {
                 if (aadharInput) aadharInput.value = '';
@@ -1065,15 +1185,41 @@
             const allRows = document.querySelectorAll('.reg-field-row');
             allRows.forEach(r => r.classList.remove('mode-hidden', 'mode-company-highlight', 'mode-emergency-highlight'));
 
+            if (btnPrintOP) btnPrintOP.classList.remove('mode-hidden');
+            if (btnSendSMS) btnSendSMS.classList.remove('mode-hidden');
+            if (btnSendWhatsapp) btnSendWhatsapp.classList.remove('mode-hidden');
+
             if (newMode === 'NORMAL') {
-                // NORMAL MODE: Complete form, Normal India address defaults
+                // NORMAL MODE: Compact essential patient registration flow (hidden unwanted fields as per reference)
+                if (categorySelect) categorySelect.value = 'CONSULTATION';
+                rowIpno.classList.add('mode-hidden');
+                rowPassport.classList.add('mode-hidden');
+                rowIdentification.classList.add('mode-hidden');
+                rowVisitThrough.classList.add('mode-hidden');
+                rowCategory.classList.add('mode-hidden');
+                rowMarital.classList.add('mode-hidden');
+                rowReligion.classList.add('mode-hidden');
+                rowCompany.classList.add('mode-hidden');
+                rowAbha.classList.add('mode-hidden');
+                rowOfc.classList.add('mode-hidden');
                 rowPurpose.classList.add('mode-hidden');
+
+                rowLastPid.classList.add('mode-hidden');
+                rowEmail.classList.add('mode-hidden');
+                rowStreet.classList.add('mode-hidden');
+                rowComplaint.classList.add('mode-hidden');
+                rowOccupation.classList.add('mode-hidden');
+                rowIncome.classList.add('mode-hidden');
+                rowPan.classList.add('mode-hidden');
                 rowEmergencyType.classList.add('mode-hidden');
+
+                if (btnPrintOP) btnPrintOP.classList.add('mode-hidden');
+                if (btnSendSMS) btnSendSMS.classList.add('mode-hidden');
+                if (btnSendWhatsapp) btnSendWhatsapp.classList.add('mode-hidden');
 
                 lblPassport.innerHTML = 'Passport Number:';
                 lblMobile.innerHTML = 'Mobile No (without 91):';
-                if (starStreet) starStreet.style.display = 'inline';
-                if (starVillage) starVillage.style.display = 'inline';
+                if (starStreet) starStreet.style.display = 'none';
 
                 populateNormalGeo(false);
             }
@@ -1088,7 +1234,6 @@
                 lblPurpose.innerHTML = 'Purpose: <span class="req-star">*</span>';
                 lblMobile.innerHTML = 'Mobile No (International):';
                 if (starStreet) starStreet.style.display = 'inline';
-                if (starVillage) starVillage.style.display = 'inline';
 
                 populateNRIGeo();
             }
@@ -1225,8 +1370,9 @@
         // =========================================================================
         // DYNAMIC DEPARTMENT -> UNIT / DOCTOR FETCHING
         // =========================================================================
-        function fetchUnits(deptId) {
+        function fetchUnits(deptId, targetUnitId = null) {
             if (!unitSelect) return;
+            const currentVal = targetUnitId !== null ? targetUnitId : unitSelect.value;
             unitSelect.innerHTML = '<option value="">Loading units...</option>';
 
             if (!deptId) {
@@ -1234,18 +1380,25 @@
                 return;
             }
 
-            fetch(`{% url "patients:api_units" %}?department_id=${deptId}`)
+            fetch(`{% url "patients:api_units" %}?department_id=${encodeURIComponent(deptId)}`)
                 .then(r => r.json())
                 .then(data => {
                     unitSelect.innerHTML = '<option value="">Select Unit / Doctor</option>';
                     if (data.units && data.units.length > 0) {
+                        let selectedFound = false;
                         data.units.forEach((unit, idx) => {
                             const opt = document.createElement('option');
                             opt.value = unit.id;
                             opt.textContent = unit.unit_name;
-                            if (idx === 0) opt.selected = true;
+                            if (currentVal && String(unit.id) === String(currentVal)) {
+                                opt.selected = true;
+                                selectedFound = true;
+                            }
                             unitSelect.appendChild(opt);
                         });
+                        if (!selectedFound && data.units.length > 0) {
+                            unitSelect.selectedIndex = 1; // Default to first available mapped unit
+                        }
                     } else {
                         unitSelect.innerHTML = '<option value="">No units mapped</option>';
                     }
@@ -1267,6 +1420,11 @@
             btnRefreshUnits.addEventListener('click', function () {
                 fetchUnits(deptSelect.value);
             });
+        }
+
+        const isEditMode = {% if is_edit or patient.pk %}true{% else %}false{% endif %};
+        if (!isEditMode && deptSelect && deptSelect.value) {
+            fetchUnits(deptSelect.value);
         }
 
         // =========================================================================
@@ -1308,12 +1466,12 @@
             if (!patientIdDisplay) return;
             const mode = document.querySelector('input[name="registration_mode"]:checked')?.value || 'NORMAL';
             const catVal = (categorySelect ? categorySelect.value || '' : '').toUpperCase();
-            const deptText = (deptSelect && deptSelect.selectedIndex >= 0 && deptSelect.options[deptSelect.selectedIndex]) 
+            const deptText = (deptSelect && deptSelect.selectedIndex >= 0 && deptSelect.options[deptSelect.selectedIndex] && deptSelect.value) 
                 ? deptSelect.options[deptSelect.selectedIndex].text.toUpperCase() 
                 : '';
             
-            const isEmergency = mode === 'EMERGENCY' || catVal === 'EMERGENCY' || catVal === 'CASUALTY' || 
-                                deptText.includes('EMERGENCY') || deptText.includes('CASUALTY') || deptText.includes('EMR');
+            const isEmergency = mode === 'EMERGENCY' || (mode !== 'NORMAL' && (catVal === 'EMERGENCY' || catVal === 'CASUALTY')) || 
+                                (deptText && (deptText.includes('EMERGENCY') || deptText.includes('CASUALTY')));
             
             if (isEmergency) {
                 patientIdDisplay.value = 'Auto-Generated (Prefix: E...)';
@@ -1328,6 +1486,48 @@
             }
         }
         if (categorySelect) categorySelect.addEventListener('change', updatePatientIdIndicator);
+
+        // Patient ID / OP Number filter for Today's Patient List
+        const todaySearchInput = document.getElementById('todayPatientSearch');
+        if (todaySearchInput) {
+            todaySearchInput.addEventListener('input', function () {
+                const q = this.value.toLowerCase().trim();
+                const rows = document.querySelectorAll('#todayPatientsTableBody tr.today-row');
+                rows.forEach(row => {
+                    const pid = (row.getAttribute('data-patient-id') || row.querySelector('.td-patient-id')?.innerText || '').toLowerCase().trim();
+                    const opn = (row.getAttribute('data-op-number') || row.querySelector('.td-op-number')?.innerText || '').toLowerCase().trim();
+                    if (!q || pid.includes(q) || opn.includes(q)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Category (+ = O / - = D) Button Visual Toggle
+        const ptRadios = document.querySelectorAll('input[name="patient_type"]');
+        const lblPtPlus = document.getElementById('lbl_pt_plus');
+        const lblPtMinus = document.getElementById('lbl_pt_minus');
+
+        function updatePtButtons() {
+            const checkedVal = document.querySelector('input[name="patient_type"]:checked')?.value || 'O';
+            if (lblPtPlus && lblPtMinus) {
+                if (checkedVal === 'O') {
+                    lblPtPlus.style.background = '#0284c7';
+                    lblPtPlus.style.color = '#ffffff';
+                    lblPtMinus.style.background = 'transparent';
+                    lblPtMinus.style.color = '#475569';
+                } else {
+                    lblPtMinus.style.background = '#0284c7';
+                    lblPtMinus.style.color = '#ffffff';
+                    lblPtPlus.style.background = 'transparent';
+                    lblPtPlus.style.color = '#475569';
+                }
+            }
+        }
+        ptRadios.forEach(r => r.addEventListener('change', updatePtButtons));
+        updatePtButtons();
 
         // =========================================================================
         // ADD NEW COMPLAINT & MODIFY / GO SHORTCUTS
@@ -1413,6 +1613,14 @@
                 let firstInvalidEl = null;
                 const mode = document.querySelector('input[name="registration_mode"]:checked')?.value || 'NORMAL';
 
+                // Title (Mandatory in non-emergency)
+                const titleSelect = document.getElementById('id_title');
+                if (mode !== 'EMERGENCY' && (!titleSelect || !titleSelect.value || titleSelect.value.trim() === '' || titleSelect.value.trim() === '-')) {
+                    isValid = false;
+                    createError(titleSelect, 'Title is required.');
+                    if (!firstInvalidEl) firstInvalidEl = titleSelect;
+                }
+
                 // Mandatory across all modes: Name, Gender, Age
                 const nameInput = document.getElementById('id_name');
                 if (!nameInput || !nameInput.value.trim()) {
@@ -1426,6 +1634,14 @@
                     isValid = false;
                     createError(genderSelect, 'Gender is required.');
                     if (!firstInvalidEl) firstInvalidEl = genderSelect;
+                }
+
+                // Guardian Name (Mandatory in non-emergency)
+                const guardianInput = document.getElementById('id_guardian_name');
+                if (mode !== 'EMERGENCY' && (!guardianInput || !guardianInput.value.trim())) {
+                    isValid = false;
+                    createError(guardianInput, 'Guardian Name is required.');
+                    if (!firstInvalidEl) firstInvalidEl = guardianInput;
                 }
 
                 const yVal = parseInt(ageYearsInput ? ageYearsInput.value || '0' : '0', 10) || 0;

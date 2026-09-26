@@ -410,6 +410,11 @@ class Patient(TimeStampedModel):
         elif is_emer and not str(self.patient_id).upper().startswith('E') and not self.pk:
             self.patient_id = f"E{self.patient_id}"
 
+        if not self.op_number:
+            self.op_number = self.generate_next_op_number(is_emergency=is_emer)
+        elif is_emer and not str(self.op_number).upper().startswith('E') and not self.pk:
+            self.op_number = f"E{self.op_number}"
+
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
@@ -421,9 +426,9 @@ class Patient(TimeStampedModel):
     @classmethod
     def generate_next_patient_id(cls, is_emergency=False):
         """
-        Generate the next unique patient ID.
-        Normal: Sequential numeric ID (e.g. 26148627)
-        Emergency: Prefixed with 'E' (e.g. E26148627 or sequential emergency ID)
+        Generate the next unique patient ID (UHID).
+        Normal: Sequential numeric ID (e.g. 2699002004)
+        Emergency: Prefixed with 'E' (e.g. E2699002004)
         """
         from django.db.models import Max
         from django.db.models.functions import Cast
@@ -463,7 +468,7 @@ class Patient(TimeStampedModel):
         )
 
         if max_patient_id is None:
-            return "26148626"
+            return "2699000001"
 
         return str(max_patient_id + 1)
 
@@ -515,33 +520,49 @@ class Patient(TimeStampedModel):
         return str(max_num + 1)
 
     @classmethod
-    def generate_next_op_number(cls):
-        """Generate the next unique numeric OP number."""
+    def generate_next_op_number(cls, is_emergency=False):
+        """
+        Generate the next unique OP number.
+        Format: Current year last 2 digits (e.g. 26) + 6-digit sequence starting at 000001 (e.g. 26000001).
+        Emergency: Prefixed with 'E' (e.g. E26000001).
+        """
+        from django.utils import timezone
+        import re
 
-        from django.db.models import Max
-        from django.db.models.functions import Cast
-        from django.db.models import BigIntegerField
+        current_year_str = timezone.localdate().strftime('%y') if hasattr(timezone, 'localdate') else timezone.now().strftime('%y')
 
-        max_op_number = (
-            cls.objects
-            .filter(op_number__isnull=False)
-            .exclude(op_number='')
-            .filter(op_number__regex=r'^[0-9]+$')
-            .annotate(
-                numeric_op_number=Cast(
-                    'op_number',
-                    BigIntegerField()
-                )
-            )
-            .aggregate(
-                max_number=Max('numeric_op_number')
-            )['max_number']
-        )
+        if is_emergency:
+            regex_pattern = rf"^E{re.escape(current_year_str)}(\d{{6}})$"
+            matching_ops = cls.objects.filter(op_number__iregex=rf"^E{current_year_str}\d+$").values_list('op_number', flat=True)
+            max_seq = 0
+            for opn in matching_ops:
+                match = re.match(regex_pattern, str(opn).strip(), re.IGNORECASE)
+                if match:
+                    try:
+                        seq_val = int(match.group(1))
+                        if seq_val > max_seq:
+                            max_seq = seq_val
+                    except (ValueError, TypeError):
+                        continue
+            next_seq = max_seq + 1
+            return f"E{current_year_str}{str(next_seq).zfill(6)}"
 
-        if max_op_number is None:
-            return "26100000"
+        regex_pattern = rf"^{re.escape(current_year_str)}(\d{{6}})$"
+        matching_ops = cls.objects.filter(op_number__regex=rf"^{current_year_str}\d+$").values_list('op_number', flat=True)
 
-        return str(max_op_number + 1)
+        max_seq = 0
+        for opn in matching_ops:
+            match = re.match(regex_pattern, str(opn).strip())
+            if match:
+                try:
+                    seq_val = int(match.group(1))
+                    if seq_val > max_seq:
+                        max_seq = seq_val
+                except (ValueError, TypeError):
+                    continue
+
+        next_seq = max_seq + 1
+        return f"{current_year_str}{str(next_seq).zfill(6)}"
 
 
 
