@@ -555,7 +555,7 @@
                 </a>
             </div>
 
-            <!-- Right: Date & Time | User Name (Single Horizontal Line) -->
+            <!-- Right: Date/Time | User Account Dropdown -->
             <div class="hospital-banner-right">
                 <div class="header-info-line">
                     <span class="header-datetime-text">
@@ -563,13 +563,99 @@
                         <span id="liveDateTimeText">--/--/---- --:--:-- --</span>
                     </span>
                     <span class="header-info-separator">|</span>
+
+                    {% if user.is_authenticated %}
+                    <!-- User Account Dropdown -->
+                    <div id="userAccountDropdownWrapper" style="position:relative;display:inline-flex;align-items:center;">
+                        <button type="button" id="userAccountBtn"
+                                onclick="vmmcToggleUserDropdown(event)"
+                                style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:5px;
+                                       padding:2px 4px;border-radius:6px;font-size:inherit;color:inherit;
+                                       transition:background 0.15s ease;"
+                                title="Account options"
+                                aria-haspopup="true" aria-expanded="false">
+                            <i class="bi bi-person-circle text-sky-600" style="font-size:1rem;"></i>
+                            <span id="headerDisplayName" style="font-weight:600;">{{ user.get_full_name|default:user.username }}</span>
+                            {% if user.role %}
+                            <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:0.72rem;padding:2px 6px;border-radius:4px;">{{ user.get_role_display }}</span>
+                            {% endif %}
+                            <i class="bi bi-chevron-down" style="font-size:0.6rem;color:#64748b;margin-left:2px;"></i>
+                        </button>
+
+                        <!-- Dropdown Panel -->
+                        <div id="userAccountDropdown"
+                             style="display:none;position:absolute;top:calc(100% + 10px);right:0;
+                                    min-width:220px;background:#ffffff;
+                                    border:1px solid #e2e8f0;border-top:3px solid #0284c7;
+                                    border-radius:0 0 10px 10px;
+                                    box-shadow:0 16px 36px rgba(0,0,0,0.18);
+                                    z-index:99998;overflow:hidden;"
+                             role="menu">
+                            <!-- User identity header -->
+                            <div style="padding:12px 16px 10px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+                                <div style="font-size:0.88rem;font-weight:700;color:#0b2569;">
+                                    {{ user.get_full_name|default:user.username }}
+                                </div>
+                                <div style="font-size:0.78rem;color:#64748b;margin-top:1px;">
+                                    @{{ user.username }}
+                                </div>
+                                {% if user.role %}
+                                <div style="margin-top:4px;">
+                                    <span style="font-size:0.72rem;background:#e0f2fe;color:#0369a1;padding:2px 7px;border-radius:4px;font-weight:600;">{{ user.get_role_display }}</span>
+                                    {% if user.department %}<span style="font-size:0.72rem;color:#64748b;margin-left:4px;">{{ user.department }}</span>{% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <!-- Actions -->
+                            <div style="padding:6px 0;">
+                                <button type="button" onclick="vmmcOpenProfileModal(); vmmcCloseUserDropdown();"
+                                        role="menuitem"
+                                        style="width:100%;background:none;border:none;cursor:pointer;
+                                               display:flex;align-items:center;gap:10px;
+                                               padding:8px 16px;font-size:0.83rem;font-weight:500;
+                                               color:#1e293b;text-align:left;
+                                               transition:background 0.12s ease;"
+                                        onmouseover="this.style.background='#e0f2fe';this.style.color='#0369a1';"
+                                        onmouseout="this.style.background='none';this.style.color='#1e293b';">
+                                    <i class="bi bi-person-badge-fill" style="color:#0284c7;width:16px;text-align:center;"></i>
+                                    View Profile
+                                </button>
+                                <button type="button" onclick="vmmcOpenPasswordModal(); vmmcCloseUserDropdown();"
+                                        role="menuitem"
+                                        style="width:100%;background:none;border:none;cursor:pointer;
+                                               display:flex;align-items:center;gap:10px;
+                                               padding:8px 16px;font-size:0.83rem;font-weight:500;
+                                               color:#1e293b;text-align:left;
+                                               transition:background 0.12s ease;"
+                                        onmouseover="this.style.background='#e0f2fe';this.style.color='#0369a1';"
+                                        onmouseout="this.style.background='none';this.style.color='#1e293b';">
+                                    <i class="bi bi-key-fill" style="color:#0284c7;width:16px;text-align:center;"></i>
+                                    Change Password
+                                </button>
+                                <div style="height:1px;background:#e2e8f0;margin:4px 0;"></div>
+                                <form method="post" action="{% url 'logout' %}" style="margin:0;">
+                                    {% csrf_token %}
+                                    <button type="submit" role="menuitem"
+                                            style="width:100%;background:none;border:none;cursor:pointer;
+                                                   display:flex;align-items:center;gap:10px;
+                                                   padding:8px 16px;font-size:0.83rem;font-weight:500;
+                                                   color:#dc2626;text-align:left;
+                                                   transition:background 0.12s ease;"
+                                            onmouseover="this.style.background='#fee2e2';"
+                                            onmouseout="this.style.background='none';">
+                                        <i class="bi bi-box-arrow-right" style="color:#dc2626;width:16px;text-align:center;"></i>
+                                        Logout
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
                     <span class="header-user-text">
                         <i class="bi bi-person-circle text-sky-600 mr-1.5"></i>
-                        <span>{{ user.username|default:"Administrator" }}</span>
-                        {% if user.role %}
-                        <span class="badge ml-1" style="background: #e0f2fe; color: #0369a1; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">{{ user.get_role_display }}</span>
-                        {% endif %}
+                        <a href="{% url 'login' %}" style="color:inherit;text-decoration:none;font-weight:600;">Login</a>
                     </span>
+                    {% endif %}
                 </div>
             </div>
         </header>
@@ -599,26 +685,6 @@
                     {% endif %}
                 </li>
                 {% endfor %}
-
-                <!-- Logout / Login -->
-                <li class="top-nav-item" style="margin-left: auto;">
-                    {% if user.is_authenticated %}
-                    <form method="post" action="{% url 'logout' %}" style="margin: 0; display: flex;">
-                        {% csrf_token %}
-                        <button type="submit" class="top-nav-link"
-                            style="background: none; border: none; cursor: pointer; border-left: 1px solid rgba(255,255,255,0.12);">
-                            <i class="bi bi-box-arrow-right text-danger"></i>
-                            <span>Logout</span>
-                        </button>
-                    </form>
-                    {% else %}
-                    <a href="{% url 'login' %}" class="top-nav-link"
-                        style="border-left: 1px solid rgba(255,255,255,0.12);">
-                        <i class="bi bi-box-arrow-in-right"></i>
-                        <span>Login</span>
-                    </a>
-                    {% endif %}
-                </li>
             </ul>
         </nav>
 
@@ -840,6 +906,193 @@
             });
         });
     </script>
+
+    {% if user.is_authenticated %}
+    <!-- PROFILE MODAL -->
+    <div id="vmmcProfileModal"
+         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100000;align-items:center;justify-content:center;padding:16px;"
+         role="dialog" aria-modal="true" aria-labelledby="vmmcProfileModalTitle">
+        <div style="background:#ffffff;border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,0.22);max-width:520px;width:100%;overflow:hidden;animation:vmmcModalFadeZoom 220ms cubic-bezier(0.16,1,0.3,1) forwards;">
+            <div style="background:linear-gradient(135deg,#0b2569 0%,#0284c7 100%);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
+                <h5 id="vmmcProfileModalTitle" style="margin:0;font-size:0.95rem;font-weight:700;display:flex;align-items:center;gap:8px;"><i class="bi bi-person-badge-fill"></i> My Profile</h5>
+                <button type="button" onclick="vmmcCloseProfileModal()" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;line-height:1;opacity:0.8;" aria-label="Close">&times;</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;padding:14px 18px 10px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+                <div style="width:52px;height:52px;border-radius:50%;background:#e0f2fe;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="bi bi-person-fill" style="font-size:1.6rem;color:#0284c7;"></i>
+                </div>
+                <div>
+                    <div id="profileModalFullName" style="font-size:0.95rem;font-weight:700;color:#0b2569;">{{ user.get_full_name|default:user.username }}</div>
+                    <div style="font-size:0.8rem;color:#64748b;">@{{ user.username }}</div>
+                    <div style="margin-top:3px;">
+                        <span style="font-size:0.72rem;background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:4px;font-weight:600;">{{ user.get_role_display }}</span>
+                        {% if user.department %}<span style="font-size:0.72rem;color:#64748b;margin-left:4px;">{{ user.department }}</span>{% endif %}
+                    </div>
+                </div>
+            </div>
+            <form id="vmmcProfileForm" onsubmit="vmmcSubmitProfile(event)" novalidate>
+                {% csrf_token %}
+                <div style="padding:16px 18px;max-height:55vh;overflow-y:auto;">
+                    <div id="profileErrorSummary" style="display:none;background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:0.8rem;color:#991b1b;"></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                        <div>
+                            <label style="display:block;font-size:0.77rem;font-weight:600;color:#475569;margin-bottom:3px;">First Name</label>
+                            <input type="text" name="first_name" value="{{ user.first_name }}" placeholder="First name" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
+                            <div class="profile-field-error" data-field="first_name" style="color:#dc2626;font-size:0.75rem;margin-top:2px;display:none;"></div>
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.77rem;font-weight:600;color:#475569;margin-bottom:3px;">Last Name</label>
+                            <input type="text" name="last_name" value="{{ user.last_name }}" placeholder="Last name" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
+                            <div class="profile-field-error" data-field="last_name" style="color:#dc2626;font-size:0.75rem;margin-top:2px;display:none;"></div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block;font-size:0.77rem;font-weight:600;color:#475569;margin-bottom:3px;">Email Address</label>
+                        <input type="email" name="email" value="{{ user.email }}" placeholder="user@vmmc.edu.in" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
+                        <div class="profile-field-error" data-field="email" style="color:#dc2626;font-size:0.75rem;margin-top:2px;display:none;"></div>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block;font-size:0.77rem;font-weight:600;color:#475569;margin-bottom:3px;">Mobile / Phone Number</label>
+                        <input type="text" name="phone_number" value="{{ user.phone_number|default:'' }}" placeholder="Mobile number" maxlength="20" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
+                        <div class="profile-field-error" data-field="phone_number" style="color:#dc2626;font-size:0.75rem;margin-top:2px;display:none;"></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;">
+                        <div>
+                            <label style="display:block;font-size:0.77rem;font-weight:600;color:#94a3b8;margin-bottom:3px;">Username (read-only)</label>
+                            <input type="text" value="{{ user.username }}" readonly style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.83rem;box-sizing:border-box;background:#f8fafc;color:#64748b;">
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.77rem;font-weight:600;color:#94a3b8;margin-bottom:3px;">Employee ID (read-only)</label>
+                            <input type="text" value="{{ user.employee_id|default:'—' }}" readonly style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.83rem;box-sizing:border-box;background:#f8fafc;color:#64748b;">
+                        </div>
+                    </div>
+                    <div style="font-size:0.73rem;color:#94a3b8;margin-top:6px;"><i class="bi bi-shield-lock-fill" style="color:#cbd5e1;"></i> Username, Role, and Employee ID can only be changed by an Administrator.</div>
+                </div>
+                <div style="padding:12px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;">
+                    <button type="button" onclick="vmmcCloseProfileModal()" style="padding:7px 16px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;font-size:0.83rem;font-weight:600;color:#475569;cursor:pointer;">Cancel</button>
+                    <button type="submit" id="profileSaveBtn" style="padding:7px 18px;border:none;border-radius:6px;background:#0284c7;color:#fff;font-size:0.83rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="bi bi-check-lg"></i> Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CHANGE PASSWORD MODAL -->
+    <div id="vmmcPasswordModal"
+         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100000;align-items:center;justify-content:center;padding:16px;"
+         role="dialog" aria-modal="true" aria-labelledby="vmmcPasswordModalTitle">
+        <div style="background:#ffffff;border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,0.22);max-width:420px;width:100%;overflow:hidden;animation:vmmcModalFadeZoom 220ms cubic-bezier(0.16,1,0.3,1) forwards;">
+            <div style="background:linear-gradient(135deg,#0b2569 0%,#0284c7 100%);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
+                <h5 id="vmmcPasswordModalTitle" style="margin:0;font-size:0.95rem;font-weight:700;display:flex;align-items:center;gap:8px;"><i class="bi bi-key-fill"></i> Change Password</h5>
+                <button type="button" onclick="vmmcClosePasswordModal()" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;line-height:1;opacity:0.8;" aria-label="Close">&times;</button>
+            </div>
+            <form id="vmmcPasswordForm" onsubmit="vmmcSubmitPassword(event)" novalidate>
+                {% csrf_token %}
+                <div style="padding:18px;">
+                    <div id="pwErrorSummary" style="display:none;background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:0.8rem;color:#991b1b;"></div>
+                    <div style="margin-bottom:14px;">
+                        <label style="display:block;font-size:0.77rem;font-weight:600;color:#475569;margin-bottom:4px;">Current Password *</label>
+                        <div style="position:relative;">
+                            <input type="password" name="old_password" id="pwOld" placeholder="Enter your current password" style="width:100%;padding:8px 36px 8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
+                            <button type="button" onclick="vmmcTogglePw('pwOld','eyeOld')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:0.95rem;"><i id="eyeOld" class="bi bi-eye-slash-fill"></i></button>
+                        </div>
+                        <div class="pw-field-error" data-field="old_password" style="color:#dc2626;font-size:0.75rem;margin-top:3px;display:none;"></div>
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <label style="display:block;font-size:0.77rem;font-weight:600;color:#475569;margin-bottom:4px;">New Password *</label>
+                        <div style="position:relative;">
+                            <input type="password" name="new_password" id="pwNew" placeholder="Enter new password" style="width:100%;padding:8px 36px 8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
+                            <button type="button" onclick="vmmcTogglePw('pwNew','eyeNew')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:0.95rem;"><i id="eyeNew" class="bi bi-eye-slash-fill"></i></button>
+                        </div>
+                        <div class="pw-field-error" data-field="new_password" style="color:#dc2626;font-size:0.75rem;margin-top:3px;display:none;"></div>
+                    </div>
+                    <div style="margin-bottom:6px;">
+                        <label style="display:block;font-size:0.77rem;font-weight:600;color:#475569;margin-bottom:4px;">Confirm New Password *</label>
+                        <div style="position:relative;">
+                            <input type="password" name="confirm_password" id="pwConfirm" placeholder="Re-enter new password" style="width:100%;padding:8px 36px 8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
+                            <button type="button" onclick="vmmcTogglePw('pwConfirm','eyeConfirm')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:0.95rem;"><i id="eyeConfirm" class="bi bi-eye-slash-fill"></i></button>
+                        </div>
+                        <div class="pw-field-error" data-field="confirm_password" style="color:#dc2626;font-size:0.75rem;margin-top:3px;display:none;"></div>
+                    </div>
+                </div>
+                <div style="padding:12px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;">
+                    <button type="button" onclick="vmmcClosePasswordModal()" style="padding:7px 16px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;font-size:0.83rem;font-weight:600;color:#475569;cursor:pointer;">Cancel</button>
+                    <button type="submit" id="pwSaveBtn" style="padding:7px 18px;border:none;border-radius:6px;background:#0284c7;color:#fff;font-size:0.83rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="bi bi-check-lg"></i> Change Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- USER ACCOUNT DROPDOWN + MODAL JS -->
+    <script>
+    // Dropdown
+    function vmmcToggleUserDropdown(e){e.stopPropagation();var d=document.getElementById('userAccountDropdown'),b=document.getElementById('userAccountBtn');if(!d)return;var o=d.style.display==='block';d.style.display=o?'none':'block';if(b)b.setAttribute('aria-expanded',!o);}
+    function vmmcCloseUserDropdown(){var d=document.getElementById('userAccountDropdown'),b=document.getElementById('userAccountBtn');if(d)d.style.display='none';if(b)b.setAttribute('aria-expanded','false');}
+    document.addEventListener('click',function(e){var w=document.getElementById('userAccountDropdownWrapper');if(w&&!w.contains(e.target))vmmcCloseUserDropdown();});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'){vmmcCloseUserDropdown();vmmcCloseProfileModal();vmmcClosePasswordModal();}});
+
+    // Profile Modal
+    function vmmcOpenProfileModal(){var m=document.getElementById('vmmcProfileModal');if(m){m.style.display='flex';document.body.style.overflow='hidden';}document.querySelectorAll('.profile-field-error').forEach(function(el){el.style.display='none';el.textContent='';});var es=document.getElementById('profileErrorSummary');if(es){es.style.display='none';es.textContent='';}}
+    function vmmcCloseProfileModal(){var m=document.getElementById('vmmcProfileModal');if(m){m.style.display='none';document.body.style.overflow='';}}
+    (function(){var m=document.getElementById('vmmcProfileModal');if(m)m.addEventListener('click',function(e){if(e.target===this)vmmcCloseProfileModal();});})();
+    function vmmcSubmitProfile(e){
+        e.preventDefault();
+        var form=document.getElementById('vmmcProfileForm'),btn=document.getElementById('profileSaveBtn');if(!form||!btn)return;
+        document.querySelectorAll('.profile-field-error').forEach(function(el){el.style.display='none';el.textContent='';});
+        var es=document.getElementById('profileErrorSummary');if(es){es.style.display='none';es.textContent='';}
+        btn.disabled=true;btn.innerHTML='<i class="bi bi-hourglass-split"></i> Saving\u2026';
+        fetch('{% url "users:profile_update" %}',{method:'POST',body:new FormData(form),headers:{'X-Requested-With':'XMLHttpRequest'}})
+        .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
+        .then(function(res){
+            btn.disabled=false;btn.innerHTML='<i class="bi bi-check-lg"></i> Save Changes';
+            if(res.ok&&res.data.success){
+                var dn=document.getElementById('headerDisplayName');if(dn&&res.data.full_name)dn.textContent=res.data.full_name;
+                var pmfn=document.getElementById('profileModalFullName');if(pmfn&&res.data.full_name)pmfn.textContent=res.data.full_name;
+                vmmcCloseProfileModal();vmmcShowJsToast('success',res.data.message||'Profile updated successfully.');
+            }else{
+                var errs=res.data.errors||{},msgs=[];
+                Object.keys(errs).forEach(function(f){var el=document.querySelector('.profile-field-error[data-field="'+f+'"]');if(el){el.textContent=errs[f];el.style.display='block';}msgs.push(errs[f]);});
+                if(msgs.length&&es){es.textContent=msgs.join(' ');es.style.display='block';}
+            }
+        })
+        .catch(function(){btn.disabled=false;btn.innerHTML='<i class="bi bi-check-lg"></i> Save Changes';vmmcShowJsToast('error','A network error occurred. Please try again.');});
+    }
+
+    // Password Modal
+    function vmmcOpenPasswordModal(){var m=document.getElementById('vmmcPasswordModal');if(m){m.style.display='flex';document.body.style.overflow='hidden';}var form=document.getElementById('vmmcPasswordForm');if(form)form.reset();document.querySelectorAll('.pw-field-error').forEach(function(el){el.style.display='none';el.textContent='';});var es=document.getElementById('pwErrorSummary');if(es){es.style.display='none';es.textContent='';}}
+    function vmmcClosePasswordModal(){var m=document.getElementById('vmmcPasswordModal');if(m){m.style.display='none';document.body.style.overflow='';}}
+    (function(){var m=document.getElementById('vmmcPasswordModal');if(m)m.addEventListener('click',function(e){if(e.target===this)vmmcClosePasswordModal();});})();
+    function vmmcTogglePw(inputId,iconId){var inp=document.getElementById(inputId),ico=document.getElementById(iconId);if(!inp)return;if(inp.type==='password'){inp.type='text';if(ico){ico.classList.remove('bi-eye-slash-fill');ico.classList.add('bi-eye-fill');}}else{inp.type='password';if(ico){ico.classList.remove('bi-eye-fill');ico.classList.add('bi-eye-slash-fill');}}}
+    function vmmcSubmitPassword(e){
+        e.preventDefault();
+        var form=document.getElementById('vmmcPasswordForm'),btn=document.getElementById('pwSaveBtn');if(!form||!btn)return;
+        document.querySelectorAll('.pw-field-error').forEach(function(el){el.style.display='none';el.textContent='';});
+        var es=document.getElementById('pwErrorSummary');if(es){es.style.display='none';es.textContent='';}
+        btn.disabled=true;btn.innerHTML='<i class="bi bi-hourglass-split"></i> Changing\u2026';
+        fetch('{% url "users:change_password" %}',{method:'POST',body:new FormData(form),headers:{'X-Requested-With':'XMLHttpRequest'}})
+        .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
+        .then(function(res){
+            btn.disabled=false;btn.innerHTML='<i class="bi bi-check-lg"></i> Change Password';
+            if(res.ok&&res.data.success){vmmcClosePasswordModal();vmmcShowJsToast('success',res.data.message||'Password changed successfully.');}
+            else{var errs=res.data.errors||{},msgs=[];Object.keys(errs).forEach(function(f){var el=document.querySelector('.pw-field-error[data-field="'+f+'"]');if(el){el.textContent=errs[f];el.style.display='block';}msgs.push(errs[f]);});if(msgs.length&&es){es.textContent=msgs.join(' ');es.style.display='block';}}
+        })
+        .catch(function(){btn.disabled=false;btn.innerHTML='<i class="bi bi-check-lg"></i> Change Password';vmmcShowJsToast('error','A network error occurred. Please try again.');});
+    }
+
+    // JS Toast helper (reuses existing CSS keyframe from existing toast system)
+    function vmmcShowJsToast(type,message){
+        var ok=type==='success';
+        var c=document.getElementById('vmmc-toast-container');
+        if(!c){c=document.createElement('div');c.id='vmmc-toast-container';c.setAttribute('aria-live','polite');c.style.cssText='position:fixed;top:18px;right:20px;z-index:99999;min-width:300px;max-width:420px;';document.body.appendChild(c);}
+        var id='vmmc-js-toast-'+Date.now(),t=document.createElement('div');
+        t.id=id;t.setAttribute('role','alert');
+        t.style.cssText='display:flex;align-items:flex-start;gap:10px;background:#fff;border:1px solid '+(ok?'#bbf7d0':'#fca5a5')+';border-left:4px solid '+(ok?'#16a34a':'#dc2626')+';border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.13);padding:12px 14px;animation:vmmcToastSlideIn .32s cubic-bezier(.16,1,.3,1) forwards;margin-bottom:8px;';
+        t.innerHTML='<i class="bi '+(ok?'bi-check-circle-fill':'bi-exclamation-circle-fill')+'" style="color:'+(ok?'#16a34a':'#dc2626')+';font-size:1.15rem;flex-shrink:0;margin-top:1px;"></i><div style="flex:1;"><div style="font-size:.82rem;font-weight:700;color:'+(ok?'#14532d':'#7f1d1d')+';line-height:1.3;">'+(ok?'Success':'Error')+'</div><div style="font-size:.8rem;color:#1e293b;margin-top:2px;">'+message+'</div></div><button type="button" onclick="vmmcDismissToast(\''+id+'\')" style="background:none;border:none;cursor:pointer;color:#64748b;font-size:1rem;padding:0 0 0 6px;line-height:1;">&times;</button>';
+        c.appendChild(t);
+        setTimeout(function(){if(window.vmmcDismissToast)window.vmmcDismissToast(id);},3000);
+    }
+    </script>
+    {% endif %}
+
     {% block extra_js %}{% endblock %}
 </body>
 
