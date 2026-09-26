@@ -2315,3 +2315,112 @@ def landing_department_reset_defaults(request):
 
 
 
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# USER PROFILE SELF-UPDATE (navbar dropdown → View Profile)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class UserProfileUpdateView(LoginRequiredMixin, View):
+    """
+    AJAX endpoint that allows the currently authenticated user to update
+    their own safe profile fields (first_name, last_name, email, phone_number).
+    Role, permissions, superuser/staff status, and username are NOT editable here.
+    """
+
+    def post(self, request):
+        user = request.user
+        errors = {}
+
+        first_name = (request.POST.get('first_name') or '').strip()
+        last_name = (request.POST.get('last_name') or '').strip()
+        email = (request.POST.get('email') or '').strip()
+        phone_number = (request.POST.get('phone_number') or '').strip()
+
+        if email:
+            from django.core.validators import validate_email
+            from django.core.exceptions import ValidationError as DjValidationError
+            try:
+                validate_email(email)
+            except DjValidationError:
+                errors['email'] = 'Enter a valid email address.'
+
+        if phone_number and len(phone_number) > 20:
+            errors['phone_number'] = 'Phone number must be 20 characters or fewer.'
+
+        if errors:
+            return JsonResponse({'success': False, 'errors': errors}, status=400)
+
+        user.first_name = first_name
+        user.last_name = last_name
+        user.email = email
+        user.phone_number = phone_number
+        user.save(update_fields=['first_name', 'last_name', 'email', 'phone_number'])
+
+        full_name = user.get_full_name() or user.username
+        return JsonResponse({
+            'success': True,
+            'message': 'Profile updated successfully.',
+            'full_name': full_name,
+            'username': user.username,
+            'email': user.email,
+            'phone_number': user.phone_number or '',
+            'role_display': user.get_role_display(),
+            'department': user.department or '',
+            'employee_id': user.employee_id or '',
+        })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PASSWORD SELF-CHANGE (navbar dropdown → Change Password)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class UserPasswordChangeView(LoginRequiredMixin, View):
+    """
+    AJAX endpoint for the logged-in user to change their own password.
+    Validates old password, runs Django's built-in password validators,
+    hashes securely, and re-authenticates the session.
+    """
+
+    def post(self, request):
+        from django.contrib.auth import update_session_auth_hash
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError as DjValidationError
+
+        user = request.user
+        old_password = request.POST.get('old_password', '')
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+
+        errors = {}
+
+        if not old_password:
+            errors['old_password'] = 'Current password is required.'
+        elif not user.check_password(old_password):
+            errors['old_password'] = 'The current password you entered is incorrect.'
+
+        if not new_password:
+            errors['new_password'] = 'New password is required.'
+
+        if not confirm_password:
+            errors['confirm_password'] = 'Please confirm the new password.'
+        elif new_password and new_password != confirm_password:
+            errors['confirm_password'] = 'New password and confirmation do not match.'
+
+        if new_password and not errors.get('new_password') and not errors.get('confirm_password'):
+            try:
+                validate_password(new_password, user=user)
+            except DjValidationError as e:
+                errors['new_password'] = ' '.join(e.messages)
+
+        if errors:
+            return JsonResponse({'success': False, 'errors': errors}, status=400)
+
+        user.set_password(new_password)
+        user.save(update_fields=['password'])
+        update_session_auth_hash(request, user)
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Password changed successfully.',
+        })

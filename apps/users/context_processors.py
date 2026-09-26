@@ -16,6 +16,13 @@ def dynamic_navbar(request):
     if not user or not user.is_authenticated:
         return {'dynamic_nav_modules': []}
 
+    try:
+        return _build_dynamic_navbar(request, user)
+    except Exception:
+        return {'dynamic_nav_modules': []}
+
+
+def _build_dynamic_navbar(request, user):
     role_str = (getattr(user, 'role', '') or '').strip().upper()
     is_admin = (
         user.is_superuser

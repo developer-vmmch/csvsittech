@@ -7,7 +7,8 @@ from .views import (
     check_username_api,
     nav_module_create, nav_module_edit, nav_module_rename, nav_module_delete,
     nav_submodule_create, nav_submodule_edit, nav_submodule_rename, nav_submodule_remap, nav_submodule_delete,
-    nav_reset_defaults
+    nav_reset_defaults,
+    UserProfileUpdateView, UserPasswordChangeView,
 )
 
 app_name = 'users'
@@ -41,4 +42,7 @@ urlpatterns = [
     path('<int:pk>/edit/', UserUpdateView.as_view(), name='edit'),
     path('<int:pk>/delete/', UserDeleteView.as_view(), name='delete'),
     path('api/check-username/', check_username_api, name='api_check_username'),
+    # Self-service profile and password
+    path('profile/update/', UserProfileUpdateView.as_view(), name='profile_update'),
+    path('profile/change-password/', UserPasswordChangeView.as_view(), name='change_password'),
 ]
