@@ -53,6 +53,8 @@
             align-items: center;
             justify-content: space-between;
             gap: 20px;
+            position: relative;
+            z-index: 1050;
         }
 
         .hospital-banner-left {
@@ -107,6 +109,8 @@
             display: flex;
             align-items: center;
             flex-shrink: 0;
+            position: relative;
+            z-index: 1051;
         }
 
         .header-info-line {
@@ -566,7 +570,7 @@
 
                     {% if user.is_authenticated %}
                     <!-- User Account Dropdown -->
-                    <div id="userAccountDropdownWrapper" style="position:relative;display:inline-flex;align-items:center;">
+                    <div id="userAccountDropdownWrapper" style="position:relative;display:inline-flex;align-items:center;z-index:1052;">
                         <button type="button" id="userAccountBtn"
                                 onclick="vmmcToggleUserDropdown(event)"
                                 style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:5px;
@@ -1025,10 +1029,27 @@
     <!-- USER ACCOUNT DROPDOWN + MODAL JS -->
     <script>
     // Dropdown
-    function vmmcToggleUserDropdown(e){e.stopPropagation();var d=document.getElementById('userAccountDropdown'),b=document.getElementById('userAccountBtn');if(!d)return;var o=d.style.display==='block';d.style.display=o?'none':'block';if(b)b.setAttribute('aria-expanded',!o);}
-    function vmmcCloseUserDropdown(){var d=document.getElementById('userAccountDropdown'),b=document.getElementById('userAccountBtn');if(d)d.style.display='none';if(b)b.setAttribute('aria-expanded','false');}
-    document.addEventListener('click',function(e){var w=document.getElementById('userAccountDropdownWrapper');if(w&&!w.contains(e.target))vmmcCloseUserDropdown();});
-    document.addEventListener('keydown',function(e){if(e.key==='Escape'){vmmcCloseUserDropdown();vmmcCloseProfileModal();vmmcClosePasswordModal();}});
+    function vmmcToggleUserDropdown(e){
+        if(e){e.stopPropagation();if(e.preventDefault)e.preventDefault();}
+        var d=document.getElementById('userAccountDropdown'),b=document.getElementById('userAccountBtn');
+        if(!d)return;
+        var o=d.style.display==='block';
+        d.style.display=o?'none':'block';
+        if(b)b.setAttribute('aria-expanded',!o);
+    }
+    function vmmcCloseUserDropdown(){
+        var d=document.getElementById('userAccountDropdown'),b=document.getElementById('userAccountBtn');
+        if(d)d.style.display='none';
+        if(b)b.setAttribute('aria-expanded','false');
+    }
+    document.addEventListener('click',function(e){
+        var w=document.getElementById('userAccountDropdownWrapper');
+        if(w&&!w.contains(e.target))vmmcCloseUserDropdown();
+    });
+    window.addEventListener('scroll',function(){vmmcCloseUserDropdown();},{passive:true});
+    document.addEventListener('keydown',function(e){
+        if(e.key==='Escape'){vmmcCloseUserDropdown();vmmcCloseProfileModal();vmmcClosePasswordModal();}
+    });
 
     // Profile Modal
     function vmmcOpenProfileModal(){var m=document.getElementById('vmmcProfileModal');if(m){m.style.display='flex';document.body.style.overflow='hidden';}document.querySelectorAll('.profile-field-error').forEach(function(el){el.style.display='none';el.textContent='';});var es=document.getElementById('profileErrorSummary');if(es){es.style.display='none';es.textContent='';}}
