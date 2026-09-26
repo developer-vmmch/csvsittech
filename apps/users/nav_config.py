@@ -11,13 +11,6 @@ NAVBAR_MODULES_CONFIG = [
         'description': 'Front office operations, CRM enquiries, admission requests, patient search, and logs',
         'submodules': [
             {
-                'key': 'fo_landing',
-                'name': 'Front Office Hub',
-                'icon': 'bi-grid-fill',
-                'url': '/front-office/',
-                'description': 'Main front desk operational center and real-time statistics',
-            },
-            {
                 'key': 'fo_crm',
                 'name': 'CRM (Enquiries)',
                 'icon': 'bi-telephone-inbound-fill',
