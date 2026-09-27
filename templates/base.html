@@ -945,9 +945,9 @@
                                     Change Password
                                 </button>
                                 <div style="height:1px;background:#e2e8f0;margin:4px 0;"></div>
-                                <form method="post" action="{% url 'logout' %}" style="margin:0;">
+                                <form id="vmmcLogoutForm" method="post" action="{% url 'logout' %}" style="margin:0;">
                                     {% csrf_token %}
-                                    <button type="submit" role="menuitem"
+                                    <button type="submit" id="vmmcLogoutBtn" role="menuitem"
                                             style="width:100%;background:none;border:none;cursor:pointer;
                                                    display:flex;align-items:center;gap:10px;
                                                    padding:8px 16px;font-size:0.83rem;font-weight:500;
@@ -1359,6 +1359,41 @@
         if(e.key==='Escape'){vmmcCloseUserDropdown();vmmcCloseProfileModal();vmmcClosePasswordModal();}
     });
 
+    // Helper to retrieve cookie by name
+    function vmmcGetCookie(name) {
+        if (!document.cookie) return null;
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                return decodeURIComponent(cookie.substring(name.length + 1));
+            }
+        }
+        return null;
+    }
+
+    // Ensure logout form always synchronizes the live CSRF cookie token before submit
+    (function(){
+        var logoutForm = document.getElementById('vmmcLogoutForm');
+        if (logoutForm) {
+            logoutForm.addEventListener('submit', function() {
+                var liveToken = vmmcGetCookie('csrftoken');
+                if (liveToken) {
+                    var input = logoutForm.querySelector('input[name="csrfmiddlewaretoken"]');
+                    if (input) {
+                        input.value = liveToken;
+                    }
+                }
+            });
+        }
+        // Force fresh page reload if restored from browser bfcache
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
+    })();
+
     // Profile Modal
     function vmmcOpenProfileModal(){var m=document.getElementById('vmmcProfileModal');if(m){m.style.display='flex';document.body.style.overflow='hidden';}document.querySelectorAll('.profile-field-error').forEach(function(el){el.style.display='none';el.textContent='';});var es=document.getElementById('profileErrorSummary');if(es){es.style.display='none';es.textContent='';}}
     function vmmcCloseProfileModal(){var m=document.getElementById('vmmcProfileModal');if(m){m.style.display='none';document.body.style.overflow='';}}
@@ -1368,8 +1403,10 @@
         var form=document.getElementById('vmmcProfileForm'),btn=document.getElementById('profileSaveBtn');if(!form||!btn)return;
         document.querySelectorAll('.profile-field-error').forEach(function(el){el.style.display='none';el.textContent='';});
         var es=document.getElementById('profileErrorSummary');if(es){es.style.display='none';es.textContent='';}
+        var liveToken = vmmcGetCookie('csrftoken');
+        if(liveToken){var tInp=form.querySelector('input[name="csrfmiddlewaretoken"]');if(tInp)tInp.value=liveToken;}
         btn.disabled=true;btn.innerHTML='<i class="bi bi-hourglass-split"></i> Saving\u2026';
-        fetch('{% url "users:profile_update" %}',{method:'POST',body:new FormData(form),headers:{'X-Requested-With':'XMLHttpRequest'}})
+        fetch('{% url "users:profile_update" %}',{method:'POST',body:new FormData(form),headers:{'X-Requested-With':'XMLHttpRequest','X-CSRFToken':liveToken||''}})
         .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
         .then(function(res){
             btn.disabled=false;btn.innerHTML='<i class="bi bi-check-lg"></i> Save Changes';
@@ -1396,8 +1433,10 @@
         var form=document.getElementById('vmmcPasswordForm'),btn=document.getElementById('pwSaveBtn');if(!form||!btn)return;
         document.querySelectorAll('.pw-field-error').forEach(function(el){el.style.display='none';el.textContent='';});
         var es=document.getElementById('pwErrorSummary');if(es){es.style.display='none';es.textContent='';}
+        var liveToken = vmmcGetCookie('csrftoken');
+        if(liveToken){var tInp=form.querySelector('input[name="csrfmiddlewaretoken"]');if(tInp)tInp.value=liveToken;}
         btn.disabled=true;btn.innerHTML='<i class="bi bi-hourglass-split"></i> Changing\u2026';
-        fetch('{% url "users:change_password" %}',{method:'POST',body:new FormData(form),headers:{'X-Requested-With':'XMLHttpRequest'}})
+        fetch('{% url "users:change_password" %}',{method:'POST',body:new FormData(form),headers:{'X-Requested-With':'XMLHttpRequest','X-CSRFToken':liveToken||''}})
         .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
         .then(function(res){
             btn.disabled=false;btn.innerHTML='<i class="bi bi-check-lg"></i> Change Password';

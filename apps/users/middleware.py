@@ -18,6 +18,12 @@ class DepartmentAccessMiddleware:
 
     def __call__(self, request):
         response = self.get_response(request)
+        if getattr(request, 'user', None) and request.user.is_authenticated:
+            path = getattr(request, 'path_info', None) or getattr(request, 'path', '')
+            if not (path.startswith('/static/') or path.startswith('/media/')):
+                response['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
+                response['Pragma'] = 'no-cache'
+                response['Expires'] = '0'
         return response
 
     def process_view(self, request, view_func, view_args, view_kwargs):
