@@ -912,6 +912,8 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
                 'visit_type': 'IP' if is_emergency else 'OP',
                 'category': 'EMERGENCY' if is_emergency else 'RE_CONSULTATION',
                 'ipno': next_ip if is_emergency else '',
+                'ward': '',
+                'bed': '',
             })
         else:
             context['visit_form'] = PatientVisitForm(patient=None, initial={
@@ -988,6 +990,8 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
                             visit.ipno = raw_ip
                 else:
                     visit.ipno = ''
+                    visit.ward = ''
+                    visit.bed = ''
 
                 if request.user.is_authenticated:
                     visit.created_by = request.user
@@ -2277,28 +2281,130 @@ def api_search_patient_for_allocation(request):
 def api_available_ward_beds(request):
     """
     Returns vacant bed numbers for a selected hospital ward.
+    Accepts ward_id, ward, or ward_name (ID, name, or code).
     """
-    ward_id = request.GET.get('ward_id')
-    ward = Ward.objects.filter(id=ward_id).first()
-    if not ward:
-        return JsonResponse({'status': 'error', 'message': 'Ward not found', 'beds': []})
+    import re
+    ward_param = (request.GET.get('ward_id') or request.GET.get('ward') or request.GET.get('ward_name') or '').strip()
+    if not ward_param:
+        return JsonResponse({'status': 'error', 'message': 'Ward parameter is required', 'beds': [], 'total_available': 0})
 
-    capacity = ward.capacity or 20
-    active_beds = PatientVisit.objects.filter(
+    ward = None
+    if ward_param.isdigit():
+        ward = Ward.objects.filter(id=int(ward_param)).first()
+    if not ward:
+        ward = Ward.objects.filter(Q(name__iexact=ward_param) | Q(code__iexact=ward_param)).first()
+    if not ward:
+        ward = Ward.objects.filter(Q(name__icontains=ward_param) | Q(code__icontains=ward_param)).first()
+    if not ward:
+        return JsonResponse({'status': 'error', 'message': f"Ward '{ward_param}' not found", 'beds': [], 'total_available': 0})
+
+    capacity = ward.capacity if ward.capacity is not None else (ward.total_beds if ward.total_beds is not None else 0)
+    # Active IP admissions (occupied beds)
+    active_visits = PatientVisit.objects.filter(
         Q(ward__iexact=ward.name) | Q(ward__iexact=ward.code),
         visit_type=Patient.VisitChoices.IP,
         discharge_date__isnull=True
-    ).values_list('bed', flat=True)
+    ).select_related('patient')
 
-    occupied_set = {b.strip().upper() for b in active_beds if b}
+    occupied_map = {}
+    occupied_set = set()
+    for v in active_visits:
+        if v.bed:
+            b_norm = v.bed.strip().upper()
+            occupied_map[b_norm] = v
+            occupied_set.add(b_norm)
+
+    # Allotted/Approved admission requests (blocked/reserved beds)
+    from apps.core.models import AdmissionRequest
+    blocked_reqs = AdmissionRequest.objects.filter(
+        Q(ward=ward) | Q(ward__name__iexact=ward.name) | Q(ward__code__iexact=ward.code),
+        status__in=['ALLOTTED', 'APPROVED']
+    ).select_related('patient')
+
+    blocked_map = {}
+    blocked_set = set()
+    for r in blocked_reqs:
+        if r.bed_room:
+            b_norm = r.bed_room.strip().upper()
+            if b_norm not in occupied_set:
+                blocked_map[b_norm] = r
+                blocked_set.add(b_norm)
+
+    # Dynamically derive bed code prefix from ward code (e.g. 'MMW-01' -> 'MMW', 'CAS-01' -> 'CAS')
+    code_raw = (ward.code or '').strip()
+    prefix = code_raw.split('-')[0].strip().upper() if '-' in code_raw else re.sub(r'[^A-Za-z0-9]', '', code_raw).upper()
+    if not prefix:
+        prefix = ''.join([w[0] for w in ward.name.split() if w]).upper()[:4] or 'BED'
+
+    all_beds = []
     available_beds = []
 
     for i in range(1, capacity + 1):
-        bed_str = f"B-{i:02d}"
-        if bed_str.upper() not in occupied_set:
-            available_beds.append(bed_str)
+        bed_str = f"{prefix}{i:03d}"
+        alt1 = f"B-{i:02d}"
+        alt2 = f"{prefix}-{i:02d}"
+        alt3 = f"{prefix}-{i:03d}"
+        check_aliases = [bed_str.upper(), alt1.upper(), alt2.upper(), alt3.upper()]
 
-    return JsonResponse({'status': 'success', 'beds': available_beds, 'total_available': len(available_beds)})
+        is_occ = any(a in occupied_set for a in check_aliases)
+        is_blk = any(a in blocked_set for a in check_aliases)
+
+        if is_occ:
+            v_match = next((occupied_map[a] for a in check_aliases if a in occupied_map), None)
+            p_name = v_match.patient.name if (v_match and v_match.patient) else ''
+            p_ip = v_match.ipno or '' if v_match else ''
+            bed_obj = {
+                'code': bed_str,
+                'status': 'occupied',
+                'patient_name': p_name,
+                'ipno': p_ip,
+                'is_available': False,
+                'is_occupied': True,
+                'is_blocked': False
+            }
+        elif is_blk:
+            r_match = next((blocked_map[a] for a in check_aliases if a in blocked_map), None)
+            p_name = r_match.patient.name if (r_match and r_match.patient) else ''
+            bed_obj = {
+                'code': bed_str,
+                'status': 'blocked',
+                'patient_name': p_name,
+                'is_available': False,
+                'is_occupied': False,
+                'is_blocked': True
+            }
+        else:
+            available_beds.append(bed_str)
+            bed_obj = {
+                'code': bed_str,
+                'status': 'available',
+                'patient_name': '',
+                'ipno': '',
+                'is_available': True,
+                'is_occupied': False,
+                'is_blocked': False
+            }
+
+        all_beds.append(bed_obj)
+
+    return JsonResponse({
+        'status': 'success',
+        'ward_id': ward.id,
+        'ward_name': ward.name,
+        'ward_code': ward.code,
+        'capacity': capacity,
+        'beds': available_beds,
+        'all_beds': all_beds,
+        'total_available': len(available_beds),
+        'total_occupied': len(occupied_set),
+        'total_blocked': len(blocked_set),
+        'summary': {
+            'available': len(available_beds),
+            'occupied': len(occupied_set),
+            'blocked': len(blocked_set),
+            'total': capacity
+        }
+    })
 
 
 @login_required

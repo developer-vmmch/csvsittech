@@ -89,6 +89,136 @@
         cursor: not-allowed;
     }
 
+    /* Bed Selection UI - Direct Ward Beds Grid */
+    .ward-beds-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 4px 2px;
+        align-items: center;
+    }
+
+    /* Bed Item Base Styles */
+    .bed-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        font-family: monospace;
+        transition: all 0.15s ease;
+        user-select: none;
+        border: 1px solid transparent;
+        line-height: 1.2;
+    }
+
+    /* Available State */
+    .bed-item-available {
+        background: #f0fdf4;
+        border-color: #86efac;
+        color: #166534;
+        cursor: pointer;
+    }
+    .bed-item-available:hover {
+        background: #dcfce7;
+        border-color: #4ade80;
+        color: #14532d;
+        transform: translateY(-1px);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    /* Selected State */
+    .bed-item-selected, .bed-item-available.active-selected {
+        background: #0284c7 !important;
+        border-color: #0369a1 !important;
+        color: #ffffff !important;
+        box-shadow: 0 1px 4px rgba(2, 132, 199, 0.4) !important;
+        transform: scale(1.02);
+    }
+    .bed-item-selected .bed-icon, .bed-item-available.active-selected .bed-icon {
+        color: #ffffff !important;
+    }
+
+    /* Occupied State */
+    .bed-item-occupied {
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #991b1b;
+        cursor: not-allowed;
+        opacity: 0.88;
+    }
+    .bed-item-occupied .bed-status-tag {
+        font-size: 0.62rem;
+        font-weight: 700;
+        background: #fee2e2;
+        color: #b91c1c;
+        padding: 1px 4px;
+        border-radius: 3px;
+        font-family: sans-serif;
+        text-transform: uppercase;
+        margin-left: 2px;
+    }
+
+    /* Blocked / Unavailable State */
+    .bed-item-blocked {
+        background: #fffbeb;
+        border-color: #fde68a;
+        color: #92400e;
+        cursor: not-allowed;
+        opacity: 0.88;
+    }
+    .bed-item-blocked .bed-status-tag {
+        font-size: 0.62rem;
+        font-weight: 700;
+        background: #fef3c7;
+        color: #b45309;
+        padding: 1px 4px;
+        border-radius: 3px;
+        font-family: sans-serif;
+        text-transform: uppercase;
+        margin-left: 2px;
+    }
+
+    /* Summary Bar Badges */
+    .bed-summary-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        border: 1px solid transparent;
+    }
+    .bed-summary-avail {
+        background: #ecfdf5;
+        color: #047857;
+        border-color: #a7f3d0;
+    }
+    .bed-summary-occ {
+        background: #fef2f2;
+        color: #b91c1c;
+        border-color: #fecaca;
+    }
+    .bed-summary-blocked {
+        background: #fffbeb;
+        color: #b45309;
+        border-color: #fde68a;
+    }
+    .bed-summary-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .dot-avail { background: #10b981; }
+    .dot-occ { background: #ef4444; }
+    .dot-blocked { background: #f59e0b; }
+
     /* Input Group for Button Addon */
     .input-group-compact {
         display: inline-flex;
@@ -903,13 +1033,13 @@
                     </div>
                     <div class="visit-field-item">
                         <label class="visit-field-label">Ward:</label>
-                        <div style="max-width: 70px;">
+                        <div style="min-width: 95px; max-width: 125px;">
                             {{ visit_form.ward }}
                         </div>
                     </div>
                     <div class="visit-field-item">
                         <label class="visit-field-label">Bed:</label>
-                        <input type="text" name="bed" id="id_bed" class="form-control-compact" value="{% if patient %}{{ last_visit.bed|default:'' }}{% endif %}" placeholder="" style="width: 65px;">
+                        <input type="text" name="bed" id="id_bed" class="form-control-compact" value="{% if patient and is_emergency_patient %}{{ last_visit.bed|default:'' }}{% endif %}" readonly placeholder="" style="width: 65px; font-weight: 600;">
                     </div>
                     <div class="visit-field-item">
                         <label class="visit-field-label">IP Number:</label>
@@ -934,6 +1064,30 @@
                         <div style="width: 60px;">
                             {{ visit_form.reg_fees }}
                         </div>
+                    </div>
+                </div>
+
+                <!-- DYNAMIC AVAILABLE BED SELECTION PANEL -->
+                <div id="ward_beds_panel" style="display: none; margin: 6px 0 10px 0; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+                        <div style="font-size: 0.8rem; font-weight: 700; color: #1e293b; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-hospital" style="color: #0284c7; font-size: 0.95rem;"></i>
+                            <span>Ward Beds: <span id="ward_beds_ward_name" style="color: #0369a1;">Selected Ward</span></span>
+                        </div>
+                        <div id="ward_beds_summary_bar" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; flex-wrap: wrap;">
+                            <span class="bed-summary-pill bed-summary-avail" id="summary_avail_badge">
+                                <span class="bed-summary-dot dot-avail"></span> Available: <strong id="summary_avail_count">0</strong>
+                            </span>
+                            <span class="bed-summary-pill bed-summary-occ" id="summary_occ_badge">
+                                <span class="bed-summary-dot dot-occ"></span> Occupied: <strong id="summary_occ_count">0</strong>
+                            </span>
+                            <span class="bed-summary-pill bed-summary-blocked" id="summary_blocked_badge" style="display: none;">
+                                <span class="bed-summary-dot dot-blocked"></span> Blocked: <strong id="summary_blocked_count">0</strong>
+                            </span>
+                        </div>
+                    </div>
+                    <div id="ward_beds_grid" class="ward-beds-grid">
+                        <!-- Dynamically populated direct bed items -->
                     </div>
                 </div>
 
@@ -1455,6 +1609,196 @@
                     })
                     .catch(err => console.error("Error fetching units:", err));
             });
+        }
+
+        // =========================================================================
+        // IP SWITCH -> WARD SELECTION -> AVAILABLE BED SELECTION
+        // =========================================================================
+        const vtSelect = document.getElementById('id_visit_type');
+        const wardSelect = document.getElementById('id_visit_ward');
+        const bedInput = document.getElementById('id_bed');
+        const bedsPanel = document.getElementById('ward_beds_panel');
+        const bedsGrid = document.getElementById('ward_beds_grid');
+        const wardNameSpan = document.getElementById('ward_beds_ward_name');
+        const summaryAvailCount = document.getElementById('summary_avail_count');
+        const summaryOccCount = document.getElementById('summary_occ_count');
+        const summaryBlockedBadge = document.getElementById('summary_blocked_badge');
+        const summaryBlockedCount = document.getElementById('summary_blocked_count');
+
+        if (vtSelect && wardSelect && bedInput) {
+            // Guarantee Bed is strictly readonly and immune to manual keyboard/paste manipulation
+            bedInput.setAttribute('readonly', 'readonly');
+            bedInput.addEventListener('keydown', function(e) {
+                // Prevent typing or editing manually
+                e.preventDefault();
+            });
+            bedInput.addEventListener('paste', function(e) {
+                e.preventDefault();
+            });
+
+            function isIpSelected() {
+                return (vtSelect.value || '').trim().toUpperCase() === 'IP';
+            }
+
+            // Global handler for selecting an available bed
+            window.selectWardBed = function(bedCode, btnElem) {
+                if (!bedCode) return;
+                bedInput.value = bedCode;
+                if (bedsGrid) {
+                    const allAvail = bedsGrid.querySelectorAll('.bed-item-available');
+                    allAvail.forEach(b => b.classList.remove('active-selected'));
+                }
+                if (btnElem) {
+                    btnElem.classList.add('active-selected');
+                }
+            };
+
+            // Fetch and display beds directly for the selected ward (NO artificial room grouping)
+            function loadAvailableBedsForWard() {
+                const wardVal = (wardSelect.value || '').trim();
+                if (!isIpSelected() || !wardVal) {
+                    if (bedsPanel) bedsPanel.style.display = 'none';
+                    return;
+                }
+
+                if (wardNameSpan) wardNameSpan.textContent = wardVal;
+                if (summaryAvailCount) summaryAvailCount.textContent = '...';
+                if (summaryOccCount) summaryOccCount.textContent = '...';
+                if (summaryBlockedBadge) summaryBlockedBadge.style.display = 'none';
+                if (bedsPanel) bedsPanel.style.display = 'block';
+                if (bedsGrid) bedsGrid.innerHTML = '<div style="font-size: 0.78rem; color: #64748b; font-style: italic; padding: 6px;">Loading ward beds...</div>';
+
+                fetch(`{% url "patients:api_available_ward_beds" %}?ward=${encodeURIComponent(wardVal)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            const summary = data.summary || {};
+                            const availCount = summary.available !== undefined ? summary.available : (data.beds ? data.beds.length : 0);
+                            const occCount = summary.occupied !== undefined ? summary.occupied : (data.total_occupied || 0);
+                            const blkCount = summary.blocked !== undefined ? summary.blocked : (data.total_blocked || 0);
+
+                            if (summaryAvailCount) summaryAvailCount.textContent = availCount;
+                            if (summaryOccCount) summaryOccCount.textContent = occCount;
+                            if (summaryBlockedBadge) {
+                                if (blkCount > 0) {
+                                    summaryBlockedBadge.style.display = 'inline-flex';
+                                    if (summaryBlockedCount) summaryBlockedCount.textContent = blkCount;
+                                } else {
+                                    summaryBlockedBadge.style.display = 'none';
+                                }
+                            }
+
+                            const currentBed = (bedInput.value || '').trim().toUpperCase();
+                            const bedsList = data.all_beds || [];
+
+                            let html = '';
+                            if (availCount === 0) {
+                                html += '<div style="width: 100%; font-size: 0.78rem; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; padding: 5px 8px; margin-bottom: 6px; font-weight: 600;"><i class="bi bi-info-circle-fill" style="margin-right: 4px;"></i>No beds available in this ward.</div>';
+                            }
+
+                            if (bedsList.length > 0) {
+                                bedsList.forEach(b => {
+                                    const bCode = (b.code || '').trim();
+                                    const isSelected = (currentBed && currentBed === bCode.toUpperCase());
+                                    if (b.is_available) {
+                                        html += `<button type="button" class="bed-item bed-item-available ${isSelected ? 'active-selected' : ''}" onclick="selectWardBed('${bCode}', this)" title="Select available bed ${bCode}">🛏 ${bCode}</button>`;
+                                    } else if (b.is_occupied) {
+                                        const tooltip = `Occupied${b.patient_name ? ' by ' + b.patient_name : ''}${b.ipno ? ' (' + b.ipno + ')' : ''}`;
+                                        html += `<div class="bed-item bed-item-occupied" title="${tooltip}">🛏 ${bCode} <span class="bed-status-tag">Occupied</span></div>`;
+                                    } else if (b.is_blocked) {
+                                        const tooltip = `Blocked / Reserved${b.patient_name ? ' for ' + b.patient_name : ''}`;
+                                        html += `<div class="bed-item bed-item-blocked" title="${tooltip}">🛏 ${bCode} <span class="bed-status-tag">Blocked</span></div>`;
+                                    } else {
+                                        html += `<div class="bed-item bed-item-occupied" title="Unavailable">🛏 ${bCode} <span class="bed-status-tag">Unavailable</span></div>`;
+                                    }
+                                });
+                                bedsGrid.innerHTML = html;
+                            } else if (availCount > 0 && data.beds && data.beds.length > 0) {
+                                // Fallback if all_beds is empty
+                                data.beds.forEach(bed => {
+                                    const isSelected = (currentBed && currentBed === bed.toUpperCase());
+                                    html += `<button type="button" class="bed-item bed-item-available ${isSelected ? 'active-selected' : ''}" onclick="selectWardBed('${bed}', this)" title="Select available bed ${bed}">🛏 ${bed}</button>`;
+                                });
+                                bedsGrid.innerHTML = html;
+                            } else {
+                                bedsGrid.innerHTML = '<div style="font-size: 0.78rem; color: #64748b; font-style: italic; padding: 6px;">No beds available in this ward.</div>';
+                            }
+                        } else {
+                            if (summaryAvailCount) summaryAvailCount.textContent = '0';
+                            if (summaryOccCount) summaryOccCount.textContent = '0';
+                            if (summaryBlockedBadge) summaryBlockedBadge.style.display = 'none';
+                            bedsGrid.innerHTML = '<div style="font-size: 0.78rem; color: #64748b; font-style: italic; padding: 6px;">No beds available in this ward.</div>';
+                        }
+                    })
+                    .catch(err => {
+                        if (summaryAvailCount) summaryAvailCount.textContent = '!';
+                        bedsGrid.innerHTML = '<div style="font-size: 0.78rem; color: #dc2626; font-style: italic; padding: 6px;">Error loading ward beds.</div>';
+                    });
+            }
+
+            // Visit Type change listener
+            vtSelect.addEventListener('change', function() {
+                if (isIpSelected()) {
+                    wardSelect.disabled = false;
+                    // Switching to IP: keep bed empty and do not auto-select ward unless already chosen
+                    if (!wardSelect.value) {
+                        bedInput.value = '';
+                        if (bedsPanel) bedsPanel.style.display = 'none';
+                    } else {
+                        loadAvailableBedsForWard();
+                    }
+                } else {
+                    // Non-IP: clear ward, disable ward, clear bed, hide beds panel
+                    wardSelect.value = '';
+                    wardSelect.disabled = true;
+                    bedInput.value = '';
+                    if (bedsGrid) bedsGrid.innerHTML = '';
+                    if (bedsPanel) bedsPanel.style.display = 'none';
+                }
+            });
+
+            // Ward change listener
+            wardSelect.addEventListener('change', function() {
+                // Clear previous bed selection whenever Ward changes
+                bedInput.value = '';
+                if (bedsGrid) bedsGrid.innerHTML = '';
+                if (wardSelect.value && isIpSelected()) {
+                    loadAvailableBedsForWard();
+                } else {
+                    if (bedsPanel) bedsPanel.style.display = 'none';
+                }
+            });
+
+            // Initial state on page load
+            if (!isIpSelected()) {
+                wardSelect.value = '';
+                wardSelect.disabled = true;
+                bedInput.value = '';
+                if (bedsPanel) bedsPanel.style.display = 'none';
+            } else {
+                wardSelect.disabled = false;
+                if (wardSelect.value) {
+                    loadAvailableBedsForWard();
+                } else {
+                    bedInput.value = '';
+                    if (bedsPanel) bedsPanel.style.display = 'none';
+                }
+            }
+
+
+            // Ensure disabled ward is enabled before form submit if IP, or cleared if OP
+            const visitForm = document.getElementById('review_visit_form');
+            if (visitForm) {
+                visitForm.addEventListener('submit', function() {
+                    if (isIpSelected()) {
+                        wardSelect.disabled = false;
+                    } else {
+                        wardSelect.disabled = false;
+                        wardSelect.value = '';
+                        bedInput.value = '';
+                    }
+                });
+            }
         }
     });
 </script>
