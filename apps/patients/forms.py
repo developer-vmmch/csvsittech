@@ -188,18 +188,8 @@ class PatientRegistrationForm(forms.ModelForm):
     def clean_patient_id(self):
         patient_id = self.cleaned_data.get('patient_id')
         if not patient_id and not self.instance.pk:
-            category = str(self.data.get('category') or '').upper()
-            dept_id = self.data.get('department_obj')
-            is_emer = False
-            if category in ['EMERGENCY', 'CASUALTY']:
-                is_emer = True
-            elif dept_id:
-                try:
-                    dept = Department.objects.filter(pk=dept_id).first()
-                    if dept and any(term in dept.name.upper() for term in ['EMERGENCY', 'CASUALTY']):
-                        is_emer = True
-                except Exception:
-                    pass
+            reg_mode = (self.data.get('registration_mode') or 'NORMAL').upper()
+            is_emer = (reg_mode == 'EMERGENCY')
             return Patient.generate_next_patient_id(is_emergency=is_emer)
         return patient_id
 

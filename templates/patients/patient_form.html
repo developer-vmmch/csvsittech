@@ -640,7 +640,18 @@
                 <!-- ======================================================= -->
                 <div class="reg-col-right">
 
-                    <!-- 1. Mobile No (without 91) -->
+                    <!-- 1. DOB + Calc Age Refresh (Top Right) -->
+                    <div class="reg-field-row" id="row_dob">
+                        <label class="reg-field-label" for="id_dob">DOB:</label>
+                        <div class="reg-field-input-wrap" style="display: flex; gap: 5px; max-width: 210px;">
+                            {{ form.dob }}
+                            <button type="button" class="btn-icon-refresh" id="btnCalcAgeFromDOB" title="Calculate Age from Date of Birth">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 2. Mobile No (without 91) -->
                     <div class="reg-field-row" id="row_mobile">
                         <label class="reg-field-label" for="id_mobile_no" id="lblMobile">Mobile No (without 91):</label>
                         <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
@@ -649,7 +660,7 @@
                         </div>
                     </div>
 
-                    <!-- 2. Aadhar Card / Number -->
+                    <!-- 3. Aadhar Card / Number -->
                     <div class="reg-field-row" id="row_aadhar">
                         <label class="reg-field-label" for="id_aadhar_card">Aadhar Card:</label>
                         <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
@@ -658,23 +669,12 @@
                         </div>
                     </div>
 
-                    <!-- 3. ABHA Number -->
+                    <!-- 4. ABHA Number -->
                     <div class="reg-field-row" id="row_abha">
                         <label class="reg-field-label" for="id_abha_id">ABHA Number:</label>
                         <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
                             {{ form.abha_id }}
                             {% if form.abha_id.errors %}<span class="js-field-error">{{ form.abha_id.errors.0 }}</span>{% endif %}
-                        </div>
-                    </div>
-
-                    <!-- 4. DOB + Calc Age Refresh (Below ABHA Number) -->
-                    <div class="reg-field-row" id="row_dob">
-                        <label class="reg-field-label" for="id_dob">DOB:</label>
-                        <div class="reg-field-input-wrap" style="display: flex; gap: 5px; max-width: 210px;">
-                            {{ form.dob }}
-                            <button type="button" class="btn-icon-refresh" id="btnCalcAgeFromDOB" title="Calculate Age from Date of Birth">
-                                <i class="bi bi-arrow-repeat"></i>
-                            </button>
                         </div>
                     </div>
 
@@ -1483,18 +1483,12 @@
         if (btnCalcAge) btnCalcAge.addEventListener('click', calculateAge);
 
         // =========================================================================
-        // EMERGENCY ID INDICATOR
+        // EMERGENCY ID INDICATOR (Only show E prefix in EMERGENCY mode)
         // =========================================================================
         function updatePatientIdIndicator() {
             if (!patientIdDisplay) return;
             const mode = document.querySelector('input[name="registration_mode"]:checked')?.value || 'NORMAL';
-            const catVal = (categorySelect ? categorySelect.value || '' : '').toUpperCase();
-            const deptText = (deptSelect && deptSelect.selectedIndex >= 0 && deptSelect.options[deptSelect.selectedIndex] && deptSelect.value) 
-                ? deptSelect.options[deptSelect.selectedIndex].text.toUpperCase() 
-                : '';
-            
-            const isEmergency = mode === 'EMERGENCY' || (mode !== 'NORMAL' && (catVal === 'EMERGENCY' || catVal === 'CASUALTY')) || 
-                                (deptText && (deptText.includes('EMERGENCY') || deptText.includes('CASUALTY')));
+            const isEmergency = (mode === 'EMERGENCY');
             
             if (isEmergency) {
                 patientIdDisplay.value = 'Auto-Generated (Prefix: E...)';
