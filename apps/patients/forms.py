@@ -162,8 +162,7 @@ class PatientRegistrationForm(forms.ModelForm):
         self.fields['age_years'].required = False
         self.fields['age_months'].required = False
         self.fields['age_days'].required = False
-        self.fields['title'].required = (reg_mode != 'EMERGENCY')
-        self.fields['title'].error_messages = {'required': 'Title is required.'}
+        self.fields['title'].required = False
         self.fields['name'].required = True
         self.fields['gender'].required = True
         self.fields['guardian_name'].required = (reg_mode != 'EMERGENCY')
@@ -206,15 +205,30 @@ class PatientRegistrationForm(forms.ModelForm):
 
     def clean_age_years(self):
         val = self.cleaned_data.get('age_years')
-        return val if val is not None else 0
+        if val in [None, '']:
+            return 0
+        try:
+            return int(val)
+        except (ValueError, TypeError):
+            return 0
 
     def clean_age_months(self):
         val = self.cleaned_data.get('age_months')
-        return val if val is not None else 0
+        if val in [None, '']:
+            return 0
+        try:
+            return int(val)
+        except (ValueError, TypeError):
+            return 0
 
     def clean_age_days(self):
         val = self.cleaned_data.get('age_days')
-        return val if val is not None else 0
+        if val in [None, '']:
+            return 0
+        try:
+            return int(val)
+        except (ValueError, TypeError):
+            return 0
 
     patient_type = forms.ChoiceField(
         required=False,
@@ -321,9 +335,9 @@ class PatientRegistrationForm(forms.ModelForm):
                 ('', 'Select'), ('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')
             ], attrs={'class': 'form-select', 'id': 'id_gender', 'required': 'required'}),
             'dob': forms.DateInput(attrs={'class': 'form-input', 'type': 'date', 'id': 'id_dob'}),
-            'age_years': forms.NumberInput(attrs={'class': 'form-input small-input', 'id': 'id_age_years', 'placeholder': 'Y', 'min': '0'}),
-            'age_months': forms.NumberInput(attrs={'class': 'form-input small-input', 'id': 'id_age_months', 'placeholder': 'M', 'min': '0'}),
-            'age_days': forms.NumberInput(attrs={'class': 'form-input small-input', 'id': 'id_age_days', 'placeholder': 'D', 'min': '0'}),
+            'age_years': forms.TextInput(attrs={'class': 'form-input small-input', 'id': 'id_age_years', 'placeholder': 'Y', 'inputmode': 'numeric', 'maxlength': '3'}),
+            'age_months': forms.TextInput(attrs={'class': 'form-input small-input', 'id': 'id_age_months', 'placeholder': 'M', 'inputmode': 'numeric', 'maxlength': '2'}),
+            'age_days': forms.TextInput(attrs={'class': 'form-input small-input', 'id': 'id_age_days', 'placeholder': 'D', 'inputmode': 'numeric', 'maxlength': '2'}),
             'aadhar_card': forms.TextInput(attrs={'class': 'form-input', 'id': 'id_aadhar_card', 'placeholder': '12-digit Aadhar number', 'maxlength': '12'}),
             'visit_through': forms.Select(attrs={'class': 'form-select', 'id': 'id_visit_through'}),
             'category': forms.Select(attrs={'class': 'form-select', 'id': 'id_category'}),
