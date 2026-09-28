@@ -39,31 +39,31 @@
 {% endblock %}
 
 {% block content %}
-<div class="space-y-4">
+<div class="space-y-2.5">
 
     <!-- Header Banner -->
-    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-2.5 shadow-sm">
+    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3.5 py-1.5 shadow-sm">
         <div>
-            <div class="text-[11px] text-slate-500 font-semibold uppercase">Front Office / Analytics & Footfall</div>
-            <h1 class="text-base md:text-lg font-black text-[#0b2569] m-0 flex items-center gap-2">
+            <div class="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Front Office / Analytics & Footfall</div>
+            <h1 class="text-sm md:text-base font-black text-[#0b2569] m-0 flex items-center gap-1.5">
                 <i class="bi bi-bar-chart-line-fill text-amber-600"></i> Patient Count & Footfall Register
             </h1>
         </div>
         <div class="flex items-center gap-2">
             <span class="text-xs text-slate-500">Period: <strong class="text-slate-800">{{ from_date }}</strong> to <strong class="text-slate-800">{{ to_date }}</strong></span>
-            <span class="badge" style="background: #fef3c7; color: #92400e; font-weight: 800; font-size: 0.82rem; padding: 4px 10px; border-radius: 6px;">
+            <span class="badge" style="background: #fef3c7; color: #92400e; font-weight: 800; font-size: 0.78rem; padding: 3px 8px; border-radius: 5px;">
                 Filter: {{ filter_type }}
             </span>
         </div>
     </div>
 
     <!-- Filter Toolbar -->
-    <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
-        <form method="get" action="{% url 'core:patient_count' %}" class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex flex-wrap items-center gap-3">
+    <div class="bg-white border border-slate-200 rounded-lg p-2.5 shadow-sm">
+        <form method="get" action="{% url 'core:patient_count' %}" class="flex flex-wrap items-center justify-between gap-2.5">
+            <div class="flex flex-wrap items-center gap-2.5">
                 <div class="flex items-center gap-1.5">
                     <label class="text-xs font-bold text-slate-700">Category:</label>
-                    <select name="filter_type" class="text-xs border border-slate-300 rounded px-3 py-1.5 font-semibold text-slate-700">
+                    <select name="filter_type" class="text-xs border border-slate-300 rounded px-2.5 py-1 font-semibold text-slate-700">
                         <option value="Both" {% if filter_type == 'Both' or not filter_type %}selected{% endif %}>Both (All Footfall)</option>
                         <option value="OP New" {% if filter_type == 'OP New' %}selected{% endif %}>OP New Registration</option>
                         <option value="OP Review" {% if filter_type == 'OP Review' %}selected{% endif %}>OP Review Consultations</option>
@@ -73,24 +73,24 @@
 
                 <div class="flex items-center gap-1.5">
                     <label class="text-xs font-bold text-slate-700">From Date:</label>
-                    <input type="date" name="from_date" value="{{ from_date }}" class="text-xs border border-slate-300 rounded px-2.5 py-1.5">
+                    <input type="date" name="from_date" value="{{ from_date }}" class="text-xs border border-slate-300 rounded px-2 py-1">
                 </div>
 
                 <div class="flex items-center gap-1.5">
                     <label class="text-xs font-bold text-slate-700">To Date:</label>
-                    <input type="date" name="to_date" value="{{ to_date }}" class="text-xs border border-slate-300 rounded px-2.5 py-1.5">
+                    <input type="date" name="to_date" value="{{ to_date }}" class="text-xs border border-slate-300 rounded px-2 py-1">
                 </div>
             </div>
 
             <!-- Action Buttons -->
             <div class="flex items-center gap-2">
-                <button type="submit" class="px-4 py-1.5 bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs rounded shadow-sm inline-flex items-center gap-1.5">
+                <button type="submit" class="px-3.5 py-1 bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs rounded shadow-sm inline-flex items-center gap-1.5">
                     <i class="bi bi-eye"></i> Show
                 </button>
-                <a href="{% url 'core:patient_count_export' %}?from_date={{ from_date }}&to_date={{ to_date }}&filter_type={{ filter_type }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs rounded inline-flex items-center gap-1">
+                <a href="{% url 'core:patient_count_export' %}?from_date={{ from_date }}&to_date={{ to_date }}&filter_type={{ filter_type }}" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs rounded inline-flex items-center gap-1">
                     <i class="bi bi-file-earmark-spreadsheet text-emerald-600"></i> Export CSV
                 </a>
-                <button type="button" onclick="window.print()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs rounded inline-flex items-center gap-1">
+                <button type="button" onclick="window.print()" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs rounded inline-flex items-center gap-1">
                     <i class="bi bi-printer"></i> Print
                 </button>
             </div>

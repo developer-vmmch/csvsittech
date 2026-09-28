@@ -9,34 +9,34 @@
         background: #ffffff;
         border: 1px solid #cbd5e1;
         border-radius: 8px;
-        padding: 16px 20px;
+        padding: 10px 16px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        margin-bottom: 20px;
+        margin-bottom: 10px;
     }
     .ar-form-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 14px;
-        padding-bottom: 10px;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
         border-bottom: 1px solid #e2e8f0;
     }
     .ar-table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        font-size: 0.8rem;
+        font-size: 0.79rem;
     }
     .ar-table th {
         background: #0b2569;
         color: #ffffff;
         font-weight: 700;
-        padding: 8px 10px;
+        padding: 6px 8px;
         text-align: left;
         white-space: nowrap;
     }
     .ar-table td {
-        padding: 8px 10px;
+        padding: 5px 8px;
         border-bottom: 1px solid #e2e8f0;
         color: #1e293b;
         vertical-align: middle;
@@ -62,10 +62,10 @@
         display: none;
     }
     .lookup-item {
-        padding: 8px 12px;
+        padding: 6px 10px;
         border-bottom: 1px solid #f1f5f9;
         cursor: pointer;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
     }
     .lookup-item:hover {
         background: #e0f2fe;
@@ -74,17 +74,17 @@
 {% endblock %}
 
 {% block content %}
-<div class="space-y-4">
+<div class="space-y-2.5">
 
     <!-- Header Breadcrumb Banner -->
-    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-2.5 shadow-sm">
+    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3.5 py-1.5 shadow-sm">
         <div>
-            <div class="text-[11px] text-slate-500 font-semibold uppercase">Front Office / Inpatient Operations</div>
-            <h1 class="text-base md:text-lg font-black text-[#0b2569] m-0 flex items-center gap-2">
+            <div class="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Front Office / Inpatient Operations</div>
+            <h1 class="text-sm md:text-base font-black text-[#0b2569] m-0 flex items-center gap-1.5">
                 <i class="bi bi-door-open-fill text-purple-600"></i> Inpatient Ward Admission Requests
             </h1>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2.5">
             <span class="text-xs text-slate-500">Total: <strong class="text-slate-800">{{ total_count }}</strong></span>
             <span class="text-xs text-amber-600">Pending: <strong>{{ pending_count }}</strong></span>
             <span class="text-xs text-sky-600">Approved: <strong>{{ approved_count }}</strong></span>
@@ -107,35 +107,35 @@
             <input type="hidden" name="request_id" id="admRequestId" value="">
 
             <!-- Row 1: Patient Search & Demographics Autofill -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-purple-50/50 p-3 rounded-lg border border-purple-100 mb-3">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 bg-purple-50/50 p-2 rounded-lg border border-purple-100 mb-2">
                 <div class="patient-lookup-box md:col-span-2">
-                    <label class="block text-xs font-bold text-slate-700 mb-1">
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">
                         Find Patient (UHID / Name / Mobile) <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
                         <input type="text" id="patientLookupInput" placeholder="Type UHID, Name, or 10-digit mobile..."
-                            class="w-full text-xs px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-purple-400 focus:outline-none" autocomplete="off">
-                        <i class="bi bi-search absolute right-3 top-2.5 text-slate-400 text-xs"></i>
+                            class="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded focus:ring-2 focus:ring-purple-400 focus:outline-none" autocomplete="off">
+                        <i class="bi bi-search absolute right-3 top-2 text-slate-400 text-xs"></i>
                     </div>
                     <div id="patientLookupResults" class="patient-lookup-results"></div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Patient ID / UHID <span class="text-red-500">*</span></label>
-                    <input type="text" name="patient_id" id="id_patient_id" class="w-full text-xs px-3 py-2 bg-slate-100 border border-slate-300 rounded font-mono font-bold text-purple-700" readonly required>
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">Patient ID / UHID <span class="text-red-500">*</span></label>
+                    <input type="text" name="patient_id" id="id_patient_id" class="w-full text-xs px-2.5 py-1.5 bg-slate-100 border border-slate-300 rounded font-mono font-bold text-purple-700" readonly required>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Patient Name</label>
-                    <input type="text" id="id_patient_name" class="w-full text-xs px-3 py-2 bg-slate-100 border border-slate-300 rounded font-bold text-slate-800" readonly placeholder="Auto-populated">
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">Patient Name</label>
+                    <input type="text" id="id_patient_name" class="w-full text-xs px-2.5 py-1.5 bg-slate-100 border border-slate-300 rounded font-bold text-slate-800" readonly placeholder="Auto-populated">
                 </div>
             </div>
 
             <!-- Row 2: Admission Clinical Assignment -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 mb-2">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Department</label>
-                    <select name="department" id="id_department" class="w-full text-xs px-3 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-purple-400">
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">Department</label>
+                    <select name="department" id="id_department" class="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-purple-400">
                         <option value="">-- Select Department --</option>
                         {% for dept in departments %}
                         <option value="{{ dept.id }}">{{ dept.name }}</option>
@@ -144,8 +144,8 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Requested Ward</label>
-                    <select name="ward" id="id_ward" class="w-full text-xs px-3 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-purple-400">
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">Requested Ward</label>
+                    <select name="ward" id="id_ward" class="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-purple-400">
                         <option value="">-- Select Ward --</option>
                         {% for w in wards %}
                         <option value="{{ w.id }}">{{ w.name }} ({{ w.code }}) - {{ w.capacity }} Beds</option>
@@ -154,13 +154,13 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Bed / Room No</label>
-                    <input type="text" name="bed_room" id="id_bed_room" placeholder="e.g. Bed 04 / Room 102" class="w-full text-xs px-3 py-2 border border-slate-300 rounded">
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">Bed / Room No</label>
+                    <input type="text" name="bed_room" id="id_bed_room" placeholder="e.g. Bed 04 / Room 102" class="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Admission Type</label>
-                    <select name="admission_type" id="id_admission_type" class="w-full text-xs px-3 py-2 border border-slate-300 rounded">
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">Admission Type</label>
+                    <select name="admission_type" id="id_admission_type" class="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded">
                         {% for type_code, type_name in admission_types %}
                         <option value="{{ type_code }}">{{ type_name }}</option>
                         {% endfor %}
@@ -169,10 +169,10 @@
             </div>
 
             <!-- Row 3: Priority & Clinical Reason -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 mb-2">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Priority</label>
-                    <select name="priority" id="id_priority" class="w-full text-xs px-3 py-2 border border-slate-300 rounded">
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">Priority</label>
+                    <select name="priority" id="id_priority" class="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded">
                         {% for prio_code, prio_name in priorities %}
                         <option value="{{ prio_code }}" {% if prio_code == 'Normal' %}selected{% endif %}>{{ prio_name }}</option>
                         {% endfor %}
@@ -180,20 +180,20 @@
                 </div>
 
                 <div class="md:col-span-3">
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Clinical Remarks / Reason for Admission</label>
-                    <input type="text" name="reason_remarks" id="id_reason_remarks" placeholder="Diagnosis, symptoms, admitting physician notes..." class="w-full text-xs px-3 py-2 border border-slate-300 rounded">
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">Clinical Remarks / Reason for Admission</label>
+                    <input type="text" name="reason_remarks" id="id_reason_remarks" placeholder="Diagnosis, symptoms, admitting physician notes..." class="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded">
                 </div>
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
-                <button type="submit" class="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded shadow-sm inline-flex items-center gap-1.5" id="admSubmitBtn">
+            <div class="flex items-center gap-2 pt-1.5 border-t border-slate-100">
+                <button type="submit" class="px-3.5 py-1.5 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded shadow-sm inline-flex items-center gap-1.5" id="admSubmitBtn">
                     <i class="bi bi-check2-circle"></i> <span>Submit Admission Request</span>
                 </button>
-                <button type="button" onclick="resetAdmForm()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded border border-slate-300">
+                <button type="button" onclick="resetAdmForm()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded border border-slate-300">
                     <i class="bi bi-arrow-counterclockwise"></i> Reset
                 </button>
-                <button type="button" onclick="window.print()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded border border-slate-300">
+                <button type="button" onclick="window.print()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded border border-slate-300">
                     <i class="bi bi-printer"></i> Print
                 </button>
             </div>
@@ -201,7 +201,7 @@
     </div>
 
     <!-- Filter Bar -->
-    <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+    <div class="bg-white border border-slate-200 rounded-lg p-2.5 shadow-sm">
         <form method="get" action="{% url 'core:admission_request' %}" class="flex flex-wrap items-center gap-2">
             <div class="flex items-center gap-1.5">
                 <label class="text-xs font-bold text-slate-700">Department:</label>

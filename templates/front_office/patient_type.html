@@ -9,7 +9,7 @@
         background: #ffffff;
         border: 1px solid #cbd5e1;
         border-radius: 8px;
-        padding: 14px 16px;
+        padding: 9px 12px;
         transition: transform 0.15s, box-shadow 0.15s;
         position: relative;
         overflow: hidden;
@@ -35,18 +35,18 @@
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        font-size: 0.8rem;
+        font-size: 0.79rem;
     }
     .ptype-table th {
         background: #0b2569;
         color: #ffffff;
         font-weight: 700;
-        padding: 8px 10px;
+        padding: 6px 8px;
         text-align: left;
         white-space: nowrap;
     }
     .ptype-table td {
-        padding: 8px 10px;
+        padding: 5px 8px;
         border-bottom: 1px solid #e2e8f0;
         color: #1e293b;
         vertical-align: middle;
@@ -58,56 +58,56 @@
 {% endblock %}
 
 {% block content %}
-<div class="space-y-4">
+<div class="space-y-2.5">
 
     <!-- Header Banner -->
-    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-2.5 shadow-sm">
+    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3.5 py-1.5 shadow-sm">
         <div>
-            <div class="text-[11px] text-slate-500 font-semibold uppercase">Front Office / Patient Categorization</div>
-            <h1 class="text-base md:text-lg font-black text-[#0b2569] m-0 flex items-center gap-2">
+            <div class="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Front Office / Patient Categorization</div>
+            <h1 class="text-sm md:text-base font-black text-[#0b2569] m-0 flex items-center gap-1.5">
                 <i class="bi bi-tags-fill text-indigo-600"></i> Patient Type Analysis (Normal / Company / NRI / Emergency)
             </h1>
         </div>
         <div class="flex items-center gap-2">
-            <span class="badge" style="background: #ede9fe; color: #6d28d9; font-weight: 800; font-size: 0.82rem; padding: 4px 10px; border-radius: 6px;">
+            <span class="badge" style="background: #ede9fe; color: #6d28d9; font-weight: 800; font-size: 0.78rem; padding: 3px 8px; border-radius: 5px;">
                 Total Filtered: {{ total_count }}
             </span>
         </div>
     </div>
 
     <!-- 4 Patient Type Summary Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
         <div class="type-card t-normal">
             <div class="flex justify-between items-center text-xs font-bold text-slate-600">
                 <span>Normal Patients</span>
-                <i class="bi bi-person text-sky-600 text-base"></i>
+                <i class="bi bi-person text-sky-600 text-sm"></i>
             </div>
-            <div class="mt-2 text-2xl font-black text-sky-700">{{ normal_count }}</div>
+            <div class="mt-1 text-xl font-black text-sky-700">{{ normal_count }}</div>
             <div class="text-[10px] text-slate-400 mt-0.5">Individual / Self-pay</div>
         </div>
 
         <div class="type-card t-company">
             <div class="flex justify-between items-center text-xs font-bold text-slate-600">
                 <span>Company / Corporate</span>
-                <i class="bi bi-building text-purple-600 text-base"></i>
+                <i class="bi bi-building text-purple-600 text-sm"></i>
             </div>
-            <div class="mt-2 text-2xl font-black text-purple-700">{{ company_count }}</div>
+            <div class="mt-1 text-xl font-black text-purple-700">{{ company_count }}</div>
             <div class="text-[10px] text-slate-400 mt-0.5">Insurance / TPA / Schemes</div>
         </div>
 
         <div class="type-card t-emergency">
             <div class="flex justify-between items-center text-xs font-bold text-slate-600">
                 <span>Emergency Cases</span>
-                <i class="bi bi-shield-exclamation text-red-600 text-base"></i>
+                <i class="bi bi-shield-exclamation text-red-600 text-sm"></i>
             </div>
-            <div class="mt-2 text-2xl font-black text-red-700">{{ emergency_count }}</div>
+            <div class="mt-1 text-xl font-black text-red-700">{{ emergency_count }}</div>
             <div class="text-[10px] text-slate-400 mt-0.5">Casualty / Emergency ID 'E'</div>
         </div>
 
         <div class="type-card t-nri">
             <div class="flex justify-between items-center text-xs font-bold text-slate-600">
                 <span>NRI Patients</span>
-                <i class="bi bi-globe-americas text-amber-600 text-base"></i>
+                <i class="bi bi-globe-americas text-amber-600 text-sm"></i>
             </div>
             <div class="mt-2 text-2xl font-black text-amber-700">{{ nri_count }}</div>
             <div class="text-[10px] text-slate-400 mt-0.5">International / NRI Origin</div>

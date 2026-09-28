@@ -6,58 +6,58 @@
 
 {% block content %}
 <div class="panel">
-    <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+    <div class="panel-header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.75rem;">
         <div>
-            <h2 class="panel-title" style="margin: 0; font-size: 1.25rem;">Patient Directory</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; margin-bottom: 0;">Comprehensive list of registered OPD and IPD hospital patients.</p>
+            <h2 class="panel-title" style="margin: 0; font-size: 1.15rem;">Patient Directory</h2>
+            <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 2px; margin-bottom: 0;">Comprehensive list of registered OPD and IPD hospital patients.</p>
         </div>
         {% if request.user|has_perm:'patients.patient_list.create' %}
-        <a href="{% url 'patients:add' %}" class="btn btn-primary">
+        <a href="{% url 'patients:add' %}" class="btn btn-primary" style="padding: 0.4rem 0.85rem;">
             <i class="bi bi-person-plus-fill"></i> Add New Patient
         </a>
         {% endif %}
     </div>
 
     <!-- Filter Form -->
-    <form id="filterForm" method="get" action="{% url 'patients:list' %}" style="background: #f8fafc; padding: 1.25rem; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 1.25rem;">
-        <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
-            <div style="flex: 2; min-width: 200px;">
-                <label style="font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.25rem;">Search (Name / ID / OP)</label>
-                <input type="text" name="search" value="{{ search }}" class="form-input" placeholder="Search..." style="width: 100%;">
+    <form id="filterForm" method="get" action="{% url 'patients:list' %}" style="background: #f8fafc; padding: 0.6rem 0.85rem; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 0.75rem;">
+        <div style="display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 2; min-width: 180px;">
+                <label style="font-size: 0.80rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.15rem;">Search (Name / ID / OP)</label>
+                <input type="text" name="search" value="{{ search }}" class="form-input" placeholder="Search..." style="width: 100%; height: 32px; font-size: 0.82rem; padding: 2px 8px;">
             </div>
-            <div style="flex: 1; min-width: 150px;">
-                <label style="font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.25rem;">From Date</label>
-                <input type="date" id="from_date" name="from_date" value="{{ from_date }}" class="form-input" style="width: 100%;" onclick="if(this.showPicker) this.showPicker();">
+            <div style="flex: 1; min-width: 130px;">
+                <label style="font-size: 0.80rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.15rem;">From Date</label>
+                <input type="date" id="from_date" name="from_date" value="{{ from_date }}" class="form-input" style="width: 100%; height: 32px; font-size: 0.82rem; padding: 2px 8px;" onclick="if(this.showPicker) this.showPicker();">
             </div>
-            <div style="flex: 1; min-width: 150px;">
-                <label style="font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.25rem;">To Date</label>
-                <input type="date" id="to_date" name="to_date" value="{{ to_date }}" class="form-input" style="width: 100%;" onclick="if(this.showPicker) this.showPicker();">
+            <div style="flex: 1; min-width: 130px;">
+                <label style="font-size: 0.80rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.15rem;">To Date</label>
+                <input type="date" id="to_date" name="to_date" value="{{ to_date }}" class="form-input" style="width: 100%; height: 32px; font-size: 0.82rem; padding: 2px 8px;" onclick="if(this.showPicker) this.showPicker();">
             </div>
-            <div style="flex: 1; min-width: 150px;">
-                <label style="font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.25rem;">Patient Type</label>
-                <select name="patient_type" class="form-input" style="width: 100%; font-size: 0.85rem; height: 38px;">
+            <div style="flex: 1; min-width: 120px;">
+                <label style="font-size: 0.80rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.15rem;">Patient Type</label>
+                <select name="patient_type" class="form-input" style="width: 100%; font-size: 0.82rem; height: 32px; padding: 2px 6px;">
                     <option value="A" {% if patient_type == 'A' or not patient_type %}selected{% endif %}>A</option>
                     <option value="O" {% if patient_type == 'O' %}selected{% endif %}>O</option>
                     <option value="D" {% if patient_type == 'D' %}selected{% endif %}>D</option>
                 </select>
             </div>
-            <div style="flex: 1; min-width: 150px;">
-                <label style="font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.25rem;">Department</label>
-                <select name="department" class="form-input" style="width: 100%; font-size: 0.85rem; height: 38px;">
+            <div style="flex: 1; min-width: 140px;">
+                <label style="font-size: 0.80rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.15rem;">Department</label>
+                <select name="department" class="form-input" style="width: 100%; font-size: 0.82rem; height: 32px; padding: 2px 6px;">
                     <option value="">[ All Departments ▼ ]</option>
                     {% for dept in departments %}
                         <option value="{{ dept.name }}" {% if department == dept.name %}selected{% endif %}>{{ dept.name }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
-                <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1rem;"><i class="bi bi-funnel"></i> Apply Filter</button>
-                <a href="{% url 'patients:list' %}" class="btn btn-secondary" style="padding: 0.5rem 1rem;"><i class="bi bi-x-circle"></i> Clear</a>
+            <div style="display: flex; gap: 0.4rem; align-items: flex-end;">
+                <button type="submit" class="btn btn-primary" style="padding: 0.35rem 0.8rem; height: 32px;"><i class="bi bi-funnel"></i> Apply Filter</button>
+                <a href="{% url 'patients:list' %}" class="btn btn-secondary" style="padding: 0.35rem 0.8rem; height: 32px;"><i class="bi bi-x-circle"></i> Clear</a>
             </div>
         </div>
     </form>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; flex-wrap: wrap; gap: 0.75rem;">
         <div style="position: relative;">
             <button type="button" class="btn btn-secondary" onclick="toggleColumnDropdown()" style="padding: 0.5rem 1rem;">
                 <i class="bi bi-layout-three-columns"></i> Columns ▾

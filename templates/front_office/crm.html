@@ -9,58 +9,67 @@
         background: #ffffff;
         border: 1px solid #cbd5e1;
         border-radius: 8px;
-        padding: 16px 20px;
+        padding: 10px 16px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        margin-bottom: 20px;
+        margin-bottom: 10px;
     }
     .crm-form-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 14px;
-        padding-bottom: 10px;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
         border-bottom: 1px solid #e2e8f0;
     }
     .crm-form-title {
-        font-size: 1.05rem;
+        font-size: 0.98rem;
         font-weight: 800;
         color: #0b2569;
         margin: 0;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
     }
     .crm-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 20px;
+        gap: 14px;
     }
     @media (max-width: 900px) {
         .crm-grid {
             grid-template-columns: 1fr;
+            gap: 10px;
         }
     }
     .form-group-compact {
-        margin-bottom: 10px;
+        margin-bottom: 0px;
     }
     .form-label-compact {
         display: block;
-        font-size: 0.78rem;
+        font-size: 0.77rem;
         font-weight: 700;
         color: #1e293b;
-        margin-bottom: 3px;
+        margin-bottom: 2px;
+        line-height: 1.15;
     }
     .form-label-compact .req {
         color: #dc2626;
     }
     .form-control-compact {
         width: 100%;
-        padding: 6px 10px;
-        font-size: 0.82rem;
+        padding: 4px 8px;
+        font-size: 0.81rem;
+        height: 29px;
         border: 1px solid #cbd5e1;
-        border-radius: 6px;
+        border-radius: 5px;
         background: #ffffff;
+        box-sizing: border-box;
         transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    textarea.form-control-compact {
+        height: auto;
+        min-height: 44px;
+        padding: 4px 8px;
     }
     .form-control-compact:focus {
         outline: none;
@@ -70,24 +79,25 @@
     .crm-btn-group {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         flex-wrap: wrap;
-        margin-top: 14px;
-        padding-top: 12px;
+        margin-top: 8px;
+        padding-top: 8px;
         border-top: 1px solid #e2e8f0;
     }
     .btn-fo-primary {
         background: #0284c7;
         color: #ffffff !important;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         font-weight: 700;
-        padding: 6px 16px;
-        border-radius: 6px;
+        padding: 5px 14px;
+        height: 28px;
+        border-radius: 5px;
         border: 1px solid #0284c7;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         transition: all 0.15s ease;
     }
     .btn-fo-primary:hover {
@@ -96,15 +106,16 @@
     .btn-fo-secondary {
         background: #f1f5f9;
         color: #1e293b !important;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         font-weight: 600;
-        padding: 6px 14px;
-        border-radius: 6px;
+        padding: 5px 12px;
+        height: 28px;
+        border-radius: 5px;
         border: 1px solid #cbd5e1;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         transition: all 0.15s ease;
     }
     .btn-fo-secondary:hover {
@@ -114,19 +125,19 @@
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        font-size: 0.8rem;
+        font-size: 0.79rem;
     }
     .crm-table th {
         background: #0b2569;
         color: #ffffff;
         font-weight: 700;
-        padding: 8px 10px;
+        padding: 6px 8px;
         text-align: left;
         white-space: nowrap;
         border-right: 1px solid rgba(255,255,255,0.1);
     }
     .crm-table td {
-        padding: 8px 10px;
+        padding: 5px 8px;
         border-bottom: 1px solid #e2e8f0;
         color: #1e293b;
         vertical-align: middle;
@@ -138,17 +149,17 @@
 {% endblock %}
 
 {% block content %}
-<div class="space-y-4">
+<div class="space-y-2.5">
 
     <!-- Header Breadcrumb Banner -->
-    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-2.5 shadow-sm">
+    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3.5 py-1.5 shadow-sm">
         <div>
-            <div class="text-[11px] text-slate-500 font-semibold uppercase">Front Office / Operations</div>
-            <h1 class="text-base md:text-lg font-black text-[#0b2569] m-0 flex items-center gap-2">
+            <div class="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Front Office / Operations</div>
+            <h1 class="text-sm md:text-base font-black text-[#0b2569] m-0 flex items-center gap-1.5">
                 <i class="bi bi-telephone-inbound-fill text-sky-600"></i> CRM &mdash; Call / Enquiry Management
             </h1>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2.5">
             <span class="text-xs text-slate-500">Total: <strong class="text-slate-800">{{ total_count }}</strong></span>
             <span class="text-xs text-red-600">Open: <strong>{{ open_count }}</strong></span>
             <span class="text-xs text-amber-600">Follow-up: <strong>{{ followup_count }}</strong></span>
@@ -172,7 +183,7 @@
 
             <div class="crm-grid">
                 <!-- LEFT SIDE -->
-                <div class="space-y-2">
+                <div class="space-y-1.5">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                         <div class="form-group-compact">
                             <label class="form-label-compact">Caller Mobile No <span class="req">*</span></label>
@@ -221,12 +232,12 @@
 
                     <div class="form-group-compact">
                         <label class="form-label-compact">Enquiry About / Details <span class="req">*</span></label>
-                        <textarea name="enquiry_about" id="id_enquiry_about" rows="3" class="form-control-compact" placeholder="Describe the caller enquiry or reason for contacting..." required></textarea>
+                        <textarea name="enquiry_about" id="id_enquiry_about" rows="2" class="form-control-compact" placeholder="Describe the caller enquiry or reason for contacting..." required></textarea>
                     </div>
                 </div>
 
                 <!-- RIGHT SIDE -->
-                <div class="space-y-2">
+                <div class="space-y-1.5">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                         <div class="form-group-compact">
                             <label class="form-label-compact">Caller Type / Source</label>
@@ -326,7 +337,7 @@
     </div>
 
     <!-- Filter & Report Controls -->
-    <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+    <div class="bg-white border border-slate-200 rounded-lg p-2.5 shadow-sm">
         <form method="get" action="{% url 'core:crm' %}" class="flex flex-wrap items-center gap-2">
             <div class="flex items-center gap-1.5">
                 <label class="text-xs font-bold text-slate-700">From:</label>

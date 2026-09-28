@@ -48,11 +48,11 @@
         .hospital-top-banner {
             background: #ffffff;
             border-bottom: 1px solid #e2e8f0;
-            padding: 8px 24px;
+            padding: 5px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 20px;
+            gap: 14px;
             position: relative;
             z-index: 1050;
         }
@@ -65,13 +65,13 @@
         .hospital-brand-link {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
             text-decoration: none !important;
         }
 
         .hospital-logo-img {
-            width: 60px;
-            height: 60px;
+            width: 48px;
+            height: 48px;
             object-fit: contain;
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
             flex-shrink: 0;
@@ -85,24 +85,24 @@
 
         .hospital-main-title {
             font-family: 'Times New Roman', Georgia, serif, sans-serif;
-            font-size: 1.45rem;
+            font-size: 1.32rem;
             font-weight: 800;
             font-style: italic;
             color: #0b2569;
             letter-spacing: 0.2px;
-            line-height: 1.2;
+            line-height: 1.15;
             margin: 0;
         }
 
         .hospital-sub-title {
             font-family: 'Times New Roman', Georgia, serif, sans-serif;
-            font-size: 0.88rem;
+            font-size: 0.82rem;
             font-weight: 700;
             font-style: italic;
             color: #0284c7;
-            margin-top: 1px;
+            margin-top: 0px;
             letter-spacing: 0.2px;
-            line-height: 1.2;
+            line-height: 1.15;
         }
 
         .hospital-banner-right {
@@ -116,12 +116,12 @@
         .header-info-line {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             background: #f8fafc;
             border: 1px solid #cbd5e1;
-            padding: 5px 14px;
+            padding: 4px 10px;
             border-radius: 6px;
-            font-size: 0.82rem;
+            font-size: 0.78rem;
             font-weight: 600;
             color: #1e293b;
             white-space: nowrap;
@@ -152,7 +152,7 @@
             list-style: none;
             margin: 0 auto;
             width: 100%;
-            padding: 0 24px;
+            padding: 0 20px;
             overflow: visible !important;
             position: relative;
             box-sizing: border-box;
@@ -168,9 +168,9 @@
         .top-nav-link {
             color: #ffffff !important;
             text-decoration: none !important;
-            font-size: 0.82rem;
+            font-size: 0.80rem;
             font-weight: 600;
-            padding: 8px 13px;
+            padding: 6px 11px;
             display: flex;
             align-items: center;
             gap: 4px;
@@ -297,10 +297,22 @@
             flex: 1 0 auto;
             width: 100%;
             max-width: 100%;
-            padding: 16px 24px 40px;
+            padding: 10px 20px 24px;
             background-color: #f8fafc;
             animation: vmmcPageFadeIn var(--vmmc-anim-smooth) var(--vmmc-ease-out) forwards;
             will-change: opacity, transform;
+        }
+
+        /* Compact Page Stack - Reduce excessive spacing between consecutive cards/sections */
+        .main-site-content > .space-y-4 > :not([hidden]) ~ :not([hidden]),
+        .content-body > .space-y-4 > :not([hidden]) ~ :not([hidden]),
+        .space-y-4.erp-compact-stack > :not([hidden]) ~ :not([hidden]) {
+            margin-top: 10px !important;
+        }
+
+        .main-site-content > .space-y-6 > :not([hidden]) ~ :not([hidden]),
+        .content-body > .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+            margin-top: 12px !important;
         }
 
         .hospital-bottom-footer {
@@ -308,8 +320,8 @@
             background: linear-gradient(90deg, #002299 0%, #0033cc 50%, #002299 100%);
             color: #ffffff;
             text-align: center;
-            padding: 6px 16px;
-            font-size: 0.8rem;
+            padding: 5px 16px;
+            font-size: 0.78rem;
             font-weight: 600;
             letter-spacing: 0.3px;
             flex-shrink: 0;
@@ -562,28 +574,28 @@
             .hospital-top-banner {
                 flex-direction: column;
                 align-items: stretch;
-                padding: 8px 12px;
-                gap: 8px;
+                padding: 6px 10px;
+                gap: 6px;
             }
             .hospital-banner-left {
                 width: 100%;
                 justify-content: flex-start;
             }
             .hospital-brand-link {
-                gap: 10px;
+                gap: 8px;
                 width: 100%;
             }
             .hospital-logo-img {
-                width: 40px;
-                height: 40px;
+                width: 36px;
+                height: 36px;
             }
             .hospital-main-title {
-                font-size: clamp(0.95rem, 4.2vw, 1.15rem);
-                line-height: 1.25;
+                font-size: clamp(0.92rem, 4vw, 1.1rem);
+                line-height: 1.2;
             }
             .hospital-sub-title {
-                font-size: clamp(0.70rem, 3vw, 0.78rem);
-                line-height: 1.2;
+                font-size: clamp(0.68rem, 2.8vw, 0.75rem);
+                line-height: 1.15;
             }
             .hospital-banner-right {
                 width: 100%;
@@ -593,15 +605,15 @@
                 width: 100%;
                 justify-content: space-between;
                 box-sizing: border-box;
-                padding: 4px 8px;
-                font-size: 0.74rem;
-                gap: 6px;
+                padding: 3px 8px;
+                font-size: 0.72rem;
+                gap: 5px;
             }
             .header-datetime-text {
-                font-size: 0.72rem;
+                font-size: 0.70rem;
             }
             #userAccountBtn {
-                font-size: 0.74rem;
+                font-size: 0.72rem;
             }
 
             /* Touch-Friendly Wrapping Navbar (No Horizontal Page Overflow & No Menu Clipping) */
@@ -610,15 +622,15 @@
             }
             .top-navbar-nav {
                 flex-wrap: wrap !important;
-                padding: 4px 8px !important;
+                padding: 3px 6px !important;
                 gap: 2px;
             }
             .top-nav-item {
                 flex-shrink: 0;
             }
             .top-nav-link {
-                padding: 5px 8px !important;
-                font-size: 0.72rem !important;
+                padding: 4px 7px !important;
+                font-size: 0.71rem !important;
                 border-right: none !important;
                 border-radius: 4px;
             }
@@ -632,7 +644,7 @@
 
             /* Main Page Content Padding */
             .main-site-content {
-                padding: 10px 10px 24px !important;
+                padding: 8px 8px 18px !important;
             }
 
             /* Modals reflow & padding */
@@ -659,22 +671,22 @@
         /* 2. Large Mobile / Small Tablet (576px - 767px) */
         @media (min-width: 576px) and (max-width: 767px) {
             .hospital-top-banner {
-                padding: 8px 14px;
-                gap: 10px;
+                padding: 6px 12px;
+                gap: 8px;
             }
             .hospital-logo-img {
-                width: 46px;
-                height: 46px;
+                width: 40px;
+                height: 40px;
             }
             .hospital-main-title {
-                font-size: clamp(1.05rem, 3.2vw, 1.22rem);
+                font-size: clamp(1.0rem, 3vw, 1.18rem);
             }
             .hospital-sub-title {
-                font-size: 0.78rem;
+                font-size: 0.76rem;
             }
             .header-info-line {
-                padding: 4px 10px;
-                font-size: 0.76rem;
+                padding: 3px 8px;
+                font-size: 0.74rem;
             }
 
             .top-navbar-container {
@@ -682,17 +694,17 @@
             }
             .top-navbar-nav {
                 flex-wrap: wrap !important;
-                padding: 4px 10px !important;
-                gap: 3px;
+                padding: 3px 8px !important;
+                gap: 2px;
             }
             .top-nav-link {
-                padding: 6px 9px !important;
-                font-size: 0.74rem !important;
+                padding: 5px 8px !important;
+                font-size: 0.73rem !important;
                 border-radius: 4px;
             }
 
             .main-site-content {
-                padding: 12px 14px 28px !important;
+                padding: 9px 12px 20px !important;
             }
 
             #vmmcProfileModal > div,
@@ -704,22 +716,22 @@
         /* 3. Tablet (768px - 991px) */
         @media (min-width: 768px) and (max-width: 991px) {
             .hospital-top-banner {
-                padding: 8px 16px;
-                gap: 12px;
+                padding: 6px 14px;
+                gap: 10px;
             }
             .hospital-logo-img {
-                width: 50px;
-                height: 50px;
+                width: 44px;
+                height: 44px;
             }
             .hospital-main-title {
-                font-size: 1.25rem;
+                font-size: 1.2rem;
             }
             .hospital-sub-title {
-                font-size: 0.82rem;
+                font-size: 0.80rem;
             }
             .header-info-line {
-                padding: 5px 10px;
-                font-size: 0.78rem;
+                padding: 4px 8px;
+                font-size: 0.76rem;
             }
 
             .top-navbar-container {
@@ -727,15 +739,15 @@
             }
             .top-navbar-nav {
                 flex-wrap: wrap !important;
-                padding: 4px 12px !important;
+                padding: 3px 10px !important;
                 gap: 2px !important;
             }
             .top-nav-item {
                 flex-shrink: 0;
             }
             .top-nav-link {
-                padding: 6px 8px !important;
-                font-size: 0.74rem !important;
+                padding: 5px 7px !important;
+                font-size: 0.73rem !important;
                 gap: 2px !important;
                 border-right: none !important;
                 border-radius: 4px;
@@ -745,70 +757,90 @@
             }
 
             .main-site-content {
-                padding: 14px 18px 32px !important;
+                padding: 10px 14px 20px !important;
             }
         }
 
         /* 4. Small Desktop / Laptop (992px - 1199px) */
         @media (min-width: 992px) and (max-width: 1199px) {
             .hospital-top-banner {
-                padding: 8px 20px;
+                padding: 5px 16px;
             }
             .hospital-logo-img {
-                width: 54px;
-                height: 54px;
+                width: 46px;
+                height: 46px;
             }
             .hospital-main-title {
-                font-size: 1.35rem;
+                font-size: 1.25rem;
             }
             .hospital-sub-title {
-                font-size: 0.85rem;
+                font-size: 0.80rem;
             }
 
             .top-navbar-nav {
-                padding: 0 16px !important;
+                padding: 0 14px !important;
             }
             .top-nav-link {
-                padding: 8px 10px !important;
-                font-size: 0.78rem !important;
+                padding: 6px 9px !important;
+                font-size: 0.77rem !important;
             }
 
             .main-site-content {
-                padding: 16px 20px 36px !important;
+                padding: 10px 16px 22px !important;
             }
         }
 
         /* 5. Standard Laptop / Desktop (1200px - 1767px) */
         @media (min-width: 1200px) and (max-width: 1767px) {
             .hospital-top-banner {
-                padding: 8px 24px;
+                padding: 5px 20px;
             }
-            .top-navbar-nav {
-                padding: 0 24px;
+            .hospital-logo-img {
+                width: 48px;
+                height: 48px;
             }
-            .top-nav-link {
-                padding: 8px 13px;
+            .hospital-main-title {
+                font-size: 1.32rem;
+            }
+            .hospital-sub-title {
                 font-size: 0.82rem;
             }
+            .top-navbar-nav {
+                padding: 0 20px;
+            }
+            .top-nav-link {
+                padding: 6px 11px;
+                font-size: 0.80rem;
+            }
             .main-site-content {
-                padding: 16px 24px 40px;
+                padding: 10px 20px 24px;
             }
         }
 
         /* 6. Large Desktop / 2K Monitor (1768px - 2399px) */
         @media (min-width: 1768px) and (max-width: 2399px) {
             .hospital-top-banner {
-                padding: 10px 32px;
+                padding: 6px 24px;
+            }
+            .hospital-logo-img {
+                width: 50px;
+                height: 50px;
+            }
+            .hospital-main-title {
+                font-size: 1.35rem;
+            }
+            .hospital-sub-title {
+                font-size: 0.84rem;
             }
             .top-navbar-nav {
-                padding: 0 32px;
+                padding: 0 24px;
             }
             .top-nav-link {
-                padding: 9px 15px;
-                font-size: 0.85rem;
+                padding: 7px 12px;
+                font-size: 0.82rem;
             }
             .main-site-content {
-                padding: 18px 32px 42px;
+                padding: 12px 24px 26px;
             }
         }
 
@@ -818,30 +850,34 @@
             .hospital-top-banner {
                 max-width: 2560px;
                 margin-inline: auto;
-                padding: 12px 36px;
+                padding: 8px 28px;
                 width: 100%;
                 box-sizing: border-box;
+            }
+            .hospital-logo-img {
+                width: 52px;
+                height: 52px;
             }
             .top-navbar-nav {
                 max-width: 2560px;
                 margin-inline: auto;
-                padding: 0 36px;
+                padding: 0 28px;
                 width: 100%;
                 box-sizing: border-box;
             }
             .top-nav-link {
-                padding: 10px 16px;
-                font-size: 0.88rem;
+                padding: 7px 14px;
+                font-size: 0.84rem;
             }
             .main-site-content {
                 max-width: 2560px;
                 margin-inline: auto;
-                padding: 22px 36px 48px;
+                padding: 14px 28px 28px;
                 width: 100%;
                 box-sizing: border-box;
             }
             .hospital-bottom-footer {
-                padding: 8px 36px;
+                padding: 6px 28px;
             }
         }
     </style>

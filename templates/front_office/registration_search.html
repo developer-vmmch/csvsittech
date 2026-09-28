@@ -9,26 +9,26 @@
         background: #ffffff;
         border: 1px solid #cbd5e1;
         border-radius: 8px;
-        padding: 16px 20px;
+        padding: 10px 16px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        margin-bottom: 20px;
+        margin-bottom: 10px;
     }
     .reg-table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        font-size: 0.8rem;
+        font-size: 0.79rem;
     }
     .reg-table th {
         background: #0b2569;
         color: #ffffff;
         font-weight: 700;
-        padding: 8px 10px;
+        padding: 6px 8px;
         text-align: left;
         white-space: nowrap;
     }
     .reg-table td {
-        padding: 8px 10px;
+        padding: 5px 8px;
         border-bottom: 1px solid #e2e8f0;
         color: #1e293b;
         vertical-align: middle;
@@ -37,10 +37,10 @@
         background: #f8fafc;
     }
     .filter-tab-btn {
-        padding: 6px 14px;
-        font-size: 0.8rem;
+        padding: 4px 12px;
+        font-size: 0.78rem;
         font-weight: 700;
-        border-radius: 6px;
+        border-radius: 5px;
         cursor: pointer;
         transition: all 0.15s;
     }
@@ -56,18 +56,18 @@
 {% endblock %}
 
 {% block content %}
-<div class="space-y-4">
+<div class="space-y-2.5">
 
     <!-- Header Banner -->
-    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-2.5 shadow-sm">
+    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3.5 py-1.5 shadow-sm">
         <div>
-            <div class="text-[11px] text-slate-500 font-semibold uppercase">Front Office / Patient Directory</div>
-            <h1 class="text-base md:text-lg font-black text-[#0b2569] m-0 flex items-center gap-2">
+            <div class="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Front Office / Patient Directory</div>
+            <h1 class="text-sm md:text-base font-black text-[#0b2569] m-0 flex items-center gap-1.5">
                 <i class="bi bi-search text-sky-600"></i> Master Registration Search
             </h1>
         </div>
         <div class="flex items-center gap-2">
-            <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 800; font-size: 0.82rem; padding: 4px 10px; border-radius: 6px;">
+            <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 800; font-size: 0.78rem; padding: 3px 8px; border-radius: 5px;">
                 Record Count: {{ total_records }}
             </span>
         </div>
@@ -78,7 +78,7 @@
         <form method="get" action="{% url 'core:registration_search' %}" id="regSearchForm">
             
             <!-- Type Selector Tabs (OP / IP / Both / Discharge) -->
-            <div class="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200">
+            <div class="flex items-center gap-2 mb-2 pb-2 border-b border-slate-200">
                 <span class="text-xs font-bold text-slate-700 mr-2">Visit Category:</span>
                 <input type="hidden" name="visit_filter" id="visitFilterInput" value="{{ visit_filter }}">
                 
@@ -97,32 +97,32 @@
             </div>
 
             <!-- Search Inputs Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 mb-2">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Patient ID / UHID</label>
-                    <input type="text" name="patient_id" value="{{ patient_id }}" placeholder="e.g. 26148626 or E26..." class="w-full text-xs px-3 py-1.5 border border-slate-300 rounded">
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">Patient ID / UHID</label>
+                    <input type="text" name="patient_id" value="{{ patient_id }}" placeholder="e.g. 26148626 or E26..." class="w-full text-xs px-2.5 py-1 border border-slate-300 rounded">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Patient Name</label>
-                    <input type="text" name="patient_name" value="{{ patient_name }}" placeholder="Search by name..." class="w-full text-xs px-3 py-1.5 border border-slate-300 rounded">
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">Patient Name</label>
+                    <input type="text" name="patient_name" value="{{ patient_name }}" placeholder="Search by name..." class="w-full text-xs px-2.5 py-1 border border-slate-300 rounded">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Mobile No</label>
-                    <input type="text" name="mobile_no" value="{{ mobile_no }}" placeholder="10-digit mobile..." class="w-full text-xs px-3 py-1.5 border border-slate-300 rounded">
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">Mobile No</label>
+                    <input type="text" name="mobile_no" value="{{ mobile_no }}" placeholder="10-digit mobile..." class="w-full text-xs px-2.5 py-1 border border-slate-300 rounded">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">IP Number</label>
-                    <input type="text" name="ip_no" value="{{ ip_no }}" placeholder="e.g. 600001..." class="w-full text-xs px-3 py-1.5 border border-slate-300 rounded">
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">IP Number</label>
+                    <input type="text" name="ip_no" value="{{ ip_no }}" placeholder="e.g. 600001..." class="w-full text-xs px-2.5 py-1 border border-slate-300 rounded">
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 mb-2">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Department</label>
-                    <select name="department" class="w-full text-xs px-3 py-1.5 border border-slate-300 rounded">
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">Department</label>
+                    <select name="department" class="w-full text-xs px-2.5 py-1 border border-slate-300 rounded">
                         <option value="">All Departments</option>
                         {% for dept in departments %}
                         <option value="{{ dept.id }}" {% if department_selected == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
@@ -131,18 +131,18 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Unit / Doctor</label>
-                    <input type="text" name="unit_doctor" value="{{ unit_doctor }}" placeholder="Search doctor or unit..." class="w-full text-xs px-3 py-1.5 border border-slate-300 rounded">
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">Unit / Doctor</label>
+                    <input type="text" name="unit_doctor" value="{{ unit_doctor }}" placeholder="Search doctor or unit..." class="w-full text-xs px-2.5 py-1 border border-slate-300 rounded">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">ABHA ID / Aadhaar</label>
-                    <input type="text" name="abha_id" value="{{ abha_id }}" placeholder="ABHA or Aadhaar..." class="w-full text-xs px-3 py-1.5 border border-slate-300 rounded">
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">ABHA ID / Aadhaar</label>
+                    <input type="text" name="abha_id" value="{{ abha_id }}" placeholder="ABHA or Aadhaar..." class="w-full text-xs px-2.5 py-1 border border-slate-300 rounded">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Company / Scheme</label>
-                    <select name="company" class="w-full text-xs px-3 py-1.5 border border-slate-300 rounded">
+                    <label class="block text-xs font-bold text-slate-700 mb-0.5">Company / Scheme</label>
+                    <select name="company" class="w-full text-xs px-2.5 py-1 border border-slate-300 rounded">
                         <option value="">All Companies</option>
                         {% for comp in companies %}
                         <option value="{{ comp.id }}" {% if company_selected == comp.id|stringformat:"s" %}selected{% endif %}>{{ comp.name }}</option>
@@ -152,7 +152,7 @@
             </div>
 
             <!-- Date Range & Search Option Modes -->
-            <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
                 <div class="flex flex-wrap items-center gap-3">
                     <div class="flex items-center gap-1.5">
                         <span class="text-xs font-bold text-slate-700">From Date:</span>

@@ -10,43 +10,43 @@
         border: 1px solid #cbd5e1;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        margin-bottom: 20px;
+        margin-bottom: 10px;
         overflow: hidden;
     }
     .log-section-header {
         background: #0b2569;
         color: #ffffff;
-        padding: 10px 16px;
+        padding: 6px 12px;
         display: flex;
         align-items: center;
         justify-content: space-between;
     }
     .log-section-title {
-        font-size: 0.92rem;
+        font-size: 0.88rem;
         font-weight: 800;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.4px;
         margin: 0;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
     }
     .log-table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        font-size: 0.8rem;
+        font-size: 0.79rem;
     }
     .log-table th {
         background: #f1f5f9;
         color: #1e293b;
         font-weight: 700;
-        padding: 8px 12px;
+        padding: 6px 10px;
         text-align: left;
         border-bottom: 2px solid #cbd5e1;
         white-space: nowrap;
     }
     .log-table td {
-        padding: 8px 12px;
+        padding: 5px 10px;
         border-bottom: 1px solid #e2e8f0;
         color: #1e293b;
         vertical-align: middle;
@@ -58,13 +58,13 @@
 {% endblock %}
 
 {% block content %}
-<div class="space-y-4">
+<div class="space-y-2.5">
 
     <!-- Header Banner -->
-    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-2.5 shadow-sm">
+    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3.5 py-1.5 shadow-sm">
         <div>
-            <div class="text-[11px] text-slate-500 font-semibold uppercase">Front Office / Staff Audit Trail</div>
-            <h1 class="text-base md:text-lg font-black text-[#0b2569] m-0 flex items-center gap-2">
+            <div class="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Front Office / Staff Audit Trail</div>
+            <h1 class="text-sm md:text-base font-black text-[#0b2569] m-0 flex items-center gap-1.5">
                 <i class="bi bi-person-lines-fill text-rose-600"></i> Front Office Staff User Activity Log
             </h1>
         </div>
@@ -74,17 +74,17 @@
     </div>
 
     <!-- Date & User Selection Filter Bar -->
-    <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
-        <form method="get" action="{% url 'core:user_log' %}" class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex flex-wrap items-center gap-3">
+    <div class="bg-white border border-slate-200 rounded-lg p-2.5 shadow-sm">
+        <form method="get" action="{% url 'core:user_log' %}" class="flex flex-wrap items-center justify-between gap-2.5">
+            <div class="flex flex-wrap items-center gap-2.5">
                 <div class="flex items-center gap-1.5">
                     <label class="text-xs font-bold text-slate-700">Select Date:</label>
-                    <input type="date" name="date" value="{{ log_date }}" class="text-xs border border-slate-300 rounded px-2.5 py-1.5 font-bold text-slate-700">
+                    <input type="date" name="date" value="{{ log_date }}" class="text-xs border border-slate-300 rounded px-2.5 py-1 font-bold text-slate-700">
                 </div>
 
                 <div class="flex items-center gap-1.5">
                     <label class="text-xs font-bold text-slate-700">Staff User:</label>
-                    <select name="user_id" class="text-xs border border-slate-300 rounded px-2.5 py-1.5">
+                    <select name="user_id" class="text-xs border border-slate-300 rounded px-2.5 py-1">
                         <option value="">All Staff Users</option>
                         {% for u in users %}
                         <option value="{{ u.id }}" {% if user_id_filter == u.id|stringformat:"s" %}selected{% endif %}>{{ u.username }} ({{ u.get_full_name|default:u.username }})</option>
@@ -94,16 +94,16 @@
 
                 <div class="flex items-center gap-1.5">
                     <label class="text-xs font-bold text-slate-700">Patient ID / Name:</label>
-                    <input type="text" name="patient_id" value="{{ patient_id_search }}" placeholder="Search UHID / Patient..." class="text-xs border border-slate-300 rounded px-3 py-1.5">
+                    <input type="text" name="patient_id" value="{{ patient_id_search }}" placeholder="Search UHID / Patient..." class="text-xs border border-slate-300 rounded px-2.5 py-1">
                 </div>
             </div>
 
             <!-- Action Buttons -->
             <div class="flex items-center gap-2">
-                <button type="submit" class="px-4 py-1.5 bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs rounded shadow-sm inline-flex items-center gap-1.5">
+                <button type="submit" class="px-3.5 py-1 bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs rounded shadow-sm inline-flex items-center gap-1.5">
                     <i class="bi bi-eye"></i> View Logs
                 </button>
-                <a href="{% url 'core:user_log' %}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs rounded">
+                <a href="{% url 'core:user_log' %}" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs rounded">
                     <i class="bi bi-arrow-counterclockwise"></i> Reset
                 </a>
             </div>
