@@ -1,0 +1,1935 @@
+{% extends "base.html" %}
+
+{% block title %}Module & Submodule Management | VMMC ERP{% endblock %}
+{% block page_heading %}Modules & Submodules Manager{% endblock %}
+
+{% block content %}
+<style>
+    .modman-page-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        margin-bottom: 4rem;
+    }
+
+    /* Hero Banner */
+    .modman-hero-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem 1.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.25rem;
+    }
+
+    .modman-hero-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+    }
+
+    .modman-hero-subtitle {
+        color: #64748b;
+        font-size: 0.88rem;
+        margin: 0.35rem 0 0 0;
+    }
+
+    .modman-tab-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .modman-tab-btn.active {
+        background: #0284c7;
+        color: #ffffff;
+        box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
+    }
+
+    .modman-tab-btn.inactive {
+        background: #f8fafc;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+
+    .modman-tab-btn.inactive:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+        border-color: #cbd5e1;
+    }
+
+    /* Stats Overview */
+    .modman-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+
+    .modman-stat-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1.1rem 1.35rem;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        display: flex;
+        align-items: center;
+        gap: 1.1rem;
+    }
+
+    .modman-stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    .modman-stat-info h4 {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.2;
+    }
+
+    .modman-stat-info p {
+        margin: 0.15rem 0 0 0;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .stat-pill {
+        display: inline-block;
+        font-size: 0.7rem;
+        padding: 2px 7px;
+        border-radius: 4px;
+        margin-top: 4px;
+        font-weight: 600;
+    }
+    .stat-pill-success { background: #dcfce7; color: #15803d; }
+    .stat-pill-danger { background: #fee2e2; color: #b91c1c; }
+
+    /* Controls & Filter Bar */
+    .modman-controls-bar {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .view-segmented-group {
+        display: inline-flex;
+        background: #f1f5f9;
+        padding: 0.25rem;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        gap: 0.25rem;
+    }
+
+    .view-segment-btn {
+        padding: 0.45rem 1rem;
+        border-radius: 6px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        text-decoration: none;
+        color: #475569;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        transition: all 0.15s;
+    }
+
+    .view-segment-btn.active {
+        background: #ffffff;
+        color: #0284c7;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        font-weight: 700;
+    }
+
+    .view-segment-btn:hover:not(.active) {
+        color: #0f172a;
+        background: rgba(255, 255, 255, 0.5);
+    }
+
+    .filter-actions-group {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        flex-wrap: wrap;
+    }
+
+    .modman-search-box {
+        position: relative;
+        min-width: 240px;
+    }
+
+    .modman-search-box i {
+        position: absolute;
+        left: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 0.95rem;
+    }
+
+    .modman-search-input {
+        width: 100%;
+        padding: 0.5rem 0.85rem 0.5rem 2.2rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.86rem;
+        background: #f8fafc;
+        color: #0f172a;
+        box-sizing: border-box;
+        transition: all 0.2s ease;
+    }
+
+    .modman-search-input:focus {
+        outline: none;
+        background: #ffffff;
+        border-color: #0284c7;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+
+    .modman-select-filter {
+        padding: 0.5rem 0.85rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.84rem;
+        background: #f8fafc;
+        color: #334155;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .modman-select-filter:focus {
+        outline: none;
+        border-color: #0284c7;
+    }
+
+    .btn-create-mod {
+        background: #0284c7;
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        padding: 0.52rem 1.15rem;
+        font-size: 0.86rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+    .btn-create-mod:hover { background: #0369a1; color: #ffffff; transform: translateY(-1px); }
+
+    .btn-create-submod {
+        background: #059669;
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        padding: 0.52rem 1.15rem;
+        font-size: 0.86rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+    .btn-create-submod:hover { background: #047857; color: #ffffff; transform: translateY(-1px); }
+
+    /* Tables Container */
+    .modman-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+    }
+
+    .modman-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .modman-table th {
+        background: #f8fafc;
+        padding: 0.85rem 1.15rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .modman-table td {
+        padding: 0.9rem 1.15rem;
+        font-size: 0.86rem;
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+
+    .modman-table tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    .mod-icon-box {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        color: #ffffff;
+        flex-shrink: 0;
+    }
+
+    .badge-code {
+        font-family: monospace;
+        font-size: 0.74rem;
+        background: #f1f5f9;
+        color: #475569;
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .badge-category {
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: 4px;
+        background: #f0fdf4;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .badge-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.74rem;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 20px;
+    }
+    .badge-status.active { background: #dcfce7; color: #166534; }
+    .badge-status.inactive { background: #fee2e2; color: #991b1b; }
+
+    /* Action Buttons in Table */
+    .table-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        justify-content: flex-end;
+    }
+
+    .btn-tbl-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .btn-tbl-action:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+        border-color: #94a3b8;
+    }
+
+    .btn-tbl-action.edit:hover {
+        background: #e0f2fe;
+        color: #0369a1;
+        border-color: #7dd3fc;
+    }
+
+    .btn-tbl-action.toggle:hover {
+        background: #fef3c7;
+        color: #b45309;
+        border-color: #fde68a;
+    }
+
+    .btn-tbl-action.delete:hover {
+        background: #fee2e2;
+        color: #b91c1c;
+        border-color: #fca5a5;
+    }
+
+    /* Hierarchy Tree View */
+    .tree-view-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .tree-mod-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        overflow: hidden;
+    }
+
+    .tree-mod-header {
+        background: #f8fafc;
+        padding: 1rem 1.35rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e2e8f0;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .tree-mod-title-group {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+    }
+
+    .tree-sub-list {
+        padding: 1rem 1.35rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 0.85rem;
+        background: #ffffff;
+    }
+
+    .tree-sub-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.85rem 1rem;
+        background: #ffffff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        transition: all 0.15s ease;
+    }
+
+    .tree-sub-item:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        transform: translateY(-1px);
+    }
+
+    /* Pagination */
+    .modman-pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.85rem 1.25rem;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        font-size: 0.84rem;
+        color: #64748b;
+    }
+
+    .page-btn-group {
+        display: flex;
+        gap: 0.35rem;
+    }
+
+    .page-btn {
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #334155;
+        text-decoration: none;
+        font-size: 0.82rem;
+        font-weight: 600;
+        transition: all 0.15s;
+    }
+
+    .page-btn.active {
+        background: #0284c7;
+        color: #ffffff;
+        border-color: #0284c7;
+    }
+
+    .page-btn:hover:not(.active):not(.disabled) {
+        background: #f1f5f9;
+        color: #0f172a;
+    }
+
+    .page-btn.disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    /* Modal Dialogs (Fixed Viewport Centering) */
+    body.navmap-modal-open {
+        overflow: hidden !important;
+    }
+
+    .nav-modal-backdrop {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(15, 23, 42, 0.65) !important;
+        backdrop-filter: blur(4px) !important;
+        -webkit-backdrop-filter: blur(4px) !important;
+        z-index: 999999 !important;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1.25rem !important;
+        box-sizing: border-box !important;
+        overflow-y: auto !important;
+    }
+
+    .nav-modal-dialog {
+        background: #ffffff !important;
+        border-radius: 12px !important;
+        max-width: 520px !important;
+        width: 100% !important;
+        margin: auto !important;
+        position: relative !important;
+        max-height: calc(100vh - 3rem) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
+        border: 1px solid #cbd5e1 !important;
+        animation: modalSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    @keyframes modalSlideIn {
+        from { opacity: 0; transform: translateY(-16px) scale(0.96); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .nav-modal-header {
+        background: #0b2569;
+        color: #ffffff;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .nav-modal-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .nav-modal-close {
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1.4rem;
+        cursor: pointer;
+        line-height: 1;
+    }
+
+    .nav-modal-close:hover {
+        color: #ffffff;
+    }
+
+    .nav-modal-body {
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        overflow-y: auto;
+        max-height: calc(100vh - 180px);
+    }
+
+    .form-group-modal {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .form-group-modal label {
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #334155;
+    }
+
+    .form-input-modal {
+        width: 100%;
+        padding: 0.55rem 0.85rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.88rem;
+        background: #ffffff;
+        color: #0f172a;
+        box-sizing: border-box;
+    }
+
+    .form-input-modal:focus {
+        outline: none;
+        border-color: #0284c7;
+        box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
+    }
+
+    .nav-modal-footer {
+        padding: 1rem 1.5rem;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+    }
+
+    /* Submodule Multi Picker Component */
+    .submodule-multi-picker {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #ffffff;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
+    }
+
+    .picker-search-bar {
+        position: relative;
+        padding: 6px 10px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .picker-search-bar i {
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 0.85rem;
+    }
+
+    .picker-search-input {
+        width: 100%;
+        padding: 0.35rem 0.65rem 0.35rem 2rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.82rem;
+        background: #ffffff;
+        box-sizing: border-box;
+    }
+
+    .picker-search-input:focus {
+        outline: none;
+        border-color: #0284c7;
+    }
+
+    .picker-items-list {
+        max-height: 190px;
+        overflow-y: auto;
+        padding: 3px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+    }
+
+    .picker-item-row {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 6px 12px;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.12s ease;
+        margin: 0;
+        border-bottom: 1px solid #f8fafc;
+    }
+
+    .picker-item-row:hover {
+        background: #f1f5f9;
+    }
+
+    .picker-item-row.is-selected {
+        background: #f0f9ff;
+    }
+
+    .picker-item-row input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: #0284c7;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .picker-sub-icon {
+        font-size: 1rem;
+        color: #0284c7;
+        flex-shrink: 0;
+    }
+
+    .picker-sub-info {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        min-width: 0;
+    }
+
+    .picker-sub-title {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #0f172a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .picker-parent-tag {
+        font-size: 0.68rem;
+        padding: 1px 5px;
+        border-radius: 4px;
+        background: #f1f5f9;
+        color: #64748b;
+        font-weight: 500;
+        border: 1px solid #e2e8f0;
+        flex-shrink: 0;
+    }
+
+    .picker-url-tag {
+        font-size: 0.68rem;
+        font-family: monospace;
+        color: #94a3b8;
+        max-width: 140px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 0;
+    }
+
+    .btn-sub-selector-action {
+        background: none;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 2px 7px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #0284c7;
+        cursor: pointer;
+        transition: all 0.12s;
+    }
+
+    .btn-sub-selector-action:hover {
+        background: #e0f2fe;
+        border-color: #7dd3fc;
+    }
+</style>
+
+<div class="modman-page-wrapper">
+
+    <!-- 1. Hero Header Banner -->
+    <div class="modman-hero-card">
+        <div>
+            <h1 class="modman-hero-title">
+                <i class="bi bi-boxes text-sky-600"></i>
+                Modules & Submodules Management
+            </h1>
+            <p class="modman-hero-subtitle">
+                Centrally manage, configure, reorganize, activate, or deactivate ERP navigation modules and submodules.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <a href="{% url 'users:module_manager' %}" class="modman-tab-btn active">
+                <i class="bi bi-boxes"></i> Modules & Submodules
+            </a>
+            <a href="{% url 'users:navbar_mapping' %}" class="modman-tab-btn inactive">
+                <i class="bi bi-diagram-3-fill"></i> Nav Bar Mapping
+            </a>
+            <a href="{% url 'users:landing_departments' %}" class="modman-tab-btn inactive">
+                <i class="bi bi-grid-1x2-fill"></i> Landing Departments
+            </a>
+            <a href="{% url 'users:role_permissions' %}" class="modman-tab-btn inactive">
+                <i class="bi bi-grid-3x3-gap-fill"></i> Role Access Matrix
+            </a>
+            <a href="{% url 'users:list' %}" class="modman-tab-btn inactive">
+                <i class="bi bi-people"></i> User Directory
+            </a>
+        </div>
+    </div>
+
+    <!-- 2. Statistics Overview Cards -->
+    <div class="modman-stats-grid">
+        <div class="modman-stat-card">
+            <div class="modman-stat-icon" style="background: #e0f2fe; color: #0284c7;">
+                <i class="bi bi-folder-fill"></i>
+            </div>
+            <div class="modman-stat-info">
+                <h4>{{ total_modules }}</h4>
+                <p>Top Modules</p>
+                <span class="stat-pill stat-pill-success">{{ active_modules }} Active</span>
+                {% if inactive_modules > 0 %}
+                <span class="stat-pill stat-pill-danger">{{ inactive_modules }} Disabled</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="modman-stat-card">
+            <div class="modman-stat-icon" style="background: #ecfdf5; color: #059669;">
+                <i class="bi bi-node-plus-fill"></i>
+            </div>
+            <div class="modman-stat-info">
+                <h4>{{ total_submodules }}</h4>
+                <p>Nav Submodules</p>
+                <span class="stat-pill stat-pill-success">{{ active_submodules }} Active</span>
+                {% if inactive_submodules > 0 %}
+                <span class="stat-pill stat-pill-danger">{{ inactive_submodules }} Disabled</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="modman-stat-card">
+            <div class="modman-stat-icon" style="background: #fdf4ff; color: #a855f7;">
+                <i class="bi bi-hospital-fill"></i>
+            </div>
+            <div class="modman-stat-info">
+                <h4>{{ total_departments }}</h4>
+                <p>Landing Portals</p>
+                <span class="stat-pill" style="background: #f3e8ff; color: #7e22ce;">Linked System</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Controls & Filter Bar -->
+    <div class="modman-controls-bar">
+        <!-- View Segmented Switcher -->
+        <div class="view-segmented-group">
+            <a href="?tab=modules{% if q %}&q={{ q }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}"
+               class="view-segment-btn {% if tab == 'modules' %}active{% endif %}">
+                <i class="bi bi-folder2"></i> Modules ({{ total_modules }})
+            </a>
+            <a href="?tab=submodules{% if q %}&q={{ q }}{% endif %}{% if mod_filter %}&mod={{ mod_filter }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}"
+               class="view-segment-btn {% if tab == 'submodules' %}active{% endif %}">
+                <i class="bi bi-list-nested"></i> Submodules ({{ total_submodules }})
+            </a>
+            <a href="?tab=tree{% if q %}&q={{ q }}{% endif %}"
+               class="view-segment-btn {% if tab == 'tree' %}active{% endif %}">
+                <i class="bi bi-diagram-3"></i> Hierarchy Tree
+            </a>
+        </div>
+
+        <!-- Filter Form & Actions -->
+        <div class="filter-actions-group">
+            <form method="get" action="" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <input type="hidden" name="tab" value="{{ tab }}">
+                <div class="modman-search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="q" value="{{ q }}" class="modman-search-input"
+                           placeholder="Search {% if tab == 'submodules' %}submodules, URLs...{% else %}modules, titles...{% endif %}"
+                           id="managerSearchInput">
+                </div>
+
+                {% if tab == 'submodules' %}
+                <select name="mod" class="modman-select-filter" onchange="this.form.submit()">
+                    <option value="">All Parent Modules</option>
+                    {% for mod in all_modules_list %}
+                    <option value="{{ mod.id }}" {% if mod_filter == mod.id|stringformat:"s" %}selected{% endif %}>
+                        {{ mod.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+
+                <select name="status" class="modman-select-filter" onchange="this.form.submit()">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Only</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive Only</option>
+                </select>
+
+                {% if q or status_filter != 'all' or mod_filter %}
+                <a href="?tab={{ tab }}" class="btn-tbl-action" title="Clear Filters">
+                    <i class="bi bi-x-circle"></i> Clear
+                </a>
+                {% endif %}
+            </form>
+
+            <button type="button" class="btn-create-mod" onclick="openAddModuleModal()">
+                <i class="bi bi-plus-circle"></i> Add Module
+            </button>
+            <button type="button" class="btn-create-submod" onclick="openAddSubmoduleModal()">
+                <i class="bi bi-node-plus"></i> Add Submodule
+            </button>
+            <button type="button" class="btn-tbl-action" onclick="openResetDefaultsModal()" title="Reset to Factory Defaults" style="color: #b91c1c;">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 1: MODULES MANAGEMENT TABLE -->
+    <!-- ============================================================ -->
+    {% if tab == 'modules' %}
+    <div class="modman-card">
+        <div style="overflow-x: auto;">
+            <table class="modman-table">
+                <thead>
+                    <tr>
+                        <th style="width: 70px; text-align: center;">Order</th>
+                        <th style="width: 60px;">Icon</th>
+                        <th>Module Title & Code</th>
+                        <th>Category</th>
+                        <th>Submodules</th>
+                        <th>Default Route Link</th>
+                        <th>Status</th>
+                        <th style="text-align: right; width: 220px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mod in modules_page %}
+                    <tr>
+                        <td style="text-align: center; font-weight: 700; color: #64748b;">
+                            {{ mod.order }}
+                        </td>
+                        <td>
+                            <div class="mod-icon-box" style="background: {{ mod.color|default:'#0284c7' }};">
+                                <i class="bi {{ mod.icon|default:'bi-folder2' }}"></i>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; color: #0f172a; font-size: 0.95rem;">
+                                {{ mod.name }}
+                            </div>
+                            <div style="display: flex; gap: 0.35rem; align-items: center; margin-top: 3px;">
+                                <span class="badge-code">{{ mod.code }}</span>
+                                {% if mod.description %}
+                                <span style="font-size: 0.76rem; color: #64748b; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    • {{ mod.description }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if mod.badge %}
+                            <span class="badge-category">{{ mod.badge }}</span>
+                            {% else %}
+                            <span style="color: #94a3b8; font-size: 0.78rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="?tab=submodules&mod={{ mod.id }}" style="text-decoration: none;" title="View submodules">
+                                <span style="font-weight: 700; color: #0284c7; font-size: 0.9rem;">{{ mod.sub_count }}</span>
+                                <span style="font-size: 0.78rem; color: #64748b;">({{ mod.active_sub_count }} Active)</span>
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge-code" style="background: #f8fafc; color: #0284c7;">
+                                {{ mod.url_path|default:'#' }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if mod.is_active %}
+                            <span class="badge-status active">
+                                <i class="bi bi-check-circle-fill"></i> Active
+                            </span>
+                            {% else %}
+                            <span class="badge-status inactive">
+                                <i class="bi bi-x-circle-fill"></i> Disabled
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <button type="button" class="btn-tbl-action edit"
+                                        onclick="openEditModuleModal({{ mod.id }}, '{{ mod.name|escapejs }}', '{{ mod.code|escapejs }}', '{{ mod.icon|escapejs }}', '{{ mod.url_path|escapejs }}', '{{ mod.color|escapejs }}', '{{ mod.badge|default:''|escapejs }}', '{{ mod.description|default:''|escapejs }}', {{ mod.order }}, {{ mod.is_active|yesno:'true,false' }}, [{% for s in mod.submodules.all %}{{ s.id }}{% if not forloop.last %},{% endif %}{% endfor %}])"
+                                        title="Edit Module">
+                                    <i class="bi bi-pencil-square"></i> Edit
+                                </button>
+                                <button type="button" class="btn-tbl-action" style="color: #059669; border-color: #a7f3d0;"
+                                        onclick="openAddSubmoduleModal({{ mod.id }})"
+                                        title="Add Submodule under {{ mod.name }}">
+                                    <i class="bi bi-plus"></i> +Sub
+                                </button>
+                                <a href="{% url 'users:nav_module_toggle_active' mod.id %}?next={{ request.get_full_path|urlencode }}"
+                                   class="btn-tbl-action toggle"
+                                   title="Toggle Active Status">
+                                    <i class="bi {% if mod.is_active %}bi-toggle-on text-emerald-600{% else %}bi-toggle-off text-slate-400{% endif %}"></i>
+                                </a>
+                                <button type="button" class="btn-tbl-action delete"
+                                        onclick="confirmDeleteModule({{ mod.id }}, '{{ mod.name|escapejs }}', {{ mod.sub_count }})"
+                                        title="Delete Module">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 3rem 1rem; color: #64748b;">
+                            <i class="bi bi-folder-x" style="font-size: 2.5rem; color: #cbd5e1; display: block; margin-bottom: 0.5rem;"></i>
+                            No navigation modules match the selected filter.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if modules_page.has_other_pages %}
+        <div class="modman-pagination">
+            <div>
+                Showing page {{ modules_page.number }} of {{ modules_page.paginator.num_pages }} ({{ total_modules }} total modules)
+            </div>
+            <div class="page-btn-group">
+                {% if modules_page.has_previous %}
+                <a href="?tab=modules&page={{ modules_page.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}" class="page-btn">
+                    &laquo; Prev
+                </a>
+                {% else %}
+                <span class="page-btn disabled">&laquo; Prev</span>
+                {% endif %}
+
+                {% for p in modules_page.paginator.page_range %}
+                <a href="?tab=modules&page={{ p }}{% if q %}&q={{ q }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}"
+                   class="page-btn {% if modules_page.number == p %}active{% endif %}">
+                    {{ p }}
+                </a>
+                {% endfor %}
+
+                {% if modules_page.has_next %}
+                <a href="?tab=modules&page={{ modules_page.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}" class="page-btn">
+                    Next &raquo;
+                </a>
+                {% else %}
+                <span class="page-btn disabled">Next &raquo;</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ============================================================ -->
+    <!-- TAB 2: SUBMODULES MANAGEMENT TABLE -->
+    <!-- ============================================================ -->
+    {% if tab == 'submodules' %}
+    <div class="modman-card">
+        <div style="overflow-x: auto;">
+            <table class="modman-table">
+                <thead>
+                    <tr>
+                        <th style="width: 70px; text-align: center;">Order</th>
+                        <th style="width: 50px;">Icon</th>
+                        <th>Submodule Link & Code</th>
+                        <th>Parent Module</th>
+                        <th>Target Route URL</th>
+                        <th>Status</th>
+                        <th style="text-align: right; width: 260px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in submodules_page %}
+                    <tr>
+                        <td style="text-align: center; font-weight: 700; color: #64748b;">
+                            {{ sub.order }}
+                        </td>
+                        <td>
+                            <i class="bi {{ sub.icon|default:'bi-dot' }}" style="font-size: 1.25rem; color: #0284c7;"></i>
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; color: #0f172a; font-size: 0.92rem;">
+                                {{ sub.name }}
+                            </div>
+                            <div style="display: flex; gap: 0.35rem; align-items: center; margin-top: 3px;">
+                                <span class="badge-code">{{ sub.code }}</span>
+                                {% if sub.description %}
+                                <span style="font-size: 0.76rem; color: #64748b; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    • {{ sub.description }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 3px 8px; border-radius: 6px; background: #f1f5f9; font-weight: 600; font-size: 0.82rem; color: #0f172a;">
+                                <i class="bi {{ sub.module.icon|default:'bi-folder' }}" style="color: {{ sub.module.color|default:'#0284c7' }};"></i>
+                                {{ sub.module.name }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge-code" style="background: #f8fafc; color: #0284c7;">
+                                {{ sub.url_path }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if sub.is_active %}
+                            <span class="badge-status active">
+                                <i class="bi bi-check-circle-fill"></i> Active
+                            </span>
+                            {% else %}
+                            <span class="badge-status inactive">
+                                <i class="bi bi-x-circle-fill"></i> Disabled
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <button type="button" class="btn-tbl-action edit"
+                                        onclick="openEditSubmoduleModal({{ sub.id }}, {{ sub.module.id }}, '{{ sub.name|escapejs }}', '{{ sub.code|escapejs }}', '{{ sub.icon|escapejs }}', '{{ sub.url_path|escapejs }}', '{{ sub.description|default:''|escapejs }}', {{ sub.order }}, {{ sub.is_active|yesno:'true,false' }})"
+                                        title="Edit Submodule">
+                                    <i class="bi bi-pencil-square"></i> Edit
+                                </button>
+                                <button type="button" class="btn-tbl-action" style="color: #4f46e5; border-color: #c7d2fe;"
+                                        onclick="openRemapSubmoduleModal({{ sub.id }}, '{{ sub.name|escapejs }}', {{ sub.module.id }})"
+                                        title="Move to another Parent Module">
+                                    <i class="bi bi-arrow-left-right"></i> Move
+                                </button>
+                                <a href="{% url 'users:nav_submodule_toggle_active' sub.id %}?next={{ request.get_full_path|urlencode }}"
+                                   class="btn-tbl-action toggle"
+                                   title="Toggle Active Status">
+                                    <i class="bi {% if sub.is_active %}bi-toggle-on text-emerald-600{% else %}bi-toggle-off text-slate-400{% endif %}"></i>
+                                </a>
+                                <button type="button" class="btn-tbl-action delete"
+                                        onclick="confirmDeleteSubmodule({{ sub.id }}, '{{ sub.name|escapejs }}')"
+                                        title="Delete Submodule">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 3rem 1rem; color: #64748b;">
+                            <i class="bi bi-slash-circle" style="font-size: 2.5rem; color: #cbd5e1; display: block; margin-bottom: 0.5rem;"></i>
+                            No submodules match the selected query.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if submodules_page.has_other_pages %}
+        <div class="modman-pagination">
+            <div>
+                Showing page {{ submodules_page.number }} of {{ submodules_page.paginator.num_pages }} ({{ total_submodules }} total submodules)
+            </div>
+            <div class="page-btn-group">
+                {% if submodules_page.has_previous %}
+                <a href="?tab=submodules&page={{ submodules_page.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if mod_filter %}&mod={{ mod_filter }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}" class="page-btn">
+                    &laquo; Prev
+                </a>
+                {% else %}
+                <span class="page-btn disabled">&laquo; Prev</span>
+                {% endif %}
+
+                {% for p in submodules_page.paginator.page_range %}
+                <a href="?tab=submodules&page={{ p }}{% if q %}&q={{ q }}{% endif %}{% if mod_filter %}&mod={{ mod_filter }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}"
+                   class="page-btn {% if submodules_page.number == p %}active{% endif %}">
+                    {{ p }}
+                </a>
+                {% endfor %}
+
+                {% if submodules_page.has_next %}
+                <a href="?tab=submodules&page={{ submodules_page.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if mod_filter %}&mod={{ mod_filter }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}" class="page-btn">
+                    Next &raquo;
+                </a>
+                {% else %}
+                <span class="page-btn disabled">Next &raquo;</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ============================================================ -->
+    <!-- TAB 3: HIERARCHY TREE VIEW -->
+    <!-- ============================================================ -->
+    {% if tab == 'tree' %}
+    <div class="tree-view-wrapper">
+        {% for mod in tree_modules %}
+        <div class="tree-mod-card">
+            <div class="tree-mod-header" onclick="toggleTreeModule({{ mod.id }})">
+                <div class="tree-mod-title-group">
+                    <div class="mod-icon-box" style="background: {{ mod.color|default:'#0284c7' }};">
+                        <i class="bi {{ mod.icon|default:'bi-folder2' }}"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.05rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 0.5rem;">
+                            {{ mod.name }}
+                            <span class="badge-code">{{ mod.code }}</span>
+                            {% if mod.badge %}
+                            <span class="badge-category">{{ mod.badge }}</span>
+                            {% endif %}
+                            {% if not mod.is_active %}
+                            <span class="badge-status inactive" style="font-size: 0.68rem; padding: 1px 6px;">Disabled</span>
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">
+                            Order: {{ mod.order }} • Route: {{ mod.url_path|default:'#' }} • {{ mod.submodules.all|length }} Submodules
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;" onclick="event.stopPropagation();">
+                    <button type="button" class="btn-tbl-action" style="color: #059669; border-color: #a7f3d0;"
+                            onclick="openAddSubmoduleModal({{ mod.id }})"
+                            title="Add Submodule under {{ mod.name }}">
+                        <i class="bi bi-plus-circle"></i> Add Submodule
+                    </button>
+                    <button type="button" class="btn-tbl-action edit"
+                            onclick="openEditModuleModal({{ mod.id }}, '{{ mod.name|escapejs }}', '{{ mod.code|escapejs }}', '{{ mod.icon|escapejs }}', '{{ mod.url_path|escapejs }}', '{{ mod.color|escapejs }}', '{{ mod.badge|default:''|escapejs }}', '{{ mod.description|default:''|escapejs }}', {{ mod.order }}, {{ mod.is_active|yesno:'true,false' }}, [{% for s in mod.submodules.all %}{{ s.id }}{% if not forloop.last %},{% endif %}{% endfor %}])">
+                        <i class="bi bi-pencil"></i> Edit
+                    </button>
+                    <i class="bi bi-chevron-down" id="treeChevron_{{ mod.id }}" style="color: #94a3b8; transition: transform 0.2s; margin-left: 6px;"></i>
+                </div>
+            </div>
+
+            <!-- Submodules Grid -->
+            <div class="tree-sub-list" id="treeBody_{{ mod.id }}">
+                {% for sub in mod.submodules.all %}
+                <div class="tree-sub-item">
+                    <div style="display: flex; align-items: center; gap: 0.65rem; min-width: 0;">
+                        <i class="bi {{ sub.icon|default:'bi-dot' }}" style="font-size: 1.15rem; color: #0284c7; flex-shrink: 0;"></i>
+                        <div style="min-width: 0;">
+                            <div style="font-weight: 700; color: #0f172a; font-size: 0.86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {{ sub.name }}
+                            </div>
+                            <div style="font-size: 0.72rem; color: #64748b; font-family: monospace;">
+                                {{ sub.url_path }}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.25rem; flex-shrink: 0;">
+                        <button type="button" class="btn-tbl-action edit" style="padding: 2px 6px;"
+                                onclick="openEditSubmoduleModal({{ sub.id }}, {{ mod.id }}, '{{ sub.name|escapejs }}', '{{ sub.code|escapejs }}', '{{ sub.icon|escapejs }}', '{{ sub.url_path|escapejs }}', '{{ sub.description|default:''|escapejs }}', {{ sub.order }}, {{ sub.is_active|yesno:'true,false' }})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" class="btn-tbl-action" style="padding: 2px 6px; color: #4f46e5;"
+                                onclick="openRemapSubmoduleModal({{ sub.id }}, '{{ sub.name|escapejs }}', {{ mod.id }})" title="Move">
+                            <i class="bi bi-arrow-left-right"></i>
+                        </button>
+                        <button type="button" class="btn-tbl-action delete" style="padding: 2px 6px;"
+                                onclick="confirmDeleteSubmodule({{ sub.id }}, '{{ sub.name|escapejs }}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="grid-column: 1 / -1; color: #94a3b8; font-size: 0.84rem; padding: 0.5rem 0;">
+                    No child submodules created under {{ mod.name }}. Click "+ Add Submodule" above to create one.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL DIALOGS FOR DYNAMIC MANAGEMENT -->
+<!-- ============================================================ -->
+
+<!-- 1. Add Navigation Module Modal -->
+<div id="addModuleModal" class="nav-modal-backdrop">
+    <div class="nav-modal-dialog">
+        <div class="nav-modal-header" style="background: #0284c7;">
+            <h3><i class="bi bi-folder-plus"></i> Add Navigation Module</h3>
+            <button type="button" class="nav-modal-close" onclick="closeModal('addModuleModal')">&times;</button>
+        </div>
+        <form method="post" action="{% url 'users:nav_module_create' %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <div class="nav-modal-body">
+                <div class="form-group-modal">
+                    <label>Module Title <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-input-modal" placeholder="e.g. Pharmacy, Telemedicine, OT" required>
+                </div>
+                <div class="form-group-modal">
+                    <label>Module Identifier Code (optional, auto-generated if blank)</label>
+                    <input type="text" name="code" class="form-input-modal" placeholder="e.g. pharmacy, telemedicine">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+                    <div class="form-group-modal">
+                        <label>Bootstrap Icon Class</label>
+                        <input type="text" name="icon" class="form-input-modal" placeholder="e.g. bi-capsule, bi-hospital" value="bi-folder2">
+                    </div>
+                    <div class="form-group-modal">
+                        <label>Accent Hex Color</label>
+                        <input type="color" name="color" class="form-input-modal" style="height: 38px; padding: 2px 6px;" value="#0284c7">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+                    <div class="form-group-modal">
+                        <label>Category Badge (optional)</label>
+                        <input type="text" name="badge" class="form-input-modal" placeholder="e.g. Clinical, Supplies, System">
+                    </div>
+                    <div class="form-group-modal">
+                        <label>Sort Order</label>
+                        <input type="number" name="order" class="form-input-modal" value="90">
+                    </div>
+                </div>
+                <div class="form-group-modal">
+                    <label>Default URL Route</label>
+                    <input type="text" name="url_path" class="form-input-modal" placeholder="e.g. /pharmacy/ or #" value="#">
+                </div>
+                <div class="form-group-modal">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <label style="margin: 0; font-weight: 600; color: #334155;">
+                            <i class="bi bi-diagram-3-fill text-sky-600"></i> Map / Place Submodules under this Module
+                        </label>
+                        <div style="display: flex; gap: 0.35rem;">
+                            <button type="button" class="btn-sub-selector-action" onclick="selectAllModuleSubmodules('add_sub_picker_list', true)">Select All</button>
+                            <button type="button" class="btn-sub-selector-action" onclick="selectAllModuleSubmodules('add_sub_picker_list', false)">Clear</button>
+                            <button type="button" class="btn-sub-selector-action" style="color: #059669; border-color: #a7f3d0;" onclick="autoGenerateModuleDescription('add_sub_picker_list', 'add_mod_desc')" title="Auto-fill description from selected submodules">
+                                <i class="bi bi-magic"></i> Auto Description
+                            </button>
+                        </div>
+                    </div>
+                    <div class="submodule-multi-picker">
+                        <div class="picker-search-bar">
+                            <i class="bi bi-search"></i>
+                            <input type="text" class="picker-search-input" placeholder="Search submodules to place in this module..." onkeyup="filterPickerSubmodules(this, 'add_sub_picker_list')">
+                        </div>
+                        <div class="picker-items-list" id="add_sub_picker_list">
+                            {% for sub in all_submodules_list %}
+                            <label class="picker-item-row" data-sub-id="{{ sub.id }}" data-name="{{ sub.name|lower }}" data-parent="{{ sub.module.name|default:'Unassigned'|lower }}" data-title="{{ sub.name }}">
+                                <input type="checkbox" name="selected_submodules" value="{{ sub.id }}" onchange="updatePickerRowState(this)">
+                                <i class="bi {{ sub.icon|default:'bi-circle' }} picker-sub-icon"></i>
+                                <div class="picker-sub-info">
+                                    <span class="picker-sub-title">{{ sub.name }}</span>
+                                    <span class="picker-parent-tag">Current: {{ sub.module.name|default:"Unassigned" }}</span>
+                                </div>
+                                <span class="picker-url-tag">{{ sub.url_path }}</span>
+                            </label>
+                            {% empty %}
+                            <div style="padding: 10px; text-align: center; color: #94a3b8; font-size: 0.8rem;">No submodules available</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <small style="color: #64748b; font-size: 0.76rem; margin-top: 3px; display: block;">
+                        <i class="bi bi-info-circle"></i> Check the submodules to place under this module. Use "Auto Description" to summarize them.
+                    </small>
+                </div>
+                <div class="form-group-modal">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <label style="margin: 0;">Description (optional)</label>
+                        <button type="button" class="btn-sub-selector-action" style="color: #059669; border-color: #a7f3d0;" onclick="autoGenerateModuleDescription('add_sub_picker_list', 'add_mod_desc')">
+                            <i class="bi bi-magic"></i> Auto-fill from Submodules
+                        </button>
+                    </div>
+                    <textarea id="add_mod_desc" name="description" class="form-input-modal" rows="2" placeholder="Summary of what this module covers..."></textarea>
+                </div>
+            </div>
+            <div class="nav-modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addModuleModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="background: #0284c7;">Create Module</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 2. Edit Navigation Module Modal -->
+<div id="editModuleModal" class="nav-modal-backdrop">
+    <div class="nav-modal-dialog">
+        <div class="nav-modal-header" style="background: #0284c7;">
+            <h3><i class="bi bi-pencil-square"></i> Edit Navigation Module</h3>
+            <button type="button" class="nav-modal-close" onclick="closeModal('editModuleModal')">&times;</button>
+        </div>
+        <form method="post" id="editModuleForm" action="">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <div class="nav-modal-body">
+                <div class="form-group-modal">
+                    <label>Module Title <span class="text-danger">*</span></label>
+                    <input type="text" id="edit_mod_name" name="name" class="form-input-modal" required>
+                </div>
+                <div class="form-group-modal">
+                    <label>Module Code (Identifier Key)</label>
+                    <input type="text" id="edit_mod_code" name="code" class="form-input-modal" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+                    <div class="form-group-modal">
+                        <label>Bootstrap Icon Class</label>
+                        <input type="text" id="edit_mod_icon" name="icon" class="form-input-modal">
+                    </div>
+                    <div class="form-group-modal">
+                        <label>Accent Hex Color</label>
+                        <input type="color" id="edit_mod_color" name="color" class="form-input-modal" style="height: 38px; padding: 2px 6px;">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+                    <div class="form-group-modal">
+                        <label>Category Badge</label>
+                        <input type="text" id="edit_mod_badge" name="badge" class="form-input-modal">
+                    </div>
+                    <div class="form-group-modal">
+                        <label>Sort Order</label>
+                        <input type="number" id="edit_mod_order" name="order" class="form-input-modal">
+                    </div>
+                </div>
+                <div class="form-group-modal">
+                    <label>Default URL / Route Link</label>
+                    <input type="text" id="edit_mod_url" name="url_path" class="form-input-modal">
+                </div>
+                <div class="form-group-modal">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <label style="margin: 0; font-weight: 600; color: #334155;">
+                            <i class="bi bi-diagram-3-fill text-sky-600"></i> Map / Place Submodules under this Module
+                        </label>
+                        <div style="display: flex; gap: 0.35rem;">
+                            <button type="button" class="btn-sub-selector-action" onclick="selectAllModuleSubmodules('edit_sub_picker_list', true)">Select All</button>
+                            <button type="button" class="btn-sub-selector-action" onclick="selectAllModuleSubmodules('edit_sub_picker_list', false)">Clear</button>
+                            <button type="button" class="btn-sub-selector-action" style="color: #059669; border-color: #a7f3d0;" onclick="autoGenerateModuleDescription('edit_sub_picker_list', 'edit_mod_desc')" title="Auto-fill description from selected submodules">
+                                <i class="bi bi-magic"></i> Auto Description
+                            </button>
+                        </div>
+                    </div>
+                    <div class="submodule-multi-picker">
+                        <div class="picker-search-bar">
+                            <i class="bi bi-search"></i>
+                            <input type="text" class="picker-search-input" placeholder="Search submodules to place in this module..." onkeyup="filterPickerSubmodules(this, 'edit_sub_picker_list')">
+                        </div>
+                        <div class="picker-items-list" id="edit_sub_picker_list">
+                            {% for sub in all_submodules_list %}
+                            <label class="picker-item-row" data-sub-id="{{ sub.id }}" data-name="{{ sub.name|lower }}" data-parent="{{ sub.module.name|default:'Unassigned'|lower }}" data-title="{{ sub.name }}">
+                                <input type="checkbox" name="selected_submodules" value="{{ sub.id }}" onchange="updatePickerRowState(this)">
+                                <i class="bi {{ sub.icon|default:'bi-circle' }} picker-sub-icon"></i>
+                                <div class="picker-sub-info">
+                                    <span class="picker-sub-title">{{ sub.name }}</span>
+                                    <span class="picker-parent-tag">Current: {{ sub.module.name|default:"Unassigned" }}</span>
+                                </div>
+                                <span class="picker-url-tag">{{ sub.url_path }}</span>
+                            </label>
+                            {% empty %}
+                            <div style="padding: 10px; text-align: center; color: #94a3b8; font-size: 0.8rem;">No submodules available</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <small style="color: #64748b; font-size: 0.76rem; margin-top: 3px; display: block;">
+                        <i class="bi bi-info-circle"></i> Check or uncheck submodules to place/reassign them to this module. Use "Auto Description" to update the description.
+                    </small>
+                </div>
+                <div class="form-group-modal">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <label style="margin: 0;">Description</label>
+                        <button type="button" class="btn-sub-selector-action" style="color: #059669; border-color: #a7f3d0;" onclick="autoGenerateModuleDescription('edit_sub_picker_list', 'edit_mod_desc')">
+                            <i class="bi bi-magic"></i> Auto-fill from Submodules
+                        </button>
+                    </div>
+                    <textarea id="edit_mod_desc" name="description" class="form-input-modal" rows="2" placeholder="Summary of what this module covers..."></textarea>
+                </div>
+                <div class="form-group-modal" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="edit_mod_active" name="is_active" style="width: 18px; height: 18px;">
+                    <label for="edit_mod_active" style="margin: 0; cursor: pointer;">Module is Active (visible in top navbar)</label>
+                </div>
+            </div>
+            <div class="nav-modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editModuleModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="background: #0284c7;">Update Module</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 3. Add Submodule Modal -->
+<div id="addSubmoduleModal" class="nav-modal-backdrop">
+    <div class="nav-modal-dialog">
+        <div class="nav-modal-header" style="background: #059669;">
+            <h3><i class="bi bi-node-plus-fill"></i> Add Navigation Submodule</h3>
+            <button type="button" class="nav-modal-close" onclick="closeModal('addSubmoduleModal')">&times;</button>
+        </div>
+        <form method="post" action="{% url 'users:nav_submodule_create' %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <div class="nav-modal-body">
+                <div class="form-group-modal">
+                    <label>Parent Navigation Module <span class="text-danger">*</span></label>
+                    <select name="module_id" id="add_sub_module_id" class="form-input-modal" required>
+                        {% for mod in all_modules_list %}
+                        <option value="{{ mod.id }}">{{ mod.name }} ({{ mod.code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group-modal">
+                    <label>Submodule Link Title <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-input-modal" placeholder="e.g. Bed Matrix, Prescription Entry" required>
+                </div>
+                <div class="form-group-modal">
+                    <label>Submodule Code (optional, auto-generated)</label>
+                    <input type="text" name="code" class="form-input-modal" placeholder="e.g. bed_matrix, prescription_entry">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+                    <div class="form-group-modal">
+                        <label>Bootstrap Icon Class</label>
+                        <input type="text" name="icon" class="form-input-modal" placeholder="e.g. bi-grid, bi-flask" value="bi-dot">
+                    </div>
+                    <div class="form-group-modal">
+                        <label>Sort Order</label>
+                        <input type="number" name="order" class="form-input-modal" value="10">
+                    </div>
+                </div>
+                <div class="form-group-modal">
+                    <label>Target URL / Route Link <span class="text-danger">*</span></label>
+                    <input type="text" name="url_path" class="form-input-modal" placeholder="e.g. /patients/ward/allocation/ or /lab/orders/" required>
+                </div>
+                <div class="form-group-modal">
+                    <label>Description (optional)</label>
+                    <textarea name="description" class="form-input-modal" rows="2" placeholder="Brief summary of what this submodule does..."></textarea>
+                </div>
+            </div>
+            <div class="nav-modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addSubmoduleModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="background: #059669;">Create Submodule</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 4. Edit Submodule Modal -->
+<div id="editSubmoduleModal" class="nav-modal-backdrop">
+    <div class="nav-modal-dialog">
+        <div class="nav-modal-header" style="background: #0284c7;">
+            <h3><i class="bi bi-pencil-square"></i> Edit Submodule</h3>
+            <button type="button" class="nav-modal-close" onclick="closeModal('editSubmoduleModal')">&times;</button>
+        </div>
+        <form method="post" id="editSubmoduleForm" action="">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <div class="nav-modal-body">
+                <div class="form-group-modal">
+                    <label>Parent Navigation Module <span class="text-danger">*</span></label>
+                    <select name="module_id" id="edit_sub_module_id" class="form-input-modal" required>
+                        {% for mod in all_modules_list %}
+                        <option value="{{ mod.id }}">{{ mod.name }} ({{ mod.code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group-modal">
+                    <label>Submodule Link Title <span class="text-danger">*</span></label>
+                    <input type="text" id="edit_sub_name" name="name" class="form-input-modal" required>
+                </div>
+                <div class="form-group-modal">
+                    <label>Submodule Code (Lookup Key)</label>
+                    <input type="text" id="edit_sub_code" name="code" class="form-input-modal" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+                    <div class="form-group-modal">
+                        <label>Bootstrap Icon Class</label>
+                        <input type="text" id="edit_sub_icon" name="icon" class="form-input-modal">
+                    </div>
+                    <div class="form-group-modal">
+                        <label>Sort Order</label>
+                        <input type="number" id="edit_sub_order" name="order" class="form-input-modal">
+                    </div>
+                </div>
+                <div class="form-group-modal">
+                    <label>Target URL / Route Link <span class="text-danger">*</span></label>
+                    <input type="text" id="edit_sub_url" name="url_path" class="form-input-modal" required>
+                </div>
+                <div class="form-group-modal">
+                    <label>Description</label>
+                    <textarea id="edit_sub_desc" name="description" class="form-input-modal" rows="2"></textarea>
+                </div>
+                <div class="form-group-modal" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="edit_sub_active" name="is_active" style="width: 18px; height: 18px;">
+                    <label for="edit_sub_active" style="margin: 0; cursor: pointer;">Submodule is Active (enabled in menu)</label>
+                </div>
+            </div>
+            <div class="nav-modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editSubmoduleModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="background: #0284c7;">Update Submodule</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 5. Remap / Move Submodule Modal -->
+<div id="remapSubmoduleModal" class="nav-modal-backdrop">
+    <div class="nav-modal-dialog">
+        <div class="nav-modal-header" style="background: #4f46e5;">
+            <h3><i class="bi bi-arrow-left-right"></i> Move Submodule to Another Module</h3>
+            <button type="button" class="nav-modal-close" onclick="closeModal('remapSubmoduleModal')">&times;</button>
+        </div>
+        <form method="post" id="remapSubmoduleForm" action="">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <div class="nav-modal-body">
+                <p style="font-size: 0.9rem; color: #334155; margin: 0;">
+                    Move submodule <strong id="remap_sub_title" class="text-sky-600"></strong> to a new parent navigation dropdown:
+                </p>
+                <div class="form-group-modal">
+                    <label>Select Target Parent Module</label>
+                    <select name="target_module_id" id="remap_target_module_id" class="form-input-modal" required>
+                        {% for mod in all_modules_list %}
+                        <option value="{{ mod.id }}">{{ mod.name }} ({{ mod.code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="nav-modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('remapSubmoduleModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="background: #4f46e5;">Move Submodule</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 6. Delete Module Confirmation Modal (Safe check) -->
+<div id="deleteModuleModal" class="nav-modal-backdrop">
+    <div class="nav-modal-dialog" style="max-width: 480px;">
+        <div class="nav-modal-header" style="background: #dc2626;">
+            <h3><i class="bi bi-exclamation-triangle-fill"></i> Delete Navigation Module</h3>
+            <button type="button" class="nav-modal-close" onclick="closeModal('deleteModuleModal')">&times;</button>
+        </div>
+        <form method="post" id="deleteModuleForm" action="">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <input type="hidden" name="cascade" id="delete_mod_cascade" value="false">
+            <div class="nav-modal-body">
+                <p id="deleteModuleMessage" style="font-size: 0.92rem; color: #334155; margin: 0; line-height: 1.5;"></p>
+                <div id="deleteModuleWarning" style="display: none; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 0.75rem 1rem; color: #991b1b; font-size: 0.84rem;">
+                    <i class="bi bi-shield-exclamation"></i>
+                    <strong>Cascade Alert:</strong> Deleting this module will also permanently delete all its child submodules and reset any department permission mappings pointing to it.
+                </div>
+            </div>
+            <div class="nav-modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('deleteModuleModal')">Cancel</button>
+                <button type="submit" class="btn btn-danger" style="background: #dc2626; color: #ffffff;">Confirm Deletion</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 7. Delete Submodule Confirmation Modal -->
+<div id="deleteSubmoduleModal" class="nav-modal-backdrop">
+    <div class="nav-modal-dialog" style="max-width: 440px;">
+        <div class="nav-modal-header" style="background: #dc2626;">
+            <h3><i class="bi bi-exclamation-triangle-fill"></i> Delete Submodule</h3>
+            <button type="button" class="nav-modal-close" onclick="closeModal('deleteSubmoduleModal')">&times;</button>
+        </div>
+        <form method="post" id="deleteSubmoduleForm" action="">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <div class="nav-modal-body">
+                <p id="deleteSubmoduleMessage" style="font-size: 0.92rem; color: #334155; margin: 0; line-height: 1.5;"></p>
+            </div>
+            <div class="nav-modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('deleteSubmoduleModal')">Cancel</button>
+                <button type="submit" class="btn btn-danger" style="background: #dc2626; color: #ffffff;">Delete Submodule</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 8. Reset Layout Confirmation Modal -->
+<div id="resetDefaultsModal" class="nav-modal-backdrop">
+    <div class="nav-modal-dialog" style="max-width: 460px;">
+        <div class="nav-modal-header" style="background: #b91c1c;">
+            <h3><i class="bi bi-arrow-counterclockwise"></i> Reset Navigation to Defaults</h3>
+            <button type="button" class="nav-modal-close" onclick="closeModal('resetDefaultsModal')">&times;</button>
+        </div>
+        <form method="post" action="{% url 'users:nav_reset_defaults' %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <div class="nav-modal-body">
+                <p style="font-size: 0.92rem; color: #334155; margin: 0; line-height: 1.5;">
+                    Are you sure you want to restore the navigation structure to factory system defaults? This will re-initialize all 12 core modules and 76 submodules.
+                </p>
+            </div>
+            <div class="nav-modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('resetDefaultsModal')">Cancel</button>
+                <button type="submit" class="btn btn-danger" style="background: #dc2626; color: #ffffff;">Confirm Factory Reset</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Modal Helpers
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            if (modal.parentElement !== document.body) {
+                document.body.appendChild(modal);
+            }
+            modal.style.display = 'flex';
+            document.body.classList.add('navmap-modal-open');
+        }
+    }
+
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
+            const anyOpen = Array.from(document.querySelectorAll('.nav-modal-backdrop')).some(m => m.style.display === 'flex');
+            if (!anyOpen) {
+                document.body.classList.remove('navmap-modal-open');
+            }
+        }
+    }
+
+    // Close on clicking backdrop or ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.nav-modal-backdrop').forEach(modal => {
+                if (modal.style.display === 'flex') {
+                    modal.style.display = 'none';
+                }
+            });
+            document.body.classList.remove('navmap-modal-open');
+        }
+    });
+
+    document.querySelectorAll('.nav-modal-backdrop').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal(modal.id);
+            }
+        });
+    });
+
+    // Submodule Multi-Picker Helper Functions
+    function filterPickerSubmodules(input, listId) {
+        const query = (input.value || '').trim().toLowerCase();
+        const list = document.getElementById(listId);
+        if (!list) return;
+        const rows = list.querySelectorAll('.picker-item-row');
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name') || '';
+            const parent = row.getAttribute('data-parent') || '';
+            const matches = !query || name.includes(query) || parent.includes(query);
+            row.style.display = matches ? 'flex' : 'none';
+        });
+    }
+
+    function selectAllModuleSubmodules(listId, check) {
+        const list = document.getElementById(listId);
+        if (!list) return;
+        const chks = list.querySelectorAll('input[type="checkbox"]');
+        chks.forEach(chk => {
+            const row = chk.closest('.picker-item-row');
+            if (!row || row.style.display !== 'none') {
+                chk.checked = check;
+                updatePickerRowState(chk);
+            }
+        });
+    }
+
+    function updatePickerRowState(chk) {
+        const row = chk.closest('.picker-item-row');
+        if (row) {
+            if (chk.checked) {
+                row.classList.add('is-selected');
+            } else {
+                row.classList.remove('is-selected');
+            }
+        }
+    }
+
+    function autoGenerateModuleDescription(listId, descInputId) {
+        const list = document.getElementById(listId);
+        const descInput = document.getElementById(descInputId);
+        if (!list || !descInput) return;
+        const checkedRows = list.querySelectorAll('.picker-item-row input[type="checkbox"]:checked');
+        const titles = [];
+        checkedRows.forEach(chk => {
+            const row = chk.closest('.picker-item-row');
+            if (row) {
+                const title = row.getAttribute('data-title') || '';
+                if (title && !titles.includes(title)) {
+                    titles.push(title);
+                }
+            }
+        });
+        if (titles.length > 0) {
+            descInput.value = titles.join(', ');
+        } else {
+            descInput.value = 'General operations and module features';
+        }
+    }
+
+    // 1. Add Module Modal
+    function openAddModuleModal() {
+        const addList = document.getElementById('add_sub_picker_list');
+        if (addList) {
+            addList.querySelectorAll('.picker-item-row').forEach(row => {
+                row.style.display = 'flex';
+                const chk = row.querySelector('input[type="checkbox"]');
+                if (chk) {
+                    chk.checked = false;
+                    updatePickerRowState(chk);
+                }
+            });
+            const searchInput = addList.parentElement.querySelector('.picker-search-input');
+            if (searchInput) searchInput.value = '';
+        }
+        openModal('addModuleModal');
+    }
+
+    // 2. Edit Module Modal
+    function openEditModuleModal(id, name, code, icon, url, color, badge, desc, order, isActive, subIds) {
+        const form = document.getElementById('editModuleForm');
+        form.action = `/administration/modules/${id}/edit/`;
+        document.getElementById('edit_mod_name').value = name;
+        document.getElementById('edit_mod_code').value = code || '';
+        document.getElementById('edit_mod_icon').value = icon;
+        document.getElementById('edit_mod_url').value = url;
+        document.getElementById('edit_mod_color').value = color || '#0284c7';
+        document.getElementById('edit_mod_badge').value = badge || '';
+        document.getElementById('edit_mod_desc').value = desc || '';
+        document.getElementById('edit_mod_order').value = order || 10;
+        document.getElementById('edit_mod_active').checked = isActive;
+
+        // Reset and pre-check submodules assigned to this module
+        const pickerList = document.getElementById('edit_sub_picker_list');
+        if (pickerList) {
+            const subIdSet = new Set(Array.isArray(subIds) ? subIds.map(Number) : []);
+            pickerList.querySelectorAll('.picker-item-row').forEach(row => {
+                row.style.display = 'flex';
+                const chk = row.querySelector('input[type="checkbox"]');
+                if (chk) {
+                    const sId = parseInt(chk.value, 10);
+                    chk.checked = subIdSet.has(sId);
+                    updatePickerRowState(chk);
+                }
+            });
+            const searchInput = pickerList.parentElement.querySelector('.picker-search-input');
+            if (searchInput) searchInput.value = '';
+        }
+
+        openModal('editModuleModal');
+    }
+
+    // 3. Delete Module Action (Safe check)
+    function confirmDeleteModule(id, name, subCount) {
+        const form = document.getElementById('deleteModuleForm');
+        form.action = `/administration/modules/${id}/delete/`;
+        const msgEl = document.getElementById('deleteModuleMessage');
+        const warnEl = document.getElementById('deleteModuleWarning');
+        const cascadeInput = document.getElementById('delete_mod_cascade');
+
+        if (subCount > 0) {
+            msgEl.innerHTML = `Are you sure you want to delete module <strong>"${name}"</strong>? It contains <strong>${subCount}</strong> child submodule(s).`;
+            warnEl.style.display = 'block';
+            cascadeInput.value = 'true';
+        } else {
+            msgEl.innerHTML = `Are you sure you want to delete module <strong>"${name}"</strong>?`;
+            warnEl.style.display = 'none';
+            cascadeInput.value = 'false';
+        }
+        openModal('deleteModuleModal');
+    }
+
+    // 4. Add Submodule Modal
+    function openAddSubmoduleModal(preselectedModuleId) {
+        if (preselectedModuleId) {
+            const select = document.getElementById('add_sub_module_id');
+            if (select) select.value = preselectedModuleId;
+        }
+        openModal('addSubmoduleModal');
+    }
+
+    // 5. Edit Submodule Modal
+    function openEditSubmoduleModal(id, moduleId, name, code, icon, url, desc, order, isActive) {
+        const form = document.getElementById('editSubmoduleForm');
+        form.action = `/administration/submodules/${id}/edit/`;
+        const select = document.getElementById('edit_sub_module_id');
+        if (select && moduleId) select.value = moduleId;
+        document.getElementById('edit_sub_name').value = name;
+        document.getElementById('edit_sub_code').value = code || '';
+        document.getElementById('edit_sub_icon').value = icon;
+        document.getElementById('edit_sub_url').value = url;
+        document.getElementById('edit_sub_desc').value = desc || '';
+        document.getElementById('edit_sub_order').value = order || 10;
+        document.getElementById('edit_sub_active').checked = isActive;
+        openModal('editSubmoduleModal');
+    }
+
+    // 6. Remap Submodule Modal
+    function openRemapSubmoduleModal(subId, subName, currentModuleId) {
+        const form = document.getElementById('remapSubmoduleForm');
+        form.action = `/administration/submodules/${subId}/remap/`;
+        document.getElementById('remap_sub_title').textContent = subName;
+        const select = document.getElementById('remap_target_module_id');
+        if (select) select.value = currentModuleId;
+        openModal('remapSubmoduleModal');
+    }
+
+    // 7. Delete Submodule Action
+    function confirmDeleteSubmodule(id, name) {
+        const form = document.getElementById('deleteSubmoduleForm');
+        form.action = `/administration/submodules/${id}/delete/`;
+        document.getElementById('deleteSubmoduleMessage').innerHTML = `Are you sure you want to delete submodule <strong>"${name}"</strong>?`;
+        openModal('deleteSubmoduleModal');
+    }
+
+    // 8. Reset Defaults Modal
+    function openResetDefaultsModal() {
+        openModal('resetDefaultsModal');
+    }
+
+    // Tree View Accordion Toggle
+    function toggleTreeModule(moduleId) {
+        const body = document.getElementById('treeBody_' + moduleId);
+        const chevron = document.getElementById('treeChevron_' + moduleId);
+        if (body) {
+            const isHidden = body.style.display === 'none';
+            body.style.display = isHidden ? 'grid' : 'none';
+            if (chevron) {
+                chevron.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Move all modals directly under document.body
+        document.querySelectorAll('.nav-modal-backdrop').forEach(modal => {
+            document.body.appendChild(modal);
+        });
+    });
+</script>
+{% endblock %}

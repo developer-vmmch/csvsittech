@@ -12,7 +12,12 @@ from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.cache import never_cache
 from django.middleware.csrf import rotate_token
 from django.db import models
-from .forms import UserCreationCustomForm, UserEditCustomForm, UserLoginForm, CustomRoleForm, LandingDepartmentForm
+from django.db.models import Count, Q
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from .forms import (
+    UserCreationCustomForm, UserEditCustomForm, UserLoginForm, CustomRoleForm, LandingDepartmentForm,
+    NavModuleForm, NavSubmoduleForm
+)
 from .models import RoleMenuPermission, CustomRole, NavModule, NavSubmodule, LandingDepartment
 from .permissions import PERMISSION_MODULES
 from .departments import (
@@ -365,12 +370,16 @@ class ERPLogoutView(View):
         return self.post(request)
 
     def post(self, request):
+        is_timeout = request.GET.get('timeout') == '1' or request.POST.get('timeout') == '1'
         if request.user.is_authenticated:
             auth_logout(request)
         else:
             request.session.flush()
         rotate_token(request)
-        messages.info(request, "You have been logged out successfully.")
+        if is_timeout:
+            messages.warning(request, "Your session has expired due to 5 minutes of inactivity. Please log in again to continue.")
+        else:
+            messages.info(request, "You have been logged out successfully.")
         return redirect('login')
 
 
@@ -1666,9 +1675,36 @@ class NavBarMappingView(LoginRequiredMixin, MenuAccessRequiredMixin, View):
             for sub in mod.submodules.order_by('order', 'id'):
                 total_submodules += 1
                 is_granted = current_perms.get(sub.code, False) if not is_admin_selected else True
+                
+                # Granular Action Permissions
+                act_dict = current_perms.get(f"{sub.code}_actions", {}) if isinstance(current_perms.get(f"{sub.code}_actions"), dict) else {}
+                
+                if is_admin_selected:
+                    can_view = can_add = can_edit = can_delete = can_print = True
+                elif is_granted:
+                    can_view = bool(current_perms.get(f"{sub.code}.view", act_dict.get('view', True)))
+                    can_add = bool(current_perms.get(f"{sub.code}.add", current_perms.get(f"{sub.code}.create", act_dict.get('add', act_dict.get('create', True)))))
+                    can_edit = bool(current_perms.get(f"{sub.code}.edit", current_perms.get(f"{sub.code}.update", act_dict.get('edit', act_dict.get('update', True)))))
+                    can_delete = bool(current_perms.get(f"{sub.code}.delete", act_dict.get('delete', True)))
+                    can_print = bool(current_perms.get(f"{sub.code}.print", current_perms.get(f"{sub.code}.export", act_dict.get('print', act_dict.get('export', True)))))
+                else:
+                    can_view = can_add = can_edit = can_delete = can_print = False
+
+                active_actions_count = sum([1 for x in [can_view, can_add, can_edit, can_delete, can_print] if x])
+                if not is_granted or active_actions_count == 0:
+                    perm_status = 'none'
+                    perm_badge = 'Disabled'
+                elif active_actions_count == 5:
+                    perm_status = 'full'
+                    perm_badge = 'Full Access'
+                else:
+                    perm_status = 'partial'
+                    perm_badge = f'Partial ({active_actions_count}/5)'
+
                 if is_granted and sub.is_active:
                     enabled_submodules += 1
                     mod_enabled_count += 1
+
                 mod_submodules.append({
                     'id': sub.id,
                     'key': sub.code,
@@ -1680,6 +1716,14 @@ class NavBarMappingView(LoginRequiredMixin, MenuAccessRequiredMixin, View):
                     'is_active': sub.is_active,
                     'is_system': sub.is_system,
                     'is_granted': is_granted,
+                    'can_view': can_view,
+                    'can_add': can_add,
+                    'can_edit': can_edit,
+                    'can_delete': can_delete,
+                    'can_print': can_print,
+                    'active_actions_count': active_actions_count,
+                    'perm_status': perm_status,
+                    'perm_badge': perm_badge,
                 })
 
             mod_key_granted = current_perms.get(mod.code, False) if not is_admin_selected else True
@@ -1710,6 +1754,7 @@ class NavBarMappingView(LoginRequiredMixin, MenuAccessRequiredMixin, View):
             'selected_role_obj': next((r for r in roles if r['code'] == selected_role), roles[0]) if view_mode == 'role' else None,
             'modules': modules_data,
             'all_modules_list': all_modules,
+            'all_submodules_list': NavSubmodule.objects.select_related('module').order_by('module__order', 'order', 'name'),
             'total_modules': len(modules_data),
             'total_submodules': total_submodules,
             'enabled_submodules': enabled_submodules,
@@ -1731,7 +1776,38 @@ class NavBarMappingView(LoginRequiredMixin, MenuAccessRequiredMixin, View):
                 sub_key = sub.code
                 post_key = f"perm_{sub_key}"
                 is_checked = post_key in request.POST
+                
+                # Check granular action checkboxes
+                can_view = f"perm_act_{sub_key}_view" in request.POST
+                can_add = f"perm_act_{sub_key}_add" in request.POST
+                can_edit = f"perm_act_{sub_key}_edit" in request.POST
+                can_delete = f"perm_act_{sub_key}_delete" in request.POST
+                can_print = f"perm_act_{sub_key}_print" in request.POST
+
+                # If master toggle is on but none of action checkboxes are present, default all actions to True
+                if is_checked and not any([can_view, can_add, can_edit, can_delete, can_print]):
+                    can_view = can_add = can_edit = can_delete = can_print = True
+                elif not is_checked:
+                    can_view = can_add = can_edit = can_delete = can_print = False
+
                 perms_dict[sub_key] = is_checked
+                perms_dict[f"{sub_key}.view"] = can_view
+                perms_dict[f"{sub_key}.add"] = can_add
+                perms_dict[f"{sub_key}.create"] = can_add
+                perms_dict[f"{sub_key}.edit"] = can_edit
+                perms_dict[f"{sub_key}.update"] = can_edit
+                perms_dict[f"{sub_key}.delete"] = can_delete
+                perms_dict[f"{sub_key}.print"] = can_print
+                perms_dict[f"{sub_key}.export"] = can_print
+                perms_dict[f"{sub_key}_actions"] = {
+                    'access': is_checked,
+                    'view': can_view,
+                    'add': can_add,
+                    'edit': can_edit,
+                    'delete': can_delete,
+                    'print': can_print,
+                }
+
                 if is_checked:
                     mod_sub_active = True
 
@@ -1743,7 +1819,7 @@ class NavBarMappingView(LoginRequiredMixin, MenuAccessRequiredMixin, View):
             dept = get_object_or_404(LandingDepartment, pk=dept_id)
             dept.nav_permissions = perms_dict
             dept.save()
-            messages.success(request, f"Top Navigation Bar mapping for '{dept.name}' department saved successfully!")
+            messages.success(request, f"Permissions & Navigation Mapping for '{dept.name}' department saved successfully!")
             return redirect(f"{reverse_lazy('users:navbar_mapping')}?mode=department&dept={dept.id}")
         else:
             selected_role = request.POST.get('role')
@@ -1757,9 +1833,152 @@ class NavBarMappingView(LoginRequiredMixin, MenuAccessRequiredMixin, View):
             obj.menu_permissions = existing
             obj.save()
 
-            messages.success(request, f"Nav Bar Modules & Submodules mapping for '{selected_role}' saved successfully!")
+            messages.success(request, f"Permissions & Nav Bar mapping for '{selected_role}' saved successfully!")
             return redirect(f"{reverse_lazy('users:navbar_mapping')}?mode=role&role={selected_role}")
 
+
+
+# =========================================================================
+# MODULE & SUBMODULE DEDICATED MANAGER (ADMINISTRATOR)
+# =========================================================================
+
+class ModuleSubmoduleManagerView(LoginRequiredMixin, View):
+    """
+    Dedicated centralized management page for Navigation Modules and Submodules.
+    Allows administrators to dynamically create, edit, rename, move/remap, activate/deactivate,
+    reorder, and delete modules and submodules with clean search, filters, tabs, and modals.
+    """
+    def get(self, request):
+        if not (request.user.is_superuser or getattr(request.user, 'is_admin_role', False)):
+            messages.error(request, "Access restricted to system administrators.")
+            return redirect('patients:list')
+
+        # Seed defaults if database table is empty
+        try:
+            if not NavModule.objects.exists():
+                seed_default_nav_modules_if_needed()
+        except Exception:
+            pass
+
+        tab = request.GET.get('tab', 'modules').strip().lower()
+        if tab not in ['modules', 'submodules', 'tree']:
+            tab = 'modules'
+
+        q = request.GET.get('q', '').strip()
+        status_filter = request.GET.get('status', 'all').strip().lower()
+        mod_filter = request.GET.get('mod', '').strip()
+        page_num = request.GET.get('page', 1)
+
+        # Overview counters
+        total_modules = NavModule.objects.count()
+        active_modules = NavModule.objects.filter(is_active=True).count()
+        inactive_modules = total_modules - active_modules
+
+        total_submodules = NavSubmodule.objects.count()
+        active_submodules = NavSubmodule.objects.filter(is_active=True).count()
+        inactive_submodules = total_submodules - active_submodules
+
+        total_departments = LandingDepartment.objects.count()
+
+        all_modules_list = NavModule.objects.all().order_by('order', 'id')
+
+        # 1. Modules query
+        modules_qs = NavModule.objects.annotate(
+            sub_count=Count('submodules'),
+            active_sub_count=Count('submodules', filter=Q(submodules__is_active=True))
+        ).order_by('order', 'id')
+
+        if q:
+            modules_qs = modules_qs.filter(
+                Q(name__icontains=q) |
+                Q(code__icontains=q) |
+                Q(badge__icontains=q) |
+                Q(description__icontains=q) |
+                Q(url_path__icontains=q)
+            )
+        if status_filter == 'active':
+            modules_qs = modules_qs.filter(is_active=True)
+        elif status_filter == 'inactive':
+            modules_qs = modules_qs.filter(is_active=False)
+
+        # 2. Submodules query
+        submodules_qs = NavSubmodule.objects.select_related('module').order_by('module__order', 'order', 'id')
+
+        if q:
+            submodules_qs = submodules_qs.filter(
+                Q(name__icontains=q) |
+                Q(code__icontains=q) |
+                Q(url_path__icontains=q) |
+                Q(description__icontains=q) |
+                Q(module__name__icontains=q)
+            )
+        if mod_filter and mod_filter.isdigit():
+            submodules_qs = submodules_qs.filter(module_id=int(mod_filter))
+        if status_filter == 'active':
+            submodules_qs = submodules_qs.filter(is_active=True)
+        elif status_filter == 'inactive':
+            submodules_qs = submodules_qs.filter(is_active=False)
+
+        # Pagination
+        items_per_page = 15
+        if tab == 'submodules':
+            paginator = Paginator(submodules_qs, items_per_page)
+            try:
+                submodules_page = paginator.page(page_num)
+            except PageNotAnInteger:
+                submodules_page = paginator.page(1)
+            except EmptyPage:
+                submodules_page = paginator.page(paginator.num_pages)
+            modules_page = None
+        else:
+            paginator = Paginator(modules_qs, items_per_page)
+            try:
+                modules_page = paginator.page(page_num)
+            except PageNotAnInteger:
+                modules_page = paginator.page(1)
+            except EmptyPage:
+                modules_page = paginator.page(paginator.num_pages)
+            submodules_page = None
+
+        # Tree view: modules with preloaded submodules
+        tree_modules = NavModule.objects.prefetch_related('submodules').order_by('order', 'id')
+
+        context = {
+            'tab': tab,
+            'q': q,
+            'status_filter': status_filter,
+            'mod_filter': mod_filter,
+            'total_modules': total_modules,
+            'active_modules': active_modules,
+            'inactive_modules': inactive_modules,
+            'total_submodules': total_submodules,
+            'active_submodules': active_submodules,
+            'inactive_submodules': inactive_submodules,
+            'total_departments': total_departments,
+            'all_modules_list': all_modules_list,
+            'all_submodules_list': NavSubmodule.objects.select_related('module').order_by('module__order', 'order', 'name'),
+            'modules_list': modules_qs,
+            'modules_page': modules_page,
+            'submodules_page': submodules_page,
+            'submodules_list': submodules_qs,
+            'tree_modules': tree_modules,
+            'module_form': NavModuleForm(),
+            'submodule_form': NavSubmoduleForm(),
+        }
+        return render(request, 'users/module_submodule_manager.html', context)
+
+
+def _get_next_redirect_url(request, default_name='users:module_manager'):
+    next_url = request.POST.get('next') or request.GET.get('next')
+    if next_url:
+        return next_url
+    role = request.POST.get('role') or request.GET.get('role')
+    if role:
+        return f"{reverse_lazy('users:navbar_mapping')}?role={role}"
+    dept = request.POST.get('dept') or request.GET.get('dept')
+    if dept:
+        return f"{reverse_lazy('users:navbar_mapping')}?mode=department&dept={dept}"
+    return reverse_lazy(default_name)
 
 
 def nav_module_create(request):
@@ -1770,7 +1989,7 @@ def nav_module_create(request):
 
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
-        code = request.POST.get('code', '').strip().lower().replace(' ', '_')
+        code = request.POST.get('code', '').strip().lower().replace(' ', '_').replace('-', '_')
         icon = request.POST.get('icon', 'bi-folder2').strip()
         url_path = request.POST.get('url_path', '#').strip()
         color = request.POST.get('color', '#0284c7').strip()
@@ -1780,10 +1999,10 @@ def nav_module_create(request):
 
         if not name:
             messages.error(request, "Module name is required.")
-            return redirect('users:navbar_mapping')
+            return redirect(_get_next_redirect_url(request))
 
         if not code:
-            code = name.lower().replace(' ', '_')
+            code = name.lower().replace(' ', '_').replace('-', '_')
 
         # Ensure unique code
         base_code = code
@@ -1797,7 +2016,7 @@ def nav_module_create(request):
         except ValueError:
             order_int = 10
 
-        NavModule.objects.create(
+        mod_obj = NavModule.objects.create(
             name=name,
             code=code,
             icon=icon,
@@ -1809,11 +2028,16 @@ def nav_module_create(request):
             is_active=True,
             is_system=False,
         )
+
+        selected_subs = request.POST.getlist('selected_submodules') or request.POST.getlist('submodules')
+        if selected_subs:
+            sub_ids = [int(s) for s in selected_subs if str(s).isdigit()]
+            if sub_ids:
+                NavSubmodule.objects.filter(id__in=sub_ids).update(module=mod_obj)
+
         messages.success(request, f"Navigation Module '{name}' created successfully!")
 
-    role = request.POST.get('role', '')
-    url = reverse_lazy('users:navbar_mapping')
-    return redirect(f"{url}?role={role}" if role else url)
+    return redirect(_get_next_redirect_url(request))
 
 
 def nav_module_edit(request, pk):
@@ -1825,16 +2049,19 @@ def nav_module_edit(request, pk):
     module = get_object_or_404(NavModule, pk=pk)
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
+        code = request.POST.get('code', '').strip().lower().replace(' ', '_').replace('-', '_')
         icon = request.POST.get('icon', '').strip()
         url_path = request.POST.get('url_path', '#').strip()
         color = request.POST.get('color', '#0284c7').strip()
         badge = request.POST.get('badge', '').strip()
         description = request.POST.get('description', '').strip()
         order = request.POST.get('order', '10')
-        is_active = request.POST.get('is_active') == 'on'
+        is_active = request.POST.get('is_active') == 'on' or request.POST.get('is_active') == '1' or request.POST.get('is_active') is True
 
         if name:
             module.name = name
+        if code and not NavModule.objects.filter(code=code).exclude(pk=module.pk).exists():
+            module.code = code
         if icon:
             module.icon = icon
         module.url_path = url_path
@@ -1848,11 +2075,31 @@ def nav_module_edit(request, pk):
             pass
 
         module.save()
+
+        # Update assigned submodules from the multi-selector
+        selected_subs = request.POST.getlist('selected_submodules') or request.POST.getlist('submodules')
+        if selected_subs:
+            sub_ids = [int(s) for s in selected_subs if str(s).isdigit()]
+            if sub_ids:
+                NavSubmodule.objects.filter(id__in=sub_ids).update(module=module)
+
         messages.success(request, f"Module '{module.name}' updated successfully!")
 
-    role = request.POST.get('role', '')
-    url = reverse_lazy('users:navbar_mapping')
-    return redirect(f"{url}?role={role}" if role else url)
+    return redirect(_get_next_redirect_url(request))
+
+
+def nav_module_toggle_active(request, pk):
+    """Toggle module active / inactive status."""
+    if not (request.user.is_superuser or request.user.is_admin_role):
+        messages.error(request, "Access restricted to system administrators.")
+        return redirect('patients:list')
+
+    module = get_object_or_404(NavModule, pk=pk)
+    module.is_active = not module.is_active
+    module.save()
+    status_text = "activated" if module.is_active else "deactivated"
+    messages.success(request, f"Module '{module.name}' has been {status_text}.")
+    return redirect(_get_next_redirect_url(request))
 
 
 def nav_module_rename(request, pk):
@@ -1870,7 +2117,7 @@ def nav_module_rename(request, pk):
             if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax'):
                 return JsonResponse({'success': False, 'error': 'Module name cannot be blank.'}, status=400)
             messages.error(request, "Module name cannot be blank.")
-            return redirect('users:navbar_mapping')
+            return redirect(_get_next_redirect_url(request))
 
         module.name = name
         module.save()
@@ -1880,25 +2127,27 @@ def nav_module_rename(request, pk):
 
         messages.success(request, f"Module renamed to '{module.name}' successfully!")
 
-    role = request.POST.get('role', '')
-    url = reverse_lazy('users:navbar_mapping')
-    return redirect(f"{url}?role={role}" if role else url)
+    return redirect(_get_next_redirect_url(request))
 
 
 def nav_module_delete(request, pk):
-    """Remove a navigation module and its submodules."""
+    """Remove a navigation module safely after checking submodules."""
     if not (request.user.is_superuser or request.user.is_admin_role):
         messages.error(request, "Access restricted to system administrators.")
         return redirect('patients:list')
 
     module = get_object_or_404(NavModule, pk=pk)
     name = module.name
+    sub_count = module.submodules.count()
+    cascade = request.POST.get('cascade') == 'true' or request.GET.get('cascade') == 'true'
+
+    if sub_count > 0 and not cascade:
+        messages.error(request, f"Cannot delete module '{name}' because it contains {sub_count} submodule(s). Please remove or remap child submodules first, or confirm cascading deletion.")
+        return redirect(_get_next_redirect_url(request))
+
     module.delete()
     messages.success(request, f"Navigation Module '{name}' and its submodules have been removed.")
-
-    role = request.GET.get('role', '') or request.POST.get('role', '')
-    url = reverse_lazy('users:navbar_mapping')
-    return redirect(f"{url}?role={role}" if role else url)
+    return redirect(_get_next_redirect_url(request))
 
 
 def nav_submodule_create(request):
@@ -1910,7 +2159,7 @@ def nav_submodule_create(request):
     if request.method == 'POST':
         module_id = request.POST.get('module_id')
         name = request.POST.get('name', '').strip()
-        code = request.POST.get('code', '').strip().lower().replace(' ', '_')
+        code = request.POST.get('code', '').strip().lower().replace(' ', '_').replace('-', '_')
         icon = request.POST.get('icon', 'bi-dot').strip()
         url_path = request.POST.get('url_path', '#').strip()
         description = request.POST.get('description', '').strip()
@@ -1918,11 +2167,11 @@ def nav_submodule_create(request):
 
         if not name:
             messages.error(request, "Submodule name is required.")
-            return redirect('users:navbar_mapping')
+            return redirect(_get_next_redirect_url(request, default_name='users:module_manager'))
 
         parent_module = get_object_or_404(NavModule, pk=module_id)
         if not code:
-            code = f"{parent_module.code}_{name.lower().replace(' ', '_')}"
+            code = f"{parent_module.code}_{name.lower().replace(' ', '_').replace('-', '_')}"
 
         base_code = code
         counter = 1
@@ -1948,9 +2197,7 @@ def nav_submodule_create(request):
         )
         messages.success(request, f"Submodule '{name}' added under '{parent_module.name}' successfully!")
 
-    role = request.POST.get('role', '')
-    url = reverse_lazy('users:navbar_mapping')
-    return redirect(f"{url}?role={role}" if role else url)
+    return redirect(_get_next_redirect_url(request, default_name='users:module_manager'))
 
 
 def nav_submodule_edit(request, pk):
@@ -1961,15 +2208,24 @@ def nav_submodule_edit(request, pk):
 
     submodule = get_object_or_404(NavSubmodule, pk=pk)
     if request.method == 'POST':
+        module_id = request.POST.get('module_id')
         name = request.POST.get('name', '').strip()
+        code = request.POST.get('code', '').strip().lower().replace(' ', '_').replace('-', '_')
         icon = request.POST.get('icon', '').strip()
         url_path = request.POST.get('url_path', '').strip()
         description = request.POST.get('description', '').strip()
         order = request.POST.get('order', '10')
-        is_active = request.POST.get('is_active') == 'on'
+        is_active = request.POST.get('is_active') == 'on' or request.POST.get('is_active') == '1' or request.POST.get('is_active') is True
+
+        if module_id and str(module_id).isdigit():
+            new_parent = NavModule.objects.filter(pk=int(module_id)).first()
+            if new_parent:
+                submodule.module = new_parent
 
         if name:
             submodule.name = name
+        if code and not NavSubmodule.objects.filter(code=code).exclude(pk=submodule.pk).exists():
+            submodule.code = code
         if icon:
             submodule.icon = icon
         if url_path:
@@ -1984,9 +2240,21 @@ def nav_submodule_edit(request, pk):
         submodule.save()
         messages.success(request, f"Submodule '{submodule.name}' updated successfully!")
 
-    role = request.POST.get('role', '')
-    url = reverse_lazy('users:navbar_mapping')
-    return redirect(f"{url}?role={role}" if role else url)
+    return redirect(_get_next_redirect_url(request, default_name='users:module_manager'))
+
+
+def nav_submodule_toggle_active(request, pk):
+    """Toggle submodule active / inactive status."""
+    if not (request.user.is_superuser or request.user.is_admin_role):
+        messages.error(request, "Access restricted to system administrators.")
+        return redirect('patients:list')
+
+    submodule = get_object_or_404(NavSubmodule, pk=pk)
+    submodule.is_active = not submodule.is_active
+    submodule.save()
+    status_text = "activated" if submodule.is_active else "deactivated"
+    messages.success(request, f"Submodule '{submodule.name}' has been {status_text}.")
+    return redirect(_get_next_redirect_url(request, default_name='users:module_manager'))
 
 
 def nav_submodule_rename(request, pk):
@@ -2004,7 +2272,7 @@ def nav_submodule_rename(request, pk):
             if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax'):
                 return JsonResponse({'success': False, 'error': 'Submodule name cannot be blank.'}, status=400)
             messages.error(request, "Submodule name cannot be blank.")
-            return redirect('users:navbar_mapping')
+            return redirect(_get_next_redirect_url(request, default_name='users:module_manager'))
 
         submodule.name = name
         submodule.save()
@@ -2014,9 +2282,7 @@ def nav_submodule_rename(request, pk):
 
         messages.success(request, f"Submodule renamed to '{submodule.name}' successfully!")
 
-    role = request.POST.get('role', '')
-    url = reverse_lazy('users:navbar_mapping')
-    return redirect(f"{url}?role={role}" if role else url)
+    return redirect(_get_next_redirect_url(request, default_name='users:module_manager'))
 
 
 def nav_submodule_remap(request, pk):
@@ -2034,9 +2300,7 @@ def nav_submodule_remap(request, pk):
         submodule.save()
         messages.success(request, f"Submodule '{submodule.name}' moved from '{old_parent_name}' to '{new_parent.name}' successfully!")
 
-    role = request.POST.get('role', '')
-    url = reverse_lazy('users:navbar_mapping')
-    return redirect(f"{url}?role={role}" if role else url)
+    return redirect(_get_next_redirect_url(request, default_name='users:module_manager'))
 
 
 def nav_submodule_delete(request, pk):
@@ -2050,9 +2314,7 @@ def nav_submodule_delete(request, pk):
     submodule.delete()
     messages.success(request, f"Submodule '{name}' deleted successfully!")
 
-    role = request.GET.get('role', '') or request.POST.get('role', '')
-    url = reverse_lazy('users:navbar_mapping')
-    return redirect(f"{url}?role={role}" if role else url)
+    return redirect(_get_next_redirect_url(request, default_name='users:module_manager'))
 
 
 def nav_reset_defaults(request):
@@ -2092,9 +2354,7 @@ def nav_reset_defaults(request):
                 )
         messages.success(request, "Navigation hierarchy reset to factory system defaults successfully!")
 
-    role = request.POST.get('role', '')
-    url = reverse_lazy('users:navbar_mapping')
-    return redirect(f"{url}?role={role}" if role else url)
+    return redirect(_get_next_redirect_url(request, default_name='users:module_manager'))
 
 
 # =========================================================================

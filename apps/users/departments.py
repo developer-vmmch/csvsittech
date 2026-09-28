@@ -446,18 +446,19 @@ def user_can_access_department(user, dept_dict_or_slug):
     if not dept:
         return False
 
-    user_dept = (getattr(user, 'department', '') or '').strip().lower()
+    user_dept_raw = (getattr(user, 'department', '') or '').strip()
+    user_dept_list = [d.strip().lower() for d in user_dept_raw.split(',') if d.strip()]
     user_role = (getattr(user, 'role', '') or '').strip().lower()
 
-    if user_dept in ['all', 'all departments', 'administrator', 'admin', 'superadmin', 'management']:
+    if any(d in ['all', 'all departments', 'all departments (universal access)', 'administrator', 'admin', 'superadmin', 'management'] for d in user_dept_list):
         return True
 
-    if user_dept in [dept['code'].lower(), dept['slug'].lower(), dept['name'].lower()]:
-        return True
-
+    target_dept_keys = [dept['code'].lower(), dept['slug'].lower(), dept['name'].lower()]
     for alias in dept.get('aliases', []):
-        if alias.lower() == user_dept:
-            return True
+        target_dept_keys.append(alias.lower())
+
+    if any(d in target_dept_keys for d in user_dept_list):
+        return True
 
     role_to_dept = {
         'manager': ['clinical_department', 'department', 'front_office', 'consultant', 'ward', 'mrd', 'report', 'mis', 'accounts', 'billing', 'inventory'],

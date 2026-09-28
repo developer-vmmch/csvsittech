@@ -528,37 +528,40 @@
 
     .submodules-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
-        gap: 0.9rem;
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        gap: 1rem;
     }
 
     .submodule-item-card {
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 0.85rem 1rem;
+        border-radius: 10px;
+        padding: 1rem;
         background: #ffffff;
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 0.85rem;
+        flex-direction: column;
+        gap: 0.75rem;
         transition: all 0.2s ease;
     }
 
     .submodule-item-card:hover {
-        background: #f8fafc;
+        background: #ffffff;
         border-color: #cbd5e1;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
     }
 
     .submodule-item-card.is-enabled {
         border-color: #bae6fd;
-        background: #f0f9ff;
+        background: #f8fafc;
     }
 
-    .submodule-item-card.is-enabled:hover {
-        background: #e0f2fe;
+    .subcard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.75rem;
     }
 
-    .submodule-info {
+    .subcard-title-wrap {
         display: flex;
         align-items: flex-start;
         gap: 0.65rem;
@@ -567,20 +570,15 @@
     }
 
     .submodule-icon {
-        font-size: 1.05rem;
+        font-size: 1.15rem;
         color: #0284c7;
         margin-top: 2px;
         flex-shrink: 0;
     }
 
-    .submodule-details {
-        min-width: 0;
-        flex: 1;
-    }
-
     .submodule-name {
-        font-size: 0.88rem;
-        font-weight: 600;
+        font-size: 0.92rem;
+        font-weight: 700;
         color: #0f172a;
         margin: 0;
         display: flex;
@@ -592,21 +590,135 @@
     }
 
     .submodule-desc {
-        font-size: 0.76rem;
+        font-size: 0.78rem;
         color: #64748b;
-        margin: 0.15rem 0 0 0;
-        line-height: 1.3;
+        margin: 0.2rem 0 0 0;
+        line-height: 1.35;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
 
-    .submodule-actions-line {
+    .subcard-toggle-wrap {
         display: flex;
-        align-items: center;
+        flex-direction: column;
+        align-items: flex-end;
         gap: 0.4rem;
-        margin-top: 5px;
+        flex-shrink: 0;
+    }
+
+    /* Action Permission Badges */
+    .action-perm-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 4px;
+        letter-spacing: 0.02em;
+    }
+
+    .action-perm-badge.badge-full {
+        background: #dcfce7;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+    }
+
+    .action-perm-badge.badge-partial {
+        background: #fef9c3;
+        color: #a16207;
+        border: 1px solid #fef08a;
+    }
+
+    .action-perm-badge.badge-none {
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Granular Permissions Section */
+    .subcard-perms-body {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.65rem 0.85rem;
+    }
+
+    .submodule-item-card.is-enabled .subcard-perms-body {
+        background: #ffffff;
+        border-color: #cbd5e1;
+    }
+
+    .action-perms-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.74rem;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.5rem;
+    }
+
+    .action-quick-links {
+        display: flex;
+        gap: 0.35rem;
+    }
+
+    .quick-preset-btn {
+        background: none;
+        border: 1px solid #cbd5e1;
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: #0284c7;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .quick-preset-btn:hover {
+        background: #e0f2fe;
+        border-color: #0284c7;
+    }
+
+    .action-checkboxes-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem 0.85rem;
+    }
+
+    .action-check-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #334155;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .action-check-item input[type="checkbox"] {
+        width: 15px;
+        height: 15px;
+        accent-color: #0284c7;
+        cursor: pointer;
+    }
+
+    .action-check-item span i {
+        font-size: 0.82rem;
+        color: #64748b;
+    }
+
+    /* Subcard Footer */
+    .subcard-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px dashed #e2e8f0;
+        padding-top: 0.5rem;
+        gap: 0.5rem;
     }
 
     .submodule-url-tag {
@@ -614,9 +726,19 @@
         font-family: monospace;
         color: #64748b;
         background: #f1f5f9;
-        padding: 1px 5px;
+        padding: 2px 6px;
         border-radius: 4px;
         display: inline-block;
+        max-width: 140px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .subcard-tools {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
     }
 
     .submodule-quick-rename-btn {
@@ -780,31 +902,48 @@
     }
 
     /* Custom Dialog Modals */
+    body.navmap-modal-open {
+        overflow: hidden !important;
+    }
+
     .nav-modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.6);
-        backdrop-filter: blur(4px);
-        z-index: 99999;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(15, 23, 42, 0.65) !important;
+        backdrop-filter: blur(4px) !important;
+        -webkit-backdrop-filter: blur(4px) !important;
+        z-index: 999999 !important;
         display: none;
         align-items: center;
         justify-content: center;
-        padding: 1rem;
+        padding: 1.25rem !important;
+        box-sizing: border-box !important;
+        overflow-y: auto !important;
     }
 
     .nav-modal-dialog {
-        background: #ffffff;
-        border-radius: 12px;
-        max-width: 540px;
-        width: 100%;
-        overflow: hidden;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
-        border: 1px solid #cbd5e1;
-        animation: modalSlideIn 0.2s ease-out;
+        background: #ffffff !important;
+        border-radius: 12px !important;
+        max-width: 520px !important;
+        width: 100% !important;
+        margin: auto !important;
+        position: relative !important;
+        max-height: calc(100vh - 3rem) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
+        border: 1px solid #cbd5e1 !important;
+        animation: modalSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
 
     @keyframes modalSlideIn {
-        from { opacity: 0; transform: translateY(12px) scale(0.98); }
+        from { opacity: 0; transform: translateY(-16px) scale(0.96); }
         to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
@@ -878,6 +1017,150 @@
         justify-content: flex-end;
         gap: 0.75rem;
     }
+
+    /* Submodule Multi Picker Component */
+    .submodule-multi-picker {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #ffffff;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
+    }
+
+    .picker-search-bar {
+        position: relative;
+        padding: 6px 10px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .picker-search-bar i {
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 0.85rem;
+    }
+
+    .picker-search-input {
+        width: 100%;
+        padding: 0.35rem 0.65rem 0.35rem 2rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.82rem;
+        background: #ffffff;
+        box-sizing: border-box;
+    }
+
+    .picker-search-input:focus {
+        outline: none;
+        border-color: #0284c7;
+    }
+
+    .picker-items-list {
+        max-height: 190px;
+        overflow-y: auto;
+        padding: 3px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+    }
+
+    .picker-item-row {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 6px 12px;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.12s ease;
+        margin: 0;
+        border-bottom: 1px solid #f8fafc;
+    }
+
+    .picker-item-row:hover {
+        background: #f1f5f9;
+    }
+
+    .picker-item-row.is-selected {
+        background: #f0f9ff;
+    }
+
+    .picker-item-row input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: #0284c7;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .picker-sub-icon {
+        font-size: 1rem;
+        color: #0284c7;
+        flex-shrink: 0;
+    }
+
+    .picker-sub-info {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        min-width: 0;
+    }
+
+    .picker-sub-title {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #0f172a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .picker-parent-tag {
+        font-size: 0.68rem;
+        padding: 1px 5px;
+        border-radius: 4px;
+        background: #f1f5f9;
+        color: #64748b;
+        font-weight: 500;
+        border: 1px solid #e2e8f0;
+        flex-shrink: 0;
+    }
+
+    .picker-url-tag {
+        font-size: 0.68rem;
+        font-family: monospace;
+        color: #94a3b8;
+        max-width: 140px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 0;
+    }
+
+    .btn-sub-selector-action {
+        background: none;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 2px 7px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #0284c7;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        transition: all 0.15s ease;
+    }
+
+    .btn-sub-selector-action:hover {
+        background: #f0f9ff;
+        border-color: #0284c7;
+    }
 </style>
 
 <div class="navmap-page-wrapper">
@@ -890,12 +1173,12 @@
                 Nav Bar Modules & Submodules Mapping
             </h1>
             <p class="navmap-hero-subtitle">
-                Add, rename, remove, or remap navigation modules and submodules, and customize role access controls.
+                Add, rename, remove, or remap navigation modules and submodules, and customize department & role page-level permissions.
             </p>
         </div>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <a href="{% url 'users:roles_overview' %}" class="navmap-tab-btn inactive">
-                <i class="bi bi-person-badge"></i> Roles Overview
+            <a href="{% url 'users:module_manager' %}" class="navmap-tab-btn inactive">
+                <i class="bi bi-boxes"></i> Modules & Submodules
             </a>
             <a href="{% url 'users:navbar_mapping' %}" class="navmap-tab-btn active">
                 <i class="bi bi-diagram-3-fill"></i> Nav Bar Mapping
@@ -956,7 +1239,7 @@
     <div class="navmap-role-card">
         <div class="navmap-role-header">
             <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                <h3><i class="bi bi-sliders2 text-sky-600"></i> Nav Bar Customization Target:</h3>
+                <h3><i class="bi bi-sliders2 text-sky-600"></i> NAV BAR CUSTOMIZATION TARGET:</h3>
                 <div class="mapping-mode-switcher">
                     <a href="{% url 'users:navbar_mapping' %}?mode=department{% if selected_dept %}&dept={{ selected_dept.id }}{% endif %}"
                        class="mode-switch-btn {% if view_mode == 'department' %}active{% endif %}">
@@ -1014,7 +1297,7 @@
     <div class="admin-locked-banner">
         <i class="bi bi-shield-fill-check" style="font-size: 1.4rem;"></i>
         <div>
-            <strong>Administrator Access:</strong> All navigation modules and submodules are permanently unlocked for Administrators. Use the management buttons below to Add, Edit, or Remove modules and submodules.
+            <strong>Administrator Access:</strong> All navigation modules and submodules are permanently unlocked with Full Access for Administrators. Use the management buttons below to Add, Edit, or Remove modules and submodules.
         </div>
     </div>
     {% endif %}
@@ -1039,8 +1322,11 @@
                 <i class="bi bi-arrow-counterclockwise"></i> Reset Layout
             </button>
             {% if not is_admin_selected %}
-            <button type="button" class="btn-action-sm" onclick="toggleAllSubmodules(true)">
-                <i class="bi bi-check-all text-success"></i> Enable All
+            <button type="button" class="btn-action-sm" onclick="toggleAllSubmodules(true, 'full')">
+                <i class="bi bi-check-all text-success"></i> Enable All (Full)
+            </button>
+            <button type="button" class="btn-action-sm" onclick="toggleAllSubmodules(true, 'view')">
+                <i class="bi bi-eye text-sky-600"></i> View Only All
             </button>
             <button type="button" class="btn-action-sm" onclick="toggleAllSubmodules(false)">
                 <i class="bi bi-x-circle text-danger"></i> Disable All
@@ -1067,7 +1353,7 @@
 
         <div class="modules-mapping-list" id="modulesMappingContainer">
             {% for mod in modules %}
-            <div class="module-card" id="card_{{ mod.id }}" data-module-name="{{ mod.name|lower }}">
+            <div class="module-card" id="card_{{ mod.id }}" data-module-name="{{ mod.name|lower }} {{ mod.key|lower }}">
                 <!-- Module Header -->
                 <div class="module-card-header" onclick="toggleModuleCard('{{ mod.id }}')">
                     <div class="module-header-left">
@@ -1095,7 +1381,7 @@
                         <div style="display: flex; gap: 0.35rem; align-items: center;">
                             <button type="button" class="module-crud-btn"
                                     title="Edit Module Name & Settings"
-                                    onclick="openEditModuleModal('{{ mod.id }}', '{{ mod.name|escapejs }}', '{{ mod.icon|escapejs }}', '{{ mod.url_path|escapejs }}', '{{ mod.color|escapejs }}', '{{ mod.badge|escapejs }}', '{{ mod.description|escapejs }}', '{{ mod.order }}', {{ mod.is_active|yesno:'true,false' }})">
+                                    onclick="openEditModuleModal('{{ mod.id }}', '{{ mod.name|escapejs }}', '{{ mod.icon|escapejs }}', '{{ mod.url_path|escapejs }}', '{{ mod.color|escapejs }}', '{{ mod.badge|escapejs }}', '{{ mod.description|escapejs }}', '{{ mod.order }}', {{ mod.is_active|yesno:'true,false' }}, [{% for s in mod.submodules %}{{ s.id }}{% if not forloop.last %},{% endif %}{% endfor %}])">
                                 <i class="bi bi-pencil-square text-sky-600"></i> Edit
                             </button>
                             <button type="button" class="module-crud-btn"
@@ -1113,9 +1399,14 @@
                         {% if view_mode == 'department' or selected_role != 'ADMIN' %}
                         <div style="display: flex; gap: 0.3rem; align-items: center; margin-left: 4px;">
                             <button type="button" class="btn-action-sm" style="padding: 2px 7px; font-size: 0.72rem;"
-                                    title="Enable all submodules"
-                                    onclick="toggleModuleSubmodules('{{ mod.id }}', true)">
-                                All
+                                    title="Enable all submodules with Full Access"
+                                    onclick="toggleModuleSubmodules('{{ mod.id }}', true, 'full')">
+                                All Full
+                            </button>
+                            <button type="button" class="btn-action-sm" style="padding: 2px 7px; font-size: 0.72rem;"
+                                    title="Enable all submodules as View Only"
+                                    onclick="toggleModuleSubmodules('{{ mod.id }}', true, 'view')">
+                                View Only
                             </button>
                             <button type="button" class="btn-action-sm" style="padding: 2px 7px; font-size: 0.72rem;"
                                     title="Disable all submodules"
@@ -1135,62 +1426,126 @@
                         {% for sub in mod.submodules %}
                         <div class="submodule-item-card {% if sub.is_granted and sub.is_active %}is-enabled{% endif %}"
                              id="subcard_{{ sub.id }}"
-                             data-sub-name="{{ sub.name|lower }} {{ sub.description|lower }} {{ sub.url|lower }}">
-                            <div class="submodule-info">
-                                <i class="bi {{ sub.icon }} submodule-icon"></i>
-                                <div class="submodule-details">
-                                    <h4 class="submodule-name">
-                                        <span id="sub_name_display_{{ sub.id }}">{{ sub.name }}</span>
-                                        <button type="button" class="submodule-quick-rename-btn"
-                                                title="Rename this submodule"
-                                                onclick="openRenameSubmoduleModal('{{ sub.id }}', '{{ sub.name|escapejs }}')">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </button>
-                                        {% if not sub.is_active %}
-                                        <span class="badge badge-warning" style="font-size: 0.65rem;">Disabled</span>
-                                        {% endif %}
-                                    </h4>
-                                    <p class="submodule-desc">{{ sub.description }}</p>
-                                    <div class="submodule-actions-line">
-                                        <span class="submodule-url-tag">{{ sub.url }}</span>
-                                        <button type="button" class="submodule-micro-btn rename" title="Rename Submodule Name"
-                                                onclick="openRenameSubmoduleModal('{{ sub.id }}', '{{ sub.name|escapejs }}')">
-                                            <i class="bi bi-fonts"></i> Rename
-                                        </button>
-                                        <button type="button" class="submodule-micro-btn" title="Edit Submodule Details"
-                                                onclick="openEditSubmoduleModal('{{ sub.id }}', '{{ sub.name|escapejs }}', '{{ sub.icon|escapejs }}', '{{ sub.url|escapejs }}', '{{ sub.description|escapejs }}', '{{ sub.order }}', {{ sub.is_active|yesno:'true,false' }})">
-                                            <i class="bi bi-pencil"></i> Edit
-                                        </button>
-                                        <button type="button" class="submodule-micro-btn" title="Move to another Module"
-                                                onclick="openRemapSubmoduleModal('{{ sub.id }}', '{{ sub.name|escapejs }}', '{{ mod.id }}')">
-                                            <i class="bi bi-arrow-left-right"></i> Move
-                                        </button>
-                                        <button type="button" class="submodule-micro-btn delete" title="Delete Submodule"
-                                                onclick="confirmDeleteSubmodule('{{ sub.id }}', '{{ sub.name|escapejs }}')">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                             data-sub-name="{{ sub.name|lower }} {{ sub.description|lower }} {{ sub.url|lower }} {{ sub.key|lower }}">
+                            
+                            <!-- Card Header -->
+                            <div class="subcard-header">
+                                <div class="subcard-title-wrap">
+                                    <i class="bi {{ sub.icon }} submodule-icon"></i>
+                                    <div style="min-width: 0; flex: 1;">
+                                        <h4 class="submodule-name">
+                                            <span id="sub_name_display_{{ sub.id }}">{{ sub.name }}</span>
+                                            <button type="button" class="submodule-quick-rename-btn"
+                                                    title="Rename this submodule"
+                                                    onclick="openRenameSubmoduleModal('{{ sub.id }}', '{{ sub.name|escapejs }}')">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            {% if not sub.is_active %}
+                                            <span class="badge badge-warning" style="font-size: 0.65rem;">Disabled</span>
+                                            {% endif %}
+                                        </h4>
+                                        <div class="submodule-desc">{{ sub.description }}</div>
                                     </div>
+                                </div>
+
+                                <div class="subcard-toggle-wrap">
+                                    <span class="action-perm-badge badge-{{ sub.perm_status }}" id="badge_status_{{ sub.id }}">
+                                        {{ sub.perm_badge }}
+                                    </span>
+                                    {% if view_mode == 'role' and selected_role == 'ADMIN' %}
+                                    <label class="switch-toggle" title="Admin role is permanently granted access">
+                                        <input type="checkbox" checked disabled>
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                    {% else %}
+                                    <label class="switch-toggle" title="Toggle access to {{ sub.name }}">
+                                        <input type="checkbox"
+                                               name="perm_{{ sub.key }}"
+                                               id="chk_{{ sub.id }}"
+                                               data-module-id="{{ mod.id }}"
+                                               data-sub-id="{{ sub.id }}"
+                                               data-sub-key="{{ sub.key }}"
+                                               class="submodule-checkbox"
+                                               onchange="onSubmoduleMasterChange(this)"
+                                               {% if sub.is_granted and sub.is_active %}checked{% endif %}>
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                    {% endif %}
                                 </div>
                             </div>
 
-                            <div class="submodule-switch-wrapper">
-                                {% if view_mode == 'role' and selected_role == 'ADMIN' %}
-                                <label class="switch-toggle" title="Admin role is permanently granted access">
-                                    <input type="checkbox" checked disabled>
-                                    <span class="switch-slider"></span>
-                                </label>
-                                {% else %}
-                                <label class="switch-toggle" title="Toggle access to {{ sub.name }}">
-                                    <input type="checkbox"
-                                           name="perm_{{ sub.key }}"
-                                           id="chk_{{ sub.id }}"
-                                           data-module-id="{{ mod.id }}"
-                                           class="submodule-checkbox"
-                                           onchange="onSubmoduleChange(this)"
-                                           {% if sub.is_granted and sub.is_active %}checked{% endif %}>
-                                    <span class="switch-slider"></span>
-                                </label>
-                                {% endif %}
+                            <!-- Granular Page Action Permissions Section -->
+                            <div class="subcard-perms-body" id="actions_wrap_{{ sub.id }}">
+                                <div class="action-perms-label">
+                                    <span><i class="bi bi-shield-check text-sky-600"></i> Page Permissions:</span>
+                                    {% if not is_admin_selected %}
+                                    <div class="action-quick-links">
+                                        <button type="button" class="quick-preset-btn" onclick="setSubmodulePreset('{{ sub.id }}', 'full')">Full</button>
+                                        <button type="button" class="quick-preset-btn" onclick="setSubmodulePreset('{{ sub.id }}', 'view')">View Only</button>
+                                        <button type="button" class="quick-preset-btn" onclick="setSubmodulePreset('{{ sub.id }}', 'none')">Clear</button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="action-checkboxes-grid">
+                                    <label class="action-check-item">
+                                        <input type="checkbox" name="perm_act_{{ sub.key }}_view" id="act_{{ sub.id }}_view"
+                                               class="action-checkbox act-chk-{{ sub.id }}" data-sub-id="{{ sub.id }}" onchange="onActionCheckboxChange('{{ sub.id }}')"
+                                               {% if sub.can_view %}checked{% endif %} {% if is_admin_selected %}disabled{% endif %}>
+                                        <span><i class="bi bi-eye"></i> View</span>
+                                    </label>
+
+                                    <label class="action-check-item">
+                                        <input type="checkbox" name="perm_act_{{ sub.key }}_add" id="act_{{ sub.id }}_add"
+                                               class="action-checkbox act-chk-{{ sub.id }}" data-sub-id="{{ sub.id }}" onchange="onActionCheckboxChange('{{ sub.id }}')"
+                                               {% if sub.can_add %}checked{% endif %} {% if is_admin_selected %}disabled{% endif %}>
+                                        <span><i class="bi bi-plus-circle"></i> Add</span>
+                                    </label>
+
+                                    <label class="action-check-item">
+                                        <input type="checkbox" name="perm_act_{{ sub.key }}_edit" id="act_{{ sub.id }}_edit"
+                                               class="action-checkbox act-chk-{{ sub.id }}" data-sub-id="{{ sub.id }}" onchange="onActionCheckboxChange('{{ sub.id }}')"
+                                               {% if sub.can_edit %}checked{% endif %} {% if is_admin_selected %}disabled{% endif %}>
+                                        <span><i class="bi bi-pencil"></i> Edit</span>
+                                    </label>
+
+                                    <label class="action-check-item">
+                                        <input type="checkbox" name="perm_act_{{ sub.key }}_delete" id="act_{{ sub.id }}_delete"
+                                               class="action-checkbox act-chk-{{ sub.id }}" data-sub-id="{{ sub.id }}" onchange="onActionCheckboxChange('{{ sub.id }}')"
+                                               {% if sub.can_delete %}checked{% endif %} {% if is_admin_selected %}disabled{% endif %}>
+                                        <span><i class="bi bi-trash"></i> Delete</span>
+                                    </label>
+
+                                    <label class="action-check-item">
+                                        <input type="checkbox" name="perm_act_{{ sub.key }}_print" id="act_{{ sub.id }}_print"
+                                               class="action-checkbox act-chk-{{ sub.id }}" data-sub-id="{{ sub.id }}" onchange="onActionCheckboxChange('{{ sub.id }}')"
+                                               {% if sub.can_print %}checked{% endif %} {% if is_admin_selected %}disabled{% endif %}>
+                                        <span><i class="bi bi-printer"></i> Print/Export</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Card Footer -->
+                            <div class="subcard-footer">
+                                <span class="submodule-url-tag" title="{{ sub.url }}">{{ sub.url }}</span>
+                                <div class="subcard-tools">
+                                    <button type="button" class="submodule-micro-btn rename" title="Rename Submodule Name"
+                                            onclick="openRenameSubmoduleModal('{{ sub.id }}', '{{ sub.name|escapejs }}')">
+                                        <i class="bi bi-fonts"></i> Rename
+                                    </button>
+                                    <button type="button" class="submodule-micro-btn" title="Edit Submodule Details"
+                                            onclick="openEditSubmoduleModal('{{ sub.id }}', '{{ sub.name|escapejs }}', '{{ sub.icon|escapejs }}', '{{ sub.url|escapejs }}', '{{ sub.description|escapejs }}', '{{ sub.order }}', {{ sub.is_active|yesno:'true,false' }})">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </button>
+                                    <button type="button" class="submodule-micro-btn" title="Move to another Module"
+                                            onclick="openRemapSubmoduleModal('{{ sub.id }}', '{{ sub.name|escapejs }}', '{{ mod.id }}')">
+                                        <i class="bi bi-arrow-left-right"></i> Move
+                                    </button>
+                                    <button type="button" class="submodule-micro-btn delete" title="Delete Submodule"
+                                            onclick="confirmDeleteSubmodule('{{ sub.id }}', '{{ sub.name|escapejs }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         {% empty %}
@@ -1213,16 +1568,16 @@
                 <div>
                     <div>
                         {% if view_mode == 'department' %}
-                        Nav Bar Mapping for <strong>{{ selected_dept.name }} Department</strong>
+                        Permissions & Nav Bar Mapping for <strong>{{ selected_dept.name }} Department</strong>
                         {% else %}
                         Role Access mapping for <strong>{{ selected_role_obj.label }}</strong>
                         {% endif %}
                     </div>
                     <span style="font-size: 0.78rem; color: #64748b;">
                         {% if view_mode == 'department' %}
-                        Save to update the live Top Navigation Bar for users logged in via {{ selected_dept.name }}.
+                        Save to persistently apply page permissions and live top navbar links for users in {{ selected_dept.name }}.
                         {% else %}
-                        Save to update live Top Navigation Bar dropdowns for this role profile.
+                        Save to persistently apply page permissions and live top navbar dropdowns for this role profile.
                         {% endif %}
                     </span>
                 </div>
@@ -1232,7 +1587,7 @@
                     Reset
                 </a>
                 <button type="submit" class="btn-save-navmap">
-                    <i class="bi bi-check-circle-fill"></i> Save Nav Bar Mapping
+                    <i class="bi bi-check-circle-fill"></i> Save Permissions
                 </button>
             </div>
         </div>
@@ -1284,8 +1639,51 @@
                     <input type="text" name="url_path" class="form-input-modal" placeholder="e.g. /pharmacy/ or #" value="#">
                 </div>
                 <div class="form-group-modal">
-                    <label>Description (optional)</label>
-                    <textarea name="description" class="form-input-modal" rows="2" placeholder="Brief summary of what this module covers..."></textarea>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <label style="margin: 0; font-weight: 600; color: #334155;">
+                            <i class="bi bi-diagram-3-fill text-sky-600"></i> Map / Place Submodules under this Module
+                        </label>
+                        <div style="display: flex; gap: 0.35rem;">
+                            <button type="button" class="btn-sub-selector-action" onclick="selectAllModuleSubmodules('add_sub_picker_list', true)">Select All</button>
+                            <button type="button" class="btn-sub-selector-action" onclick="selectAllModuleSubmodules('add_sub_picker_list', false)">Clear</button>
+                            <button type="button" class="btn-sub-selector-action" style="color: #059669; border-color: #a7f3d0;" onclick="autoGenerateModuleDescription('add_sub_picker_list', 'add_mod_desc')" title="Auto-fill description from selected submodules">
+                                <i class="bi bi-magic"></i> Auto Description
+                            </button>
+                        </div>
+                    </div>
+                    <div class="submodule-multi-picker">
+                        <div class="picker-search-bar">
+                            <i class="bi bi-search"></i>
+                            <input type="text" class="picker-search-input" placeholder="Search submodules to place in this module..." onkeyup="filterPickerSubmodules(this, 'add_sub_picker_list')">
+                        </div>
+                        <div class="picker-items-list" id="add_sub_picker_list">
+                            {% for sub in all_submodules_list %}
+                            <label class="picker-item-row" data-sub-id="{{ sub.id }}" data-name="{{ sub.name|lower }}" data-parent="{{ sub.module.name|default:'Unassigned'|lower }}" data-title="{{ sub.name }}">
+                                <input type="checkbox" name="selected_submodules" value="{{ sub.id }}" onchange="updatePickerRowState(this)">
+                                <i class="bi {{ sub.icon|default:'bi-circle' }} picker-sub-icon"></i>
+                                <div class="picker-sub-info">
+                                    <span class="picker-sub-title">{{ sub.name }}</span>
+                                    <span class="picker-parent-tag">Current: {{ sub.module.name|default:"Unassigned" }}</span>
+                                </div>
+                                <span class="picker-url-tag">{{ sub.url_path }}</span>
+                            </label>
+                            {% empty %}
+                            <div style="padding: 10px; text-align: center; color: #94a3b8; font-size: 0.8rem;">No submodules available</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <small style="color: #64748b; font-size: 0.76rem; margin-top: 3px; display: block;">
+                        <i class="bi bi-info-circle"></i> Check the submodules to place under this module. Use "Auto Description" to summarize them.
+                    </small>
+                </div>
+                <div class="form-group-modal">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <label style="margin: 0;">Description (optional)</label>
+                        <button type="button" class="btn-sub-selector-action" style="color: #059669; border-color: #a7f3d0;" onclick="autoGenerateModuleDescription('add_sub_picker_list', 'add_mod_desc')">
+                            <i class="bi bi-magic"></i> Auto-fill from Submodules
+                        </button>
+                    </div>
+                    <textarea id="add_mod_desc" name="description" class="form-input-modal" rows="2" placeholder="Brief summary of what this module covers..."></textarea>
                 </div>
             </div>
             <div class="nav-modal-footer">
@@ -1336,7 +1734,50 @@
                     <input type="text" id="edit_mod_url" name="url_path" class="form-input-modal">
                 </div>
                 <div class="form-group-modal">
-                    <label>Description</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <label style="margin: 0; font-weight: 600; color: #334155;">
+                            <i class="bi bi-diagram-3-fill text-sky-600"></i> Map / Place Submodules under this Module
+                        </label>
+                        <div style="display: flex; gap: 0.35rem;">
+                            <button type="button" class="btn-sub-selector-action" onclick="selectAllModuleSubmodules('edit_sub_picker_list', true)">Select All</button>
+                            <button type="button" class="btn-sub-selector-action" onclick="selectAllModuleSubmodules('edit_sub_picker_list', false)">Clear</button>
+                            <button type="button" class="btn-sub-selector-action" style="color: #059669; border-color: #a7f3d0;" onclick="autoGenerateModuleDescription('edit_sub_picker_list', 'edit_mod_desc')" title="Auto-fill description from selected submodules">
+                                <i class="bi bi-magic"></i> Auto Description
+                            </button>
+                        </div>
+                    </div>
+                    <div class="submodule-multi-picker">
+                        <div class="picker-search-bar">
+                            <i class="bi bi-search"></i>
+                            <input type="text" class="picker-search-input" placeholder="Search submodules to place in this module..." onkeyup="filterPickerSubmodules(this, 'edit_sub_picker_list')">
+                        </div>
+                        <div class="picker-items-list" id="edit_sub_picker_list">
+                            {% for sub in all_submodules_list %}
+                            <label class="picker-item-row" data-sub-id="{{ sub.id }}" data-name="{{ sub.name|lower }}" data-parent="{{ sub.module.name|default:'Unassigned'|lower }}" data-title="{{ sub.name }}">
+                                <input type="checkbox" name="selected_submodules" value="{{ sub.id }}" onchange="updatePickerRowState(this)">
+                                <i class="bi {{ sub.icon|default:'bi-circle' }} picker-sub-icon"></i>
+                                <div class="picker-sub-info">
+                                    <span class="picker-sub-title">{{ sub.name }}</span>
+                                    <span class="picker-parent-tag">Current: {{ sub.module.name|default:"Unassigned" }}</span>
+                                </div>
+                                <span class="picker-url-tag">{{ sub.url_path }}</span>
+                            </label>
+                            {% empty %}
+                            <div style="padding: 10px; text-align: center; color: #94a3b8; font-size: 0.8rem;">No submodules available</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <small style="color: #64748b; font-size: 0.76rem; margin-top: 3px; display: block;">
+                        <i class="bi bi-info-circle"></i> Check or uncheck submodules to place/reassign them to this module. Use "Auto Description" to update the description.
+                    </small>
+                </div>
+                <div class="form-group-modal">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <label style="margin: 0;">Description</label>
+                        <button type="button" class="btn-sub-selector-action" style="color: #059669; border-color: #a7f3d0;" onclick="autoGenerateModuleDescription('edit_sub_picker_list', 'edit_mod_desc')">
+                            <i class="bi bi-magic"></i> Auto-fill from Submodules
+                        </button>
+                    </div>
                     <textarea id="edit_mod_desc" name="description" class="form-input-modal" rows="2"></textarea>
                 </div>
                 <div class="form-group-modal" style="display: flex; align-items: center; gap: 0.5rem;">
@@ -1539,7 +1980,7 @@
             <input type="hidden" name="role" value="{{ selected_role }}">
             <div class="nav-modal-body">
                 <p style="font-size: 0.92rem; color: #334155; margin: 0; line-height: 1.5;">
-                    Are you sure you want to restore the navigation structure to factory system defaults? This will re-initialize all 11 core modules and 58 submodules.
+                    Are you sure you want to restore the navigation structure to factory system defaults? This will re-initialize all 12 core modules and 76 submodules.
                 </p>
             </div>
             <div class="nav-modal-footer">
@@ -1555,7 +1996,11 @@
     function openModal(modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {
+            if (modal.parentElement !== document.body) {
+                document.body.appendChild(modal);
+            }
             modal.style.display = 'flex';
+            document.body.classList.add('navmap-modal-open');
         }
     }
 
@@ -1563,25 +2008,113 @@
         const modal = document.getElementById(modalId);
         if (modal) {
             modal.style.display = 'none';
+            const anyOpen = Array.from(document.querySelectorAll('.nav-modal-backdrop')).some(m => m.style.display === 'flex');
+            if (!anyOpen) {
+                document.body.classList.remove('navmap-modal-open');
+            }
         }
     }
 
-    // Close on clicking backdrop
+    // Close on clicking backdrop or ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.nav-modal-backdrop').forEach(modal => {
+                if (modal.style.display === 'flex') {
+                    modal.style.display = 'none';
+                }
+            });
+            document.body.classList.remove('navmap-modal-open');
+        }
+    });
+
     document.querySelectorAll('.nav-modal-backdrop').forEach(modal => {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
-                modal.style.display = 'none';
+                closeModal(modal.id);
             }
         });
     });
 
+    // Submodule Multi-Picker Helper Functions
+    function filterPickerSubmodules(input, listId) {
+        const query = (input.value || '').trim().toLowerCase();
+        const list = document.getElementById(listId);
+        if (!list) return;
+        const rows = list.querySelectorAll('.picker-item-row');
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name') || '';
+            const parent = row.getAttribute('data-parent') || '';
+            const matches = !query || name.includes(query) || parent.includes(query);
+            row.style.display = matches ? 'flex' : 'none';
+        });
+    }
+
+    function selectAllModuleSubmodules(listId, check) {
+        const list = document.getElementById(listId);
+        if (!list) return;
+        const chks = list.querySelectorAll('input[type="checkbox"]');
+        chks.forEach(chk => {
+            const row = chk.closest('.picker-item-row');
+            if (!row || row.style.display !== 'none') {
+                chk.checked = check;
+                updatePickerRowState(chk);
+            }
+        });
+    }
+
+    function updatePickerRowState(chk) {
+        const row = chk.closest('.picker-item-row');
+        if (row) {
+            if (chk.checked) {
+                row.classList.add('is-selected');
+            } else {
+                row.classList.remove('is-selected');
+            }
+        }
+    }
+
+    function autoGenerateModuleDescription(listId, descInputId) {
+        const list = document.getElementById(listId);
+        const descInput = document.getElementById(descInputId);
+        if (!list || !descInput) return;
+        const checkedRows = list.querySelectorAll('.picker-item-row input[type="checkbox"]:checked');
+        const titles = [];
+        checkedRows.forEach(chk => {
+            const row = chk.closest('.picker-item-row');
+            if (row) {
+                const title = row.getAttribute('data-title') || '';
+                if (title && !titles.includes(title)) {
+                    titles.push(title);
+                }
+            }
+        });
+        if (titles.length > 0) {
+            descInput.value = titles.join(', ');
+        } else {
+            descInput.value = 'General operations and module features';
+        }
+    }
+
     // 1. Add Module Modal
     function openAddModuleModal() {
+        const addList = document.getElementById('add_sub_picker_list');
+        if (addList) {
+            addList.querySelectorAll('.picker-item-row').forEach(row => {
+                row.style.display = 'flex';
+                const chk = row.querySelector('input[type="checkbox"]');
+                if (chk) {
+                    chk.checked = false;
+                    updatePickerRowState(chk);
+                }
+            });
+            const searchInput = addList.parentElement.querySelector('.picker-search-input');
+            if (searchInput) searchInput.value = '';
+        }
         openModal('addModuleModal');
     }
 
     // 2. Edit Module Modal
-    function openEditModuleModal(id, name, icon, url, color, badge, desc, order, isActive) {
+    function openEditModuleModal(id, name, icon, url, color, badge, desc, order, isActive, subIds) {
         const form = document.getElementById('editModuleForm');
         form.action = `/administration/navbar-mapping/modules/${id}/edit/`;
         document.getElementById('edit_mod_name').value = name;
@@ -1592,6 +2125,24 @@
         document.getElementById('edit_mod_desc').value = desc || '';
         document.getElementById('edit_mod_order').value = order || 10;
         document.getElementById('edit_mod_active').checked = isActive;
+
+        // Reset and pre-check submodules assigned to this module
+        const pickerList = document.getElementById('edit_sub_picker_list');
+        if (pickerList) {
+            const subIdSet = new Set(Array.isArray(subIds) ? subIds.map(Number) : []);
+            pickerList.querySelectorAll('.picker-item-row').forEach(row => {
+                row.style.display = 'flex';
+                const chk = row.querySelector('input[type="checkbox"]');
+                if (chk) {
+                    const sId = parseInt(chk.value, 10);
+                    chk.checked = subIdSet.has(sId);
+                    updatePickerRowState(chk);
+                }
+            });
+            const searchInput = pickerList.parentElement.querySelector('.picker-search-input');
+            if (searchInput) searchInput.value = '';
+        }
+
         openModal('editModuleModal');
     }
 
@@ -1680,48 +2231,147 @@
         chevrons.forEach(c => c.style.transform = expand ? 'rotate(0deg)' : 'rotate(-90deg)');
     }
 
-    // Toggle All Submodules across entire system
-    function toggleAllSubmodules(enable) {
+    // Toggle All Submodules across entire system with optional preset ('full', 'view')
+    function toggleAllSubmodules(enable, preset = 'full') {
         const checkboxes = document.querySelectorAll('.submodule-checkbox');
         checkboxes.forEach(chk => {
-            chk.checked = enable;
-            const parentCard = chk.closest('.submodule-item-card');
-            if (parentCard) {
-                if (enable) parentCard.classList.add('is-enabled');
-                else parentCard.classList.remove('is-enabled');
+            const subId = chk.getAttribute('data-sub-id');
+            if (enable) {
+                chk.checked = true;
+                setSubmodulePreset(subId, preset);
+            } else {
+                chk.checked = false;
+                setSubmodulePreset(subId, 'none');
             }
+            updateSubmoduleCardVisuals(subId);
         });
         updateAllModuleBadges();
         updateGlobalStats();
     }
 
     // Toggle all submodules within a specific module
-    function toggleModuleSubmodules(moduleId, enable) {
+    function toggleModuleSubmodules(moduleId, enable, preset = 'full') {
         const checkboxes = document.querySelectorAll(`.submodule-checkbox[data-module-id="${moduleId}"]`);
         checkboxes.forEach(chk => {
-            chk.checked = enable;
-            const parentCard = chk.closest('.submodule-item-card');
-            if (parentCard) {
-                if (enable) parentCard.classList.add('is-enabled');
-                else parentCard.classList.remove('is-enabled');
+            const subId = chk.getAttribute('data-sub-id');
+            if (enable) {
+                chk.checked = true;
+                setSubmodulePreset(subId, preset);
+            } else {
+                chk.checked = false;
+                setSubmodulePreset(subId, 'none');
             }
+            updateSubmoduleCardVisuals(subId);
         });
         updateModuleBadge(moduleId);
         updateGlobalStats();
     }
 
-    // Individual Submodule Change Handler
-    function onSubmoduleChange(chk) {
-        const parentCard = chk.closest('.submodule-item-card');
-        if (parentCard) {
-            if (chk.checked) parentCard.classList.add('is-enabled');
-            else parentCard.classList.remove('is-enabled');
+    // Set Submodule Preset Actions ('full', 'view', 'none')
+    function setSubmodulePreset(subId, preset) {
+        const masterChk = document.getElementById('chk_' + subId);
+        const actView = document.getElementById('act_' + subId + '_view');
+        const actAdd = document.getElementById('act_' + subId + '_add');
+        const actEdit = document.getElementById('act_' + subId + '_edit');
+        const actDelete = document.getElementById('act_' + subId + '_delete');
+        const actPrint = document.getElementById('act_' + subId + '_print');
+
+        if (preset === 'full') {
+            if (masterChk) masterChk.checked = true;
+            if (actView) actView.checked = true;
+            if (actAdd) actAdd.checked = true;
+            if (actEdit) actEdit.checked = true;
+            if (actDelete) actDelete.checked = true;
+            if (actPrint) actPrint.checked = true;
+        } else if (preset === 'view') {
+            if (masterChk) masterChk.checked = true;
+            if (actView) actView.checked = true;
+            if (actAdd) actAdd.checked = false;
+            if (actEdit) actEdit.checked = false;
+            if (actDelete) actDelete.checked = false;
+            if (actPrint) actPrint.checked = false;
+        } else if (preset === 'none') {
+            if (masterChk) masterChk.checked = false;
+            if (actView) actView.checked = false;
+            if (actAdd) actAdd.checked = false;
+            if (actEdit) actEdit.checked = false;
+            if (actDelete) actDelete.checked = false;
+            if (actPrint) actPrint.checked = false;
         }
-        const moduleId = chk.getAttribute('data-module-id');
-        if (moduleId) {
-            updateModuleBadge(moduleId);
+
+        updateSubmoduleCardVisuals(subId);
+        if (masterChk) {
+            const modId = masterChk.getAttribute('data-module-id');
+            if (modId) updateModuleBadge(modId);
         }
         updateGlobalStats();
+    }
+
+    // Master Switch Change Handler
+    function onSubmoduleMasterChange(chk) {
+        const subId = chk.getAttribute('data-sub-id');
+        if (chk.checked) {
+            // If turning on and no action is selected, select all 5 actions by default
+            const anyActive = document.querySelectorAll(`.act-chk-${subId}:checked`).length > 0;
+            if (!anyActive) {
+                setSubmodulePreset(subId, 'full');
+            }
+        } else {
+            // If turning off, uncheck actions
+            setSubmodulePreset(subId, 'none');
+        }
+        updateSubmoduleCardVisuals(subId);
+        const moduleId = chk.getAttribute('data-module-id');
+        if (moduleId) updateModuleBadge(moduleId);
+        updateGlobalStats();
+    }
+
+    // Granular Action Checkbox Change Handler
+    function onActionCheckboxChange(subId) {
+        const masterChk = document.getElementById('chk_' + subId);
+        const activeCount = document.querySelectorAll(`.act-chk-${subId}:checked`).length;
+        
+        if (masterChk) {
+            if (activeCount > 0 && !masterChk.checked) {
+                masterChk.checked = true;
+            } else if (activeCount === 0 && masterChk.checked) {
+                masterChk.checked = false;
+            }
+            const modId = masterChk.getAttribute('data-module-id');
+            if (modId) updateModuleBadge(modId);
+        }
+        
+        updateSubmoduleCardVisuals(subId);
+        updateGlobalStats();
+    }
+
+    // Update Submodule Card Status Badge & Visual Highlighting
+    function updateSubmoduleCardVisuals(subId) {
+        const card = document.getElementById('subcard_' + subId);
+        const masterChk = document.getElementById('chk_' + subId);
+        const badge = document.getElementById('badge_status_' + subId);
+        const activeCount = document.querySelectorAll(`.act-chk-${subId}:checked`).length;
+
+        const isEnabled = masterChk ? masterChk.checked : false;
+
+        if (card) {
+            if (isEnabled && activeCount > 0) card.classList.add('is-enabled');
+            else card.classList.remove('is-enabled');
+        }
+
+        if (badge) {
+            badge.className = 'action-perm-badge';
+            if (!isEnabled || activeCount === 0) {
+                badge.classList.add('badge-none');
+                badge.textContent = 'Disabled';
+            } else if (activeCount === 5) {
+                badge.classList.add('badge-full');
+                badge.textContent = 'Full Access';
+            } else {
+                badge.classList.add('badge-partial');
+                badge.textContent = `Partial (${activeCount}/5)`;
+            }
+        }
     }
 
     // Update Module Badge Count
@@ -1795,7 +2445,12 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        // Move all modals directly under document.body to prevent parent containment and scrolling issues
+        document.querySelectorAll('.nav-modal-backdrop').forEach(modal => {
+            document.body.appendChild(modal);
+        });
         updateAllModuleBadges();
     });
 </script>
 {% endblock %}
+

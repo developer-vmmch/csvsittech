@@ -14,9 +14,18 @@ class User(AbstractUser):
         default=Roles.STAFF,
         help_text='Role within the ERP system'
     )
-    department = models.CharField(max_length=100, blank=True, null=True)
+    department = models.CharField(max_length=500, blank=True, null=True, help_text="Assigned department(s) (comma-separated or 'All Departments')")
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     employee_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+
+    def get_departments_list(self):
+        """Returns the list of department names assigned to this user."""
+        if not self.department:
+            return []
+        raw = str(self.department).strip()
+        if raw.lower() in ['all', 'all departments', 'all departments (universal access)']:
+            return ['All Departments']
+        return [d.strip() for d in raw.split(',') if d.strip()]
 
     def get_role_display(self):
         built_in = dict(self.Roles.choices)
@@ -62,8 +71,11 @@ class User(AbstractUser):
         Check if user has a specific granular permission code:
         e.g. 'patients.patient_list.view', 'patients.patient_list.update',
              'patients.patient_list.delete', 'patients.patient_list.import',
-             'patients.patient_list.export'
+             'patients.patient_list.export', 'patient_list.edit', 'patient_list.delete'
         Super Admin / Administrator / Developer always returns True.
+        Universal Access ('All Departments') always returns True.
+        Checks both Department-Wise Page Mapping (LandingDepartment.nav_permissions)
+        and Role-Wise Permissions (RoleMenuPermission).
         """
         role_str = (self.role or '').strip().upper()
         if self.is_superuser or role_str in [self.Roles.ADMIN, self.Roles.DEVELOPER, 'DEVELOPER', 'DEVELOPER_ROLE']:
@@ -72,40 +84,96 @@ class User(AbstractUser):
         if not perm_code:
             return False
 
-        from apps.users.models import RoleMenuPermission
-        db_perms = RoleMenuPermission.get_permissions_for_role(self.role)
-        if db_perms and isinstance(db_perms, dict):
-            # 1. Exact match
-            if perm_code in db_perms:
-                return bool(db_perms[perm_code])
+        # Check Universal Access
+        depts_list = self.get_departments_list()
+        if 'All Departments' in depts_list:
+            return True
 
-            # 2. Aliases for edit / update
-            if perm_code.endswith('.edit'):
-                alt = perm_code[:-5] + '.update'
-                if alt in db_perms:
-                    return bool(db_perms[alt])
-            elif perm_code.endswith('.update'):
-                alt = perm_code[:-7] + '.edit'
-                if alt in db_perms:
-                    return bool(db_perms[alt])
+        # Helper to check a permission key/action in a permissions dict
+        def _check_dict(perms_dict, code):
+            if not perms_dict or not isinstance(perms_dict, dict):
+                return None
 
-            # 3. Normalized underscore format
-            norm = perm_code.replace('.', '_')
-            if norm in db_perms:
-                return bool(db_perms[norm])
+            parts = code.split('.')
+            action = parts[-1].lower() if len(parts) > 1 else 'view'
+            sub_code = parts[-2] if len(parts) > 1 else parts[0]
 
-            # 4. Fallback to base module permission if action is 'view'
-            if perm_code.endswith('.view'):
-                base = perm_code[:-5].replace('.', '_')
-                base_raw = perm_code[:-5]
-                if base in db_perms:
-                    return bool(db_perms[base])
-                if base_raw in db_perms:
-                    return bool(db_perms[base_raw])
+            # Map action synonyms
+            action_aliases = [action]
+            if action in ['edit', 'update']:
+                action_aliases = ['edit', 'update']
+            elif action in ['add', 'create']:
+                action_aliases = ['add', 'create']
+            elif action in ['delete', 'cancel']:
+                action_aliases = ['delete', 'cancel']
+            elif action in ['print', 'export']:
+                action_aliases = ['print', 'export']
+            elif action == 'view':
+                action_aliases = ['view', 'access']
 
-        # Default fallback for specific legacy roles if not configured in DB
+            # Direct check
+            if code in perms_dict:
+                return bool(perms_dict[code])
+
+            # Check action dict e.g. perms_dict.get('patient_list_actions')
+            act_obj = perms_dict.get(f"{sub_code}_actions")
+            if isinstance(act_obj, dict):
+                for act in action_aliases:
+                    if act in act_obj:
+                        return bool(act_obj[act])
+
+            # Check sub_code.action variants
+            for act in action_aliases:
+                k1 = f"{sub_code}.{act}"
+                k2 = f"{sub_code}_{act}"
+                k3 = f"{code.replace('.', '_')}_{act}"
+                if k1 in perms_dict:
+                    return bool(perms_dict[k1])
+                if k2 in perms_dict:
+                    return bool(perms_dict[k2])
+                if k3 in perms_dict:
+                    return bool(perms_dict[k3])
+
+            # If action is 'view', also check if submodule or module base key is granted
+            if action in ['view', 'access']:
+                if sub_code in perms_dict:
+                    return bool(perms_dict[sub_code])
+                if sub_code.replace('.', '_') in perms_dict:
+                    return bool(perms_dict[sub_code.replace('.', '_')])
+
+            return None
+
+        # 1. Check Department-Wise Page Mapping (LandingDepartment.nav_permissions)
+        try:
+            from apps.users.models import LandingDepartment
+            for dept_name in depts_list:
+                dept_obj = (
+                    LandingDepartment.objects.filter(name__iexact=dept_name).first()
+                    or LandingDepartment.objects.filter(code__iexact=dept_name.lower().replace(' ', '_')).first()
+                    or LandingDepartment.objects.filter(slug__iexact=dept_name.lower().replace(' ', '-')).first()
+                )
+                if dept_obj and dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict):
+                    res = _check_dict(dept_obj.nav_permissions, perm_code)
+                    if res is not None:
+                        if res:
+                            return True
+        except Exception:
+            pass
+
+        # 2. Check Role-Wise Permissions (RoleMenuPermission)
+        try:
+            from apps.users.models import RoleMenuPermission
+            role_perms = RoleMenuPermission.get_permissions_for_role(self.role)
+            if role_perms and isinstance(role_perms, dict):
+                res = _check_dict(role_perms, perm_code)
+                if res is not None:
+                    return res
+        except Exception:
+            pass
+
+        # 3. Default fallback for specific legacy roles if not configured in DB
         if self.role == self.Roles.MANAGER:
-            if perm_code.startswith('auto_trigger.') or perm_code.endswith('.view') or perm_code.endswith('.create') or perm_code.endswith('.update'):
+            if perm_code.startswith('auto_trigger.') or any(perm_code.endswith(x) for x in ['.view', '.create', '.update', '.edit', '.print', '.export']):
                 return True
 
         # Check aliases e.g. ATC_EDIT -> auto_trigger.atc.update
