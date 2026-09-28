@@ -818,19 +818,29 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         search_id = self.request.GET.get('patient_id', '').strip()
+        search_abha = self.request.GET.get('abha_id', '').strip()
         patient = None
 
         if search_id:
             patient = Patient.objects.filter(
-                Q(patient_id__iexact=search_id) | Q(ipno__iexact=search_id)
+                Q(patient_id__iexact=search_id) | Q(ipno__iexact=search_id) | Q(op_number__iexact=search_id)
             ).first()
             if not patient:
                 messages.warning(self.request, f"No patient record found for ID / IPNO '{search_id}'.")
+        elif search_abha:
+            patient = Patient.objects.filter(
+                Q(abha_id__iexact=search_abha) | Q(abha_id__icontains=search_abha)
+            ).first()
+            if not patient:
+                messages.warning(self.request, f"No patient record found for ABHA ID '{search_abha}'.")
 
         context['patient'] = patient
         context['search_id'] = search_id
+        context['search_abha'] = search_abha
         context['all_patients'] = Patient.objects.all().order_by('-id')[:50]
         context['now'] = timezone.now()
+        context['last_patient'] = Patient.objects.all().order_by('-id').first()
+        context['REVIEW_ABHA_SEARCH_VISIBLE'] = False  # Temporarily hidden from Review UI per specification; backend intact
 
         if patient:
             is_emergency = (
@@ -879,6 +889,13 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
                 'category': 'EMERGENCY' if is_emergency else 'RE_CONSULTATION',
                 'ipno': next_ip if is_emergency else '',
             })
+        else:
+            context['visit_form'] = PatientVisitForm(patient=None, initial={
+                'visit_type': 'OP',
+                'category': 'CONSULTATION',
+            })
+            context['visits'] = []
+            context['branch_transfers'] = []
 
         return context
 

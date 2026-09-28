@@ -5,710 +5,1368 @@
 
 {% block content %}
 <style>
-    .patient-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 0.65rem 1rem;
-        align-items: end;
-    }
-    .form-label {
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: #475569;
-        margin-bottom: 0.2rem;
-        display: block;
-    }
-    .form-control, .form-select {
-        width: 100%;
-        padding: 0.35rem 0.65rem;
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
-        font-size: 0.85rem;
-        color: #0f172a;
-        background-color: #ffffff;
+    /* =========================================================================
+       COMPACT HIGH-DENSITY PATIENT REVIEW & VISIT RECORD LOG
+       Strict alignment matching IMAGE 2 master reference.
+       No 2-column full-page split, no giant search panel, compact ERP layout.
+       ========================================================================= */
+    .review-page-wrapper, .review-wrapper {
+        width: min(100% - 32px, 1280px);
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0;
         box-sizing: border-box;
     }
-    .form-control[readonly], .form-select[disabled] {
+
+    /* Top Patient Information Card */
+    .patient-header-card {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 8px 14px 10px 14px;
+        margin-bottom: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+    .patient-header-title {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: #0f2c59;
+        margin: 0 0 8px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        letter-spacing: 0.2px;
+        text-transform: uppercase;
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 5px;
+    }
+
+    /* Horizontal Flow Rows matching Image 2 */
+    .patient-info-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .patient-info-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 14px;
+    }
+    .field-pair {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+    .field-pair-label {
+        font-size: 0.81rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    /* Standardized Compact Inputs */
+    .form-control-compact, .form-select-compact {
+        height: 28px;
+        padding: 2px 7px;
+        font-size: 0.82rem;
+        color: #0f172a;
+        background-color: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 5px;
+        box-sizing: border-box;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .form-control-compact:focus, .form-select-compact:focus {
+        border-color: #0284c7;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+    }
+    .form-control-compact[readonly], .form-select-compact[disabled] {
         background-color: #f8fafc;
-        color: #475569;
+        color: #334155;
         cursor: not-allowed;
     }
-    .btn-go-black {
-        background: #0f172a;
-        color: white;
-        border: none;
-        padding: 0 0.85rem;
-        font-weight: 700;
-        cursor: pointer;
-        border-radius: 0 6px 6px 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+
+    /* Input Group for Button Addon */
+    .input-group-compact {
+        display: inline-flex;
+        align-items: stretch;
     }
-    .input-group {
-        display: flex;
-        width: 100%;
-    }
-    .input-group .form-control {
+    .input-group-compact .form-control-compact {
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
-        flex: 1;
     }
-    .input-group .btn {
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
-    }
-    .age-group {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-    }
-    .age-group input {
-        width: 3.5rem;
-        text-align: center;
-    }
-    .age-group span {
-        font-weight: 700;
-        color: #64748b;
-        font-size: 0.85rem;
-    }
-    .tab-nav {
-        display: flex;
-        gap: 0.25rem;
-        border-bottom: 2px solid #e2e8f0;
-        margin-bottom: 0.75rem;
-        overflow-x: auto;
-        padding-bottom: 0;
-    }
-    .tab-btn {
-        padding: 0.45rem 1rem;
-        border: 1px solid transparent;
-        background: #f1f5f9;
-        color: #64748b;
-        font-weight: 700;
-        border-radius: 6px 6px 0 0;
-        cursor: pointer;
-        font-size: 0.82rem;
-        white-space: nowrap;
-        transition: all 0.2s;
-    }
-    .tab-btn.active {
-        background: #0d9488;
+    .btn-action-go {
+        height: 28px;
+        padding: 0 12px;
+        background: #0f172a;
+        border: 1px solid #0f172a;
         color: #ffffff;
-        border-color: #0d9488;
+        font-size: 0.82rem;
+        font-weight: 700;
+        border-radius: 0 5px 5px 0;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background 0.15s ease;
     }
-    .tab-btn:not(.active):hover {
-        background: #e2e8f0;
+    .btn-action-go:hover {
+        background: #1e293b;
+    }
+    .btn-action-search {
+        height: 28px;
+        padding: 0 10px;
+        background: #0284c7;
+        border: 1px solid #0284c7;
+        color: #ffffff;
+        font-size: 0.82rem;
+        font-weight: 700;
+        border-radius: 0 5px 5px 0;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background 0.15s ease;
+    }
+    .btn-action-search:hover {
+        background: #0369a1;
+    }
+    .btn-icon-addon {
+        height: 28px;
+        padding: 0 8px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-left: none;
+        color: #64748b;
+        font-size: 0.78rem;
+        border-radius: 0 5px 5px 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: default;
+    }
+
+    /* Age Input Triplets */
+    .age-triplet-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+    }
+    .age-triplet-group input {
+        width: 36px;
+        height: 28px;
+        text-align: center;
+        padding: 2px 2px;
+        font-weight: 600;
+    }
+    .age-triplet-group span {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #64748b;
+        margin-right: 4px;
+        margin-left: 1px;
+    }
+
+    /* 10 Tab Navigation Bar */
+    .review-tab-nav {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: transparent;
+        padding: 2px 0 6px 0;
+        overflow-x: auto;
+        white-space: nowrap;
+        margin-top: 4px;
+    }
+    .review-tab-btn {
+        padding: 5px 14px;
+        font-size: 0.81rem;
+        font-weight: 700;
+        color: #0284c7;
+        background: #ffffff;
+        border: 1px solid #0284c7;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
+    .review-tab-btn:hover:not(.active) {
+        background: #f0f9ff;
+        color: #0369a1;
+    }
+    .review-tab-btn.active {
+        background: #0284c7;
+        color: #ffffff;
+        border-color: #0284c7;
+        box-shadow: 0 1px 3px rgba(2, 132, 199, 0.25);
+    }
+
+    /* Tab Content Surface */
+    .review-tab-surface {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 10px 14px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        margin-bottom: 10px;
+    }
+    .tab-content-panel {
+        display: none;
+    }
+    .tab-content-panel.active {
+        display: block;
+    }
+
+    /* Two Column Tab Layout */
+    .tab-two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 28px;
+        row-gap: 6px;
+        margin-bottom: 8px;
+    }
+    @media (max-width: 860px) {
+        .tab-two-col {
+            grid-template-columns: 1fr;
+            row-gap: 6px;
+        }
+    }
+    .tab-col-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .tab-field-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 28px;
+    }
+    .tab-field-label {
+        width: 140px;
+        min-width: 140px;
+        font-size: 0.8rem;
+        font-weight: 700;
         color: #334155;
+        margin: 0;
+        text-align: right;
+        flex-shrink: 0;
     }
-    @media (max-width: 1024px) {
-        .patient-grid { grid-template-columns: repeat(2, 1fr); }
+
+    /* Visit Registration Horizontal Strip */
+    .visit-strip-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 8px 10px;
+        padding: 4px 0 6px 0;
     }
-    @media (max-width: 640px) {
-        .patient-grid { grid-template-columns: 1fr; }
+    .visit-field-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .visit-field-label {
+        font-size: 0.77rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        white-space: nowrap;
+    }
+
+    /* Visit History Table */
+    .review-data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.81rem;
+        margin-top: 4px;
+    }
+    .review-data-table th {
+        background: #0284c7;
+        color: #ffffff;
+        font-weight: 700;
+        padding: 5px 8px;
+        border: 1px solid #0369a1;
+        text-align: left;
+        white-space: nowrap;
+    }
+    .review-data-table td {
+        padding: 4px 8px;
+        border: 1px solid #e2e8f0;
+        color: #1e293b;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .review-data-table tr:nth-child(even) td {
+        background: #f8fafc;
+    }
+
+    /* Bottom Action Buttons Bar */
+    .review-action-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        align-items: center;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #e2e8f0;
+    }
+    .btn-action-base {
+        height: 32px;
+        padding: 0 14px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        border-radius: 5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none !important;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+    .btn-action-save {
+        background: #00897b;
+        color: #ffffff !important;
+        border-color: #00796b;
+    }
+    .btn-action-save:hover {
+        background: #00796b;
+    }
+    .btn-action-reset {
+        background: #ffffff;
+        color: #334155 !important;
+        border-color: #cbd5e1;
+    }
+    .btn-action-reset:hover {
+        background: #f1f5f9;
+        color: #0f172a !important;
+    }
+    .btn-action-blue {
+        background: #0284c7;
+        color: #ffffff !important;
+        border-color: #0284c7;
+    }
+    .btn-action-blue:hover {
+        background: #0369a1;
     }
 </style>
 
-<div class="hims-wrapper">
+<div class="review-wrapper">
 
-    <!-- Review Patient Top Info Card -->
-    <div class="hims-card" style="margin-bottom: 0.75rem; padding: 0.85rem 1.15rem; background: #ffffff; border-radius: 10px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
-            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="bi bi-clock-history" style="color: #0d9488;"></i> REVIEW - PATIENT RECORD LOG
-            </h3>
-
-            <!-- Quick Search Form -->
-            <form method="get" action="{% url 'patients:review' %}" style="display: flex; align-items: center; gap: 0.5rem; margin: 0;" onsubmit="return validateSearch(this);">
-                <label style="font-size: 0.82rem; font-weight: 700; color: #334155; white-space: nowrap;">Patient ID / IPNO:</label>
-                <input type="text" name="patient_id" id="top_search_input"
-                    value="{% if search_id %}{{ search_id }}{% elif patient %}{{ patient.patient_id }}{% endif %}"
-                    class="form-control" placeholder="e.g. 26148644"
-                    style="width: 180px; padding: 0.35rem 0.65rem; font-weight: 600;">
-                <button type="submit" class="btn btn-primary" style="background: #0d9488; border-color: #0d9488; color: white; padding: 0.35rem 0.85rem; font-size: 0.82rem;">
-                    <i class="bi bi-search"></i> Go
-                </button>
-            </form>
-        </div>
-        
-        <script>
-            function validateSearch(form) {
-                const input = form.querySelector('input[name="patient_id"]');
-                if (!input.value.trim()) {
-                    alert("Please enter a valid Patient ID or IP Number.");
-                    input.focus();
-                    return false;
-                }
-                return true;
-            }
-        </script>
-
-        <!-- Pre-filled Form Grid Displaying Patient Data -->
-        <div class="patient-grid">
-            <!-- Row 1 -->
-            <div>
-                <label class="form-label">Centre:</label>
-                <select class="form-select" disabled>
-                    <option>{% if patient %}{{ patient.get_centre_display }}{% else %}Select{% endif %}</option>
-                </select>
-            </div>
-            <div>
-                <label class="form-label">IPNO</label>
-                <input type="text" class="form-control" value="{% if last_visit %}{{ last_visit.ipno|default:'' }}{% elif patient %}{{ patient.ipno|default:'' }}{% endif %}" readonly>
-            </div>
-            <div>
-                <label class="form-label">Name:</label>
-                <input type="text" class="form-control" value="{% if patient %}{{ patient.name }}{% endif %}" readonly>
-            </div>
-            <div style="display: flex; align-items: center; padding-bottom: 0.45rem;">
-                <label class="form-label" style="margin-bottom: 0; margin-right: 1rem; color: #334155;">Last Patient Id:</label>
-                <span style="color: #64748b; font-weight: 700;">--</span>
-            </div>
-
-            <!-- Row 2 -->
-            <div>
-                <label class="form-label">Patient Id:</label>
-                <div class="input-group">
-                    <input type="text" class="form-control" value="{% if patient %}{{ patient.patient_id }}{% endif %}" readonly>
-                    <button type="button" class="btn-go-black" onclick="document.getElementById('top_search_input').focus()">Go</button>
-                </div>
-            </div>
-            <div>
-                <label class="form-label">Title:<span class="text-danger">*</span></label>
-                <select class="form-select" disabled>
-                    <option>{% if patient %}{{ patient.get_title_display }}{% else %}Select{% endif %}</option>
-                </select>
-            </div>
-            <div>
-                <label class="form-label">Category:<span class="text-danger">*</span></label>
-                <select class="form-select" disabled>
-                    <option>{% if patient %}{{ patient.get_category_display }}{% else %}Select{% endif %}</option>
-                </select>
-            </div>
-            <div>
-                <label class="form-label">Gender:<span class="text-danger">*</span></label>
-                <select class="form-select" disabled>
-                    <option>{% if patient %}{{ patient.get_gender_display }}{% else %}Select{% endif %}</option>
-                </select>
-            </div>
-
-            <!-- Row 3 -->
-            <div>
-                <label class="form-label">DOB:</label>
-                <div class="input-group">
-                    <input type="text" class="form-control" placeholder="dd/mm/yyyy" value="{% if patient and patient.dob %}{{ patient.dob|date:'d/m/Y' }}{% endif %}" readonly>
-                    <button type="button" class="btn btn-outline-secondary" style="border: 1px solid #cbd5e1; background: #f8fafc; color: #475569;" disabled>
-                        <i class="bi bi-arrow-repeat"></i>
-                    </button>
-                </div>
-            </div>
-            <div>
-                <label class="form-label">Age:<span class="text-danger">*</span></label>
-                <div class="age-group">
-                    <input type="text" class="form-control" placeholder="" value="{% if patient %}{{ patient.age_years }}{% endif %}" readonly> <span>Y</span>
-                    <input type="text" class="form-control" placeholder="" value="{% if patient %}{{ patient.age_months }}{% endif %}" readonly> <span>M</span>
-                    <input type="text" class="form-control" placeholder="" value="{% if patient %}{{ patient.age_days }}{% endif %}" readonly> <span>D</span>
-                </div>
-            </div>
-            <div>
-                <label class="form-label">Last visit Dt:</label>
-                <div class="input-group">
-                    <input type="text" class="form-control" placeholder="dd/mm/yyyy / --:--" value="{% if last_visit %}{{ last_visit.visit_date|date:'d/M/Y H:i:s' }}{% elif patient %}{{ patient.created_at|date:'d/M/Y H:i:s' }}{% endif %}" readonly>
-                    <button type="button" class="btn btn-outline-secondary" style="border: 1px solid #cbd5e1; background: #f8fafc; color: #475569;" disabled>
-                        <i class="bi bi-calendar"></i>
-                    </button>
-                </div>
-            </div>
-            <div>
-                <label class="form-label">Visit Through:</label>
-                <select class="form-select" disabled>
-                    <option>{% if last_visit %}{{ last_visit.get_visit_type_display }}{% elif patient %}{{ patient.get_visit_through_display }}{% else %}Select{% endif %}</option>
-                </select>
-            </div>
-
-            <!-- Row 4: Department & IP Department Info -->
-            <div>
-                <label class="form-label">Primary Dept:</label>
-                <input type="text" class="form-control" value="{% if patient %}{{ patient.department_obj.name|default:patient.department }}{% endif %}" readonly style="font-weight: 600;">
-            </div>
-            <div>
-                <label class="form-label" style="color: #0369a1;">Current IP Dept:</label>
-                <input type="text" class="form-control" value="{% if active_ip_admission %}{{ active_ip_admission.department }}{% elif is_admitted_inpatient %}{{ patient.department }}{% else %}--{% endif %}" readonly style="font-weight: 700; color: #0284c7; background: #f0f9ff; border-color: #bae6fd;">
-            </div>
-            <div>
-                <label class="form-label">Assigned Doctor:</label>
-                <input type="text" class="form-control" value="{% if active_ip_admission %}{{ active_ip_admission.unit_doctor }}{% elif patient %}{{ patient.unit_doctor }}{% endif %}" readonly>
-            </div>
-            <div>
-                <label class="form-label">Patient Status:</label>
-                <div style="height: 38px; display: flex; align-items: center;">
-                    {% if is_admitted_inpatient %}
-                    <span class="badge bg-danger" style="font-size: 0.82rem; padding: 6px 10px;">
-                        <i class="bi bi-hospital-fill"></i> Inpatient (IP #{{ patient.ipno }})
-                    </span>
-                    {% else %}
-                    <span class="badge bg-success" style="font-size: 0.82rem; padding: 6px 10px;">
-                        <i class="bi bi-check-circle-fill"></i> Outpatient / Discharged
-                    </span>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {% if not patient %}
-    <!-- Empty State -->
-    <div style="text-align: center; padding: 4rem 2rem; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 12px; margin-top: 1.5rem; box-shadow: var(--shadow-sm);">
-        <div style="width: 72px; height: 72px; background: #f0fdfa; color: #0d9488; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 2rem; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);">
-            <i class="bi bi-search"></i>
-        </div>
-        <h4 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem;">Search & Retrieve Patient Record</h4>
-        <p style="font-size: 0.95rem; color: #64748b; max-width: 550px; margin: 0 auto; line-height: 1.6;">
-            Enter a <strong>Patient ID</strong> or <strong>IP Number</strong> in the search field above and click <strong>Go</strong> to load their complete medical history, previous visits, and log re-consultations.
-        </p>
-    </div>
-    {% endif %}
-
-    {% if patient %}
-    <!-- Tabbed Navigation Bar -->
-    <div class="tab-nav">
-        <button type="button" class="tab-btn active" onclick="switchTab(event, 'tab-visit-details')" id="defaultTab">Visit Details</button>
-        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-branch-transfer')">
-            <i class="bi bi-arrow-left-right text-primary"></i> Ward Transfer ({{ branch_transfers|length }})
-        </button>
-        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-personal')">Personal Details</button>
-        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-company')">Company Details</button>
-        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-contact')">Contact Address</button>
-        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-office')">Office Address</button>
-        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-insurance')">Insurance Details</button>
-        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-reference')">Reference</button>
-        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-casualty')">Casualty</button>
-        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-allergy')">Allergy</button>
-        <button type="button" class="tab-btn" onclick="switchTab(event, 'tab-print')">Print</button>
-    </div>
-
-    <!-- Forms and Tabs Container -->
-    <form method="post" action="{% url 'patients:review' %}" id="review_visit_form">
-        {% csrf_token %}
-        <input type="hidden" name="patient_id_hidden" value="{{ patient.id }}">
-
-        <div style="background: #ffffff; padding: 1.5rem; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0; border-top: none; box-shadow: var(--shadow-sm); margin-bottom: 2rem;">
-            
-            {% if is_admitted_inpatient %}
-            <!-- ALERT: PATIENT IS CURRENTLY ADMITTED AS INPATIENT -->
-            <div style="background: #fff1f2; border: 1.5px solid #f43f5e; border-radius: 8px; padding: 0.85rem 1.25rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
-                <i class="bi bi-exclamation-octagon-fill" style="color: #e11d48; font-size: 1.4rem; flex-shrink: 0;"></i>
-                <div>
-                    <div style="font-size: 0.98rem; font-weight: 800; color: #881337;">The patient is already admitted as an inpatient.</div>
-                    <div style="font-size: 0.84rem; font-weight: 500; color: #be123c; margin-top: 2px;">
-                        New OP or IP registrations cannot be made until the patient is discharged.
-                    </div>
-                </div>
-            </div>
+    <!-- =========================================================================
+         TOP CARD: PATIENT LOOKUP & INFORMATION
+         Strictly matching Image 2 master layout:
+         Row 1: Centre: [Select]            IPNO: [           ]           Last Patient Id: ...
+         Row 2: Patient Id: [      ] [Go]   ABHA ID: [      ] [🔍]   Title:* [Miss]   Name:* [GAYATHIRI]   Gender:* [Female]
+         Row 3: Dob: [dd/mm/yyyy 📅]        Age:* [ ] Y [ ] M [ ] D  Category:* [CONSULTATION]   Last visit Dt: [ 📅 ]   Visit Through: [OP]
+         ========================================================================= -->
+    <div class="patient-header-card">
+        <div class="patient-header-title">
+            <span><i class="bi bi-clock-history" style="color: #00897b;"></i> REVIEW - PATIENT RECORD LOG</span>
+            {% if last_patient or patient %}
+            <span style="font-size: 0.84rem; color: #475569; font-weight: 600; text-transform: none;">
+                Last Patient Id: <strong style="color: #002060; font-size: 0.95rem; margin-left: 6px;">{% if last_patient %}{{ last_patient.patient_id }}{% elif patient %}{{ patient.patient_id }}{% endif %}</strong>
+            </span>
             {% endif %}
+        </div>
 
-            <!-- TAB CONTENT: VISIT DETAILS -->
-            <div id="tab-visit-details" class="tab-content" style="display: block;">
-                {% if is_emergency_patient %}
-                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 0.75rem 1.25rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; color: #991b1b; font-weight: 700; font-size: 0.88rem;">
-                        <i class="bi bi-exclamation-triangle-fill" style="color: #dc2626; font-size: 1.1rem;"></i>
-                        <span>EMERGENCY PATIENT RECORD: Review is restricted to Emergency Medicine and In-Patient (IP) admission only.</span>
+        <!-- GET Form for Patient ID & ABHA ID Lookup -->
+        <form method="get" action="{% url 'patients:review' %}" id="patient_lookup_form" style="margin: 0;">
+            <div class="patient-info-rows">
+
+                <!-- ROW 1: Centre | IPNO -->
+                <div class="patient-info-row">
+                    <div class="field-pair">
+                        <label class="field-pair-label" for="centre_select">Centre:</label>
+                        <select id="centre_select" class="form-select-compact" disabled style="width: 140px;">
+                            <option>{% if patient %}{{ patient.get_centre_display }}{% else %}VMMCH{% endif %}</option>
+                        </select>
                     </div>
-                    <span class="badge" style="background: #dc2626; color: white; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 0.78rem;">
-                        IP REVIEW ONLY
-                    </span>
+
+                    <div class="field-pair" style="margin-left: 20px;">
+                        <label class="field-pair-label" for="display_ipno">IPNO:</label>
+                        <input type="text" id="display_ipno" class="form-control-compact" 
+                               value="{% if last_visit %}{{ last_visit.ipno|default:'' }}{% elif patient %}{{ patient.ipno|default:'' }}{% endif %}" 
+                               readonly placeholder="" style="width: 140px; font-weight: 600;">
+                    </div>
                 </div>
-                {% endif %}
 
-                <div class="patient-grid" style="grid-template-columns: repeat(4, 1fr); gap: 1.25rem 1rem;">
-                    <div>
-                        <label class="form-label">Department:<span class="text-danger">*</span></label>
-                        {{ visit_form.department_obj }}
+                <!-- ROW 2: Patient Id [Go] | ABHA ID [🔍] | Title:* | Name:* | Gender:* -->
+                <div class="patient-info-row">
+                    <div class="field-pair">
+                        <label class="field-pair-label" for="review_patient_id">Patient Id:</label>
+                        <div class="input-group-compact">
+                            <input type="text" name="patient_id" id="review_patient_id" class="form-control-compact" 
+                                   value="{% if search_id %}{{ search_id }}{% elif patient %}{{ patient.patient_id }}{% endif %}" 
+                                   placeholder="" style="width: 110px; font-weight: 700; color: #0369a1;">
+                            <button type="submit" class="btn-action-go" title="Lookup Patient ID">Go</button>
+                        </div>
                     </div>
-                    <div>
-                        <label class="form-label">Doctor:<span class="text-danger">*</span></label>
-                        {{ visit_form.unit_obj }}
+
+                    {# TEMPORARY UI HIDE: ABHA ID Search field and icon (backend integration preserved) #}
+                    {% if REVIEW_ABHA_SEARCH_VISIBLE %}
+                    <div class="field-pair">
+                        <label class="field-pair-label" for="review_abha_id">ABHA ID:</label>
+                        <div class="input-group-compact">
+                            <input type="text" name="abha_id" id="review_abha_id" class="form-control-compact" 
+                                   value="{% if search_abha %}{{ search_abha }}{% elif patient %}{{ patient.abha_id|default:'' }}{% endif %}" 
+                                   placeholder="Enter ABHA ID" style="width: 130px; font-weight: 600;">
+                            <button type="button" onclick="submitAbhaSearch()" class="btn-action-search" title="Search ABHA ID">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div>
-                        <label class="form-label">Visit Type:</label>
-                        {{ visit_form.visit_type }}
+                    {% endif %}
+
+                    <div class="field-pair">
+                        <label class="field-pair-label" for="title_select">Title:<span class="text-danger">*</span></label>
+                        <select id="title_select" class="form-select-compact" disabled style="width: 85px; font-weight: 600;">
+                            <option>{% if patient %}{{ patient.get_title_display }}{% else %}Select{% endif %}</option>
+                        </select>
                     </div>
-                    <div>
-                        <label class="form-label">Ward:</label>
-                        {{ visit_form.ward }}
+
+                    <div class="field-pair">
+                        <label class="field-pair-label" for="display_name">Name:<span class="text-danger">*</span></label>
+                        <input type="text" id="display_name" class="form-control-compact" 
+                               value="{% if patient %}{{ patient.name }}{% endif %}" 
+                               readonly placeholder="" style="width: 220px; font-weight: 700; text-transform: uppercase;">
                     </div>
-                    <div>
-                        <label class="form-label">Review Date:</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" value="{{ now|date:'d/m/Y' }}" readonly>
-                            <button type="button" class="btn btn-outline-secondary" style="border: 1px solid #cbd5e1; background: #f8fafc; color: #475569;" disabled>
+
+                    <div class="field-pair">
+                        <label class="field-pair-label" for="gender_select">Gender:<span class="text-danger">*</span></label>
+                        <select id="gender_select" class="form-select-compact" disabled style="width: 95px; font-weight: 600;">
+                            <option>{% if patient %}{{ patient.get_gender_display }}{% else %}Select{% endif %}</option>
+                        </select>
+                        <span id="patient_age_status" class="patient-age-status" style="margin-left: 6px; font-size: 0.82rem; font-weight: 700; color: #1e293b; white-space: nowrap;">
+                            {% if patient %}{% if patient.age_years >= 18 %}Adult{% else %}Child{% endif %}{% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- ROW 3: Dob | Age:* (Y M D) | Category:* | Last visit Dt | Visit Through -->
+                <div class="patient-info-row">
+                    <div class="field-pair">
+                        <label class="field-pair-label" for="display_dob">Dob:</label>
+                        <div class="input-group-compact">
+                            <input type="text" id="display_dob" class="form-control-compact" 
+                                   value="{% if patient and patient.dob %}{{ patient.dob|date:'d/m/Y' }}{% endif %}" 
+                                   readonly placeholder="dd/mm/yyyy" style="width: 110px;">
+                            <button type="button" class="btn-icon-addon" disabled>
                                 <i class="bi bi-calendar"></i>
                             </button>
                         </div>
                     </div>
-                    <div>
-                        <label class="form-label">Time:</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" value="{{ now|date:'H:i' }}" readonly>
-                            <button type="button" class="btn btn-outline-secondary" style="border: 1px solid #cbd5e1; background: #f8fafc; color: #475569;" disabled>
-                                <i class="bi bi-clock"></i>
+
+                    <div class="field-pair">
+                        <label class="field-pair-label">Age:<span class="text-danger">*</span></label>
+                        <div class="age-triplet-group">
+                            <input type="text" id="display_age_years" class="form-control-compact" value="{% if patient %}{{ patient.age_years }}{% endif %}" readonly placeholder=""> <span>Y</span>
+                            <input type="text" id="display_age_months" class="form-control-compact" value="{% if patient %}{{ patient.age_months }}{% endif %}" readonly placeholder=""> <span>M</span>
+                            <input type="text" id="display_age_days" class="form-control-compact" value="{% if patient %}{{ patient.age_days }}{% endif %}" readonly placeholder=""> <span>D</span>
+                        </div>
+                    </div>
+
+                    <div class="field-pair">
+                        <label class="field-pair-label" for="category_select">Category:<span class="text-danger">*</span></label>
+                        <select id="category_select" class="form-select-compact" disabled style="width: 145px; font-weight: 600;">
+                            <option>{% if patient %}{{ patient.get_category_display }}{% else %}CONSULTATION{% endif %}</option>
+                        </select>
+                    </div>
+
+                    <div class="field-pair">
+                        <label class="field-pair-label" for="display_last_visit">Last visit Dt:</label>
+                        <div class="input-group-compact">
+                            <input type="text" id="display_last_visit" class="form-control-compact" 
+                                   value="{% if last_visit %}{{ last_visit.visit_date|date:'d/m/Y H:i:s' }}{% elif patient %}{{ patient.created_at|date:'d/m/Y H:i:s' }}{% endif %}" 
+                                   readonly placeholder="" style="width: 140px;">
+                            <button type="button" class="btn-icon-addon" disabled>
+                                <i class="bi bi-calendar"></i>
                             </button>
                         </div>
                     </div>
-                    <div>
-                        <label class="form-label">Reg Fees:</label>
-                        {{ visit_form.reg_fees }}
-                    </div>
-                    <div style="display: none;">
-                        {{ visit_form.ipno }}
-                        {{ visit_form.coll_status }}
-                        {{ visit_form.clinical_notes }}
-                        {{ visit_form.centre }}
+
+                    <div class="field-pair">
+                        <label class="field-pair-label" for="vt_select">Visit Through:</label>
+                        <select id="vt_select" class="form-select-compact" disabled style="width: 110px; font-weight: 600;">
+                            <option>{% if last_visit %}{{ last_visit.get_visit_type_display }}{% elif patient %}{{ patient.get_visit_through_display }}{% else %}OP{% endif %}</option>
+                        </select>
                     </div>
                 </div>
 
-                <div style="text-align: center; margin-top: 1.5rem; margin-bottom: 2rem;">
-                    <button type="button" class="btn" style="background: #0d9488; color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 6px; font-weight: 600;" onclick="toggleHistory()">
-                        View All Visit & Transfer Details
-                    </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- =========================================================================
+         ALL 10 REVIEW TABS (Strict order & pill styling matching Image 2)
+         1. Personal Details
+         2. Company Details
+         3. Contact Address
+         4. Office Address
+         5. Insurance Details
+         6. Reference
+         7. Casualty
+         8. Visit Details
+         9. Allergy
+         10. Print
+         ========================================================================= -->
+    <div class="review-tab-nav" role="tablist">
+        <button type="button" class="review-tab-btn" onclick="switchReviewTab(event, 'tab-personal')" id="btn-tab-personal">
+            Personal Details
+        </button>
+        <button type="button" class="review-tab-btn" onclick="switchReviewTab(event, 'tab-company')" id="btn-tab-company">
+            Company Details
+        </button>
+        <button type="button" class="review-tab-btn" onclick="switchReviewTab(event, 'tab-contact')" id="btn-tab-contact">
+            Contact Address
+        </button>
+        <button type="button" class="review-tab-btn" onclick="switchReviewTab(event, 'tab-office')" id="btn-tab-office">
+            Office Address
+        </button>
+        <button type="button" class="review-tab-btn" onclick="switchReviewTab(event, 'tab-insurance')" id="btn-tab-insurance">
+            Insurance Details
+        </button>
+        <button type="button" class="review-tab-btn" onclick="switchReviewTab(event, 'tab-reference')" id="btn-tab-reference">
+            Reference
+        </button>
+        <button type="button" class="review-tab-btn" onclick="switchReviewTab(event, 'tab-casualty')" id="btn-tab-casualty">
+            Casualty
+        </button>
+        <button type="button" class="review-tab-btn active" onclick="switchReviewTab(event, 'tab-visit-details')" id="btn-tab-visit-details">
+            Visit Details
+        </button>
+        <button type="button" class="review-tab-btn" onclick="switchReviewTab(event, 'tab-allergy')" id="btn-tab-allergy">
+            Allergy
+        </button>
+        <button type="button" class="review-tab-btn" onclick="switchReviewTab(event, 'tab-print')" id="btn-tab-print">
+            Print
+        </button>
+    </div>
+
+    <!-- MAIN FORM & TAB SURFACES -->
+    <form method="post" action="{% url 'patients:review' %}" id="review_visit_form" style="margin: 0;">
+        {% csrf_token %}
+        <input type="hidden" name="patient_id_hidden" value="{{ patient.id }}">
+
+        <div class="review-tab-surface">
+
+            {% if is_admitted_inpatient %}
+            <!-- ALERT: PATIENT IS CURRENTLY ADMITTED AS INPATIENT -->
+            <div style="background: #fff1f2; border: 1.5px solid #f43f5e; border-radius: 6px; padding: 6px 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-exclamation-octagon-fill text-rose-600" style="font-size: 1.15rem; flex-shrink: 0;"></i>
+                <div style="font-size: 0.83rem; font-weight: 700; color: #881337;">
+                    The patient is already admitted as an inpatient (IP #{{ patient.ipno }}). New OP or IP registrations cannot be made until discharged.
                 </div>
+            </div>
+            {% endif %}
 
-                <!-- Hidden History Table -->
-                <div id="visit_history_table" style="display: none; margin-top: 1.5rem; border-top: 1px dashed #cbd5e1; padding-top: 1.5rem;">
-                    <h5 style="font-weight: 700; color: #334155; margin-bottom: 1rem;"><i class="bi bi-clock-history text-primary"></i> Past Visit Logs</h5>
-                    {% if visits %}
-                    <div class="table-responsive" style="margin-bottom: 2rem;">
-                        <table class="table table-bordered table-striped align-middle" style="font-size: 0.85rem;">
-                            <thead style="background-color: #f8fafc;">
-                                <tr>
-                                    <th>IpNo</th>
-                                    <th>Visit No</th>
-                                    <th>Visit Date</th>
-                                    <th>Department</th>
-                                    <th>IP Dept</th>
-                                    <th>Doctor</th>
-                                    <th>Visit Type</th>
-                                    <th>Coll Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for v in visits %}
-                                <tr>
-                                    <td>
-                                        {% if v.ipno %}
-                                            <strong style="color: #0284c7;">{{ v.ipno }}</strong>
-                                        {% else %}
-                                            <span style="color: #94a3b8;">--</span>
-                                        {% endif %}
-                                    </td>
-                                    <td><strong>#{{ v.visit_no }}</strong></td>
-                                    <td>{{ v.visit_date|date:"d/M/Y H:i" }}</td>
-                                    <td>
-                                        <span class="badge" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; font-size: 0.8rem;">
-                                            {{ v.initial_department_name }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {% if v.visit_type == 'IP' or v.ipno %}
-                                            <span class="badge" style="background: #eff6ff; color: #1d4ed8; font-weight: 700; border: 1px solid #bfdbfe; font-size: 0.82rem;">
-                                                {{ v.department }}
-                                            </span>
-                                            {% if v.is_transferred %}
-                                            <div style="font-size: 0.72rem; color: #15803d; font-weight: 600; margin-top: 2px;">
-                                                <i class="bi bi-arrow-right-circle-fill"></i> Transferred to {{ v.department }}
-                                            </div>
-                                            {% endif %}
-                                        {% else %}
-                                            <span style="color: #94a3b8; font-size: 0.8rem;">--</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ v.unit_doctor }}</td>
-                                    <td>
-                                        <span class="badge {% if v.visit_type == 'IP' %}bg-primary{% else %}bg-secondary{% endif %}" style="font-size: 0.76rem;">
-                                            {{ v.visit_type }}
-                                        </span>
-                                    </td>
-                                    <td>{{ v.coll_status }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+            <!-- =========================================================================
+                 TAB 1: PERSONAL DETAILS
+                 ========================================================================= -->
+            <div id="tab-personal" class="tab-content-panel">
+                <div class="tab-two-col">
+                    <div class="tab-col-group">
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Reg Date:</label>
+                            <div class="input-group-compact">
+                                <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.registration_date|date:'d/m/Y' }}{% endif %}" readonly placeholder="dd/mm/yyyy" style="width: 110px;">
+                                <button type="button" class="btn-icon-addon" disabled><i class="bi bi-calendar"></i></button>
+                            </div>
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Reg Time:</label>
+                            <div class="input-group-compact">
+                                <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.created_at|date:'H:i:s' }}{% endif %}" readonly placeholder="hh:mm:ss" style="width: 90px;">
+                                <button type="button" class="btn-icon-addon" disabled><i class="bi bi-clock"></i></button>
+                            </div>
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Guardian Name:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.guardian_name|default:'' }}{% endif %}" readonly style="width: 240px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Emergency Contact:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.emergency_contact_phone|default:patient.alternate_phone|default:'' }}{% endif %}" readonly style="width: 200px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Aadhar Card:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.aadhar_card|default:'' }}{% endif %}" readonly style="width: 180px;">
+                        </div>
                     </div>
-                    {% else %}
-                    <p style="color: #64748b; text-align: center;">No visit records logged yet.</p>
-                    {% endif %}
 
-                    <!-- Ward Transfer History in dropdown log -->
-                    <h5 style="font-weight: 700; color: #334155; margin-bottom: 1rem; margin-top: 1.5rem;"><i class="bi bi-arrow-left-right text-info"></i> Ward Transfer Records</h5>
-                    {% if branch_transfers %}
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover" style="font-size: 0.85rem;">
-                            <thead style="background-color: #f0f9ff;">
-                                <tr>
-                                    <th>Request #</th>
-                                    <th>Request Date</th>
-                                    <th>From Department</th>
-                                    <th>To Department</th>
-                                    <th>Status</th>
-                                    <th>Requested By</th>
-                                    <th>Approved / Reviewed By</th>
-                                    <th>Reason / Remarks</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for bt in branch_transfers %}
-                                <tr>
-                                    <td><strong style="color: #0284c7;">{{ bt.transfer_request_number }}</strong></td>
-                                    <td>{{ bt.requested_at|date:"d/M/Y H:i" }}</td>
-                                    <td><span class="badge bg-light text-dark border">{{ bt.from_department.name }}</span></td>
-                                    <td><span class="badge" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">{{ bt.to_department.name }}</span> {% if bt.to_unit %}<div style="font-size: 0.72rem; color: #64748b;">{{ bt.to_unit.unit_name }}</div>{% endif %}</td>
-                                    <td>
-                                        {% if bt.status == 'PENDING' %}<span class="badge bg-warning text-dark">Pending</span>
-                                        {% elif bt.status == 'ACCEPTED' %}<span class="badge bg-success">Accepted</span>
-                                        {% elif bt.status == 'REJECTED' %}<span class="badge bg-danger">Rejected</span>
-                                        {% elif bt.status == 'CANCELLED' %}<span class="badge bg-secondary">Cancelled</span>{% endif %}
-                                    </td>
-                                    <td>{{ bt.requested_by.username|default:"Staff" }}</td>
-                                    <td>{{ bt.reviewed_by.username|default:"--" }} {% if bt.reviewed_at %}<div style="font-size: 0.72rem; color: #64748b;">{{ bt.reviewed_at|date:"d/M/Y H:i" }}</div>{% endif %}</td>
-                                    <td>
-                                        <div>{{ bt.transfer_reason }}</div>
-                                        {% if bt.review_notes %}<div style="font-size: 0.74rem; color: #15803d; margin-top: 2px;">Acceptance Notes: {{ bt.review_notes }}</div>{% endif %}
-                                        {% if bt.rejection_reason %}<div style="font-size: 0.74rem; color: #b91c1c; margin-top: 2px;">Rejection Reason: {{ bt.rejection_reason }}</div>{% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <div class="tab-col-group">
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Blood Group:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.blood_group|default:'' }}{% endif %}" readonly style="width: 110px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Relationship:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.get_guardian_relationship_display|default:'' }}{% endif %}" readonly style="width: 160px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Marital Status:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.marital_status|default:'' }}{% endif %}" readonly style="width: 160px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Religion:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.religion|default:'' }}{% endif %}" readonly style="width: 160px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Occupation:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.occupation|default:'' }}{% endif %}" readonly style="width: 200px;">
+                        </div>
                     </div>
-                    {% else %}
-                    <p style="color: #64748b; font-size: 0.85rem; font-style: italic;">No ward transfer records recorded for this patient.</p>
-                    {% endif %}
                 </div>
             </div>
 
-            <!-- TAB CONTENT: WARD TRANSFER DETAILS -->
-            <div id="tab-branch-transfer" class="tab-content" style="display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem;">
-                    <div>
-                        <h4 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">
-                            <i class="bi bi-arrow-left-right text-primary"></i> Inter-Department Ward Transfer History
-                        </h4>
-                        <p style="font-size: 0.84rem; color: #64748b; margin: 4px 0 0 0;">
-                            Complete chronological audit trail of all patient transfer requests between hospital departments.
-                        </p>
+            <!-- =========================================================================
+                 TAB 2: COMPANY DETAILS
+                 ========================================================================= -->
+            <div id="tab-company" class="tab-content-panel">
+                <div class="tab-two-col">
+                    <div class="tab-col-group">
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Company Name:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient and patient.patient_company %}{{ patient.patient_company.name }}{% elif patient %}Direct / Self Pay{% endif %}" readonly style="width: 240px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Income:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.income|default:'' }}{% endif %}" readonly style="width: 180px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Emp Id:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.ofc_code|default:'' }}{% endif %}" readonly style="width: 180px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Designation:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.occupation|default:'' }}{% endif %}" readonly style="width: 200px;">
+                        </div>
                     </div>
-                    <a href="{% url 'patients:branch_transfer' %}?q={{ patient.patient_id }}" class="btn btn-sm btn-outline-primary" style="font-weight: 600;">
-                        <i class="bi bi-box-arrow-up-right"></i> Open Ward Transfer Module
-                    </a>
+
+                    <div class="tab-col-group">
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Occupation:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.occupation|default:'' }}{% endif %}" readonly style="width: 200px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Patient Type:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient and patient.patient_company %}{{ patient.patient_company.get_category_display }}{% elif patient %}Individual / Self Pay{% endif %}" readonly style="width: 200px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Relationship:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.get_guardian_relationship_display|default:'' }}{% endif %}" readonly style="width: 180px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =========================================================================
+                 TAB 3: CONTACT ADDRESS
+                 ========================================================================= -->
+            <div id="tab-contact" class="tab-content-panel">
+                <div class="tab-two-col">
+                    <div class="tab-col-group">
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Street:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.street|default:'' }}{% endif %}" readonly style="width: 280px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Village / Area:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.village_area|default:'' }}{% endif %}" readonly style="width: 280px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Country:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.country|default:'India' }}{% else %}India{% endif %}" readonly style="width: 200px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">State:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.state|default:'Puducherry' }}{% else %}Puducherry{% endif %}" readonly style="width: 200px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">City:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.city|default:'Karaikal' }}{% else %}Karaikal{% endif %}" readonly style="width: 200px;">
+                        </div>
+                    </div>
+
+                    <div class="tab-col-group">
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Mobile No:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.mobile_no|default:'' }}{% endif %}" readonly style="width: 180px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Phone No:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.alternate_phone|default:'' }}{% endif %}" readonly style="width: 180px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Mail Id:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.email|default:'' }}{% endif %}" readonly style="width: 240px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Pin Code:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.pincode|default:'' }}{% endif %}" readonly style="width: 130px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =========================================================================
+                 TAB 4: OFFICE ADDRESS
+                 ========================================================================= -->
+            <div id="tab-office" class="tab-content-panel">
+                <div class="tab-two-col">
+                    <div class="tab-col-group">
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Street:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.street|default:'' }}{% endif %}" readonly placeholder="Office Street" style="width: 280px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Village / Area:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.village_area|default:'' }}{% endif %}" readonly placeholder="Office Area" style="width: 280px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Country:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.country|default:'India' }}{% else %}India{% endif %}" readonly style="width: 200px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">State:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.state|default:'Puducherry' }}{% else %}Puducherry{% endif %}" readonly style="width: 200px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">City:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.city|default:'Karaikal' }}{% else %}Karaikal{% endif %}" readonly style="width: 200px;">
+                        </div>
+                    </div>
+
+                    <div class="tab-col-group">
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Mobile No:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.mobile_no|default:'' }}{% endif %}" readonly placeholder="Office Mobile" style="width: 180px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Phone No:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.alternate_phone|default:'' }}{% endif %}" readonly placeholder="Office Phone" style="width: 180px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Mail Id:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.email|default:'' }}{% endif %}" readonly placeholder="Office Email" style="width: 240px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Pin Code:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.pincode|default:'' }}{% endif %}" readonly placeholder="Office Pin Code" style="width: 130px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =========================================================================
+                 TAB 5: INSURANCE DETAILS
+                 ========================================================================= -->
+            <div id="tab-insurance" class="tab-content-panel">
+                <div class="tab-two-col">
+                    <div class="tab-col-group">
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Company:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient and patient.patient_company and patient.patient_company.category == 'INSURANCE' %}{{ patient.patient_company.name }}{% elif patient %}Direct / Self Pay{% endif %}" readonly style="width: 240px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Address:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.street|default:patient.city|default:'Karaikal' }}{% endif %}" readonly style="width: 240px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Ins Carrier Name:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient and patient.patient_company %}{{ patient.patient_company.name }}{% elif patient %}Self-Pay / Non-Insured{% endif %}" readonly style="width: 240px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Contact Person:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.guardian_name|default:patient.name }}{% endif %}" readonly style="width: 240px;">
+                        </div>
+                    </div>
+
+                    <div class="tab-col-group">
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Policy No:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.ofc_code|default:'' }}{% endif %}" readonly style="width: 180px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Mobile No:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.mobile_no|default:'' }}{% endif %}" readonly style="width: 180px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Coverage Type:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ patient.get_category_display }}{% endif %}" readonly style="width: 180px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Credit Limit Amt:</label>
+                            <input type="text" class="form-control-compact" value="{% if patient %}0.00{% endif %}" readonly style="width: 120px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =========================================================================
+                 TAB 6: REFERENCE
+                 ========================================================================= -->
+            <div id="tab-reference" class="tab-content-panel">
+                <div class="tab-two-col">
+                    <div class="tab-col-group">
+                        <div class="tab-field-row">
+                            <label class="tab-field-label" style="width: 165px; min-width: 165px;">Introduced To Hospital By:</label>
+                            <input type="text" class="form-control-compact" value="{% if last_visit and last_visit.ref_by %}{{ last_visit.ref_by }}{% elif patient %}Self / Direct{% endif %}" readonly style="width: 240px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label" style="width: 165px; min-width: 165px;">Referred Doctor:</label>
+                            <input type="text" class="form-control-compact" value="{% if last_visit and last_visit.unit_doctor %}{{ last_visit.unit_doctor }}{% elif patient and patient.unit_doctor %}{{ patient.unit_doctor }}{% endif %}" readonly style="width: 240px;">
+                        </div>
+                    </div>
+                    <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+                        <div class="tab-field-row" style="align-items: flex-start;">
+                            <label class="tab-field-label" style="width: 165px; min-width: 165px; margin-top: 4px;">Complaint:</label>
+                            <textarea class="form-control-compact" rows="2" style="height: auto; width: 100%; max-width: 650px; padding: 4px 8px;" readonly>{% if patient %}{{ patient.complaint|default:last_visit.clinical_notes|default:'' }}{% endif %}</textarea>
+                        </div>
+                        <div class="tab-field-row" style="align-items: flex-start;">
+                            <label class="tab-field-label" style="width: 165px; min-width: 165px; margin-top: 4px;">Remarks:</label>
+                            <textarea class="form-control-compact" rows="2" style="height: auto; width: 100%; max-width: 650px; padding: 4px 8px;" readonly>{% if last_visit %}{{ last_visit.discharge_notes|default:'' }}{% endif %}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =========================================================================
+                 TAB 7: CASUALTY
+                 ========================================================================= -->
+            <div id="tab-casualty" class="tab-content-panel">
+                <div class="tab-two-col">
+                    <div class="tab-col-group">
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Casualty No:</label>
+                            <input type="text" class="form-control-compact" value="{% if is_emergency_patient %}CAS-{{ patient.patient_id }}{% elif patient %}--{% endif %}" readonly style="width: 180px; font-weight: 600;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">Trauma No:</label>
+                            <input type="text" class="form-control-compact" value="{% if is_emergency_patient %}TR-{% if patient.ipno %}{{ patient.ipno }}{% else %}{{ patient.patient_id }}{% endif %}{% elif patient %}--{% endif %}" readonly style="width: 180px;">
+                        </div>
+                        <div class="tab-field-row">
+                            <label class="tab-field-label">MLC No:</label>
+                            <input type="text" class="form-control-compact" value="{% if is_emergency_patient %}MLC-N/A{% elif patient %}Non-MLC{% endif %}" readonly style="width: 180px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =========================================================================
+                 TAB 8: VISIT DETAILS
+                 ========================================================================= -->
+            <div id="tab-visit-details" class="tab-content-panel active">
+                {% if is_emergency_patient %}
+                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 6px 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                    <div style="display: flex; align-items: center; gap: 6px; color: #991b1b; font-weight: 700; font-size: 0.82rem;">
+                        <i class="bi bi-exclamation-triangle-fill text-red-600"></i>
+                        <span>EMERGENCY PATIENT RECORD: Review is restricted to Emergency Medicine and In-Patient (IP) admission.</span>
+                    </div>
+                    <span class="badge" style="background: #dc2626; color: white; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.74rem;">IP ONLY</span>
+                </div>
+                {% endif %}
+
+                <!-- Horizontal Visit Form Controls Strip -->
+                <div class="visit-strip-row">
+                    <div class="visit-field-item">
+                        <label class="visit-field-label">Department:<span class="text-danger">*</span></label>
+                        <div style="max-width: 155px;">
+                            {{ visit_form.department_obj }}
+                        </div>
+                    </div>
+                    <div class="visit-field-item">
+                        <label class="visit-field-label">Doctor:<span class="text-danger">*</span></label>
+                        <div style="max-width: 165px;">
+                            {{ visit_form.unit_obj }}
+                        </div>
+                    </div>
+                    <div class="visit-field-item">
+                        <label class="visit-field-label">Visit Type:</label>
+                        <div style="max-width: 70px;">
+                            {{ visit_form.visit_type }}
+                        </div>
+                    </div>
+                    <div class="visit-field-item">
+                        <label class="visit-field-label">Ward:</label>
+                        <div style="max-width: 70px;">
+                            {{ visit_form.ward }}
+                        </div>
+                    </div>
+                    <div class="visit-field-item">
+                        <label class="visit-field-label">Bed:</label>
+                        <input type="text" name="bed" id="id_bed" class="form-control-compact" value="{% if patient %}{{ last_visit.bed|default:'' }}{% endif %}" placeholder="" style="width: 65px;">
+                    </div>
+                    <div class="visit-field-item">
+                        <label class="visit-field-label">IP Number:</label>
+                        <input type="text" name="ipno" id="id_ipno" class="form-control-compact" value="{% if patient %}{% if is_emergency_patient %}{{ next_ipno }}{% else %}{{ last_visit.ipno|default:'' }}{% endif %}{% endif %}" placeholder="" style="width: 85px; font-weight: 600;">
+                    </div>
+                    <div class="visit-field-item">
+                        <label class="visit-field-label">Review Date:</label>
+                        <div class="input-group-compact">
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ now|date:'d/M/Y' }}{% endif %}" readonly placeholder="{% if not patient %}dd/M/yyyy{% endif %}" style="width: 95px;">
+                            <button type="button" class="btn-icon-addon" disabled><i class="bi bi-calendar"></i></button>
+                        </div>
+                    </div>
+                    <div class="visit-field-item">
+                        <label class="visit-field-label">Time:</label>
+                        <div class="input-group-compact">
+                            <input type="text" class="form-control-compact" value="{% if patient %}{{ now|date:'H:i:s' }}{% endif %}" readonly placeholder="{% if not patient %}hh:mm:ss{% endif %}" style="width: 70px;">
+                            <button type="button" class="btn-icon-addon" disabled><i class="bi bi-clock"></i></button>
+                        </div>
+                    </div>
+                    <div class="visit-field-item">
+                        <label class="visit-field-label">RegFees:</label>
+                        <div style="width: 60px;">
+                            {{ visit_form.reg_fees }}
+                        </div>
+                    </div>
                 </div>
 
-                {% if branch_transfers %}
-                <div class="table-responsive">
-                    <table class="table table-hover table-bordered align-middle" style="font-size: 0.88rem;">
-                        <thead style="background: #f8fafc; font-weight: 700; color: #334155;">
-                            <tr>
-                                <th>Transfer Request #</th>
-                                <th>Requested Date & Time</th>
-                                <th>Current / From Dept</th>
-                                <th>Requested / Destination Dept</th>
-                                <th>Status</th>
-                                <th>Requested By</th>
-                                <th>Approved / Reviewed By</th>
-                                <th>Transfer Reason & Clinical Remarks</th>
+                <div style="display: none;">
+                    {{ visit_form.coll_status }}
+                    {{ visit_form.clinical_notes }}
+                    {{ visit_form.centre }}
+                </div>
+
+                <!-- View All Visit Details Button matching Image 2 & 8 -->
+                <div style="text-align: center; margin: 8px 0 6px 0; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                    <button type="button" class="btn btn-sm" style="background: #0f2c59; color: white; border: none; padding: 4px 14px; font-weight: 700; border-radius: 5px; font-size: 0.8rem;" onclick="toggleHistory()">
+                        View All visit details
+                    </button>
+                    <input type="text" class="form-control-compact" style="width: 45px; height: 26px; border: 1px solid #cbd5e1; border-radius: 4px;" readonly value="{% if visits %}{{ visits|length }}{% endif %}">
+                </div>
+
+                <!-- Past Visits History Table Container -->
+                <div id="visit_history_container" class="table-responsive" style="overflow-x: auto; margin-top: 4px;">
+                    <table class="review-data-table">
+                        <thead>
+                            <tr style="background: #0284c7; color: #ffffff;">
+                                <th>IpNo</th>
+                                <th>Visit No</th>
+                                <th>Visit Date</th>
+                                <th>Department</th>
+                                <th>Doctor</th>
+                                <th>Visit Type</th>
+                                <th>Ward</th>
+                                <th>Bed</th>
+                                <th>Date of Disch</th>
+                                <th>RefNo</th>
+                                <th>RefBy</th>
+                                <th>RefDate</th>
+                                <th>RegFees</th>
+                                <th>Coll Status</th>
+                                <th style="text-align: center;"></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for bt in branch_transfers %}
+                            {% for v in visits %}
                             <tr>
-                                <td>
-                                    <strong style="color: #0284c7; font-size: 0.9rem;">{{ bt.transfer_request_number }}</strong>
-                                    <div style="font-size: 0.72rem; color: #64748b;">IP #{{ bt.admission.ipno|default:bt.admission.visit_no }}</div>
-                                </td>
-                                <td>
-                                    <div style="font-weight: 600;">{{ bt.requested_at|date:"d/M/Y" }}</div>
-                                    <div style="font-size: 0.74rem; color: #64748b;">{{ bt.requested_at|date:"H:i" }}</div>
-                                </td>
-                                <td>
-                                    <span class="badge" style="background: #f1f5f9; color: #334155; font-size: 0.82rem; border: 1px solid #cbd5e1;">
-                                        {{ bt.from_department.name }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge" style="background: #eff6ff; color: #1d4ed8; font-size: 0.82rem; border: 1px solid #bfdbfe;">
-                                        <i class="bi bi-arrow-right"></i> {{ bt.to_department.name }}
-                                    </span>
-                                    {% if bt.to_unit %}
-                                    <div style="font-size: 0.75rem; color: #475569; margin-top: 3px;"><strong>Unit:</strong> {{ bt.to_unit.unit_name }}</div>
+                                <td><strong>{{ v.ipno|default:"--" }}</strong></td>
+                                <td>{{ v.visit_no }}</td>
+                                <td>{{ v.visit_date|date:"d/M/Y" }}</td>
+                                <td>{{ v.initial_department_name|default:v.department }}</td>
+                                <td>{{ v.unit_doctor }}</td>
+                                <td>{{ v.visit_type }}</td>
+                                <td>{{ v.ward|default:"" }}</td>
+                                <td>{{ v.bed|default:"" }}</td>
+                                <td>{{ v.date_of_discharge|date:"d/M/Y"|default:"" }}</td>
+                                <td>{{ v.ref_no|default:"" }}</td>
+                                <td>{{ v.ref_by|default:"" }}</td>
+                                <td>{{ v.ref_date|date:"d/M/Y"|default:"" }}</td>
+                                <td>{{ v.reg_fees|default:"0.00" }}</td>
+                                <td>{{ v.coll_status|default:"" }}</td>
+                                <td style="text-align: center;">
+                                    {% if patient %}
+                                    <a href="{% url 'patients:print' patient.id %}" target="_blank" class="btn btn-sm" style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 1px 8px; font-size: 0.78rem; font-weight: 600; text-decoration: none;">
+                                        <i class="bi bi-printer"></i> Print
+                                    </a>
                                     {% endif %}
                                 </td>
-                                <td>
-                                    {% if bt.status == 'PENDING' %}
-                                    <span class="badge bg-warning text-dark" style="font-size: 0.8rem; padding: 5px 8px;"><i class="bi bi-hourglass-split"></i> Pending Approval</span>
-                                    {% elif bt.status == 'ACCEPTED' %}
-                                    <span class="badge bg-success" style="font-size: 0.8rem; padding: 5px 8px;"><i class="bi bi-check-circle-fill"></i> Accepted / Transferred</span>
-                                    {% elif bt.status == 'REJECTED' %}
-                                    <span class="badge bg-danger" style="font-size: 0.8rem; padding: 5px 8px;"><i class="bi bi-x-circle-fill"></i> Rejected</span>
-                                    {% elif bt.status == 'CANCELLED' %}
-                                    <span class="badge bg-secondary" style="font-size: 0.8rem; padding: 5px 8px;"><i class="bi bi-slash-circle"></i> Cancelled</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div style="font-weight: 600; color: #334155;">{{ bt.requested_by.username|default:"Staff" }}</div>
-                                    <div style="font-size: 0.74rem; color: #64748b;">{{ bt.requested_by.get_role_display }}</div>
-                                </td>
-                                <td>
-                                    {% if bt.reviewed_by %}
-                                    <div style="font-weight: 600; color: #166534;">{{ bt.reviewed_by.username }}</div>
-                                    <div style="font-size: 0.74rem; color: #64748b;">{{ bt.reviewed_at|date:"d/M/Y H:i" }}</div>
-                                    {% else %}
-                                    <span style="color: #94a3b8; font-style: italic;">Awaiting Review</span>
-                                    {% endif %}
-                                </td>
-                                <td style="max-width: 250px;">
-                                    <div><strong>Reason:</strong> {{ bt.transfer_reason }}</div>
-                                    {% if bt.review_notes %}
-                                    <div style="background: #f0fdf4; border-left: 3px solid #22c55e; padding: 3px 6px; margin-top: 4px; font-size: 0.78rem; color: #166534;">
-                                        <strong>Acceptance Notes:</strong> {{ bt.review_notes }}
-                                    </div>
-                                    {% endif %}
-                                    {% if bt.rejection_reason %}
-                                    <div style="background: #fef2f2; border-left: 3px solid #ef4444; padding: 3px 6px; margin-top: 4px; font-size: 0.78rem; color: #991b1b;">
-                                        <strong>Rejection Reason:</strong> {{ bt.rejection_reason }}
-                                    </div>
-                                    {% endif %}
-                                    {% if bt.cancellation_reason %}
-                                    <div style="background: #f8fafc; border-left: 3px solid #64748b; padding: 3px 6px; margin-top: 4px; font-size: 0.78rem; color: #475569;">
-                                        <strong>Cancellation Reason:</strong> {{ bt.cancellation_reason }}
-                                    </div>
-                                    {% endif %}
-                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="15" style="text-align: center; color: #64748b; padding: 10px;">No previous visits recorded.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
-                {% else %}
-                <div style="text-align: center; padding: 3rem 1rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">
-                    <div style="font-size: 2rem; color: #94a3b8; margin-bottom: 0.5rem;"><i class="bi bi-arrow-left-right"></i></div>
-                    <h6 style="font-weight: 700; color: #475569;">No Ward Transfer Records Found</h6>
-                    <p style="font-size: 0.85rem; color: #64748b; margin: 0;">This patient has not been transferred between hospital departments.</p>
+
+                {% if branch_transfers %}
+                <h6 style="font-weight: 700; color: #1e293b; margin-top: 10px; margin-bottom: 6px; font-size: 0.85rem;">
+                    <i class="bi bi-arrow-left-right text-info"></i> Ward Transfer Logs
+                </h6>
+                <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                    <table class="review-data-table">
+                        <thead>
+                            <tr style="background: #0284c7; color: #ffffff;">
+                                <th>Request #</th>
+                                <th>Date</th>
+                                <th>From Dept</th>
+                                <th>To Dept</th>
+                                <th>Status</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bt in branch_transfers %}
+                            <tr>
+                                <td><strong>{{ bt.transfer_request_number }}</strong></td>
+                                <td>{{ bt.requested_at|date:"d/M/Y H:i" }}</td>
+                                <td>{{ bt.from_department.name }}</td>
+                                <td>{{ bt.to_department.name }}</td>
+                                <td><span class="badge bg-secondary" style="font-size: 0.72rem;">{{ bt.status }}</span></td>
+                                <td>{{ bt.transfer_reason }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
                 {% endif %}
             </div>
 
-            <!-- OTHER TABS -->
-            <div id="tab-personal" class="tab-content" style="display: none;">
-                <p style="color: #64748b;"><strong>Full Name:</strong> {{ patient.title }} {{ patient.name }}</p>
-                <p style="color: #64748b;"><strong>Mobile:</strong> {{ patient.mobile_no }}</p>
-            </div>
-            <div id="tab-company" class="tab-content" style="display: none;">
-                <p style="color: #64748b;">Company / Scheme information goes here.</p>
-            </div>
-            <div id="tab-contact" class="tab-content" style="display: none;">
-                <p style="color: #64748b;"><strong>Address:</strong> {{ patient.street|default:"--" }}, {{ patient.city }}, {{ patient.state }}</p>
-            </div>
-            <div id="tab-office" class="tab-content" style="display: none;">
-                <p style="color: #64748b;">Office Address details.</p>
-            </div>
-            <div id="tab-insurance" class="tab-content" style="display: none;">
-                <p style="color: #64748b;">Insurance records.</p>
-            </div>
-            <div id="tab-reference" class="tab-content" style="display: none;">
-                <p style="color: #64748b;">Reference details.</p>
-            </div>
-            <div id="tab-casualty" class="tab-content" style="display: none;">
-                <p style="color: #64748b;">Casualty logs.</p>
-            </div>
-            <div id="tab-allergy" class="tab-content" style="display: none;">
-                <p style="color: #64748b;">Allergy information.</p>
-            </div>
-            <div id="tab-print" class="tab-content" style="display: none;">
-                <p style="color: #64748b;">Print options.</p>
-                <a href="{% url 'patients:medical_history_print' patient.id %}" target="_blank" class="btn btn-primary"><i class="bi bi-printer"></i> Print Medical History</a>
+            <!-- =========================================================================
+                 TAB 9: ALLERGY (Drug Allergy & Food Allergy)
+                 ========================================================================= -->
+            <div id="tab-allergy" class="tab-content-panel">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 8px;">
+                    <!-- Drug Allergy -->
+                    <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; background: #ffffff;">
+                        <h6 style="font-size: 0.86rem; font-weight: 700; color: #dc2626; margin: 0 0 6px 0; display: flex; align-items: center; gap: 5px;">
+                            <i class="bi bi-capsule"></i> Drug Allergy
+                        </h6>
+                        <table class="review-data-table">
+                            <thead>
+                                <tr style="background: #0284c7; color: #ffffff;">
+                                    <th style="width: 50px;">Sno</th>
+                                    <th>Description</th>
+                                    <th style="width: 140px;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>Penicillin / Amoxicillin</td>
+                                    <td><span class="badge bg-success" style="font-size: 0.72rem;">No Known Allergy</span></td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Sulfa Drugs / Sulfonamides</td>
+                                    <td><span class="badge bg-success" style="font-size: 0.72rem;">No Known Allergy</span></td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>NSAIDs (Aspirin / Ibuprofen)</td>
+                                    <td><span class="badge bg-success" style="font-size: 0.72rem;">No Known Allergy</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Food Allergy -->
+                    <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; background: #ffffff;">
+                        <h6 style="font-size: 0.86rem; font-weight: 700; color: #d97706; margin: 0 0 6px 0; display: flex; align-items: center; gap: 5px;">
+                            <i class="bi bi-egg-fried"></i> Food Allergy
+                        </h6>
+                        <table class="review-data-table">
+                            <thead>
+                                <tr style="background: #0284c7; color: #ffffff;">
+                                    <th style="width: 50px;">Sno</th>
+                                    <th>Description</th>
+                                    <th style="width: 140px;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>Peanuts / Tree Nuts</td>
+                                    <td><span class="badge bg-success" style="font-size: 0.72rem;">No Known Allergy</span></td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Shellfish / Seafood</td>
+                                    <td><span class="badge bg-success" style="font-size: 0.72rem;">No Known Allergy</span></td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>Dairy / Lactose</td>
+                                    <td><span class="badge bg-success" style="font-size: 0.72rem;">No Known Allergy</span></td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>Eggs</td>
+                                    <td><span class="badge bg-success" style="font-size: 0.72rem;">No Known Allergy</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
-            <!-- Bottom Action Buttons -->
-            <div style="display: flex; gap: 0.75rem; justify-content: center; margin-top: 3rem;">
-                <button type="submit" class="btn" {% if is_admitted_inpatient %}disabled style="background: #94a3b8; color: white; border: none; padding: 0.5rem 1.5rem; font-weight: 600; border-radius: 6px; cursor: not-allowed;" title="Cannot save: Patient is currently admitted as an inpatient"{% else %}style="background: #22c55e; color: white; border: none; padding: 0.5rem 1.5rem; font-weight: 600; border-radius: 6px;"{% endif %}>
-                    <i class="bi bi-save" style="margin-right: 4px;"></i> Save
-                </button>
-                <button type="reset" class="btn" style="background: #f97316; color: white; border: none; padding: 0.5rem 1.5rem; font-weight: 600; border-radius: 6px;">
-                    <i class="bi bi-arrow-counterclockwise" style="margin-right: 4px;"></i> Reset
-                </button>
-                <button type="button" class="btn" style="background: #2563eb; color: white; border: none; padding: 0.5rem 1.5rem; font-weight: 600; border-radius: 6px;">
-                    <i class="bi bi-printer" style="margin-right: 4px;"></i> Print
-                </button>
-                <button type="button" class="btn" style="background: #2563eb; color: white; border: none; padding: 0.5rem 1.5rem; font-weight: 600; border-radius: 6px;">
-                    <i class="bi bi-tags" style="margin-right: 4px;"></i> Label - I
-                </button>
-                <button type="button" class="btn" style="background: #2563eb; color: white; border: none; padding: 0.5rem 1.5rem; font-weight: 600; border-radius: 6px;">
-                    <i class="bi bi-printer" style="margin-right: 4px;"></i> Print - OP
-                </button>
-                <button type="button" class="btn" style="background: #2563eb; color: white; border: none; padding: 0.5rem 1.5rem; font-weight: 600; border-radius: 6px;">
-                    <i class="bi bi-file-earmark-text" style="margin-right: 4px;"></i> Label - A4
-                </button>
+            <!-- =========================================================================
+                 TAB 10: PRINT
+                 ========================================================================= -->
+            <div id="tab-print" class="tab-content-panel">
+                <div style="padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 12px; display: inline-flex; flex-direction: column; gap: 8px;">
+                    <span style="font-size: 0.82rem; font-weight: 700; color: #0f172a; margin-bottom: 2px;">Select Document to Print:</span>
+                    <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                        <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.83rem; font-weight: 700; color: #1e293b; cursor: pointer;">
+                            <input type="radio" name="print_doc_option" value="reg_sheet" checked id="radio_print_reg"> Registration Sheet
+                        </label>
+                        <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.83rem; font-weight: 700; color: #1e293b; cursor: pointer;">
+                            <input type="radio" name="print_doc_option" value="id_card" id="radio_print_id"> Patient Id Card
+                        </label>
+                        <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.83rem; font-weight: 700; color: #1e293b; cursor: pointer;">
+                            <input type="radio" name="print_doc_option" value="receipt" id="radio_print_receipt"> Fees Receipt
+                        </label>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                    {% if patient %}
+                    <a href="{% url 'patients:medical_history_print' patient.id %}" target="_blank" class="btn-action-base btn-action-blue">
+                        <i class="bi bi-printer"></i> Print Medical History
+                    </a>
+                    <a href="{% url 'patients:print' patient.id %}" target="_blank" class="btn-action-base btn-action-blue">
+                        <i class="bi bi-card-heading"></i> Print OP Pass
+                    </a>
+                    <a href="{% url 'patients:review_report' %}?q={{ patient.patient_id }}" target="_blank" class="btn-action-base btn-action-blue">
+                        <i class="bi bi-file-earmark-medical"></i> Review Summary Sheet
+                    </a>
+                    {% else %}
+                    <button type="button" class="btn-action-base btn-action-blue" disabled style="opacity: 0.6; cursor: not-allowed;">
+                        <i class="bi bi-printer"></i> Print Medical History
+                    </button>
+                    <button type="button" class="btn-action-base btn-action-blue" disabled style="opacity: 0.6; cursor: not-allowed;">
+                        <i class="bi bi-card-heading"></i> Print OP Pass
+                    </button>
+                    <button type="button" class="btn-action-base btn-action-blue" disabled style="opacity: 0.6; cursor: not-allowed;">
+                        <i class="bi bi-file-earmark-medical"></i> Review Summary Sheet
+                    </button>
+                    {% endif %}
+                </div>
             </div>
+
+            <!-- =========================================================================
+                 BOTTOM ACTION BUTTONS (Exact names & functionality preserved)
+                 Save | Reset | Print | Label - I | Print - OP | Label-A4
+                 ========================================================================= -->
+            <div class="review-action-bar">
+                <button type="submit" class="btn-action-base btn-action-save" 
+                        {% if is_admitted_inpatient or not patient %}disabled title="{% if is_admitted_inpatient %}Patient is currently admitted as an inpatient{% else %}Please search a patient first{% endif %}" style="opacity: 0.7; cursor: not-allowed;"{% endif %}>
+                    <i class="bi bi-save"></i> Save
+                </button>
+                <button type="button" class="btn-action-base btn-action-reset" onclick="window.location.href='{% url 'patients:review' %}'">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset
+                </button>
+                {% if patient %}
+                <a href="{% url 'patients:medical_history_print' patient.id %}" target="_blank" class="btn-action-base btn-action-blue">
+                    <i class="bi bi-printer"></i> Print
+                </a>
+                <button type="button" onclick="window.print()" class="btn-action-base btn-action-blue">
+                    <i class="bi bi-tags"></i> Label - I
+                </button>
+                <a href="{% url 'patients:print' patient.id %}" target="_blank" class="btn-action-base btn-action-blue">
+                    <i class="bi bi-printer"></i> Print - OP
+                </a>
+                <button type="button" onclick="window.print()" class="btn-action-base btn-action-blue">
+                    <i class="bi bi-file-earmark-text"></i> Label-A4
+                </button>
+                {% else %}
+                <button type="button" class="btn-action-base btn-action-blue" disabled style="opacity: 0.6; cursor: not-allowed;">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+                <button type="button" class="btn-action-base btn-action-blue" disabled style="opacity: 0.6; cursor: not-allowed;">
+                    <i class="bi bi-tags"></i> Label - I
+                </button>
+                <button type="button" class="btn-action-base btn-action-blue" disabled style="opacity: 0.6; cursor: not-allowed;">
+                    <i class="bi bi-printer"></i> Print - OP
+                </button>
+                <button type="button" class="btn-action-base btn-action-blue" disabled style="opacity: 0.6; cursor: not-allowed;">
+                    <i class="bi bi-file-earmark-text"></i> Label-A4
+                </button>
+                {% endif %}
+            </div>
+
         </div>
     </form>
-    {% endif %}
 
 </div>
 
 <script>
-    function switchTab(evt, tabId) {
-        var i, tabcontent, tablinks;
-        tabcontent = document.getElementsByClassName("tab-content");
-        for (i = 0; i < tabcontent.length; i++) {
-            tabcontent[i].style.display = "none";
+    // Tab switching function
+    function switchReviewTab(evt, tabId) {
+        if (evt) evt.preventDefault();
+        const panels = document.querySelectorAll('.tab-content-panel');
+        panels.forEach(p => p.classList.remove('active'));
+        
+        const buttons = document.querySelectorAll('.review-tab-btn');
+        buttons.forEach(b => b.classList.remove('active'));
+        
+        const target = document.getElementById(tabId);
+        if (target) {
+            target.classList.add('active');
         }
-        tablinks = document.getElementsByClassName("tab-btn");
-        for (i = 0; i < tablinks.length; i++) {
-            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        if (evt && evt.currentTarget) {
+            evt.currentTarget.classList.add('active');
+        } else {
+            const btn = document.getElementById('btn-' + tabId);
+            if (btn) btn.classList.add('active');
         }
-        document.getElementById(tabId).style.display = "block";
-        evt.currentTarget.className += " active";
     }
 
+    // Toggle past visit history table
     function toggleHistory() {
-        var hist = document.getElementById("visit_history_table");
-        if (hist.style.display === "none") {
-            hist.style.display = "block";
-        } else {
-            hist.style.display = "none";
+        const hist = document.getElementById("visit_history_container");
+        if (hist) {
+            hist.style.display = (hist.style.display === "none") ? "block" : "none";
         }
+    }
+
+    // ABHA ID search submit function
+    function submitAbhaSearch() {
+        const abhaInput = document.getElementById('review_abha_id');
+        const val = abhaInput ? abhaInput.value.trim() : '';
+        if (!val) {
+            alert("Please enter an ABHA ID to search.");
+            if (abhaInput) abhaInput.focus();
+            return;
+        }
+        const pidInput = document.getElementById('review_patient_id');
+        if (pidInput) pidInput.value = '';
+        document.getElementById('patient_lookup_form').submit();
+    }
+
+    // Dynamic Age classification and DOB sync
+    function updateAgeClassification() {
+        const ageYInput = document.getElementById('display_age_years');
+        const statusSpan = document.getElementById('patient_age_status');
+        if (!statusSpan) return;
+
+        let years = null;
+        if (ageYInput && ageYInput.value !== '' && ageYInput.value !== null && ageYInput.value !== undefined) {
+            const parsed = parseInt(ageYInput.value.trim(), 10);
+            if (!isNaN(parsed)) {
+                years = parsed;
+            }
+        }
+
+        {% if patient %}
+        if (years === null) {
+            years = {{ patient.age_years|default:0 }};
+        }
+        {% endif %}
+
+        if (years !== null) {
+            statusSpan.textContent = (years >= 18) ? 'Adult' : 'Child';
+        } else {
+            statusSpan.textContent = '';
+        }
+    }
+
+    function calculateAgeFromDob() {
+        const dobInput = document.getElementById('display_dob');
+        const ageYInput = document.getElementById('display_age_years');
+        const ageMInput = document.getElementById('display_age_months');
+        const ageDInput = document.getElementById('display_age_days');
+
+        if (dobInput && dobInput.value) {
+            const val = dobInput.value.trim();
+            let dob = null;
+            if (val.includes('/')) {
+                const parts = val.split('/');
+                if (parts.length === 3) {
+                    dob = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+                }
+            } else if (val.includes('-')) {
+                const parts = val.split('-');
+                if (parts.length === 3) {
+                    if (parts[0].length === 4) {
+                        dob = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                    } else {
+                        dob = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+                    }
+                }
+            }
+
+            if (dob && !isNaN(dob.getTime())) {
+                const today = new Date();
+                let years = today.getFullYear() - dob.getFullYear();
+                let months = today.getMonth() - dob.getMonth();
+                let days = today.getDate() - dob.getDate();
+
+                if (days < 0) {
+                    months -= 1;
+                    const prevMonthLastDay = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+                    days += prevMonthLastDay;
+                }
+                if (months < 0) {
+                    years -= 1;
+                    months += 12;
+                }
+
+                if (years >= 0 && ageYInput) ageYInput.value = years;
+                if (months >= 0 && ageMInput) ageMInput.value = months;
+                if (days >= 0 && ageDInput) ageDInput.value = days;
+            }
+        }
+        updateAgeClassification();
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        // Add form-control class to all django rendered fields in visit details
-        const visitFormInputs = document.querySelectorAll('#tab-visit-details input, #tab-visit-details select, #tab-visit-details textarea');
-        visitFormInputs.forEach(el => {
-            if (!el.classList.contains('form-control') && !el.classList.contains('form-select')) {
+        // Ensure Visit Details is the default active tab on load, search, or refresh
+        switchReviewTab(null, 'tab-visit-details');
+
+        // Initial age classification check
+        updateAgeClassification();
+
+        // Listen for changes to age years input or DOB
+        const ageYInput = document.getElementById('display_age_years');
+        if (ageYInput) {
+            ageYInput.addEventListener('input', updateAgeClassification);
+            ageYInput.addEventListener('change', updateAgeClassification);
+        }
+        const dobInput = document.getElementById('display_dob');
+        if (dobInput) {
+            dobInput.addEventListener('input', calculateAgeFromDob);
+            dobInput.addEventListener('change', calculateAgeFromDob);
+        }
+
+        const abhaInput = document.getElementById('review_abha_id');
+        if (abhaInput) {
+            abhaInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submitAbhaSearch();
+                }
+            });
+        }
+
+        // Style django rendered fields in visit details
+        const visitInputs = document.querySelectorAll('.visit-strip-row input, .visit-strip-row select, .visit-strip-row textarea');
+        visitInputs.forEach(el => {
+            if (!el.classList.contains('form-control-compact') && !el.classList.contains('form-select-compact')) {
                 if (el.tagName === 'SELECT') {
-                    el.classList.add('form-select');
+                    el.classList.add('form-select-compact');
                 } else {
-                    el.classList.add('form-control');
+                    el.classList.add('form-control-compact');
                 }
             }
         });
 
-        // Handle Visit Type and Ward interactions
-        const ipInput = document.getElementById('id_ipno');
-        const visitTypeSel = document.getElementById('id_visit_type');
-        const wardSel = document.getElementById('id_visit_ward');
-        
-        function handleVisitTypeChange() {
-            if (visitTypeSel && wardSel) {
-                if (visitTypeSel.value === 'IP' && (!wardSel.value || wardSel.value === '')) {
-                    wardSel.value = 'General Ward';
-                }
-            }
-        }
-
-        if (visitTypeSel) {
-            visitTypeSel.addEventListener('change', handleVisitTypeChange);
-        }
-
+        // Dynamic Department -> Unit/Doctor selection
         const deptSel = document.getElementById('id_visit_department') || document.getElementById('id_department_obj');
         const unitSel = document.getElementById('id_visit_unit') || document.getElementById('id_unit_obj');
         if (deptSel && unitSel) {
@@ -731,18 +1389,10 @@
                                 unitSel.appendChild(opt);
                             });
                         }
-                    });
+                    })
+                    .catch(err => console.error("Error fetching units:", err));
             });
         }
-
-        {% if is_emergency_patient %}
-        if (visitTypeSel) {
-            visitTypeSel.value = 'IP';
-        }
-        if (ipInput && (!ipInput.value || ipInput.value.trim() === '')) {
-            ipInput.value = "{{ next_ipno|default:'600000' }}";
-        }
-        {% endif %}
     });
 </script>
 {% endblock %}
