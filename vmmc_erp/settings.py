@@ -135,6 +135,13 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'core:dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
+# ============================================================
+# Session Timeout Configuration (5 Minutes / 300 Seconds)
+# ============================================================
+SESSION_COOKIE_AGE = int(os.getenv('SESSION_COOKIE_AGE', 300))  # 5 minutes in seconds
+SESSION_SAVE_EVERY_REQUEST = True  # Resets the 5-minute inactivity timer on each user request
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Expires session when the browser is closed
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

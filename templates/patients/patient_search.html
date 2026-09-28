@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load permission_tags %}
 
 {% block title %}Search Patients | VMMCerp{% endblock %}
 {% block page_heading %}Patient Search & Lookup{% endblock %}
@@ -200,12 +201,19 @@
                         <td>{{ patient.created_at|date:"d/M/Y H:i" }}</td>
                         <td>
                             <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                {% if request.user|has_perm:'search_patient.edit' or request.user|has_perm:'patient_list.edit' %}
                                 <a href="{% url 'patients:edit' patient.id %}" class="btn-edit-sm" title="Edit Patient">
                                     <i class="bi bi-pencil"></i> Edit
                                 </a>
+                                {% endif %}
+
+                                {% if request.user|has_perm:'search_patient.print' or request.user|has_perm:'patient_list.print' or request.user|has_perm:'search_patient.export' or request.user|has_perm:'patient_list.export' %}
                                 <a href="{% url 'patients:print' patient.id %}" target="_blank" class="btn-print-sm" title="Print OP Pass">
                                     <i class="bi bi-printer"></i> Print OP
                                 </a>
+                                {% endif %}
+
+                                {% if request.user|has_perm:'search_patient.delete' or request.user|has_perm:'patient_list.delete' %}
                                 {% if patient.patient_type != 'D' and patient.created_source != 'D' %}
                                 <form method="post" action="{% url 'patients:delete' patient.id %}" onsubmit="return confirm('Delete patient {{ patient.name }}?');" style="margin: 0;">
                                     {% csrf_token %}
@@ -213,6 +221,7 @@
                                         <i class="bi bi-trash"></i> Delete
                                     </button>
                                 </form>
+                                {% endif %}
                                 {% endif %}
                             </div>
                         </td>

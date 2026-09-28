@@ -11,7 +11,7 @@
             <h2 class="panel-title" style="margin: 0; font-size: 1.15rem;">Patient Directory</h2>
             <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 2px; margin-bottom: 0;">Comprehensive list of registered OPD and IPD hospital patients.</p>
         </div>
-        {% if request.user|has_perm:'patients.patient_list.create' %}
+        {% if request.user|can_create:'patient_list' or request.user|can_create:'add_patient' %}
         <a href="{% url 'patients:add' %}" class="btn btn-primary" style="padding: 0.4rem 0.85rem;">
             <i class="bi bi-person-plus-fill"></i> Add New Patient
         </a>
@@ -74,7 +74,7 @@
             </div>
         </div>
         
-        {% if request.user|has_perm:'patients.patient_list.export' %}
+        {% if request.user|can_export:'patient_list' %}
         <div>
             <button type="button" class="btn" style="background: #16a34a; color: white; border: none; padding: 0.5rem 1rem;" onclick="exportExcel()">
                 <i class="bi bi-file-earmark-excel"></i> Export Excel
@@ -281,14 +281,14 @@
                         
                         let actionsHtml = '<div style="display: flex; align-items: center; gap: 0.4rem;">';
                         
-                        {% if request.user|has_perm:'patients.patient_list.update' %}
+                        {% if request.user|can_edit:'patient_list' %}
                         actionsHtml += `
                             <a href="/patients/${pk}/edit/" class="btn-edit-sm" title="Edit Patient Details">
                                 <i class="bi bi-pencil"></i> Edit
                             </a>`;
                         {% endif %}
                         
-                        {% if request.user|has_perm:'patients.patient_list.delete' %}
+                        {% if request.user|can_delete:'patient_list' %}
                         const ptype = row.getAttribute('data-patient-type');
                         if (ptype !== 'D') {
                             actionsHtml += `

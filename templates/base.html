@@ -25,6 +25,7 @@
             }
         }
     </script>
+    {% block extra_css %}{% endblock %}
     <style>
         html,
         body {
@@ -1494,6 +1495,55 @@
         c.appendChild(t);
         setTimeout(function(){if(window.vmmcDismissToast)window.vmmcDismissToast(id);},3000);
     }
+
+    // 5-Minute Inactivity Session Timeout Watcher
+    (function() {
+        var INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes (300,000 ms)
+        var WARNING_BEFORE_MS = 30 * 1000;         // 30 seconds warning
+        var timeoutTimer = null;
+        var warningTimer = null;
+        var lastActivity = Date.now();
+        var isWarningShown = false;
+
+        function resetInactivityTimer() {
+            var now = Date.now();
+            if (now - lastActivity < 500 && !isWarningShown) return;
+            lastActivity = now;
+
+            if (timeoutTimer) clearTimeout(timeoutTimer);
+            if (warningTimer) clearTimeout(warningTimer);
+
+            if (isWarningShown) {
+                isWarningShown = false;
+            }
+
+            // Set warning timer at 4 minutes 30 seconds
+            warningTimer = setTimeout(showTimeoutWarning, INACTIVITY_TIMEOUT_MS - WARNING_BEFORE_MS);
+            // Set final logout timer at 5 minutes
+            timeoutTimer = setTimeout(handleSessionTimeout, INACTIVITY_TIMEOUT_MS);
+        }
+
+        function showTimeoutWarning() {
+            isWarningShown = true;
+            if (window.vmmcShowToast) {
+                window.vmmcShowToast("Your session will expire in 30 seconds due to inactivity. Move your mouse or press any key to continue working.", false);
+            }
+        }
+
+        function handleSessionTimeout() {
+            // Automatically log out and redirect with timeout notification
+            window.location.href = "{% url 'logout' %}?timeout=1";
+        }
+
+        // Broad range of interaction events that prove user presence
+        var activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click', 'wheel', 'input'];
+        activityEvents.forEach(function(evt) {
+            window.addEventListener(evt, resetInactivityTimer, { passive: true });
+        });
+
+        // Initialize timers
+        resetInactivityTimer();
+    })();
     </script>
     {% endif %}
 
