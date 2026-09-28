@@ -818,15 +818,28 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         search_id = self.request.GET.get('patient_id', '').strip()
+        search_ipno = self.request.GET.get('ipno', '').strip()
         search_abha = self.request.GET.get('abha_id', '').strip()
         patient = None
 
-        if search_id:
+        if search_ipno:
+            patient = Patient.objects.filter(ipno__iexact=search_ipno).first()
+            if not patient:
+                visit = PatientVisit.objects.filter(ipno__iexact=search_ipno).select_related('patient').order_by('-visit_date', '-id').first()
+                if visit:
+                    patient = visit.patient
+            if not patient:
+                messages.warning(self.request, "Patient/IP number not found.")
+        elif search_id:
             patient = Patient.objects.filter(
                 Q(patient_id__iexact=search_id) | Q(ipno__iexact=search_id) | Q(op_number__iexact=search_id)
             ).first()
             if not patient:
-                messages.warning(self.request, f"No patient record found for ID / IPNO '{search_id}'.")
+                visit = PatientVisit.objects.filter(ipno__iexact=search_id).select_related('patient').order_by('-visit_date', '-id').first()
+                if visit:
+                    patient = visit.patient
+                else:
+                    messages.warning(self.request, f"No patient record found for ID / IPNO '{search_id}'.")
         elif search_abha:
             patient = Patient.objects.filter(
                 Q(abha_id__iexact=search_abha) | Q(abha_id__icontains=search_abha)
@@ -835,7 +848,8 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
                 messages.warning(self.request, f"No patient record found for ABHA ID '{search_abha}'.")
 
         context['patient'] = patient
-        context['search_id'] = search_id
+        context['search_id'] = patient.patient_id if patient else search_id
+        context['search_ipno'] = search_ipno
         context['search_abha'] = search_abha
         context['all_patients'] = Patient.objects.all().order_by('-id')[:50]
         context['now'] = timezone.now()
@@ -843,6 +857,14 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
         context['REVIEW_ABHA_SEARCH_VISIBLE'] = False  # Temporarily hidden from Review UI per specification; backend intact
 
         if patient:
+            # Synchronize actual age from DOB if DOB is available
+            if patient.dob:
+                today = timezone.localdate() if hasattr(timezone, 'localdate') else timezone.now().date()
+                dob = patient.dob
+                calc_years = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                if calc_years >= 0:
+                    patient.age_years = calc_years
+
             is_emergency = (
                 str(patient.patient_id or '').upper().startswith('E') or 
                 patient.category in ['EMERGENCY', 'CASUALTY'] or
@@ -872,6 +894,8 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
 
             context['visits'] = patient.visits.all().order_by('-visit_no')
             context['last_visit'] = patient.visits.order_by('-visit_no').first()
+            if not search_ipno:
+                context['search_ipno'] = (context['last_visit'].ipno if context['last_visit'] and context['last_visit'].ipno else patient.ipno) or ''
             context['branch_transfers'] = BranchTransferRequest.objects.filter(patient=patient).select_related(
                 'from_department', 'to_department', 'to_unit', 'requested_by', 'reviewed_by', 'cancelled_by'
             ).order_by('-requested_at')

@@ -395,10 +395,13 @@
                     </div>
 
                     <div class="field-pair" style="margin-left: 20px;">
-                        <label class="field-pair-label" for="display_ipno">IPNO:</label>
-                        <input type="text" id="display_ipno" class="form-control-compact" 
-                               value="{% if last_visit %}{{ last_visit.ipno|default:'' }}{% elif patient %}{{ patient.ipno|default:'' }}{% endif %}" 
-                               readonly placeholder="" style="width: 140px; font-weight: 600;">
+                        <label class="field-pair-label" for="review_ipno">IPNO:</label>
+                        <div class="input-group-compact">
+                            <input type="text" name="ipno" id="review_ipno" class="form-control-compact"
+                                   value="{% if search_ipno %}{{ search_ipno }}{% elif last_visit %}{{ last_visit.ipno|default:'' }}{% elif patient %}{{ patient.ipno|default:'' }}{% endif %}"
+                                   placeholder="" style="width: 110px; font-weight: 700; color: #0369a1;">
+                            <button type="button" id="btn_ipno_go" onclick="submitIpnoSearch()" class="btn-action-go" title="Lookup IPNO">Go</button>
+                        </div>
                     </div>
                 </div>
 
@@ -410,7 +413,7 @@
                             <input type="text" name="patient_id" id="review_patient_id" class="form-control-compact" 
                                    value="{% if search_id %}{{ search_id }}{% elif patient %}{{ patient.patient_id }}{% endif %}" 
                                    placeholder="" style="width: 110px; font-weight: 700; color: #0369a1;">
-                            <button type="submit" class="btn-action-go" title="Lookup Patient ID">Go</button>
+                            <button type="button" id="btn_patient_id_go" onclick="submitPatientIdSearch()" class="btn-action-go" title="Lookup Patient ID">Go</button>
                         </div>
                     </div>
 
@@ -449,7 +452,7 @@
                             <option>{% if patient %}{{ patient.get_gender_display }}{% else %}Select{% endif %}</option>
                         </select>
                         <span id="patient_age_status" class="patient-age-status" style="margin-left: 6px; font-size: 0.82rem; font-weight: 700; color: #1e293b; white-space: nowrap;">
-                            {% if patient %}{% if patient.age_years >= 18 %}Adult{% else %}Child{% endif %}{% endif %}
+                            {% if patient %}{% if patient.age_years >= 12 %}Adult{% else %}Child{% endif %}{% endif %}
                         </span>
                     </div>
                 </div>
@@ -910,7 +913,7 @@
                     </div>
                     <div class="visit-field-item">
                         <label class="visit-field-label">IP Number:</label>
-                        <input type="text" name="ipno" id="id_ipno" class="form-control-compact" value="{% if patient %}{% if is_emergency_patient %}{{ next_ipno }}{% else %}{{ last_visit.ipno|default:'' }}{% endif %}{% endif %}" placeholder="" style="width: 85px; font-weight: 600;">
+                        <input type="text" name="ipno" id="id_ipno" class="form-control-compact" value="{% if patient %}{% if is_emergency_patient %}{{ next_ipno }}{% else %}{{ last_visit.ipno|default:'' }}{% endif %}{% endif %}" readonly placeholder="" style="width: 85px; font-weight: 600;">
                     </div>
                     <div class="visit-field-item">
                         <label class="visit-field-label">Review Date:</label>
@@ -1235,6 +1238,38 @@
         }
     }
 
+    // IPNO search submit function
+    function submitIpnoSearch() {
+        const ipnoInput = document.getElementById('review_ipno');
+        const val = ipnoInput ? ipnoInput.value.trim() : '';
+        if (!val) {
+            alert("Please enter an IP number to search.");
+            if (ipnoInput) ipnoInput.focus();
+            return;
+        }
+        const pidInput = document.getElementById('review_patient_id');
+        if (pidInput) pidInput.value = '';
+        const abhaInput = document.getElementById('review_abha_id');
+        if (abhaInput) abhaInput.value = '';
+        document.getElementById('patient_lookup_form').submit();
+    }
+
+    // Patient ID search submit function
+    function submitPatientIdSearch() {
+        const pidInput = document.getElementById('review_patient_id');
+        const val = pidInput ? pidInput.value.trim() : '';
+        if (!val) {
+            alert("Please enter a Patient ID to search.");
+            if (pidInput) pidInput.focus();
+            return;
+        }
+        const ipnoInput = document.getElementById('review_ipno');
+        if (ipnoInput) ipnoInput.value = '';
+        const abhaInput = document.getElementById('review_abha_id');
+        if (abhaInput) abhaInput.value = '';
+        document.getElementById('patient_lookup_form').submit();
+    }
+
     // ABHA ID search submit function
     function submitAbhaSearch() {
         const abhaInput = document.getElementById('review_abha_id');
@@ -1246,6 +1281,8 @@
         }
         const pidInput = document.getElementById('review_patient_id');
         if (pidInput) pidInput.value = '';
+        const ipnoInput = document.getElementById('review_ipno');
+        if (ipnoInput) ipnoInput.value = '';
         document.getElementById('patient_lookup_form').submit();
     }
 
@@ -1270,7 +1307,8 @@
         {% endif %}
 
         if (years !== null) {
-            statusSpan.textContent = (years >= 18) ? 'Adult' : 'Child';
+            // Age rule: Age below 12 -> Child, Age 12 and above -> Adult
+            statusSpan.textContent = (years >= 12) ? 'Adult' : 'Child';
         } else {
             statusSpan.textContent = '';
         }
@@ -1329,8 +1367,12 @@
         // Ensure Visit Details is the default active tab on load, search, or refresh
         switchReviewTab(null, 'tab-visit-details');
 
-        // Initial age classification check
-        updateAgeClassification();
+        // Initial age classification check & DOB sync
+        if (document.getElementById('display_dob') && document.getElementById('display_dob').value) {
+            calculateAgeFromDob();
+        } else {
+            updateAgeClassification();
+        }
 
         // Listen for changes to age years input or DOB
         const ageYInput = document.getElementById('display_age_years');
@@ -1342,6 +1384,27 @@
         if (dobInput) {
             dobInput.addEventListener('input', calculateAgeFromDob);
             dobInput.addEventListener('change', calculateAgeFromDob);
+        }
+
+        // Enter key listeners on IPNO and Patient ID search fields
+        const ipnoInput = document.getElementById('review_ipno');
+        if (ipnoInput) {
+            ipnoInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submitIpnoSearch();
+                }
+            });
+        }
+
+        const pidInput = document.getElementById('review_patient_id');
+        if (pidInput) {
+            pidInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submitPatientIdSearch();
+                }
+            });
         }
 
         const abhaInput = document.getElementById('review_abha_id');
