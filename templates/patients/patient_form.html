@@ -174,11 +174,17 @@
         gap: 3px;
     }
     .age-triple-wrap input {
-        width: 40px !important;
+        width: 44px !important;
         height: 24px !important;
         text-align: center;
-        padding: 1px !important;
+        padding: 1px 2px !important;
         font-weight: 600;
+        -moz-appearance: textfield;
+    }
+    .age-triple-wrap input::-webkit-outer-spin-button,
+    .age-triple-wrap input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
     }
     .age-unit-label {
         font-size: 0.74rem;
@@ -422,7 +428,7 @@
                 <!-- ======================================================= -->
                 <div class="reg-col-left">
 
-                    <!-- 1. IPNO -->
+                    <!-- 1. IPNO (Mode-specific) -->
                     <div class="reg-field-row mode-hidden" id="row_ipno">
                         <label class="reg-field-label" for="id_ipno">IPNO</label>
                         <div class="reg-field-input-wrap" style="max-width: 160px;">
@@ -445,25 +451,23 @@
                         </div>
                     </div>
 
-                    <!-- 3. Title (Mandatory) -->
-                    <div class="reg-field-row" id="row_title">
-                        <label class="reg-field-label" for="id_title" id="lblTitle">Title: <span class="req-star">*</span></label>
-                        <div class="reg-field-input-wrap" style="max-width: 130px; flex-direction: column; align-items: flex-start;">
-                            {{ form.title }}
-                            {% if form.title.errors %}<span class="js-field-error">{{ form.title.errors.0 }}</span>{% endif %}
-                        </div>
-                    </div>
-
-                    <!-- 4. Name (Mandatory) -->
+                    <!-- 3. Name (Title + Patient Name) -->
                     <div class="reg-field-row" id="row_name">
-                        <label class="reg-field-label" for="id_name">Name: <span class="req-star">*</span></label>
+                        <label class="reg-field-label" for="id_name" id="lblName">Name: <span class="req-star">*</span></label>
                         <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
-                            {{ form.name }}
+                            <div style="display: flex; gap: 4px; width: 100%;">
+                                <div style="width: 80px; min-width: 80px;">
+                                    {{ form.title }}
+                                </div>
+                                <div style="flex: 1;">
+                                    {{ form.name }}
+                                </div>
+                            </div>
                             {% if form.name.errors %}<span class="js-field-error">{{ form.name.errors.0 }}</span>{% endif %}
                         </div>
                     </div>
 
-                    <!-- 5. Gender (Mandatory) -->
+                    <!-- 4. Gender (Mandatory) -->
                     <div class="reg-field-row" id="row_gender">
                         <label class="reg-field-label" for="id_gender">Gender: <span class="req-star">*</span></label>
                         <div class="reg-field-input-wrap" style="max-width: 130px; flex-direction: column; align-items: flex-start;">
@@ -472,18 +476,7 @@
                         </div>
                     </div>
 
-                    <!-- 6. DOB + Calc Age Refresh -->
-                    <div class="reg-field-row" id="row_dob">
-                        <label class="reg-field-label" for="id_dob">DOB:</label>
-                        <div class="reg-field-input-wrap" style="display: flex; gap: 5px; max-width: 210px;">
-                            {{ form.dob }}
-                            <button type="button" class="btn-icon-refresh" id="btnCalcAgeFromDOB" title="Calculate Age from Date of Birth">
-                                <i class="bi bi-arrow-repeat"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 7. Age (Years / Months / Days) (Mandatory) -->
+                    <!-- 5. Age (Years / Months / Days) (Mandatory) -->
                     <div class="reg-field-row" id="row_age">
                         <label class="reg-field-label" for="id_age_years">Age: <span class="req-star">*</span></label>
                         <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
@@ -496,119 +489,7 @@
                         </div>
                     </div>
 
-                    <!-- 8. Aadhar Card -->
-                    <div class="reg-field-row" id="row_aadhar">
-                        <label class="reg-field-label" for="id_aadhar_card">Aadhar Card:</label>
-                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
-                            {{ form.aadhar_card }}
-                            {% if form.aadhar_card.errors %}<span class="js-field-error">{{ form.aadhar_card.errors.0 }}</span>{% endif %}
-                        </div>
-                    </div>
-
-                    <!-- 9. Mobile No (without 91) - Left Column Last Lane -->
-                    <div class="reg-field-row" id="row_mobile">
-                        <label class="reg-field-label" for="id_mobile_no" id="lblMobile">Mobile No (without 91):</label>
-                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
-                            {{ form.mobile_no }}
-                            {% if form.mobile_no.errors %}<span class="js-field-error">{{ form.mobile_no.errors.0 }}</span>{% endif %}
-                        </div>
-                    </div>
-
-                    <!-- 10. Passport Number (Mandatory in NRI Mode) -->
-                    <div class="reg-field-row mode-hidden" id="row_passport">
-                        <label class="reg-field-label" for="id_passport_number" id="lblPassport">Passport Number:</label>
-                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
-                            {{ form.passport_number }}
-                            {% if form.passport_number.errors %}<span class="js-field-error">{{ form.passport_number.errors.0 }}</span>{% endif %}
-                        </div>
-                    </div>
-
-                    <!-- 11. Identification Mark -->
-                    <div class="reg-field-row mode-hidden" id="row_identification">
-                        <label class="reg-field-label" for="id_identification_mark">Identification Mark:</label>
-                        <div class="reg-field-input-wrap">
-                            {{ form.identification_mark }}
-                        </div>
-                    </div>
-
-                    <!-- 12. Visit Through -->
-                    <div class="reg-field-row mode-hidden" id="row_visit_through">
-                        <label class="reg-field-label" for="id_visit_through">Visit Through:</label>
-                        <div class="reg-field-input-wrap" style="max-width: 200px;">
-                            {{ form.visit_through }}
-                        </div>
-                    </div>
-
-                    <!-- 13. Category -->
-                    <div class="reg-field-row mode-hidden" id="row_category">
-                        <label class="reg-field-label" for="id_category">Category:</label>
-                        <div class="reg-field-input-wrap" style="max-width: 200px;">
-                            {{ form.category }}
-                        </div>
-                    </div>
-
-                    <!-- 14. Marital Status -->
-                    <div class="reg-field-row mode-hidden" id="row_marital_status">
-                        <label class="reg-field-label" for="id_marital_status">Marital Status:</label>
-                        <div class="reg-field-input-wrap" style="max-width: 150px;">
-                            {{ form.marital_status }}
-                        </div>
-                    </div>
-
-                    <!-- 15. Religion -->
-                    <div class="reg-field-row mode-hidden" id="row_religion">
-                        <label class="reg-field-label" for="id_religion">Religion:</label>
-                        <div class="reg-field-input-wrap" style="max-width: 150px;">
-                            {{ form.religion }}
-                        </div>
-                    </div>
-
-                    <!-- 16. Company Name + Employee ID -->
-                    <div class="reg-field-row mode-hidden" id="row_company">
-                        <label class="reg-field-label" for="id_patient_company" id="lblCompany">Company Name:</label>
-                        <div class="reg-field-input-wrap" style="display: flex; align-items: center; gap: 4px;">
-                            <div style="flex: 1;">
-                                {{ form.patient_company }}
-                            </div>
-                            <span class="inline-text-label">Employee ID:</span>
-                            <div style="width: 120px; min-width: 100px;">
-                                {{ form.employee_id }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 17. ABHAID -->
-                    <div class="reg-field-row mode-hidden" id="row_abha">
-                        <label class="reg-field-label" for="id_abha_id">ABHAID</label>
-                        <div class="reg-field-input-wrap" style="max-width: 220px;">
-                            {{ form.abha_id }}
-                        </div>
-                    </div>
-
-                    <!-- 18. OFC Code -->
-                    <div class="reg-field-row mode-hidden" id="row_ofc">
-                        <label class="reg-field-label" for="id_ofc_code">OFC Code</label>
-                        <div class="reg-field-input-wrap" style="max-width: 220px;">
-                            {{ form.ofc_code }}
-                        </div>
-                    </div>
-
-                    <!-- 19. Purpose (Mandatory in NRI Mode) -->
-                    <div class="reg-field-row mode-hidden" id="row_purpose">
-                        <label class="reg-field-label" for="id_purpose" id="lblPurpose">Purpose: <span class="req-star">*</span></label>
-                        <div class="reg-field-input-wrap">
-                            {{ form.purpose }}
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- ======================================================= -->
-                <!-- RIGHT COLUMN FIELDS                                     -->
-                <!-- ======================================================= -->
-                <div class="reg-col-right">
-
-                    <!-- 1. Guardian Name (Relationship + Name) - Right Side Top (Mandatory) -->
+                    <!-- 6. Guardian Name (Relationship + Name) (Mandatory) -->
                     <div class="reg-field-row" id="row_guardian">
                         <label class="reg-field-label" for="id_guardian_name" id="lblGuardian">Guardian Name: <span class="req-star">*</span></label>
                         <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
@@ -624,41 +505,25 @@
                         </div>
                     </div>
 
-                    <!-- 2. Last Patient Id -->
-                    <div class="reg-field-row mode-hidden" id="row_last_pid">
-                        <label class="reg-field-label">Last Patient Id:</label>
-                        <div class="reg-field-input-wrap">
-                            <span class="last-pid-text">{{ last_patient_id|default:"26176168" }}</span>
-                        </div>
-                    </div>
-
-                    <!-- 3. Email -->
-                    <div class="reg-field-row mode-hidden" id="row_email">
-                        <label class="reg-field-label" for="id_email">Email:</label>
-                        <div class="reg-field-input-wrap">
-                            {{ form.email }}
-                        </div>
-                    </div>
-
-                    <!-- 4. Street / Address -->
-                    <div class="reg-field-row mode-hidden" id="row_street">
-                        <label class="reg-field-label" for="id_street">Street: <span class="req-star" id="star_street">*</span></label>
+                    <!-- 7. Street / Address -->
+                    <div class="reg-field-row" id="row_street">
+                        <label class="reg-field-label" for="id_street">Street: <span class="req-star" id="star_street" style="display: none;">*</span></label>
                         <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
-                            <textarea name="street" id="id_street" class="form-input form-textarea-compact" rows="1" placeholder="Street / Address">{{ form.street.value|default:'' }}</textarea>
+                            <input type="text" name="street" id="id_street" class="form-input" placeholder="Street / Door No / Address" value="{{ form.street.value|default:'' }}">
                             {% if form.street.errors %}<span class="js-field-error">{{ form.street.errors.0 }}</span>{% endif %}
                         </div>
                     </div>
 
-                    <!-- 5. Village / Area -->
+                    <!-- 8. Village / Area -->
                     <div class="reg-field-row" id="row_village_area">
                         <label class="reg-field-label" for="id_village_area">Village / Area: <span class="req-star" id="star_village">*</span></label>
                         <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
-                            <textarea name="village_area" id="id_village_area" class="form-input form-textarea-compact" rows="1" placeholder="Village / Area">{{ form.village_area.value|default:'' }}</textarea>
+                            <input type="text" name="village_area" id="id_village_area" class="form-input" placeholder="Village / Area" value="{{ form.village_area.value|default:'' }}">
                             {% if form.village_area.errors %}<span class="js-field-error">{{ form.village_area.errors.0 }}</span>{% endif %}
                         </div>
                     </div>
 
-                    <!-- 6. City (Dynamic for NORMAL vs NRI) -->
+                    <!-- 9. City (Dynamic for NORMAL vs NRI) -->
                     <div class="reg-field-row" id="row_city">
                         <label class="reg-field-label" for="id_city_select" id="lblCity">City:</label>
                         <div class="reg-field-input-wrap" style="max-width: 230px;">
@@ -668,7 +533,7 @@
                         </div>
                     </div>
 
-                    <!-- 7. State (Dynamic for NORMAL vs NRI) -->
+                    <!-- 10. State (Dynamic for NORMAL vs NRI) -->
                     <div class="reg-field-row" id="row_state">
                         <label class="reg-field-label" for="id_state_select" id="lblState">State:</label>
                         <div class="reg-field-input-wrap" style="max-width: 230px;">
@@ -678,8 +543,9 @@
                         </div>
                     </div>
 
-                    <!-- 8. Country (Dynamic for NORMAL vs NRI) -->
-                    <div class="reg-field-row" id="row_country">
+                    <!-- Mode-Specific Left Column Fields -->
+                    <!-- Country (Shown only in NRI Mode) -->
+                    <div class="reg-field-row mode-hidden" id="row_country">
                         <label class="reg-field-label" for="id_country_select" id="lblCountry">Country:</label>
                         <div class="reg-field-input-wrap" style="max-width: 230px;">
                             <select name="country" id="id_country_select" class="form-select">
@@ -688,15 +554,131 @@
                         </div>
                     </div>
 
-                    <!-- 9. Pincode -->
-                    <div class="reg-field-row" id="row_pincode">
-                        <label class="reg-field-label" for="id_pincode">Pincode:</label>
-                        <div class="reg-field-input-wrap" style="max-width: 180px;">
-                            {{ form.pincode }}
+                    <!-- Passport Number (Mandatory in NRI Mode) -->
+                    <div class="reg-field-row mode-hidden" id="row_passport">
+                        <label class="reg-field-label" for="id_passport_number" id="lblPassport">Passport Number:</label>
+                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
+                            {{ form.passport_number }}
+                            {% if form.passport_number.errors %}<span class="js-field-error">{{ form.passport_number.errors.0 }}</span>{% endif %}
                         </div>
                     </div>
 
-                    <!-- 10. Blood Group + Category (+ for O / - for D) -->
+                    <!-- Identification Mark -->
+                    <div class="reg-field-row mode-hidden" id="row_identification">
+                        <label class="reg-field-label" for="id_identification_mark">Identification Mark:</label>
+                        <div class="reg-field-input-wrap">
+                            {{ form.identification_mark }}
+                        </div>
+                    </div>
+
+                    <!-- Visit Through -->
+                    <div class="reg-field-row mode-hidden" id="row_visit_through">
+                        <label class="reg-field-label" for="id_visit_through">Visit Through:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 200px;">
+                            {{ form.visit_through }}
+                        </div>
+                    </div>
+
+                    <!-- Category -->
+                    <div class="reg-field-row mode-hidden" id="row_category">
+                        <label class="reg-field-label" for="id_category">Category:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 200px;">
+                            {{ form.category }}
+                        </div>
+                    </div>
+
+                    <!-- Marital Status -->
+                    <div class="reg-field-row mode-hidden" id="row_marital_status">
+                        <label class="reg-field-label" for="id_marital_status">Marital Status:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 150px;">
+                            {{ form.marital_status }}
+                        </div>
+                    </div>
+
+                    <!-- Religion -->
+                    <div class="reg-field-row mode-hidden" id="row_religion">
+                        <label class="reg-field-label" for="id_religion">Religion:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 150px;">
+                            {{ form.religion }}
+                        </div>
+                    </div>
+
+                    <!-- Company Name + Employee ID -->
+                    <div class="reg-field-row mode-hidden" id="row_company">
+                        <label class="reg-field-label" for="id_patient_company" id="lblCompany">Company Name:</label>
+                        <div class="reg-field-input-wrap" style="display: flex; align-items: center; gap: 4px;">
+                            <div style="flex: 1;">
+                                {{ form.patient_company }}
+                            </div>
+                            <span class="inline-text-label">Employee ID:</span>
+                            <div style="width: 120px; min-width: 100px;">
+                                {{ form.employee_id }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OFC Code -->
+                    <div class="reg-field-row mode-hidden" id="row_ofc">
+                        <label class="reg-field-label" for="id_ofc_code">OFC Code</label>
+                        <div class="reg-field-input-wrap" style="max-width: 220px;">
+                            {{ form.ofc_code }}
+                        </div>
+                    </div>
+
+                    <!-- Purpose (Mandatory in NRI Mode) -->
+                    <div class="reg-field-row mode-hidden" id="row_purpose">
+                        <label class="reg-field-label" for="id_purpose" id="lblPurpose">Purpose: <span class="req-star">*</span></label>
+                        <div class="reg-field-input-wrap">
+                            {{ form.purpose }}
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ======================================================= -->
+                <!-- RIGHT COLUMN FIELDS                                     -->
+                <!-- ======================================================= -->
+                <div class="reg-col-right">
+
+                    <!-- 1. DOB + Calc Age Refresh (Top Right) -->
+                    <div class="reg-field-row" id="row_dob">
+                        <label class="reg-field-label" for="id_dob">DOB:</label>
+                        <div class="reg-field-input-wrap" style="display: flex; gap: 5px; max-width: 210px;">
+                            {{ form.dob }}
+                            <button type="button" class="btn-icon-refresh" id="btnCalcAgeFromDOB" title="Calculate Age from Date of Birth">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 2. Mobile No (without 91) -->
+                    <div class="reg-field-row" id="row_mobile">
+                        <label class="reg-field-label" for="id_mobile_no" id="lblMobile">Mobile No (without 91):</label>
+                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
+                            {{ form.mobile_no }}
+                            {% if form.mobile_no.errors %}<span class="js-field-error">{{ form.mobile_no.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 3. Aadhar Card / Number -->
+                    <div class="reg-field-row" id="row_aadhar">
+                        <label class="reg-field-label" for="id_aadhar_card">Aadhar Card:</label>
+                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
+                            {{ form.aadhar_card }}
+                            {% if form.aadhar_card.errors %}<span class="js-field-error">{{ form.aadhar_card.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 4. ABHA Number -->
+                    <div class="reg-field-row" id="row_abha">
+                        <label class="reg-field-label" for="id_abha_id">ABHA Number:</label>
+                        <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
+                            {{ form.abha_id }}
+                            {% if form.abha_id.errors %}<span class="js-field-error">{{ form.abha_id.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 4. Blood Group + Category (+ for O / - for D) -->
                     <div class="reg-field-row" id="row_blood_group">
                         <label class="reg-field-label" for="id_blood_group">Bloodgroup:</label>
                         <div class="reg-field-input-wrap" style="display: flex; align-items: center; gap: 6px;">
@@ -716,32 +698,15 @@
                         </div>
                     </div>
 
-                    <!-- 11. Complaint + Add New Complaint -->
-                    <div class="reg-field-row mode-hidden" id="row_complaint">
-                        <label class="reg-field-label" for="id_complaint">Complaint:</label>
-                        <div class="reg-field-input-wrap" style="display: flex; gap: 5px;">
-                            {{ form.complaint }}
-                            <button type="button" class="btn-dark-complaint" id="btnAddComplaint">Add New Complaint</button>
+                    <!-- 5. Pincode -->
+                    <div class="reg-field-row" id="row_pincode">
+                        <label class="reg-field-label" for="id_pincode">Pincode:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 180px;">
+                            {{ form.pincode }}
                         </div>
                     </div>
 
-                    <!-- 12. Occupation -->
-                    <div class="reg-field-row mode-hidden" id="row_occupation">
-                        <label class="reg-field-label" for="id_occupation">Occupation:</label>
-                        <div class="reg-field-input-wrap" style="max-width: 220px;">
-                            {{ form.occupation }}
-                        </div>
-                    </div>
-
-                    <!-- 13. Income -->
-                    <div class="reg-field-row mode-hidden" id="row_income">
-                        <label class="reg-field-label" for="id_income">Income:</label>
-                        <div class="reg-field-input-wrap" style="max-width: 220px;">
-                            {{ form.income }}
-                        </div>
-                    </div>
-
-                    <!-- 14. Department (Mandatory) -->
+                    <!-- 6. Department (Mandatory) -->
                     <div class="reg-field-row" id="row_department">
                         <label class="reg-field-label" for="id_department_select" id="lblDepartment">Department: <span class="req-star">*</span></label>
                         <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
@@ -750,7 +715,7 @@
                         </div>
                     </div>
 
-                    <!-- 15. Unit / Doctor + Refresh -->
+                    <!-- 7. Unit / Doctor + Refresh -->
                     <div class="reg-field-row" id="row_unit">
                         <label class="reg-field-label" for="id_unit_select" id="lblUnit">Unit / Doctor: <span class="req-star">*</span></label>
                         <div class="reg-field-input-wrap" style="display: flex; gap: 5px; flex-direction: column; align-items: flex-start;">
@@ -764,7 +729,49 @@
                         </div>
                     </div>
 
-                    <!-- 16. PAN Number (Hidden in NRI Mode) -->
+                    <!-- Mode-Specific Right Column Fields -->
+                    <!-- Last Patient Id -->
+                    <div class="reg-field-row mode-hidden" id="row_last_pid">
+                        <label class="reg-field-label">Last Patient Id:</label>
+                        <div class="reg-field-input-wrap">
+                            <span class="last-pid-text">{{ last_patient_id|default:"26176168" }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="reg-field-row mode-hidden" id="row_email">
+                        <label class="reg-field-label" for="id_email">Email:</label>
+                        <div class="reg-field-input-wrap">
+                            {{ form.email }}
+                        </div>
+                    </div>
+
+                    <!-- Complaint + Add New Complaint -->
+                    <div class="reg-field-row mode-hidden" id="row_complaint">
+                        <label class="reg-field-label" for="id_complaint">Complaint:</label>
+                        <div class="reg-field-input-wrap" style="display: flex; gap: 5px;">
+                            {{ form.complaint }}
+                            <button type="button" class="btn-dark-complaint" id="btnAddComplaint">Add New Complaint</button>
+                        </div>
+                    </div>
+
+                    <!-- Occupation -->
+                    <div class="reg-field-row mode-hidden" id="row_occupation">
+                        <label class="reg-field-label" for="id_occupation">Occupation:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 220px;">
+                            {{ form.occupation }}
+                        </div>
+                    </div>
+
+                    <!-- Income -->
+                    <div class="reg-field-row mode-hidden" id="row_income">
+                        <label class="reg-field-label" for="id_income">Income:</label>
+                        <div class="reg-field-input-wrap" style="max-width: 220px;">
+                            {{ form.income }}
+                        </div>
+                    </div>
+
+                    <!-- PAN Number (Hidden in NRI Mode) -->
                     <div class="reg-field-row mode-hidden" id="row_pan">
                         <label class="reg-field-label" for="id_pan_no">PanNo:</label>
                         <div class="reg-field-input-wrap" style="max-width: 230px;">
@@ -772,7 +779,7 @@
                         </div>
                     </div>
 
-                    <!-- 17. Emergency Medicine Type (Shown in Emergency Mode) -->
+                    <!-- Emergency Medicine Type (Shown in Emergency Mode) -->
                     <div class="reg-field-row mode-hidden" id="row_emergency_type">
                         <label class="reg-field-label" for="id_emergency_medicine_type" id="lblEmerType">Emergency Type: <span class="req-star">*</span></label>
                         <div class="reg-field-input-wrap">
@@ -834,9 +841,6 @@
                 <span style="font-size: 0.88rem; font-weight: 800; color: #0f3675; text-transform: uppercase; letter-spacing: 0.3px; display: inline-flex; align-items: center; gap: 5px;">
                     <i class="bi bi-calendar2-check-fill" style="color: #0284c7;"></i> Today's Registered Patients
                 </span>
-                <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.73rem; padding: 2px 8px; border-radius: 12px; border: 1px solid #bae6fd;">
-                    {{ today_count|default:today_patients|length }} Today
-                </span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
                 <input type="text" id="todayPatientSearch" placeholder="Search by Patient ID..." 
@@ -852,13 +856,13 @@
                 <thead>
                     <tr style="background: #f8fafc; color: #1e293b; font-weight: 700; border-bottom: 1px solid #cbd5e1; text-align: left; position: sticky; top: 0; z-index: 1;">
                         <th style="padding: 5px 8px; width: 35px;">#</th>
-                        <th style="padding: 5px 8px;">Patient ID</th>
                         <th style="padding: 5px 8px;">OP Number</th>
+                        <th style="padding: 5px 8px;">Patient ID</th>
                         <th style="padding: 5px 8px;">Patient Name</th>
-                        <th style="padding: 5px 8px;">Age / Gender</th>
                         <th style="padding: 5px 8px;">Guardian</th>
-                        <th style="padding: 5px 8px;">Mobile No</th>
                         <th style="padding: 5px 8px;">Village / Area</th>
+                        <th style="padding: 5px 8px;">Age / Gender</th>
+                        <th style="padding: 5px 8px;">Mobile No</th>
                         <th style="padding: 5px 8px;">Department</th>
                         <th style="padding: 5px 8px;">Unit / Doctor</th>
                         <th style="padding: 5px 8px;">Reg Time</th>
@@ -869,28 +873,28 @@
                     {% for p in today_patients %}
                     <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.1s ease;" class="today-row" data-patient-id="{{ p.patient_id }}" data-op-number="{{ p.op_number|default:'' }}">
                         <td style="padding: 4px 8px; color: #64748b; font-weight: 600;">{{ forloop.counter }}</td>
+                        <td style="padding: 4px 8px; font-weight: 700; color: #0284c7;" class="td-op-number">
+                            {{ p.op_number|default:"-" }}
+                        </td>
                         <td style="padding: 4px 8px; font-weight: 700;" class="td-patient-id">
                             <a href="{% url 'patients:edit' p.pk %}" style="color: #0033cc; text-decoration: none; font-weight: 800;">
                                 {{ p.patient_id }}
                             </a>
                         </td>
-                        <td style="padding: 4px 8px; font-weight: 700; color: #0284c7;" class="td-op-number">
-                            {{ p.op_number|default:"-" }}
-                        </td>
                         <td style="padding: 4px 8px; font-weight: 600; color: #0f172a;">
                             {{ p.title|default:'' }} {{ p.name }}
-                        </td>
-                        <td style="padding: 4px 8px; color: #334155;">
-                            {{ p.age_display|default:p.age_years }} / {{ p.gender|slice:":1" }}
                         </td>
                         <td style="padding: 4px 8px; color: #475569;">
                             {% if p.guardian_name %}{{ p.guardian_relationship|default:'' }} {{ p.guardian_name }}{% else %}-{% endif %}
                         </td>
-                        <td style="padding: 4px 8px; color: #334155;">
-                            {{ p.mobile_no|default:"-" }}
-                        </td>
                         <td style="padding: 4px 8px; color: #475569;">
                             {{ p.village_area|default:p.city|default:"-" }}
+                        </td>
+                        <td style="padding: 4px 8px; color: #334155;">
+                            {{ p.age_display|default:p.age_years }} / {{ p.gender|slice:":1" }}
+                        </td>
+                        <td style="padding: 4px 8px; color: #334155;">
+                            {{ p.mobile_no|default:"-" }}
                         </td>
                         <td style="padding: 4px 8px; color: #0f3675; font-weight: 600;">
                             {{ p.department_obj.name|default:p.department|default:"-" }}
@@ -912,7 +916,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="11" style="text-align: center; padding: 14px; color: #64748b; font-style: italic;">
+                        <td colspan="12" style="text-align: center; padding: 14px; color: #64748b; font-style: italic;">
                             <i class="bi bi-info-circle" style="margin-right: 4px;"></i> No patients registered today yet.
                         </td>
                     </tr>
@@ -1208,9 +1212,10 @@
             if (btnSendWhatsapp) btnSendWhatsapp.classList.remove('mode-hidden');
 
             if (newMode === 'NORMAL') {
-                // NORMAL MODE: Compact essential patient registration flow (hidden unwanted fields as per reference)
+                // NORMAL MODE: Compact essential patient registration flow
                 if (categorySelect) categorySelect.value = 'CONSULTATION';
                 rowIpno.classList.add('mode-hidden');
+                rowCountry.classList.add('mode-hidden');
                 rowPassport.classList.add('mode-hidden');
                 rowIdentification.classList.add('mode-hidden');
                 rowVisitThrough.classList.add('mode-hidden');
@@ -1218,13 +1223,11 @@
                 rowMarital.classList.add('mode-hidden');
                 rowReligion.classList.add('mode-hidden');
                 rowCompany.classList.add('mode-hidden');
-                rowAbha.classList.add('mode-hidden');
                 rowOfc.classList.add('mode-hidden');
                 rowPurpose.classList.add('mode-hidden');
 
                 rowLastPid.classList.add('mode-hidden');
                 rowEmail.classList.add('mode-hidden');
-                rowStreet.classList.add('mode-hidden');
                 rowComplaint.classList.add('mode-hidden');
                 rowOccupation.classList.add('mode-hidden');
                 rowIncome.classList.add('mode-hidden');
@@ -1247,6 +1250,7 @@
                 rowPan.classList.add('mode-hidden');
                 rowEmergencyType.classList.add('mode-hidden');
                 rowPurpose.classList.remove('mode-hidden');
+                rowCountry.classList.remove('mode-hidden');
 
                 lblPassport.innerHTML = 'Passport Number: <span class="req-star">*</span>';
                 lblPurpose.innerHTML = 'Purpose: <span class="req-star">*</span>';
@@ -1260,6 +1264,7 @@
                 rowCompany.classList.add('mode-company-highlight');
                 rowIdentification.classList.add('mode-company-highlight');
 
+                rowCountry.classList.add('mode-hidden');
                 rowAadhar.classList.add('mode-hidden');
                 rowPan.classList.add('mode-hidden');
                 rowPassport.classList.add('mode-hidden');
@@ -1478,18 +1483,12 @@
         if (btnCalcAge) btnCalcAge.addEventListener('click', calculateAge);
 
         // =========================================================================
-        // EMERGENCY ID INDICATOR
+        // EMERGENCY ID INDICATOR (Only show E prefix in EMERGENCY mode)
         // =========================================================================
         function updatePatientIdIndicator() {
             if (!patientIdDisplay) return;
             const mode = document.querySelector('input[name="registration_mode"]:checked')?.value || 'NORMAL';
-            const catVal = (categorySelect ? categorySelect.value || '' : '').toUpperCase();
-            const deptText = (deptSelect && deptSelect.selectedIndex >= 0 && deptSelect.options[deptSelect.selectedIndex] && deptSelect.value) 
-                ? deptSelect.options[deptSelect.selectedIndex].text.toUpperCase() 
-                : '';
-            
-            const isEmergency = mode === 'EMERGENCY' || (mode !== 'NORMAL' && (catVal === 'EMERGENCY' || catVal === 'CASUALTY')) || 
-                                (deptText && (deptText.includes('EMERGENCY') || deptText.includes('CASUALTY')));
+            const isEmergency = (mode === 'EMERGENCY');
             
             if (isEmergency) {
                 patientIdDisplay.value = 'Auto-Generated (Prefix: E...)';
@@ -1630,14 +1629,6 @@
                 let isValid = true;
                 let firstInvalidEl = null;
                 const mode = document.querySelector('input[name="registration_mode"]:checked')?.value || 'NORMAL';
-
-                // Title (Mandatory in non-emergency)
-                const titleSelect = document.getElementById('id_title');
-                if (mode !== 'EMERGENCY' && (!titleSelect || !titleSelect.value || titleSelect.value.trim() === '' || titleSelect.value.trim() === '-')) {
-                    isValid = false;
-                    createError(titleSelect, 'Title is required.');
-                    if (!firstInvalidEl) firstInvalidEl = titleSelect;
-                }
 
                 // Mandatory across all modes: Name, Gender, Age
                 const nameInput = document.getElementById('id_name');
