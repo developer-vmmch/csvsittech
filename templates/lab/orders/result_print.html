@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,20 +8,34 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
         body { background: #f8fafc; color: #1e293b; padding: 20px; font-size: 13px; line-height: 1.4; }
-        .report-page { max-width: 820px; margin: 0 auto; background: #fff; padding: 30px; border: 1px solid #e2e8f0; border-radius: 6px; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 20px; }
-        .hospital-title h1 { font-size: 22px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
-        .hospital-title p { font-size: 11px; color: #64748b; margin-top: 3px; }
-        .report-title { text-align: right; }
-        .report-title h2 { font-size: 15px; font-weight: 700; color: #0284c7; text-transform: uppercase; }
-        .report-title p { font-size: 11px; color: #64748b; }
+        .report-page { max-width: 840px; margin: 0 auto; background: #fff; padding: 26px; border: 1px solid #e2e8f0; border-radius: 6px; }
         
-        .patient-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 12px 16px; margin-bottom: 20px; }
-        .patient-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 12px; }
+        .header { border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px; }
+        .header-top-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+        
+        .header-logo-wrap { width: 65px; flex-shrink: 0; }
+        .hospital-logo-img { max-width: 60px; max-height: 60px; object-fit: contain; display: block; }
+        
+        .hospital-title { flex: 1; text-align: center; }
+        .hospital-title h1 { font-size: 19px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
+        .hospital-title p { font-size: 11px; color: #64748b; margin-top: 2px; }
+        
+        .header-barcode-wrap { flex-shrink: 0; text-align: right; display: flex; flex-direction: column; align-items: flex-end; min-width: 140px; }
+        .barcode-svg { height: 38px; width: auto; max-width: 160px; display: block; }
+        
+        .report-sub-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 6px; border-top: 1px dashed #cbd5e1; }
+        .report-title-badge { font-size: 13px; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.5px; }
+        .report-meta-text { font-size: 11px; color: #475569; font-weight: 600; }
+        
+        .patient-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 12px 16px; margin-bottom: 20px; display: flex; gap: 16px; align-items: center; }
+        .patient-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 12px; flex: 1; }
         .grid-item span.label { color: #64748b; text-transform: uppercase; font-size: 10px; font-weight: 600; display: block; }
         .grid-item span.value { color: #0f172a; font-weight: 600; font-size: 12px; }
         
-        .inv-section { margin-bottom: 25px; page-break-inside: avoid; }
+        .patient-qr-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 1px dashed #cbd5e1; padding-left: 12px; flex-shrink: 0; }
+        .qr-caption { font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-top: 2px; }
+        
+        .inv-section { margin-bottom: 22px; page-break-inside: avoid; }
         .inv-header { background: #0f172a; color: #fff; padding: 6px 12px; font-size: 12px; font-weight: 700; text-transform: uppercase; border-radius: 3px 3px 0 0; }
         table.results-table { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; }
         table.results-table th { background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 6px 10px; border-bottom: 1px solid #cbd5e1; text-align: left; }
@@ -32,7 +47,7 @@
         .flag-high { background: #fee2e2; color: #991b1b; }
         .flag-low { background: #fef3c7; color: #92400e; }
         
-        .footer-signatures { display: flex; justify-content: space-between; margin-top: 50px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+        .footer-signatures { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
         .sig-block { text-align: center; width: 180px; }
         .sig-line { border-top: 1px dashed #94a3b8; margin-bottom: 5px; }
         .sig-title { font-size: 11px; font-weight: 600; color: #475569; }
@@ -41,11 +56,15 @@
             body { background: #fff; padding: 0; }
             .report-page { border: none; padding: 0; max-width: 100%; }
             .no-print { display: none !important; }
+            img, svg, canvas {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="no-print" style="max-width: 820px; margin: 0 auto 15px auto; display: flex; justify-content: flex-end; gap: 10px;">
+    <div class="no-print" style="max-width: 840px; margin: 0 auto 15px auto; display: flex; justify-content: flex-end; gap: 10px;">
         <button onclick="window.print()" style="background: #0284c7; color: #fff; border: none; padding: 8px 18px; border-radius: 4px; font-weight: 600; cursor: pointer;">
             Print Lab Report
         </button>
@@ -57,14 +76,22 @@
     <div class="report-page">
         <!-- Hospital Header -->
         <div class="header">
-            <div class="hospital-title">
-                <h1>Vinayaka Mission's Medical College & Hospital</h1>
-                <p>Keezhakasakudymedu, Karaikal, Puducherry - 609609 | Central Clinical Laboratory</p>
+            <div class="header-top-row">
+                <div class="header-logo-wrap">
+                    <img src="{% static 'images/vmmc_logo.png' %}" alt="Vinayaka Missions Logo" class="hospital-logo-img">
+                </div>
+                <div class="hospital-title">
+                    <h1>Vinayaka Mission's Medical College & Hospital</h1>
+                    <p>Keezhakasakudymedu, Karaikal, Puducherry - 609609 | Central Clinical Laboratory</p>
+                </div>
+                <div class="header-barcode-wrap">
+                    <svg id="lab-barcode" class="barcode-svg"></svg>
+                </div>
             </div>
-            <div class="report-title">
-                <h2>Laboratory Report</h2>
-                <p>Sample ID: <strong>{{ service_request.sample_id }}</strong></p>
-                <p>Date: {{ service_request.request_date|date:"d/m/Y" }}</p>
+            
+            <div class="report-sub-bar">
+                <span class="report-title-badge">Official Clinical Laboratory Report</span>
+                <span class="report-meta-text">Sample ID: <strong>{{ service_request.sample_id|default:service_request.id }}</strong> &nbsp;|&nbsp; Date: {{ service_request.request_date|date:"d/m/Y" }}</span>
             </div>
         </div>
 
@@ -91,6 +118,10 @@
                     <span class="label">Clinical Diagnosis</span>
                     <span class="value" style="color: #0284c7;">{{ primary_diagnosis.name|default:"General Clinical Evaluation" }}</span>
                 </div>
+            </div>
+            <div class="patient-qr-wrap">
+                <div id="lab-qrcode"></div>
+                <span class="qr-caption">Lab Verification</span>
             </div>
         </div>
 
@@ -155,5 +186,59 @@
             </div>
         </div>
     </div>
+
+    <!-- Vendor Scripts: JsBarcode and QRCode -->
+    <script src="{% static 'js/JsBarcode.all.min.js' %}"></script>
+    <script src="{% static 'js/qrcode.min.js' %}"></script>
+    <script>
+        if (typeof JsBarcode === 'undefined') {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>');
+        }
+        if (typeof QRCode === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>');
+        }
+    </script>
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            var sampleCode = "{{ service_request.sample_id|default:service_request.id }}".trim();
+            var uhid = "{{ patient.patient_id }}".trim();
+
+            // 1. Generate Barcode for Sample ID
+            try {
+                if (typeof JsBarcode !== 'undefined' && sampleCode) {
+                    JsBarcode("#lab-barcode", sampleCode, {
+                        format: "CODE128",
+                        width: 1.3,
+                        height: 34,
+                        displayValue: true,
+                        fontSize: 10,
+                        font: "Courier New",
+                        textMargin: 2,
+                        margin: 0
+                    });
+                }
+            } catch (err) {
+                console.error("Lab barcode error:", err);
+            }
+
+            // 2. Generate QR Code for Lab Verification
+            try {
+                var qrElem = document.getElementById("lab-qrcode");
+                if (qrElem && typeof QRCode !== 'undefined' && sampleCode) {
+                    qrElem.innerHTML = "";
+                    new QRCode(qrElem, {
+                        text: "LAB-REF:" + sampleCode + "|UHID:" + uhid,
+                        width: 58,
+                        height: 58,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                }
+            } catch (err) {
+                console.error("Lab QR error:", err);
+            }
+        });
+    </script>
 </body>
 </html>

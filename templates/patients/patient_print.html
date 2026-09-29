@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -14,9 +15,9 @@
         }
 
         body {
-            font-family: 'Courier New', Courier, monospace, Arial, sans-serif;
+            font-family: 'Times New Roman', Times, Georgia, serif;
             background: #0f172a;
-            color: #fff;
+            color: #000;
             padding: 20px;
             display: flex;
             flex-direction: column;
@@ -24,7 +25,7 @@
         }
 
         .messages-container {
-            width: 720px;
+            width: 780px;
             margin-bottom: 16px;
             font-family: sans-serif;
         }
@@ -90,111 +91,309 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
-        /* OP Pass Slip */
+        /* OP Slip Layout matching reference document */
         .op-slip {
-            width: 720px;
+            width: 780px;
             background: #ffffff;
-            border: 2px solid #000;
-            padding: 24px;
+            border: 1.5px solid #000;
+            padding: 18px 24px 20px 24px;
             position: relative;
             font-size: 14px;
-            line-height: 1.5;
+            line-height: 1.45;
             color: #000;
-            border-radius: 4px;
         }
 
-        .op-header {
+        /* Top Center Logo */
+        .top-center-logo-wrap {
             text-align: center;
-            padding-bottom: 10px;
-            margin-bottom: 14px;
+            margin-bottom: 4px;
         }
 
+        .hospital-main-emblem {
+            width: 58px;
+            height: 58px;
+            object-fit: contain;
+            display: inline-block;
+        }
+
+        /* Title */
         .hospital-title {
-            font-size: 18px;
+            text-align: center;
+            font-size: 17px;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 4px;
+            color: #000;
         }
 
-        .hospital-sub {
-            font-size: 12px;
-            font-weight: 600;
+        /* Header 3-Column: NABL on Left, Address Center, NABH on Right */
+        .header-badges-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 2px;
+            margin-bottom: 6px;
         }
 
-        .op-type-banner {
+        .header-address-center {
+            flex: 1;
+            text-align: center;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #000;
+            line-height: 1.35;
+            padding-left: 110px;
+        }
+
+        .badge-right-wrap {
+            width: 130px;
+            flex-shrink: 0;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nabh-logo-img {
+            width: 66px;
+            height: 56px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .hfrid-text {
+            font-size: 10.5px;
+            font-weight: 800;
+            color: #000;
+            margin-top: 2px;
+            letter-spacing: 0.3px;
+        }
+
+        /* Banner Bar with Barcode on Left, OUT PATIENT in Middle, Dept on Right */
+        .banner-bar {
+            border-top: 1.5px solid #000;
+            border-bottom: 1.5px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 6px;
+            margin-top: 6px;
+            margin-bottom: 0;
+        }
+
+        .banner-barcode-wrap {
+            display: flex;
+            align-items: center;
+            min-width: 140px;
+        }
+
+        .banner-barcode-svg {
+            height: 32px;
+            width: auto;
+            max-width: 150px;
+            display: block;
+        }
+
+        .banner-middle-type {
+            font-size: 14.5px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            flex: 1;
+        }
+
+        .banner-dept {
+            font-size: 14.5px;
+            font-weight: 800;
+            text-transform: uppercase;
+            text-align: right;
+            min-width: 160px;
+        }
+
+        /* Patient Details Grid */
+        .patient-details-box {
+            padding-top: 4px;
+        }
+
+        .demographics-row-1 {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 10px;
+            border-bottom: 1.5px solid #000;
+            padding: 5px 4px 6px 4px;
+            font-size: 14px;
             font-weight: 800;
-            font-size: 15px;
-            border-top: 1px solid #000;
-            border-bottom: 1px solid #000;
-            padding: 6px 12px;
         }
 
-        .op-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-top: 14px;
+        .demographics-body {
+            padding: 8px 4px 4px 4px;
+            font-size: 14px;
         }
 
-        .qr-placeholder {
-            width: 52px;
-            height: 52px;
-            border: 1px solid #000;
+        .field-line {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: 700;
-        }
-
-        .field-row {
-            display: flex;
-            margin-bottom: 8px;
+            align-items: baseline;
+            margin-bottom: 6px;
+            line-height: 1.4;
         }
 
         .field-label {
-            width: 130px;
-            font-weight: 700;
-            text-transform: uppercase;
+            font-weight: 800;
+            width: 105px;
+            flex-shrink: 0;
         }
 
-        .field-val {
-            flex: 1;
+        .field-colon {
+            margin-right: 8px;
             font-weight: 800;
         }
 
-        .op-footer {
-            margin-top: 20px;
-            border-top: 1px dashed #000;
-            padding-top: 10px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            font-weight: 600;
+        .field-value {
+            font-weight: 700;
+            color: #000;
         }
 
-        /* Print Media Query */
+        .field-value-blue {
+            font-weight: 800;
+            color: #004085;
+            letter-spacing: 0.3px;
+        }
+
+        .split-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 6px;
+        }
+
+        .split-left {
+            display: flex;
+            align-items: baseline;
+            flex: 1.2;
+        }
+
+        .split-right {
+            display: flex;
+            align-items: baseline;
+            flex: 0.9;
+        }
+
+        /* QR Code Container at Bottom Center */
+        .qr-bottom-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 14px;
+            margin-bottom: 4px;
+        }
+
+        #qrcode {
+            display: inline-block;
+        }
+
+        #qrcode img, #qrcode canvas {
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* A5 Print Sheet Setup & Media Query */
+        @page {
+            size: A5;
+            margin: 5mm;
+        }
+
         @media print {
+            html, body {
+                width: 100% !important;
+                height: auto !important;
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
 
             .no-print-bar,
             .messages-container {
                 display: none !important;
             }
 
-            body {
-                background: #ffffff !important;
-                padding: 0 !important;
-            }
-
             .op-slip {
                 border: 1px solid #000 !important;
                 width: 100% !important;
+                max-width: 100% !important;
                 box-shadow: none !important;
+                margin: 0 auto !important;
+                padding: 8px 14px 10px 14px !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            .hospital-main-emblem {
+                width: 48px !important;
+                height: 48px !important;
+            }
+
+            .hospital-title {
+                font-size: 15px !important;
+                margin-bottom: 2px !important;
+            }
+
+            .header-address-center {
+                font-size: 11px !important;
+                line-height: 1.28 !important;
+            }
+
+            .nabh-logo-img {
+                width: 58px !important;
+                height: 48px !important;
+            }
+
+            .banner-bar {
+                padding: 3px 6px !important;
+                margin-top: 4px !important;
+            }
+
+            .banner-barcode-svg {
+                height: 26px !important;
+            }
+
+            .banner-middle-type,
+            .banner-dept {
+                font-size: 13px !important;
+            }
+
+            .demographics-row-1 {
+                padding: 4px 2px !important;
+                font-size: 13px !important;
+            }
+
+            .demographics-body {
+                padding: 6px 2px 2px 2px !important;
+                font-size: 13px !important;
+            }
+
+            .field-line,
+            .split-row {
+                margin-bottom: 4px !important;
+            }
+
+            .qr-bottom-wrap {
+                margin-top: 8px !important;
+                margin-bottom: 2px !important;
+            }
+
+            #qrcode img,
+            #qrcode canvas {
+                width: 64px !important;
+                height: 64px !important;
+            }
+
+            img, svg, canvas {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
         }
     </style>
@@ -225,98 +424,169 @@
         </a>
     </div>
 
-    <!-- OPD Slip -->
+    <!-- OPD Slip Card -->
     <div class="op-slip">
 
-        <div class="op-header">
-            <div class="hospital-title">VINAYAKA MISSIONS MEDICAL COLLEGE & HOSPITAL</div>
-            <div class="hospital-sub">Keezhakasakudy Med, Karaikal Pin: 609609</div>
-            <div class="hospital-sub">Phone No: 04368 - 263277, 263338 | www.vmmcki.edu.in</div>
+        <!-- Top Center Official Emblem Logo -->
+        <div class="top-center-logo-wrap">
+            <img src="{% static 'images/vmmc_logo.png' %}" alt="Vinayaka Missions Logo" class="hospital-main-emblem">
+        </div>
 
-            <div class="op-type-banner">
-                <span>OUT PATIENT - NEW</span>
-                <span style="text-transform: uppercase;">{{ patient.department|default:"GENERAL MEDICINE" }}</span>
+        <!-- Hospital Main Heading -->
+        <div class="hospital-title">
+            VINAYAKA MISSIONS MEDICAL COLLEGE &amp; HOSPITAL
+        </div>
+
+        <!-- Header Middle Row: Address Center, NABH Logo Right -->
+        <div class="header-badges-row">
+            <!-- Center: Address & Contact Info -->
+            <div class="header-address-center">
+                <div>Keezhakasakudy Medu,Karaikal Pin : 609609</div>
+                <div>Phone No: 04368 - 263277 , 263338</div>
+                <div>www.vmmckl.edu.in</div>
+            </div>
+
+            <!-- Right: NABH Pre-Accredited Logo Badge + HFRID -->
+            <div class="badge-right-wrap">
+                <img src="{% static 'images/nabh_logo.png' %}" alt="NABH (Entry Level) Pre Accredited" class="nabh-logo-img">
+                <div class="hfrid-text">HFRID : IN3410000736</div>
             </div>
         </div>
 
-        <div class="op-grid">
+        <!-- Banner Bar: Barcode Left | OUT PATIENT - NEW Middle | Department Right -->
+        <div class="banner-bar">
+            <div class="banner-barcode-wrap">
+                <svg id="op-barcode" class="banner-barcode-svg"></svg>
+            </div>
+            <div class="banner-middle-type">
+                OUT PATIENT - {% if patient.patient_type == 'R' or patient.patient_type == 'REVIEW' or patient.visit_type == 'REVIEW' %}REVIEW{% else %}NEW{% endif %}
+            </div>
+            <div class="banner-dept">
+                {{ patient.department|default:"GENERAL MEDICINE"|upper }}
+            </div>
+        </div>
 
-            <!-- Left Column -->
-            <div>
-                <div class="field-row">
+        <!-- Patient Demographics Section -->
+        <div class="patient-details-box">
+
+            <!-- Demographics Row 1: OP Number and Regn.Date with bottom border -->
+            <div class="demographics-row-1">
+                <div>
+                    <span style="font-weight: 800;">OP Number</span>
+                    <span style="margin: 0 6px 0 14px; font-weight: 800;">:</span>
+                    <span style="font-weight: 800;">{{ patient.op_number|default:patient.patient_id }}</span>
+                </div>
+                <div>
+                    <span style="font-weight: 800;">Regn.Date</span>
+                    <span style="margin: 0 6px 0 14px; font-weight: 800;">:</span>
+                    <span style="font-weight: 800;">{{ patient.created_at|date:"d/M/Y H:i:s" }}</span>
+                </div>
+            </div>
+
+            <!-- Demographics Lines Below Row 1 -->
+            <div class="demographics-body">
+
+                <!-- Line 1: UH ID immediately before Patient Name -->
+                <div class="field-line">
                     <span class="field-label">UH ID</span>
-                    <span class="field-val">: {{ patient.patient_id }}</span>
+                    <span class="field-colon">:</span>
+                    <span class="field-value" style="font-weight: 800;">{{ patient.patient_id }}</span>
                 </div>
 
-                <div class="field-row">
-                    <span class="field-label">Name</span>
-                    <span class="field-val">: {{ patient.title }}. {{ patient.name|upper }}</span>
+                <!-- Line 2: Name and Age / Gender -->
+                <div class="split-row">
+                    <div class="split-left">
+                        <span class="field-label">Name</span>
+                        <span class="field-colon">:</span>
+                        <span class="field-value-blue">{{ patient.title }}.{{ patient.name|upper }}</span>
+                    </div>
+                    <div class="split-right">
+                        <span style="font-weight: 800; width: 60px; flex-shrink: 0;">Age</span>
+                        <span class="field-colon">:</span>
+                        <span class="field-value">{{ patient.age_years }} Yr(s) &nbsp; / &nbsp; {{ patient.gender }}</span>
+                    </div>
                 </div>
 
-                <div class="field-row">
-                    <span class="field-label">Guardian</span>
-                    <span class="field-val">: {{ patient.guardian_name|default:"N/A"|upper }}</span>
-                </div>
-
-                <div class="field-row">
+                <!-- Line 3: Address -->
+                <div class="field-line">
                     <span class="field-label">Address</span>
-                    <span class="field-val">: {{ patient.street|default:"" }} {{ patient.village_area|default:"" }}
-                    </span>
+                    <span class="field-colon">:</span>
+                    <span class="field-value">{{ patient.street|default:"" }}{% if patient.village_area %},{{ patient.village_area }}{% endif %}{% if patient.city %},{{ patient.city }}{% endif %}{% if patient.state %},{{ patient.state }}{% endif %}</span>
                 </div>
 
-                <div class="field-row">
+                <!-- Line 4: Guardian -->
+                <div class="field-line" style="margin-top: 10px;">
+                    <span class="field-label">Guardian</span>
+                    <span class="field-colon">:</span>
+                    <span class="field-value">{{ patient.guardian_name|default:"--"|upper }}</span>
+                </div>
+
+                <!-- Line 5: Phone No -->
+                <div class="field-line">
                     <span class="field-label">Phone No</span>
-                    <span class="field-val">: {{ patient.mobile_no }}</span>
-                </div>
-            </div>
-
-            <!-- Right Column -->
-            <div>
-                <div class="field-row">
-                    <span class="field-label">Regn. Date</span>
-                    <span class="field-val">: {{ patient.created_at|date:"d/M/Y H:i:s" }}</span>
+                    <span class="field-colon">:</span>
+                    <span class="field-value">{{ patient.mobile_no|default:"--" }}</span>
                 </div>
 
-                <div class="field-row">
-                    <span class="field-label">Age / Gender</span>
-                    <span class="field-val">: {{ patient.age_years }} Yr(s) / {{ patient.gender }}</span>
-                </div>
-
-                <div class="field-row">
-                    <span class="field-label">Doctor/Unit</span>
-                    <span class="field-val">: {{ patient.unit_doctor|default:"GENERAL MEDICINE" }}</span>
-                </div>
-
-                <div class="field-row">
-                    <span class="field-label">Category</span>
-                    <span class="field-val">: {{ patient.company_name|default:"INDIVIDUAL" }}</span>
-                </div>
-
-                <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
-                    <div id="qrcode"></div>
-                </div>
             </div>
 
         </div>
 
-        <div class="op-footer">
-            <span>Printed On: {% now "d/M/Y H:i:s" %}</span>
-            <span>Issued By: Front Office Desk</span>
+        <!-- Bottom Center Unique Scannable QR Code -->
+        <div class="qr-bottom-wrap">
+            <div id="qrcode"></div>
         </div>
+
     </div>
 
-</body>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script>
-    window.onload = function() {
-        var qrcode = new QRCode(document.getElementById("qrcode"), {
-            text: "{{ patient.patient_id }}",
-            width: 72,
-            height: 72,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.M
+    <!-- Vendor Scripts: JsBarcode and QRCode -->
+    <script src="{% static 'js/JsBarcode.all.min.js' %}"></script>
+    <script src="{% static 'js/qrcode.min.js' %}"></script>
+    <script>
+        if (typeof JsBarcode === 'undefined') {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>');
+        }
+        if (typeof QRCode === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>');
+        }
+    </script>
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            var uhid = "{{ patient.patient_id }}".trim();
+
+            // 1. Generate Unique Scannable Barcode on Banner Left
+            try {
+                if (typeof JsBarcode !== 'undefined' && uhid) {
+                    JsBarcode("#op-barcode", uhid, {
+                        format: "CODE128",
+                        width: 1.3,
+                        height: 28,
+                        displayValue: false, // Clean barcode lines inside banner as in reference
+                        margin: 0
+                    });
+                }
+            } catch (err) {
+                console.error("Barcode generation error:", err);
+            }
+
+            // 2. Generate Unique Scannable QR Code at Bottom Center
+            try {
+                var qrElem = document.getElementById("qrcode");
+                if (qrElem && typeof QRCode !== 'undefined' && uhid) {
+                    qrElem.innerHTML = "";
+                    new QRCode(qrElem, {
+                        text: "UHID:" + uhid,
+                        width: 76,
+                        height: 76,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                }
+            } catch (err) {
+                console.error("QRCode generation error:", err);
+            }
         });
-    }
-</script>
+    </script>
+</body>
 </html>
