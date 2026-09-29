@@ -1,6 +1,7 @@
 
 from django.utils import timezone
-from datetime import timedelta
+import datetime
+from datetime import datetime, timedelta, date
 
 def get_default_date_range(request, from_param='from_date', to_param='to_param'):
     from_raw = request.GET.get(from_param)
@@ -1916,11 +1917,23 @@ def api_doctor_window_patients(request):
     visit_type = request.GET.get('visit_type')  # OP / IP / '' (All)
     date_str = request.GET.get('date')
     
+    date_obj = None
+    if date_str:
+        for fmt in ('%Y-%m-%d', '%d-%m-%Y', '%d/%m/%Y', '%Y/%m/%d'):
+            try:
+                date_obj = datetime.strptime(str(date_str).strip(), fmt).date()
+                break
+            except (ValueError, TypeError):
+                pass
+
     # We will combine Patient (Visit 1) and PatientVisit (Visit > 1)
     # 1. Query Patient (Visit 1)
     patients_qs = Patient.objects.all().order_by('-id')
-    if date_str:
+    if date_obj:
+        patients_qs = patients_qs.filter(registration_date=date_obj)
+    elif date_str:
         patients_qs = patients_qs.filter(registration_date=date_str)
+
     if department_id:
         patients_qs = patients_qs.filter(department_obj_id=department_id)
     if patient_type and patient_type != 'A':
@@ -1930,8 +1943,11 @@ def api_doctor_window_patients(request):
         
     # 2. Query PatientVisit (Visit > 1)
     visits_qs = PatientVisit.objects.select_related('patient', 'department_obj').all().order_by('-id')
-    if date_str:
+    if date_obj:
+        visits_qs = visits_qs.filter(visit_date__date=date_obj)
+    elif date_str:
         visits_qs = visits_qs.filter(visit_date__date=date_str)
+
     if department_id:
         visits_qs = visits_qs.filter(department_obj_id=department_id)
     if patient_type and patient_type != 'A':

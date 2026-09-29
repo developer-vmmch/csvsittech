@@ -721,6 +721,18 @@ $(document).ready(function() {
                 $('#patient-info-empty').show();
                 currentVisitId = null;
             },
+            error: function(xhr, status, error) {
+                console.error('Error loading patients:', error);
+                $('#patient-total-count').text('Total: 0');
+                $('#patients-table tbody').html(`
+                    <tr class="empty-row">
+                        <td colspan="8" class="text-danger">
+                            <i class="bi bi-exclamation-triangle fs-3 d-block mb-2"></i>
+                            Failed to load patient records. Please click View to retry.
+                        </td>
+                    </tr>
+                `);
+            },
             complete: function() {
                 btn.html(originalHtml).prop('disabled', false);
             }
@@ -728,30 +740,25 @@ $(document).ready(function() {
     }
 
     $('#btn-view').click(loadPatients);
+
+    // Auto-load on date, department, or visit type change
+    $('#filter_date').on('change', function() {
+        loadPatients();
+    });
+
+    $('#filter_department').on('change', function() {
+        loadPatients();
+    });
+
+    $('input[name="filter_visit_type"]').on('change', function() {
+        loadPatients();
+    });
     
     $('#btn-reset').click(function() {
         $('#filter_date').val("{% now 'Y-m-d' %}");
-        $('#filter_department').val('').trigger('change');
+        $('#filter_department').val('').trigger('change.select2');
         $('input[name="filter_visit_type"][value="OP"]').prop('checked', true);
-        
-        $('#patients-table tbody').html(`
-            <tr class="empty-row">
-                <td colspan="8">
-                    <i class="bi bi-inbox fs-3 d-block mb-2 text-muted"></i>
-                    Click View to search for patients.
-                </td>
-            </tr>
-        `);
-        $('#summary-table tbody').html(`
-            <tr class="empty-row">
-                <td colspan="4">No data available</td>
-            </tr>
-        `);
-        $('#summary-tfoot').hide();
-        $('#patient-total-count').text('Total: 0');
-        $('#diagnosis-panel').hide();
-        $('#patient-info-box').hide();
-        $('#patient-info-empty').show();
+        loadPatients();
     });
 
     // --- Select Patient ---

@@ -72,12 +72,17 @@ class DepartmentAccessMiddleware:
 
             dept_perms = dept_obj.nav_permissions if (dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict) and len(dept_obj.nav_permissions) > 0) else DEPT_DEFAULT_NAV_MAPPING.get(dept_obj.code, {})
             
+            is_api = path.startswith('/api/') or '/api/' in path or request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json'
+
             # Helper to safely redirect without creating an infinite loop
             def _safe_redirect(fallback_msg=None):
+                if is_api:
+                    from django.http import JsonResponse
+                    return JsonResponse({'status': 'error', 'message': fallback_msg or 'Access Denied.'}, status=403)
                 if fallback_msg:
                     messages.error(request, fallback_msg)
                 dest = dept_obj.dashboard_url or '/dashboard/'
-                if dest == path or path.startswith(dest) and dest != '/':
+                if dest == path or (path.startswith(dest) and dest != '/'):
                     dest = '/dashboard/'
                 if dest == path:
                     return None
@@ -85,50 +90,54 @@ class DepartmentAccessMiddleware:
 
             # 2. Check if current path matches any NavSubmodule
             matching_sub = None
+            norm_path = path.replace('/api/', '/')
             try:
                 submodules = NavSubmodule.objects.filter(is_active=True).exclude(url_path__in=['#', '', '/']).order_by('-url_path')
                 for sub in submodules:
-                    if sub.url_path and (path == sub.url_path or (path.startswith(sub.url_path) and sub.url_path != '/')):
+                    if sub.url_path and (
+                        path == sub.url_path 
+                        or (path.startswith(sub.url_path) and sub.url_path != '/')
+                        or (norm_path.startswith(sub.url_path) and sub.url_path != '/')
+                    ):
                         matching_sub = sub
                         break
             except Exception:
                 matching_sub = None
 
-            if matching_sub and dept_perms:
+            if matching_sub:
                 sub_code = matching_sub.code
-                is_granted = dept_perms.get(sub_code, False)
-                if not is_granted:
-                    # Check if .view or _actions allows it
-                    act = dept_perms.get(f"{sub_code}_actions")
-                    if isinstance(act, dict) and (act.get('access') or act.get('view')):
-                        is_granted = True
-                    elif dept_perms.get(f"{sub_code}.view"):
-                        is_granted = True
+                is_granted = (
+                    request.user.can_access_menu(sub_code)
+                    or request.user.has_perm_code(sub_code)
+                    or request.user.has_perm_code(f"{sub_code}.view")
+                    or (dept_perms and dept_perms.get(sub_code) is True)
+                )
 
                 if not is_granted:
-                    return _safe_redirect(f"Access Denied: The '{dept_obj.name}' department is not authorized to access '{matching_sub.name}'.")
+                    return _safe_redirect(f"Access Denied: You are not authorized to access '{matching_sub.name}'.")
 
                 # 3. Check granular action permissions for mutation/action routes
                 if request.method == 'POST':
                     is_delete_req = '/delete/' in path or request.POST.get('action') == 'delete'
                     if is_delete_req:
-                        can_del = dept_perms.get(f"{sub_code}.delete", dept_perms.get(f"{sub_code}_actions", {}).get('delete', True))
+                        can_del = request.user.has_perm_code(f"{sub_code}.delete")
                         if can_del is False:
-                            messages.error(request, f"Permission Denied: Delete operation is disabled for '{matching_sub.name}' in your department.")
+                            messages.error(request, f"Permission Denied: Delete operation is disabled for '{matching_sub.name}'.")
                             return redirect(matching_sub.url_path or dept_dashboard)
 
             # 4. Check department exclusive prefix boundaries
-            all_depts = get_all_departments()
-            for other_dept in all_depts:
-                if other_dept['code'] == dept_obj.code:
-                    continue
-                
-                other_prefixes = [p for p in other_dept.get('allowed_prefixes', []) if p not in ['/dashboard/', '/patients/']]
-                active_prefixes = dept_obj.allowed_prefixes if isinstance(dept_obj.allowed_prefixes, list) else []
+            if not is_api and not matching_sub:
+                all_depts = get_all_departments()
+                for other_dept in all_depts:
+                    if other_dept['code'] == dept_obj.code:
+                        continue
+                    
+                    other_prefixes = [p for p in other_dept.get('allowed_prefixes', []) if p not in ['/dashboard/', '/patients/']]
+                    active_prefixes = dept_obj.allowed_prefixes if isinstance(dept_obj.allowed_prefixes, list) else []
 
-                for prefix in other_prefixes:
-                    if path.startswith(prefix) and not any(path.startswith(ap) for ap in active_prefixes):
-                        if not user_can_access_department(request.user, other_dept):
-                            return _safe_redirect(f"Access Denied: You are not authorized to access the {other_dept['name']} department.")
+                    for prefix in other_prefixes:
+                        if path.startswith(prefix) and not any(path.startswith(ap) for ap in active_prefixes):
+                            if not user_can_access_department(request.user, other_dept):
+                                return _safe_redirect(f"Access Denied: You are not authorized to access the {other_dept['name']} department.")
 
         return None

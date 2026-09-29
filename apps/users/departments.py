@@ -461,16 +461,16 @@ def user_can_access_department(user, dept_dict_or_slug):
         return True
 
     role_to_dept = {
-        'manager': ['clinical_department', 'department', 'front_office', 'consultant', 'ward', 'mrd', 'report', 'mis', 'accounts', 'billing', 'inventory'],
-        'doctor': ['consultant', 'ward', 'ot', 'summary', 'clinical_department', 'department'],
-        'consultant': ['consultant', 'ward', 'ot', 'summary', 'clinical_department', 'department'],
+        'manager': ['clinical_department', 'department', 'front_office', 'consultant', 'ward', 'lab', 'ot', 'mrd', 'report', 'mis', 'accounts', 'billing', 'inventory'],
+        'doctor': ['consultant', 'ward', 'ot', 'summary', 'clinical_department', 'department', 'lab', 'report'],
+        'consultant': ['consultant', 'ward', 'ot', 'summary', 'clinical_department', 'department', 'lab', 'report'],
         'lab_tech': ['lab', 'blood_bank', 'report'],
         'radiologist': ['radiology', 'lab', 'report'],
         'pharmacist': ['pharmacy', 'inventory'],
         'accountant': ['accounts', 'billing'],
         'cashier': ['billing', 'accounts'],
         'nurse': ['ward', 'ot', 'front_office'],
-        'staff': ['front_office', 'ward', 'billing', 'mrd', 'summary', 'pharmacy', 'inventory', 'blood_bank', 'radiology', 'ot', 'accounts', 'report', 'mis', 'department'],
+        'staff': ['front_office', 'ward', 'billing', 'mrd', 'summary', 'pharmacy', 'inventory', 'blood_bank', 'radiology', 'ot', 'accounts', 'report', 'mis', 'department', 'consultant'],
     }
 
     allowed_depts_for_role = role_to_dept.get(user_role, [])
@@ -478,10 +478,10 @@ def user_can_access_department(user, dept_dict_or_slug):
         return True
 
     clinical_allowed = ['clinical_department', 'department', 'consultant', 'ward', 'summary', 'front_office']
-    if user_dept and dept['code'] in clinical_allowed:
+    if user_dept_raw and dept['code'] in clinical_allowed:
         try:
             from apps.patients.models import Department
-            if Department.objects.filter(name__iexact=user.department).exists():
+            if Department.objects.filter(name__iexact=user_dept_raw).exists():
                 return True
         except Exception:
             pass
