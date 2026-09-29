@@ -300,9 +300,9 @@
             margin: 0 auto;
         }
 
-        /* A5 Print Sheet Setup & Media Query */
+        /* Print Setup & Media Query */
         @page {
-            size: A5;
+            size: auto;
             margin: 5mm;
         }
 
@@ -313,6 +313,8 @@
                 background: #ffffff !important;
                 padding: 0 !important;
                 margin: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
 
             .no-print-bar,
@@ -321,14 +323,22 @@
             }
 
             .op-slip {
-                border: 1px solid #000 !important;
+                border: 1.5px solid #000 !important;
                 width: 100% !important;
-                max-width: 100% !important;
+                max-width: 780px !important;
+                height: auto !important;
+                min-height: unset !important;
                 box-shadow: none !important;
                 margin: 0 auto !important;
-                padding: 8px 14px 10px 14px !important;
+                padding: 12px 18px 12px 18px !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
+                display: block !important;
+                box-sizing: border-box !important;
+            }
+
+            .top-center-logo-wrap {
+                margin-bottom: 3px !important;
             }
 
             .hospital-main-emblem {
@@ -337,13 +347,18 @@
             }
 
             .hospital-title {
-                font-size: 15px !important;
-                margin-bottom: 2px !important;
+                font-size: 16px !important;
+                margin-bottom: 3px !important;
+            }
+
+            .header-badges-row {
+                margin-top: 2px !important;
+                margin-bottom: 4px !important;
             }
 
             .header-address-center {
-                font-size: 11px !important;
-                line-height: 1.28 !important;
+                font-size: 11.5px !important;
+                line-height: 1.35 !important;
             }
 
             .nabh-logo-img {
@@ -351,9 +366,16 @@
                 height: 48px !important;
             }
 
+            .hfrid-text {
+                font-size: 9.5px !important;
+            }
+
             .banner-bar {
                 padding: 3px 6px !important;
                 margin-top: 4px !important;
+                margin-bottom: 0 !important;
+                border-top: 1.5px solid #000 !important;
+                border-bottom: 1.5px solid #000 !important;
             }
 
             .banner-barcode-svg {
@@ -362,17 +384,22 @@
 
             .banner-middle-type,
             .banner-dept {
-                font-size: 13px !important;
+                font-size: 13.5px !important;
+            }
+
+            .patient-details-box {
+                padding-top: 2px !important;
             }
 
             .demographics-row-1 {
-                padding: 4px 2px !important;
-                font-size: 13px !important;
+                padding: 4px 4px !important;
+                font-size: 13.5px !important;
+                border-bottom: 1.5px solid #000 !important;
             }
 
             .demographics-body {
-                padding: 6px 2px 2px 2px !important;
-                font-size: 13px !important;
+                padding: 6px 4px 2px 4px !important;
+                font-size: 13.5px !important;
             }
 
             .field-line,
@@ -381,7 +408,7 @@
             }
 
             .qr-bottom-wrap {
-                margin-top: 8px !important;
+                margin-top: 10px !important;
                 margin-bottom: 2px !important;
             }
 
