@@ -150,8 +150,8 @@ class User(AbstractUser):
             role_perms = RoleMenuPermission.get_permissions_for_role(self.role)
             if role_perms and isinstance(role_perms, dict):
                 res = _check_dict(role_perms, perm_code)
-                if res is False:
-                    return False
+                if res is not None:
+                    return res
         except Exception:
             role_perms = None
 
@@ -166,18 +166,10 @@ class User(AbstractUser):
                 )
                 if dept_obj and dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict):
                     res = _check_dict(dept_obj.nav_permissions, perm_code)
-                    if res is False:
-                        return False
-                    if res is True and role_perms is None:
-                        return True
+                    if res is not None:
+                        return res
         except Exception:
             pass
-
-        # If role permissions were configured in DB and returned True
-        if role_perms and isinstance(role_perms, dict):
-            res = _check_dict(role_perms, perm_code)
-            if res is not None:
-                return res
 
         # 3. Check aliases e.g. ATC_EDIT -> auto_trigger.atc.update
         aliases = {
@@ -192,7 +184,10 @@ class User(AbstractUser):
 
         # 4. Default fallback for specific legacy roles if not configured in DB
         if self.role == self.Roles.MANAGER:
-            if perm_code.startswith('auto_trigger.') or any(perm_code.endswith(x) for x in ['.view', '.create', '.update', '.edit', '.print', '.export']):
+            return True
+
+        if self.role == self.Roles.STAFF:
+            if any(perm_code.startswith(p) for p in ['patients.', 'patient_', 'doctor_window', 'ward', 'consultant']):
                 return True
 
         return False
@@ -372,22 +367,22 @@ class User(AbstractUser):
         merged = default_map.copy()
         if db_perms:
             merged.update(db_perms)
-
-        try:
-            from apps.users.models import LandingDepartment
-            depts_list = self.get_assigned_departments_list()
-            for dept_name in depts_list:
-                dept_obj = (
-                    LandingDepartment.objects.filter(name__iexact=dept_name).first()
-                    or LandingDepartment.objects.filter(code__iexact=dept_name.lower().replace(' ', '_')).first()
-                    or LandingDepartment.objects.filter(slug__iexact=dept_name.lower().replace(' ', '-')).first()
-                )
-                if dept_obj and dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict):
-                    for k, v in dept_obj.nav_permissions.items():
-                        if v is False:
-                            merged[k] = False
-        except Exception:
-            pass
+        else:
+            try:
+                from apps.users.models import LandingDepartment
+                depts_list = self.get_departments_list()
+                for dept_name in depts_list:
+                    dept_obj = (
+                        LandingDepartment.objects.filter(name__iexact=dept_name).first()
+                        or LandingDepartment.objects.filter(code__iexact=dept_name.lower().replace(' ', '_')).first()
+                        or LandingDepartment.objects.filter(slug__iexact=dept_name.lower().replace(' ', '-')).first()
+                    )
+                    if dept_obj and dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict):
+                        for k, v in dept_obj.nav_permissions.items():
+                            if v is False and k in merged:
+                                merged[k] = False
+            except Exception:
+                pass
 
         return merged
 
