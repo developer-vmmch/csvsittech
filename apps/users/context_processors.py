@@ -87,54 +87,77 @@ def _build_dynamic_navbar(request, user):
             })
         return {'dynamic_nav_modules': user_nav_modules}
 
-    # 2. Resolve Department Permissions Map
-    dept_perms = None
-    if dept_obj:
-        if dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict) and len(dept_obj.nav_permissions) > 0:
-            dept_perms = dept_obj.nav_permissions
-        else:
-            dept_perms = DEPT_DEFAULT_NAV_MAPPING.get(dept_obj.code, {})
-    elif active_dept_code:
-        norm_code = str(active_dept_code).split(',')[0].strip().lower().replace('-', '_')
-        dept_perms = DEPT_DEFAULT_NAV_MAPPING.get(norm_code, {})
+    # 2. Resolve Role Permissions & Department Permissions
+    from .models import RoleMenuPermission
+    role_perms = RoleMenuPermission.get_permissions_for_role(user.role)
 
-    # Fallback to Role Permissions if no department found
-    role_perms = {}
-    if not dept_perms:
-        from .models import RoleMenuPermission
-        role_perms = RoleMenuPermission.get_permissions_for_role(user.role) or {}
+    dept_perms = None
+    if dept_obj and dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict) and len(dept_obj.nav_permissions) > 0:
+        dept_perms = dept_obj.nav_permissions
+    elif not role_perms:
+        if dept_obj:
+            dept_perms = DEPT_DEFAULT_NAV_MAPPING.get(dept_obj.code, {})
+        elif active_dept_code:
+            norm_code = str(active_dept_code).split(',')[0].strip().lower().replace('-', '_')
+            dept_perms = DEPT_DEFAULT_NAV_MAPPING.get(norm_code, {})
+
+    def _check_perm_map(perms_map, code):
+        if perms_map is None or not isinstance(perms_map, dict):
+            return None
+        # 1. Exact boolean in mapping
+        if code in perms_map:
+            return bool(perms_map[code])
+        if f"{code}.view" in perms_map:
+            return bool(perms_map[f"{code}.view"])
+        # 2. Check granular action dictionary
+        act = perms_map.get(f"{code}_actions")
+        if isinstance(act, dict):
+            if act.get('access') is False and act.get('view') is False:
+                return False
+            if act.get('access') is True or act.get('view') is True:
+                return True
+            if any(act.get(a) is True for a in ['add', 'create', 'edit', 'update', 'delete', 'print', 'export']):
+                return True
+            return False
+        return None
 
     def _is_submodule_permitted(sub_code):
-        if dept_perms is not None:
-            # 1. Exact boolean in department mapping
-            if dept_perms.get(sub_code) is True:
+        # 1. If role permissions are configured in DB:
+        if role_perms is not None and isinstance(role_perms, dict):
+            r_val = _check_perm_map(role_perms, sub_code)
+            # Explicitly locked/disabled in role permissions -> strictly deny!
+            if r_val is False:
+                return False
+            # If role permissions are saved in DB, and this sub_code is True:
+            if r_val is True:
+                # If department permissions are also customized in DB, ensure dept didn't lock it
+                if dept_perms is not None and isinstance(dept_perms, dict):
+                    d_val = _check_perm_map(dept_perms, sub_code)
+                    if d_val is False:
+                        return False
                 return True
-            if dept_perms.get(f"{sub_code}.view") is True:
-                return True
-            # 2. Check granular action dictionary
-            act = dept_perms.get(f"{sub_code}_actions")
-            if isinstance(act, dict):
-                if act.get('access') is True or act.get('view') is True:
+            # If not in role_perms, check if dept grants it
+            if dept_perms is not None and isinstance(dept_perms, dict):
+                d_val = _check_perm_map(dept_perms, sub_code)
+                if d_val is True:
                     return True
-                if any(act.get(a) is True for a in ['add', 'create', 'edit', 'update', 'delete', 'print', 'export']):
-                    return True
-            # Explicitly false or absent in department permissions
             return False
-        else:
-            # Role permissions fallback
-            if role_perms.get(sub_code) is True or role_perms.get(f"{sub_code}.view") is True:
-                return True
-            act = role_perms.get(f"{sub_code}_actions")
-            if isinstance(act, dict) and (act.get('access') is True or act.get('view') is True):
-                return True
-            return False
+
+        # 2. If only department permissions exist in DB:
+        if dept_perms is not None and isinstance(dept_perms, dict):
+            d_val = _check_perm_map(dept_perms, sub_code)
+            if d_val is not None:
+                return d_val
+
+        # 3. Fallback to user role menu mapping
+        return bool(user.can_access_menu(sub_code))
 
     # 3. Filter modules & submodules strictly
     has_admin_mod_added = False
 
     for mod in modules:
         active_subs = []
-        all_mod_subs = mod.submodules.filter(is_active=True).order_by('order', 'id')
+        all_mod_subs = list(mod.submodules.filter(is_active=True).order_by('order', 'id'))
 
         for sub in all_mod_subs:
             if _is_submodule_permitted(sub.code):
@@ -143,10 +166,10 @@ def _build_dynamic_navbar(request, user):
         # Include parent module ONLY if it has at least one permitted submodule,
         # OR if it's a standalone single-link module explicitly granted
         mod_is_granted = False
-        if dept_perms is not None:
-            mod_is_granted = bool(dept_perms.get(mod.code, False))
-        else:
-            mod_is_granted = bool(role_perms.get(mod.code, False))
+        if role_perms and isinstance(role_perms, dict) and mod.code in role_perms:
+            mod_is_granted = bool(role_perms[mod.code])
+        elif dept_perms and isinstance(dept_perms, dict) and mod.code in dept_perms:
+            mod_is_granted = bool(dept_perms[mod.code])
 
         if len(active_subs) > 0 or (len(all_mod_subs) == 0 and mod_is_granted):
             primary_url = mod.url_path
