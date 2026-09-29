@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,28 +27,61 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
         .header {
-            text-align: center;
             border-bottom: 2px solid #0284c7;
             padding-bottom: 15px;
             margin-bottom: 20px;
         }
+        .header-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .header-logo-wrap {
+            width: 70px;
+            flex-shrink: 0;
+        }
+        .hospital-logo-img {
+            max-width: 65px;
+            max-height: 65px;
+            object-fit: contain;
+            display: block;
+        }
+        .header-text-block {
+            flex: 1;
+            text-align: center;
+        }
         .header h1 {
-            font-size: 22px;
+            font-size: 20px;
             color: #0369a1;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-family: Georgia, serif;
         }
         .header h2 {
-            font-size: 14px;
+            font-size: 13px;
             color: #475569;
             font-weight: 600;
-            margin-top: 4px;
+            margin-top: 2px;
         }
         .header p {
-            font-size: 12px;
+            font-size: 11px;
             color: #64748b;
             margin-top: 2px;
+        }
+        .header-barcode-wrap {
+            flex-shrink: 0;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 140px;
+        }
+        .barcode-svg {
+            height: 40px;
+            width: auto;
+            max-width: 160px;
+            display: block;
         }
         .doc-title {
             text-align: center;
@@ -65,8 +99,8 @@
         }
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px 24px;
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             padding: 16px;
@@ -74,18 +108,38 @@
             margin-bottom: 24px;
             font-size: 13px;
         }
+        .info-fields-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px 18px;
+        }
         .info-item {
             display: flex;
         }
         .info-label {
             font-weight: 700;
             color: #475569;
-            width: 140px;
+            width: 120px;
             flex-shrink: 0;
         }
         .info-value {
             color: #0f172a;
             font-weight: 600;
+        }
+        .info-qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px dashed #cbd5e1;
+            padding-left: 12px;
+            gap: 4px;
+        }
+        .qr-caption {
+            font-size: 9px;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
         }
         .section-heading {
             font-size: 14px;
@@ -178,8 +232,12 @@
             .no-print {
                 display: none;
             }
+            img, svg, canvas {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
             @page {
-                margin: 15mm;
+                margin: 12mm;
             }
         }
     </style>
@@ -195,48 +253,64 @@
     <div class="print-container">
         <!-- Hospital Header -->
         <div class="header">
-            <h1>Vinayaka Missions Medical College and Hospital</h1>
-            <h2>KEEZHAKASAKUDY MEDU, KARAIKAL - 609 609</h2>
-            <p>Phone: 04368-262270, 262271 | Email: vmmch@vmmc.edu.in | Web: www.vmmc.edu.in</p>
+            <div class="header-top-row">
+                <div class="header-logo-wrap">
+                    <img src="{% static 'images/vmmc_logo.png' %}" alt="Vinayaka Missions Logo" class="hospital-logo-img">
+                </div>
+                <div class="header-text-block">
+                    <h1>Vinayaka Missions Medical College and Hospital</h1>
+                    <h2>KEEZHAKASAKUDY MEDU, KARAIKAL - 609 609</h2>
+                    <p>Phone: 04368-262270, 262271 | Email: vmmch@vmmc.edu.in | Web: www.vmmc.edu.in</p>
+                </div>
+                <div class="header-barcode-wrap">
+                    <svg id="history-barcode" class="barcode-svg"></svg>
+                </div>
+            </div>
         </div>
 
         <div class="doc-title">
             <h3>PATIENT COMPLETE MEDICAL HISTORY RECORD & REFERRAL SUMMARY</h3>
         </div>
 
-        <!-- Patient Info Card -->
+        <!-- Patient Info Card with Integrated QR -->
         <div class="info-grid">
-            <div class="info-item">
-                <span class="info-label">Patient ID / UHID:</span>
-                <span class="info-value" style="color: #0369a1; font-size: 14px;">{{ patient.patient_id }}</span>
+            <div class="info-fields-container">
+                <div class="info-item">
+                    <span class="info-label">UHID:</span>
+                    <span class="info-value" style="color: #0369a1; font-size: 14px;">{{ patient.patient_id }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Date of Report:</span>
+                    <span class="info-value">{{ now|date:"d/b/Y H:i" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Patient Name:</span>
+                    <span class="info-value">{{ patient.title }} {{ patient.name }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Age / Gender:</span>
+                    <span class="info-value">{{ patient.age_years }} Y / {{ patient.gender }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Guardian Name:</span>
+                    <span class="info-value">{{ patient.guardian_relationship }} {{ patient.guardian_name|default:"--" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Mobile Number:</span>
+                    <span class="info-value">{{ patient.mobile_no|default:"--" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Address:</span>
+                    <span class="info-value">{{ patient.street|default:"" }} {{ patient.village_area|default:"" }} {{ patient.city }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">ABHA ID / Scheme:</span>
+                    <span class="info-value">{{ patient.abha_id|default:"--" }} / {{ patient.company_name|default:"General" }}</span>
+                </div>
             </div>
-            <div class="info-item">
-                <span class="info-label">Date of Report:</span>
-                <span class="info-value">{{ now|date:"d/b/Y H:i" }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Patient Name:</span>
-                <span class="info-value">{{ patient.title }} {{ patient.name }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Age / Gender:</span>
-                <span class="info-value">{{ patient.age_years }} Y / {{ patient.gender }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Guardian Name:</span>
-                <span class="info-value">{{ patient.guardian_relationship }} {{ patient.guardian_name|default:"--" }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Mobile Number:</span>
-                <span class="info-value">{{ patient.mobile_no }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Address / City:</span>
-                <span class="info-value">{{ patient.street|default:"" }} {{ patient.village_area|default:"" }} {{ patient.city }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">ABHA ID / Scheme:</span>
-                <span class="info-value">{{ patient.abha_id|default:"--" }} / {{ patient.company_name }}</span>
+            <div class="info-qr-container">
+                <div id="history-qrcode"></div>
+                <span class="qr-caption">Scan UHID Verification</span>
             </div>
         </div>
 
@@ -338,5 +412,57 @@
         </div>
     </div>
 
+    <!-- Vendor Scripts: JsBarcode and QRCode -->
+    <script src="{% static 'js/JsBarcode.all.min.js' %}"></script>
+    <script src="{% static 'js/qrcode.min.js' %}"></script>
+    <script>
+        if (typeof JsBarcode === 'undefined') {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>');
+        }
+        if (typeof QRCode === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>');
+        }
+    </script>
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            var uhid = "{{ patient.patient_id }}".trim();
+
+            // 1. Generate Barcode for UHID
+            try {
+                if (typeof JsBarcode !== 'undefined' && uhid) {
+                    JsBarcode("#history-barcode", uhid, {
+                        format: "CODE128",
+                        width: 1.3,
+                        height: 34,
+                        displayValue: true,
+                        fontSize: 10,
+                        font: "Courier New",
+                        textMargin: 2,
+                        margin: 0
+                    });
+                }
+            } catch (err) {
+                console.error("History barcode error:", err);
+            }
+
+            // 2. Generate QR Code for Patient Record
+            try {
+                var qrElem = document.getElementById("history-qrcode");
+                if (qrElem && typeof QRCode !== 'undefined' && uhid) {
+                    qrElem.innerHTML = "";
+                    new QRCode(qrElem, {
+                        text: "UHID:" + uhid,
+                        width: 64,
+                        height: 64,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                }
+            } catch (err) {
+                console.error("History QR error:", err);
+            }
+        });
+    </script>
 </body>
 </html>
