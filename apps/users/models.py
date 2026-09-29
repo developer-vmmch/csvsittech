@@ -143,7 +143,19 @@ class User(AbstractUser):
 
             return None
 
-        # 1. Check Department-Wise Page Mapping (LandingDepartment.nav_permissions)
+        # 1. Check Role-Wise Permissions (RoleMenuPermission)
+        role_perms = None
+        try:
+            from apps.users.models import RoleMenuPermission
+            role_perms = RoleMenuPermission.get_permissions_for_role(self.role)
+            if role_perms and isinstance(role_perms, dict):
+                res = _check_dict(role_perms, perm_code)
+                if res is False:
+                    return False
+        except Exception:
+            role_perms = None
+
+        # 2. Check Department-Wise Page Mapping (LandingDepartment.nav_permissions)
         try:
             from apps.users.models import LandingDepartment
             for dept_name in depts_list:
@@ -154,29 +166,20 @@ class User(AbstractUser):
                 )
                 if dept_obj and dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict):
                     res = _check_dict(dept_obj.nav_permissions, perm_code)
-                    if res is not None:
-                        if res:
-                            return True
+                    if res is False:
+                        return False
+                    if res is True and role_perms is None:
+                        return True
         except Exception:
             pass
 
-        # 2. Check Role-Wise Permissions (RoleMenuPermission)
-        try:
-            from apps.users.models import RoleMenuPermission
-            role_perms = RoleMenuPermission.get_permissions_for_role(self.role)
-            if role_perms and isinstance(role_perms, dict):
-                res = _check_dict(role_perms, perm_code)
-                if res is not None:
-                    return res
-        except Exception:
-            pass
+        # If role permissions were configured in DB and returned True
+        if role_perms and isinstance(role_perms, dict):
+            res = _check_dict(role_perms, perm_code)
+            if res is not None:
+                return res
 
-        # 3. Default fallback for specific legacy roles if not configured in DB
-        if self.role == self.Roles.MANAGER:
-            if perm_code.startswith('auto_trigger.') or any(perm_code.endswith(x) for x in ['.view', '.create', '.update', '.edit', '.print', '.export']):
-                return True
-
-        # Check aliases e.g. ATC_EDIT -> auto_trigger.atc.update
+        # 3. Check aliases e.g. ATC_EDIT -> auto_trigger.atc.update
         aliases = {
             'ATC_VIEW': 'auto_trigger.atc.view',
             'ATC_CREATE': 'auto_trigger.atc.create',
@@ -186,6 +189,11 @@ class User(AbstractUser):
         }
         if perm_code in aliases:
             return self.has_perm_code(aliases[perm_code])
+
+        # 4. Default fallback for specific legacy roles if not configured in DB
+        if self.role == self.Roles.MANAGER:
+            if perm_code.startswith('auto_trigger.') or any(perm_code.endswith(x) for x in ['.view', '.create', '.update', '.edit', '.print', '.export']):
+                return True
 
         return False
 
@@ -361,12 +369,27 @@ class User(AbstractUser):
             'system_section': False, 'administration': False, 'users_roles': False, 'inventory': False, 'settings': False,
         })
 
+        merged = default_map.copy()
         if db_perms:
-            merged = default_map.copy()
             merged.update(db_perms)
-            return merged
 
-        return default_map
+        try:
+            from apps.users.models import LandingDepartment
+            depts_list = self.get_assigned_departments_list()
+            for dept_name in depts_list:
+                dept_obj = (
+                    LandingDepartment.objects.filter(name__iexact=dept_name).first()
+                    or LandingDepartment.objects.filter(code__iexact=dept_name.lower().replace(' ', '_')).first()
+                    or LandingDepartment.objects.filter(slug__iexact=dept_name.lower().replace(' ', '-')).first()
+                )
+                if dept_obj and dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict):
+                    for k, v in dept_obj.nav_permissions.items():
+                        if v is False:
+                            merged[k] = False
+        except Exception:
+            pass
+
+        return merged
 
     def can_access_menu(self, menu_key):
         """Checks whether the user's role profile has access to a given menu key."""
