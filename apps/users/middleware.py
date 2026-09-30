@@ -37,7 +37,8 @@ class DepartmentAccessMiddleware:
             path.startswith('/admin/') or
             path == '/' or
             path.startswith('/login') or
-            path.startswith('/logout')
+            path.startswith('/logout') or
+            path.startswith('/public/')
         ):
             return None
 

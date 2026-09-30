@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'apps.patients',
     'apps.lab',
     'apps.ot',
+    'apps.printing',
 ]
 
 MIDDLEWARE = [
@@ -170,6 +171,11 @@ STORAGES = {
 }
 WHITENOISE_MANIFEST_STRICT = False
 
+if 'test' in sys.argv:
+    STORAGES["staticfiles"] = {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    }
+
 # Media files (User uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -216,3 +222,16 @@ LOGGING = {
         },
     },
 }
+
+# ============================================================
+# QR Sticker Printer & Public Print Architecture
+# ============================================================
+STICKER_PRINTER_ENABLED = os.getenv('STICKER_PRINTER_ENABLED', 'True').lower() in ('true', '1', 't')
+STICKER_PRINTER_TYPE = os.getenv('STICKER_PRINTER_TYPE', 'mock')  # 'mock', 'generic', 'prn', 'network'
+STICKER_PRINTER_NAME = os.getenv('STICKER_PRINTER_NAME', 'TVS_Sticker_Printer')
+STICKER_PRINTER_HOST = os.getenv('STICKER_PRINTER_HOST', '127.0.0.1')
+STICKER_PRINTER_PORT = int(os.getenv('STICKER_PRINTER_PORT', '9100'))
+STICKER_PRINTER_WIDTH = os.getenv('STICKER_PRINTER_WIDTH', '60mm')
+STICKER_PRINTER_HEIGHT = os.getenv('STICKER_PRINTER_HEIGHT', '30mm')
+STICKER_PRINTER_INCLUDE_NABH = os.getenv('STICKER_PRINTER_INCLUDE_NABH', 'False').lower() in ('true', '1', 't')
+PUBLIC_BASE_URL = os.getenv('PUBLIC_BASE_URL', 'https://csvsittech.in')

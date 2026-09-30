@@ -20,6 +20,7 @@ urlpatterns = [
     path('users/', RedirectView.as_view(url='/administration/', permanent=False)),
     path('users/<path:subpath>/', RedirectView.as_view(url='/administration/%(subpath)s/', permanent=False)),
     path('ot/', include(('apps.ot.urls', 'ot'), namespace='ot')),
+    path('', include('apps.printing.urls')),
 ]
 
 if settings.DEBUG:

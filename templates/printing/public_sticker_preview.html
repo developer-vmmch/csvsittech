@@ -1,0 +1,369 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sticker Preview - {{ sticker_data.uhid }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #090d16 0%, #0f172a 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .preview-container {
+            width: 100%;
+            max-width: 680px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .header-text h1 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .header-text p {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .btn-link-doc {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #f8fafc;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .btn-link-doc:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Thermal Sticker Stage */
+        .stage-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .stage-label {
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #94a3b8;
+        }
+
+        .sticker-wrapper-shadow {
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.6);
+            border-radius: 4px;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        /* Action Buttons */
+        .actions-grid {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .btn-primary-action {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35);
+        }
+        .btn-primary-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.5);
+        }
+
+        .btn-secondary-action {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        .btn-secondary-action:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        /* Status Toast Alert */
+        #print-status-toast {
+            display: none;
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            align-items: center;
+            gap: 8px;
+            animation: fadeIn 0.3s ease;
+        }
+        #print-status-toast.success {
+            display: flex;
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #34d399;
+        }
+        #print-status-toast.error {
+            display: flex;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #f87171;
+        }
+
+        /* PRN Inspection Box */
+        .prn-box {
+            background: #020617;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .prn-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .prn-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #38bdf8;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 12px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.5;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Physical Print Media: ONLY the thermal sticker prints */
+        @media print {
+            body {
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .header-card, .actions-grid, .prn-box, .stage-label, #print-status-toast {
+                display: none !important;
+            }
+            .stage-card {
+                background: transparent !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+            .sticker-wrapper-shadow {
+                box-shadow: none !important;
+                margin: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="preview-container">
+        <!-- Top Navigation & Details -->
+        <div class="header-card">
+            <div class="header-left">
+                <div class="header-icon">
+                    <i class="bi bi-tag-fill"></i>
+                </div>
+                <div class="header-text">
+                    <h1>Thermal Sticker Preview</h1>
+                    <p>{{ sticker_data.sticker_label }} Sticker &bull; {{ sticker_data.name }} ({{ sticker_data.uhid }})</p>
+                </div>
+            </div>
+            <a href="{% url 'printing:public_print' token_obj.token %}" class="btn-link-doc">
+                <i class="bi bi-arrow-left"></i> View Full OP Document
+            </a>
+        </div>
+
+        <!-- Live Print Status Alert -->
+        <div id="print-status-toast"></div>
+
+        <!-- Thermal Sticker Visual Stage -->
+        <div class="stage-card">
+            <div class="stage-label">
+                Format: Thermal Sticker ({{ sticker_renderer.width }} &times; {{ sticker_renderer.height }})
+            </div>
+
+            <div class="sticker-wrapper-shadow">
+                {{ sticker_html|safe }}
+            </div>
+
+            <!-- Action Controls -->
+            <div class="actions-grid">
+                <button type="button" onclick="triggerWorkstationPrint()" id="btn-workstation-print" class="btn-primary-action">
+                    <i class="bi bi-printer-fill"></i> Send to Sticker Printer
+                </button>
+                <button type="button" onclick="window.print()" class="btn-secondary-action">
+                    <i class="bi bi-browser-chrome"></i> Browser Print
+                </button>
+                <button type="button" onclick="downloadPRN()" class="btn-secondary-action">
+                    <i class="bi bi-file-earmark-code"></i> Download PRN
+                </button>
+            </div>
+        </div>
+
+        <!-- PRN Command Stream for Engineers / TVS Technicians -->
+        <div class="prn-box">
+            <div class="prn-header">
+                <span><i class="bi bi-terminal"></i> TVS / TSPL PRN Command Stream</span>
+                <span style="font-size: 11px; color: #64748b;">Ready for TVS LP 46 Neo / LP 44 / Generic Thermal</span>
+            </div>
+            <div class="prn-code" id="prn-raw-text">{{ prn_payload }}</div>
+        </div>
+    </div>
+
+    <script>
+        function showToast(message, isSuccess) {
+            var toast = document.getElementById('print-status-toast');
+            toast.className = isSuccess ? 'success' : 'error';
+            toast.innerHTML = (isSuccess ? '<i class="bi bi-check-circle-fill"></i> ' : '<i class="bi bi-exclamation-triangle-fill"></i> ') + message;
+            toast.style.display = 'flex';
+        }
+
+        function triggerWorkstationPrint() {
+            var btn = document.getElementById('btn-workstation-print');
+            var originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-arrow-repeat" style="animation: spin 1s infinite linear;"></i> Sending...';
+
+            fetch("{% url 'printing:public_print_trigger' token_obj.token %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    source: 'sticker_preview_page'
+                })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                if (data.success) {
+                    showToast('Sticker sent to printer successfully! Job ID: ' + (data.job_id || 'OK') + ' (' + data.status + ')', true);
+                } else {
+                    showToast('Printer Error: ' + (data.message || 'Failed to dispatch print job'), false);
+                }
+            })
+            .catch(function(err) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                showToast('Network error while contacting printer bridge: ' + err.message, false);
+            });
+        }
+
+        function downloadPRN() {
+            var prnData = document.getElementById('prn-raw-text').innerText;
+            var blob = new Blob([prnData], { type: 'text/plain;charset=utf-8' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = "vmmc_sticker_{{ sticker_data.uhid }}.prn";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+    <style>
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</body>
+</html>

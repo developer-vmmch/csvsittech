@@ -486,6 +486,38 @@ class PatientPrintView(LoginRequiredMixin, MenuAccessRequiredMixin, DetailView):
     template_name = 'patients/patient_print.html'
     context_object_name = 'patient'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        patient = self.object
+
+        # Determine if print is OP or REVIEW
+        type_param = self.request.GET.get('type', '').strip().upper()
+        is_review = (
+            type_param == 'REVIEW' or
+            patient.patient_type in ['R', 'REVIEW'] or
+            patient.visit_through == 'REVIEW' or
+            self.request.GET.get('visit_type', '').upper() == 'REVIEW'
+        )
+        print_type = 'REVIEW' if is_review else 'OP'
+
+        visit_id = self.request.GET.get('visit_id')
+        visit = None
+        if visit_id:
+            visit = patient.visits.filter(id=visit_id).first()
+        if not visit and is_review:
+            visit = patient.visits.order_by('-visit_no').first()
+
+        from apps.printing.models import PublicPrintToken
+        token_obj = PublicPrintToken.get_or_create_token(
+            patient=patient,
+            visit=visit,
+            print_type=print_type
+        )
+        context['print_token'] = token_obj
+        context['public_print_url'] = token_obj.get_public_url(self.request)
+        context['print_type'] = print_type
+        return context
+
 
 class PatientDeleteView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermissionRequiredMixin, DeleteView):
     menu_key = 'patient_list'

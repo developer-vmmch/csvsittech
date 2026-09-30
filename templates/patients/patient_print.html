@@ -511,6 +511,14 @@
         <button onclick="window.print()" class="btn-print">
             <i class="bi bi-printer-fill"></i> Click Here to Print OP Slip
         </button>
+        {% if print_token %}
+        <a href="{% url 'printing:public_sticker' print_token.token %}" target="_blank" class="btn-back" style="background: rgba(16, 185, 129, 0.25); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399;">
+            <i class="bi bi-tag-fill"></i> Sticker Preview
+        </a>
+        <a href="{% url 'printing:public_print' print_token.token %}" target="_blank" class="btn-back" style="background: rgba(56, 189, 248, 0.2); border: 1px solid rgba(56, 189, 248, 0.4); color: #7dd3fc;">
+            <i class="bi bi-phone"></i> Mobile Patient View
+        </a>
+        {% endif %}
         <a href="{% url 'patients:add' %}" class="btn-back">
             <i class="bi bi-person-plus-fill"></i> Register Another Patient
         </a>
@@ -563,7 +571,7 @@
                 <svg id="op-barcode" class="banner-barcode-svg"></svg>
             </div>
             <div class="banner-middle-type">
-                OUT PATIENT - {% if patient.patient_type == 'R' or patient.patient_type == 'REVIEW' or patient.visit_type == 'REVIEW' %}REVIEW{% else %}NEW{% endif %}
+                OUT PATIENT - {% if print_type == 'REVIEW' or patient.patient_type == 'R' or patient.patient_type == 'REVIEW' or patient.visit_type == 'REVIEW' %}REVIEW{% else %}NEW{% endif %}
             </div>
             <div class="banner-dept">
                 {{ patient.department|default:"GENERAL MEDICINE"|upper }}
@@ -613,6 +621,9 @@
         <!-- Bottom Center Unique Scannable QR Code -->
         <div class="qr-bottom-wrap">
             <div id="qrcode"></div>
+            <div style="font-family: sans-serif; font-size: 8px; font-weight: 700; color: #334155; margin-top: 3px; letter-spacing: 0.3px; text-transform: uppercase;">
+                SCAN FOR STICKER / PRINT VIEW
+            </div>
         </div>
 
     </div>
@@ -647,10 +658,13 @@
                 console.error("Barcode generation error:", err);
             }
 
-            // 2. Generate Unique Scannable QR Code redirecting to this Print Page
+            // 2. Generate Unique Scannable QR Code redirecting to secure public print reference
             try {
                 var qrElem = document.getElementById("qrcode");
-                var redirectUrl = window.location.href || (window.location.origin + "{% url 'patients:print' patient.id %}");
+                var redirectUrl = "{{ public_print_url }}".trim();
+                if (!redirectUrl || redirectUrl.indexOf("127.0.0.1") !== -1 || redirectUrl.indexOf("localhost") !== -1 || redirectUrl.indexOf("0.0.0.0") !== -1) {
+                    redirectUrl = "https://csvsittech.in{% if print_token %}{% url 'printing:public_print' print_token.token %}{% endif %}";
+                }
                 if (qrElem && typeof QRCode !== 'undefined' && redirectUrl) {
                     qrElem.innerHTML = "";
                     new QRCode(qrElem, {

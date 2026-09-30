@@ -1,0 +1,469 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VMMC Patient Document - {{ patient.patient_id }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f1f5f9;
+            color: #0f172a;
+            min-height: 100vh;
+            padding: 14px 12px 30px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .mobile-doc-container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Clean Standalone Card */
+        .doc-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Hospital Header Section */
+        .hospital-header {
+            text-align: center;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+        }
+
+        .header-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .hospital-logo-wrap {
+            width: 48px;
+            height: 48px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hospital-logo {
+            width: 46px;
+            height: 46px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .hospital-name-block {
+            flex: 1;
+            text-align: center;
+        }
+
+        .hospital-name {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.25;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .hospital-sub {
+            font-size: 10.5px;
+            color: #475569;
+            font-weight: 600;
+            margin-top: 3px;
+            line-height: 1.35;
+        }
+
+        .nabh-badge-wrap {
+            width: 58px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nabh-badge-img {
+            width: 54px;
+            height: auto;
+            max-height: 44px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .hfrid-label {
+            font-size: 7px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-top: 2px;
+            white-space: nowrap;
+            letter-spacing: 0.2px;
+        }
+
+        /* Visit Banner */
+        .visit-banner {
+            background: #0f172a;
+            color: #ffffff;
+            border-radius: 10px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .visit-type-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #38bdf8;
+        }
+
+        .visit-dept-tag {
+            color: #f8fafc;
+            text-align: right;
+            font-size: 11.5px;
+            font-weight: 700;
+        }
+
+        /* Section Titles */
+        .section-title {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #64748b;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Patient Details Grid */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 14px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .detail-item.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .detail-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #64748b;
+            letter-spacing: 0.4px;
+            margin-bottom: 1px;
+        }
+
+        .detail-value {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .detail-value.primary-highlight {
+            color: #0284c7;
+            font-weight: 800;
+        }
+
+        .detail-value.mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13.5px;
+        }
+
+        /* Sticker Preview Section */
+        .sticker-card {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            padding: 14px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 14px;
+        }
+
+        .sticker-stage-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            overflow-x: auto;
+            padding: 4px 0;
+        }
+
+        .sticker-shadow-wrapper {
+            box-shadow: 0 8px 25px -4px rgba(0, 0, 0, 0.15);
+            border-radius: 3px;
+            background: #ffffff;
+            display: inline-block;
+        }
+
+        .sticker-specs-note {
+            font-size: 9.5px;
+            color: #64748b;
+            font-weight: 600;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        /* Action Buttons */
+        .actions-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-action-touch {
+            width: 100%;
+            height: 48px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-print-sticker {
+            background: #0f172a;
+            color: #ffffff;
+        }
+        .btn-print-sticker:active {
+            transform: scale(0.98);
+            background: #1e293b;
+        }
+
+        .btn-download-pdf {
+            background: #0284c7;
+            color: #ffffff;
+        }
+        .btn-download-pdf:active {
+            transform: scale(0.98);
+            background: #0369a1;
+        }
+
+        /* Hospital Disclaimer Footer */
+        .footer-note {
+            text-align: center;
+            font-size: 10px;
+            color: #94a3b8;
+            line-height: 1.4;
+            padding: 6px 12px;
+        }
+
+        /* Print Media Style: Clean output of the sticker only if printing from mobile */
+        @media print {
+            body {
+                background: #ffffff !important;
+                padding: 0 !important;
+            }
+            .hospital-header, .visit-banner, .details-grid, .section-title, .actions-group, .footer-note, .sticker-specs-note {
+                display: none !important;
+            }
+            .mobile-doc-container {
+                max-width: 100% !important;
+            }
+            .doc-card {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+            }
+            .sticker-card {
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .sticker-shadow-wrapper {
+                box-shadow: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-doc-container">
+
+        <!-- Standalone Document Card -->
+        <div class="doc-card">
+
+            <!-- Hospital Header with Logos and NABH -->
+            <div class="hospital-header">
+                <div class="header-top-row">
+                    <!-- Left: VMMC Hospital Emblem -->
+                    <div class="hospital-logo-wrap">
+                        <img src="{% static 'images/vmmc_logo.png' %}" alt="VMMC Logo" class="hospital-logo">
+                    </div>
+
+                    <!-- Center: Hospital Name and Location -->
+                    <div class="hospital-name-block">
+                        <div class="hospital-name">Vinayaka Missions Medical College &amp; Hospital</div>
+                        <div class="hospital-sub">
+                            Keezhakasakudy, Karaikal - 609609<br>
+                            Ph: 04368 - 263277 , 263338
+                        </div>
+                    </div>
+
+                    <!-- Right: Pre-Accredited NABH Badge -->
+                    <div class="nabh-badge-wrap">
+                        <img src="{% static 'images/nabh_logo.png' %}" alt="NABH (Entry Level) Pre Accredited" class="nabh-badge-img">
+                        <div class="hfrid-label">HFRID: IN3410000736</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Outpatient Visit Banner -->
+            <div class="visit-banner">
+                <div class="visit-type-tag">
+                    <i class="bi bi-file-earmark-medical-fill"></i>
+                    <span>OUT PATIENT - {% if token_obj.print_type == 'REVIEW' or patient.patient_type == 'R' or patient.patient_type == 'REVIEW' or patient.visit_through == 'REVIEW' %}REVIEW{% else %}NEW{% endif %}</span>
+                </div>
+                <div class="visit-dept-tag">
+                    {{ display_dept|default:patient.department|default:"GENERAL MEDICINE"|upper }}
+                </div>
+            </div>
+
+            <!-- Patient Details Grid -->
+            <div class="section-title">
+                <i class="bi bi-person-lines-fill text-primary"></i>
+                <span>Patient Details</span>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-item full-width">
+                    <span class="detail-label">Name</span>
+                    <span class="detail-value primary-highlight">{{ patient.title }}.{{ patient.name|upper }}</span>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-label">UHID</span>
+                    <span class="detail-value mono">{{ patient.patient_id }}</span>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-label">OP Number</span>
+                    <span class="detail-value mono">{{ patient.op_number|default:patient.patient_id }}</span>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-label">Department</span>
+                    <span class="detail-value">{{ display_dept|default:patient.department|default:"GENERAL MEDICINE"|upper }}</span>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-label">Registration Date</span>
+                    <span class="detail-value">{{ display_date|date:"d/m/Y H:i" }}</span>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-label">Age</span>
+                    <span class="detail-value">{{ patient.age_years }} Years</span>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-label">Gender</span>
+                    <span class="detail-value">{{ patient.gender }}</span>
+                </div>
+
+                <div class="detail-item full-width">
+                    <span class="detail-label">Guardian</span>
+                    <span class="detail-value">{{ patient.guardian_name|default:"--"|upper }}</span>
+                </div>
+            </div>
+
+            <!-- Compact Thermal Sticker Preview -->
+            <div class="section-title">
+                <i class="bi bi-tag-fill text-primary"></i>
+                <span>Sticker Preview</span>
+            </div>
+
+            <div class="sticker-card">
+                <div class="sticker-stage-box">
+                    <div class="sticker-shadow-wrapper">
+                        {{ sticker_html|safe }}
+                    </div>
+                </div>
+                <div class="sticker-specs-note">
+                    Standard Thermal Sticker Size: 60mm &times; 30mm
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="actions-group">
+                <button type="button" onclick="window.print()" class="btn-action-touch btn-print-sticker">
+                    <i class="bi bi-printer-fill"></i>
+                    <span>PRINT STICKER</span>
+                </button>
+
+                <a href="{{ pdf_download_url }}" class="btn-action-touch btn-download-pdf">
+                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                    <span>DOWNLOAD PDF</span>
+                </a>
+            </div>
+
+        </div>
+
+        <!-- Privacy & Hospital Footer -->
+        <div class="footer-note">
+            Vinayaka Missions Medical College &amp; Hospital &bull; Karaikal<br>
+            Secure Patient Reference &bull; Verified Digital Copy
+        </div>
+
+    </div>
+
+</body>
+</html>
