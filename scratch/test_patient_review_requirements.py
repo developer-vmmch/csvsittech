@@ -267,8 +267,7 @@ def run_tests():
 
     # S. Existing Visit Details functionality remains intact
     assert 'id_visit_department' in rendered_content
-    assert 'id_visit_unit' in rendered_content
-    assert 'id_visit_ward' in rendered_content
+    assert 'id_visit_ward' not in rendered_content, "Ward should not be in Review"
     assert 'id_reg_fees' in rendered_content
     assert 'View All visit details' in rendered_content
     assert 'Save' in rendered_content
