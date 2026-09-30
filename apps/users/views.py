@@ -187,6 +187,7 @@ class DepartmentLoginView(View):
     """
     Second Screen: Department-Specific Login Screen.
     Enforces user credentials validation and department authorization.
+    For Laboratory ('lab'), allows lab-department-wise division selection.
     """
     def get(self, request, dept_slug=None):
         dept_slug = dept_slug or request.GET.get('dept')
@@ -197,13 +198,26 @@ class DepartmentLoginView(View):
 
         if request.user.is_authenticated:
             if user_can_access_department(request.user, dept):
-                request.session['active_department'] = dept['code']
-                request.session['active_department_name'] = dept['name']
-                request.session['active_department_slug'] = dept['slug']
-                return redirect(dept.get('dashboard_url', '/dashboard/'))
+                # For lab, redirect if already has active lab sub department in session
+                if dept.get('code') != 'lab' or request.session.get('active_lab_sub_department'):
+                    request.session['active_department'] = dept['code']
+                    request.session['active_department_name'] = dept['name']
+                    request.session['active_department_slug'] = dept['slug']
+                    return redirect(dept.get('dashboard_url', '/dashboard/'))
+
+        lab_sub_departments = []
+        if dept.get('code') == 'lab':
+            try:
+                from apps.lab.models import LabDepartment
+                depts = list(LabDepartment.objects.filter(is_active=True))
+                depts.sort(key=lambda d: (0 if 'CENTRAL' in d.name.upper() else 1, d.name))
+                lab_sub_departments = depts
+            except Exception:
+                lab_sub_departments = []
 
         return render(request, 'users/dept_login.html', {
             'department': dept,
+            'lab_sub_departments': lab_sub_departments,
             'next': request.GET.get('next', ''),
         })
 
@@ -214,15 +228,38 @@ class DepartmentLoginView(View):
             messages.error(request, "Invalid department specified.")
             return redirect('login')
 
+        lab_sub_departments = []
+        if dept.get('code') == 'lab':
+            try:
+                from apps.lab.models import LabDepartment
+                depts = list(LabDepartment.objects.filter(is_active=True))
+                depts.sort(key=lambda d: (0 if 'CENTRAL' in d.name.upper() else 1, d.name))
+                lab_sub_departments = depts
+            except Exception:
+                lab_sub_departments = []
+
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
+        selected_lab_sub_dept = request.POST.get('lab_sub_department', '').strip()
         next_url = request.POST.get('next', '').strip()
+
+        if dept.get('code') == 'lab' and not selected_lab_sub_dept:
+            return render(request, 'users/dept_login.html', {
+                'department': dept,
+                'lab_sub_departments': lab_sub_departments,
+                'error_message': "Please select a Lab Department to login.",
+                'username': username,
+                'selected_lab_sub_dept': selected_lab_sub_dept,
+                'next': next_url,
+            })
 
         if not username or not password:
             return render(request, 'users/dept_login.html', {
                 'department': dept,
+                'lab_sub_departments': lab_sub_departments,
                 'error_message': "Please enter both username and password.",
                 'username': username,
+                'selected_lab_sub_dept': selected_lab_sub_dept,
                 'next': next_url,
             })
 
@@ -238,8 +275,10 @@ class DepartmentLoginView(View):
 
             return render(request, 'users/dept_login.html', {
                 'department': dept,
+                'lab_sub_departments': lab_sub_departments,
                 'error_message': error_msg,
                 'username': username,
+                'selected_lab_sub_dept': selected_lab_sub_dept,
                 'next': next_url,
             })
 
@@ -248,10 +287,37 @@ class DepartmentLoginView(View):
             error_msg = f"Access Denied. This user is not authorized to login to the {dept['name']} department."
             return render(request, 'users/dept_login.html', {
                 'department': dept,
+                'lab_sub_departments': lab_sub_departments,
                 'error_message': error_msg,
                 'username': username,
+                'selected_lab_sub_dept': selected_lab_sub_dept,
                 'next': next_url,
             })
+
+        # For Laboratory login: strictly enforce assigned Lab Department
+        # Central Lab has universal access to all other lab departments
+        if dept.get('code') == 'lab' and selected_lab_sub_dept:
+            is_admin_user = user.is_superuser or (getattr(user, 'role', '') or '').upper() in ['ADMIN', 'DEVELOPER', 'DEVELOPER_ROLE']
+            user_depts = [d.strip() for d in user.get_departments_list()]
+            has_universal = any(d.lower() in ['all', 'all departments', 'all departments (universal access)'] for d in user_depts)
+            has_central_lab = any('CENTRAL' in d.upper() for d in user_depts)
+
+            if not is_admin_user and not has_universal and not has_central_lab:
+                all_lab_names = {d.name.upper(): d.name for d in lab_sub_departments}
+                user_assigned_labs = [all_lab_names[d.upper()] for d in user_depts if d.upper() in all_lab_names]
+
+                # If user has specific lab department(s) assigned, they can ONLY log in to their assigned lab department
+                if user_assigned_labs:
+                    if selected_lab_sub_dept.upper() not in [l.upper() for l in user_assigned_labs]:
+                        allowed_labs_str = ", ".join(user_assigned_labs)
+                        return render(request, 'users/dept_login.html', {
+                            'department': dept,
+                            'lab_sub_departments': lab_sub_departments,
+                            'error_message': f"Access Denied. You are only assigned to the '{allowed_labs_str}' Laboratory Department.",
+                            'username': username,
+                            'selected_lab_sub_dept': selected_lab_sub_dept,
+                            'next': next_url,
+                        })
 
         # Login successful and authorized!
         auth_login(request, user)
@@ -259,7 +325,15 @@ class DepartmentLoginView(View):
         request.session['active_department_name'] = dept['name']
         request.session['active_department_slug'] = dept['slug']
 
-        messages.success(request, f"Welcome {user.get_full_name() or user.username}! Successfully logged in to {dept['name']}.")
+        if dept.get('code') == 'lab' and selected_lab_sub_dept:
+            request.session['active_lab_sub_department'] = selected_lab_sub_dept
+            matched_lab_dept = next((d for d in lab_sub_departments if d.name.lower() == selected_lab_sub_dept.lower() or str(d.id) == selected_lab_sub_dept), None)
+            if matched_lab_dept:
+                request.session['active_lab_sub_department'] = matched_lab_dept.name
+                request.session['active_lab_sub_department_id'] = matched_lab_dept.id
+
+        welcome_title = f"{dept['name']} ({request.session.get('active_lab_sub_department')})" if dept.get('code') == 'lab' and request.session.get('active_lab_sub_department') else dept['name']
+        messages.success(request, f"Welcome {user.get_full_name() or user.username}! Successfully logged in to {welcome_title}.")
 
         if next_url and next_url != '/' and next_url != reverse_lazy('login'):
             from django.utils.http import url_has_allowed_host_and_scheme
@@ -1049,6 +1123,13 @@ NAVBAR_MODULES_CONFIG = [
                 'description': 'Sub-lab divisions (Biochemistry, Hematology, Microbiology, Histopathology)',
             },
             {
+                'key': 'lab_master_permissions',
+                'name': 'Lab Permissions',
+                'icon': 'bi-shield-lock',
+                'url': '/lab/master/permissions/',
+                'description': 'Configure access permissions, test entry rights, and validation authority per lab department',
+            },
+            {
                 'key': 'master_wards',
                 'name': 'Hospital Wards',
                 'icon': 'bi-hospital',
@@ -1503,7 +1584,7 @@ DEPT_DEFAULT_NAV_MAPPING = {
     },
     'lab': {
         'lab_orders': True, 'lab_work_orders': True, 'doctor_window': True,
-        'lab_sub_departments': True, 'workload_mapping_list': True,
+        'lab_sub_departments': True, 'lab_master_permissions': True, 'workload_mapping_list': True,
         'universal_master_import_export': True, 'lab_reports': True,
         'lab_reports_dashboard': True,
     },

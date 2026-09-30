@@ -925,7 +925,9 @@
                                 aria-haspopup="true" aria-expanded="false">
                             <i class="bi bi-person-circle text-sky-600" style="font-size:1rem;"></i>
                             <span id="headerDisplayName" style="font-weight:600;">{{ user.get_full_name|default:user.username }}</span>
-                            {% if user.role %}
+                            {% if request.session.active_lab_sub_department %}
+                            <span class="badge" style="background:#ede9fe;color:#6d28d9;font-size:0.72rem;padding:2px 7px;border-radius:4px;font-weight:700;"><i class="bi bi-funnel-fill" style="margin-right:3px;font-size:0.65rem;"></i>{{ request.session.active_lab_sub_department }}</span>
+                            {% elif user.role %}
                             <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:0.72rem;padding:2px 6px;border-radius:4px;">{{ user.get_role_display }}</span>
                             {% endif %}
                             <i class="bi bi-chevron-down" style="font-size:0.6rem;color:#64748b;margin-left:2px;"></i>
@@ -948,7 +950,11 @@
                                 <div style="font-size:0.78rem;color:#64748b;margin-top:1px;">
                                     @{{ user.username }}
                                 </div>
-                                {% if user.role %}
+                                {% if request.session.active_lab_sub_department %}
+                                <div style="margin-top:4px;">
+                                    <span style="font-size:0.72rem;background:#ede9fe;color:#6d28d9;padding:2px 7px;border-radius:4px;font-weight:700;"><i class="bi bi-funnel-fill" style="margin-right:3px;"></i>Lab: {{ request.session.active_lab_sub_department }}</span>
+                                </div>
+                                {% elif user.role %}
                                 <div style="margin-top:4px;">
                                     <span style="font-size:0.72rem;background:#e0f2fe;color:#0369a1;padding:2px 7px;border-radius:4px;font-weight:600;">{{ user.get_role_display }}</span>
                                     {% if user.department %}<span style="font-size:0.72rem;color:#64748b;margin-left:4px;">{{ user.department }}</span>{% endif %}

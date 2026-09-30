@@ -1,0 +1,753 @@
+{% extends "lab/master/base.html" %}
+
+{% block title %}Lab Permissions Master | Lab Master{% endblock %}
+{% block lab_master_title %}Lab Permissions & Access Control{% endblock %}
+{% block lab_master_subtitle %}Configure module permissions, operational test entry, and validation authority per Laboratory Department{% endblock %}
+
+{% block lab_master_actions %}
+<button type="button" class="lab-btn lab-btn-secondary lab-btn-sm" onclick="resetToStandardDefaults()">
+    <i class="bi bi-arrow-counterclockwise"></i> Reset Defaults
+</button>
+<button type="button" class="lab-btn lab-btn-primary lab-btn-sm" onclick="saveCurrentPermissions()">
+    <i class="bi bi-floppy-fill"></i> Save Permissions
+</button>
+{% endblock %}
+
+{% block master_content %}
+<style>
+    /* 1. Department Selector Tabs Bar */
+    .dept-hero-nav {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .dept-tabs-scroll {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 4px 0;
+    }
+
+    .dept-tab-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 20px;
+        border-radius: 14px;
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        color: #334155;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .dept-tab-pill:hover {
+        background: #ffffff;
+        border-color: #cbd5e1;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+        color: #0f172a;
+    }
+
+    .dept-tab-pill.active {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        border-color: #2563eb;
+        color: #ffffff;
+        box-shadow: 0 8px 22px rgba(37, 99, 235, 0.38);
+        transform: translateY(-2px);
+    }
+
+    .dept-tab-pill .dept-icon-mini {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #2563eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+    }
+
+    .dept-tab-pill.active .dept-icon-mini {
+        background: rgba(255, 255, 255, 0.22);
+        color: #ffffff;
+    }
+
+    .dept-tab-pill .badge-tag {
+        font-size: 0.72rem;
+        padding: 2px 8px;
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.05);
+        color: #64748b;
+        font-weight: 800;
+    }
+
+    .dept-tab-pill.active .badge-tag {
+        background: rgba(255, 255, 255, 0.25);
+        color: #ffffff;
+    }
+
+    /* Search & Quick Controls */
+    .perm-quick-search-box {
+        position: relative;
+        display: flex;
+        align-items: center;
+        min-width: 240px;
+    }
+
+    .perm-quick-search-box i {
+        position: absolute;
+        left: 14px;
+        color: #94a3b8;
+        font-size: 0.95rem;
+    }
+
+    .perm-search-input {
+        width: 100%;
+        padding: 9px 16px 9px 38px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 0.88rem;
+        color: #0f172a;
+        background: #f8fafc;
+        transition: all 0.2s ease;
+    }
+
+    .perm-search-input:focus {
+        background: #ffffff;
+        border-color: #2563eb;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    /* 2. Department Overview Status Banner */
+    .perm-status-card {
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        border: 1.5px solid #e2e8f0;
+        border-radius: 20px;
+        padding: 18px 24px;
+        margin-bottom: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+    }
+
+    .perm-status-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .perm-status-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #eff6ff, #dbeafe);
+        color: #2563eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+        flex-shrink: 0;
+    }
+
+    .perm-status-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #0b2569;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .perm-status-desc {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 3px;
+    }
+
+    .perm-status-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* 3. Cards Grid */
+    .perm-grid-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(370px, 1fr));
+        gap: 22px;
+        margin-bottom: 100px;
+    }
+
+    .perm-group-card {
+        background: #ffffff;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.03);
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .perm-group-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+        border-color: #cbd5e1;
+    }
+
+    .perm-group-header {
+        padding: 16px 20px;
+        border-bottom: 1.5px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #f8fafc;
+    }
+
+    .perm-group-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .perm-group-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    .perm-group-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.2;
+    }
+
+    .perm-group-counter {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #64748b;
+        margin-top: 2px;
+    }
+
+    .btn-toggle-switch-all {
+        background: #ffffff;
+        border: 1.5px solid #cbd5e1;
+        padding: 5px 12px;
+        border-radius: 10px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-toggle-switch-all:hover {
+        background: #0f172a;
+        color: #ffffff;
+        border-color: #0f172a;
+    }
+
+    .perm-items-wrapper {
+        padding: 10px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1;
+    }
+
+    .perm-row-box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-radius: 14px;
+        transition: all 0.2s ease;
+        gap: 14px;
+    }
+
+    .perm-row-box:hover {
+        background: #f8fafc;
+    }
+
+    .perm-text-block {
+        flex: 1;
+    }
+
+    .perm-name-label {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 2px;
+        cursor: pointer;
+        display: block;
+    }
+
+    .perm-desc-text {
+        font-size: 0.78rem;
+        color: #64748b;
+        line-height: 1.35;
+    }
+
+    /* iOS Modern Switch */
+    .ios-switch {
+        position: relative;
+        display: inline-block;
+        width: 46px;
+        height: 26px;
+        flex-shrink: 0;
+    }
+
+    .ios-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .ios-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #cbd5e1;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        border-radius: 30px;
+    }
+
+    .ios-slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        border-radius: 50%;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    input:checked + .ios-slider {
+        background-color: #2563eb;
+        box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+    }
+
+    input:checked + .ios-slider:before {
+        transform: translateX(20px);
+    }
+
+    /* 4. Floating Footer Dock */
+    .perm-dock-bar {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(15, 23, 42, 0.94);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        color: #ffffff;
+        border-radius: 20px;
+        padding: 12px 28px;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), 0 0 1px 1px rgba(255, 255, 255, 0.1);
+        z-index: 1000;
+        animation: dockSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes dockSlideUp {
+        from { transform: translate(-50%, 40px); opacity: 0; }
+        to { transform: translate(-50%, 0); opacity: 1; }
+    }
+
+    .dock-tag-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(37, 99, 235, 0.25);
+        border: 1px solid rgba(37, 99, 235, 0.5);
+        color: #93c5fd;
+        padding: 4px 12px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.85rem;
+    }
+
+    .dock-counter-text {
+        font-size: 0.86rem;
+        color: #cbd5e1;
+        font-weight: 500;
+    }
+
+    .dock-counter-text strong {
+        color: #ffffff;
+        font-weight: 800;
+    }
+
+    .btn-dock-discard {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #f8fafc;
+        padding: 8px 16px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.86rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-dock-discard:hover {
+        background: rgba(255, 255, 255, 0.22);
+        color: #ffffff;
+        transform: translateY(-1px);
+    }
+
+    .btn-dock-save {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        border: none;
+        color: #ffffff;
+        padding: 8px 20px;
+        border-radius: 12px;
+        font-weight: 800;
+        font-size: 0.88rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
+        transition: all 0.2s ease;
+    }
+
+    .btn-dock-save:hover {
+        background: linear-gradient(135deg, #1d4ed8, #1e40af);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.6);
+    }
+
+    .btn-dock-save:active {
+        transform: translateY(0) scale(0.98);
+    }
+
+    @media (max-width: 860px) {
+        .dept-hero-nav {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .perm-status-card {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .perm-dock-bar {
+            width: 92%;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            padding: 12px 18px;
+        }
+    }
+</style>
+
+<!-- 1. Department Tabs Hero Switcher -->
+<div class="dept-hero-nav">
+    <div class="dept-tabs-scroll">
+        {% for dept in lab_departments %}
+        <a href="?dept_id={{ dept.id }}" class="dept-tab-pill {% if selected_dept.id == dept.id %}active{% endif %}">
+            <div class="dept-icon-mini">
+                <i class="bi {% if 'CENTRAL' in dept.name|upper %}bi-bezier2{% elif 'BIOCHEMISTRY' in dept.name|upper %}bi-flask{% elif 'HEMATOLOGY' in dept.name|upper %}bi-droplet-fill{% elif 'MICROBIOLOGY' in dept.name|upper %}bi-virus2{% else %}bi-building{% endif %}"></i>
+            </div>
+            <span>{{ dept.name }}</span>
+            {% if 'CENTRAL' in dept.name|upper %}
+            <span class="badge-tag">Universal</span>
+            {% else %}
+            <span class="badge-tag">{{ active_count }}/{{ total_perms_count }}</span>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Quick Search Filter -->
+    <div class="perm-quick-search-box">
+        <i class="bi bi-search"></i>
+        <input type="text" id="permSearchInput" class="perm-search-input" placeholder="Search permissions..." autocomplete="off" oninput="filterPermissions(this.value)">
+    </div>
+</div>
+
+<!-- 2. Selected Department Status Banner -->
+<div class="perm-status-card">
+    <div class="perm-status-left">
+        <div class="perm-status-avatar" style="{% if 'CENTRAL' in selected_dept.name|upper %}background: linear-gradient(135deg, #dbeafe, #eff6ff); color: #2563eb;{% else %}background: linear-gradient(135deg, #ccfbf1, #f0fdfa); color: #0d9488;{% endif %}">
+            <i class="bi {% if 'CENTRAL' in selected_dept.name|upper %}bi-shield-fill-check{% else %}bi-funnel-fill{% endif %}"></i>
+        </div>
+        <div>
+            <div class="perm-status-title">
+                <span>{{ selected_dept.name }}</span>
+                {% if 'CENTRAL' in selected_dept.name|upper %}
+                <span class="lab-badge" style="background: rgba(37, 99, 235, 0.12); color: #2563eb; font-size: 0.72rem; padding: 4px 10px;">Universal Access</span>
+                {% else %}
+                <span class="lab-badge" style="background: rgba(13, 148, 136, 0.12); color: #0d9488; font-size: 0.72rem; padding: 4px 10px;">Restricted Division</span>
+                {% endif %}
+            </div>
+            <div class="perm-status-desc">
+                {% if 'CENTRAL' in selected_dept.name|upper %}
+                Central Lab grants global supervisory access across all laboratory operations, testing queues, and result approvals.
+                {% else %}
+                Users assigned to <strong>{{ selected_dept.name }}</strong> will only have operational access to enabled capabilities below.
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="perm-status-actions">
+        <button type="button" class="lab-btn lab-btn-secondary lab-btn-sm" onclick="toggleAllCheckboxes(true)">
+            <i class="bi bi-check-all"></i> Enable All
+        </button>
+        <button type="button" class="lab-btn lab-btn-secondary lab-btn-sm" onclick="toggleAllCheckboxes(false)">
+            <i class="bi bi-dash"></i> Disable All
+        </button>
+    </div>
+</div>
+
+<!-- 3. Permission Groups Grid -->
+<form id="labPermissionsForm" onsubmit="return false;">
+    <input type="hidden" name="dept_id" value="{{ selected_dept.id }}">
+    <input type="hidden" name="dept_name" value="{{ selected_dept.name }}">
+
+    <div class="perm-grid-container">
+        {% for group in permission_groups %}
+        <div class="perm-group-card" id="card_{{ group.group_id }}">
+            <div class="perm-group-header">
+                <div class="perm-group-title-wrap">
+                    <div class="perm-group-icon" style="background: {{ group.group_color }}14; color: {{ group.group_color }};">
+                        <i class="bi {{ group.group_icon }}"></i>
+                    </div>
+                    <div>
+                        <div class="perm-group-title">{{ group.group_title }}</div>
+                        <div class="perm-group-counter" id="grp_count_{{ group.group_id }}">
+                            <span class="grp-active-val">0</span> / {{ group.permissions|length }} enabled
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn-toggle-switch-all" onclick="toggleGroupCheckboxes('{{ group.group_id }}')">
+                    <i class="bi bi-toggle-on"></i> Toggle
+                </button>
+            </div>
+
+            <div class="perm-items-wrapper">
+                {% for perm in group.permissions %}
+                <div class="perm-row-box" data-keyword="{{ perm.name|lower }} {{ perm.description|lower }}">
+                    <div class="perm-text-block">
+                        <label for="perm_{{ perm.code }}" class="perm-name-label">{{ perm.name }}</label>
+                        <div class="perm-desc-text">{{ perm.description }}</div>
+                    </div>
+                    <label class="ios-switch">
+                        <input type="checkbox" name="permissions" value="{{ perm.code }}" id="perm_{{ perm.code }}" class="grp-cb-{{ group.group_id }}" {% if perm.code in active_perm_codes %}checked{% endif %} onchange="updateLiveCounters()">
+                        <span class="ios-slider"></span>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</form>
+
+<!-- 4. Floating Action Dock -->
+<div class="perm-dock-bar">
+    <div class="dock-tag-pill">
+        <i class="bi bi-building"></i>
+        <span>{{ selected_dept.name }}</span>
+    </div>
+    <div class="dock-counter-text">
+        <strong id="activeCounterText">{{ active_count }}</strong> of {{ total_perms_count }} capabilities enabled
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn-dock-discard" onclick="window.location.reload()">
+            Discard
+        </button>
+        <button type="button" class="btn-dock-save" onclick="saveCurrentPermissions()" id="btnSavePermissions">
+            <i class="bi bi-floppy-fill"></i> Save Permissions
+        </button>
+    </div>
+</div>
+
+<script>
+    function updateLiveCounters() {
+        const totalChecked = document.querySelectorAll('input[name="permissions"]:checked').length;
+        document.getElementById('activeCounterText').textContent = totalChecked;
+
+        // Update each group card counter
+        {% for group in permission_groups %}
+        const grpChecks = document.querySelectorAll('.grp-cb-{{ group.group_id }}:checked').length;
+        const grpCounterEl = document.querySelector('#grp_count_{{ group.group_id }} .grp-active-val');
+        if (grpCounterEl) grpCounterEl.textContent = grpChecks;
+        {% endfor %}
+    }
+
+    function toggleAllCheckboxes(state) {
+        document.querySelectorAll('input[name="permissions"]').forEach(cb => {
+            cb.checked = state;
+        });
+        updateLiveCounters();
+    }
+
+    function toggleGroupCheckboxes(groupId) {
+        const cbs = document.querySelectorAll(`.grp-cb-${groupId}`);
+        if (!cbs.length) return;
+        const anyUnchecked = Array.from(cbs).some(cb => !cb.checked);
+        cbs.forEach(cb => cb.checked = anyUnchecked);
+        updateLiveCounters();
+    }
+
+    function filterPermissions(query) {
+        const q = query.trim().toLowerCase();
+        document.querySelectorAll('.perm-row-box').forEach(row => {
+            const kw = row.getAttribute('data-keyword') || '';
+            if (!q || kw.includes(q)) {
+                row.style.display = 'flex';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function resetToStandardDefaults() {
+        const deptName = "{{ selected_dept.name|upper }}";
+        const isCentral = deptName.includes('CENTRAL');
+        
+        const standardDivisionCodes = [
+            'work_orders_view', 'work_orders_print', 'order_entry_create', 'order_entry_bulk',
+            'sample_collect', 'sample_barcode', 'result_entry', 'result_tech_verify',
+            'report_view', 'report_print', 'report_history'
+        ];
+
+        document.querySelectorAll('input[name="permissions"]').forEach(cb => {
+            if (isCentral) {
+                cb.checked = true;
+            } else {
+                cb.checked = standardDivisionCodes.includes(cb.value);
+            }
+        });
+        updateLiveCounters();
+        showNotification('Permissions reset to standard template. Click Save to persist.', 'info');
+    }
+
+    async function saveCurrentPermissions() {
+        const form = document.getElementById('labPermissionsForm');
+        const deptId = form.querySelector('input[name="dept_id"]').value;
+        const deptName = form.querySelector('input[name="dept_name"]').value;
+        
+        const checkedPerms = Array.from(form.querySelectorAll('input[name="permissions"]:checked')).map(cb => cb.value);
+        
+        const btnSave = document.getElementById('btnSavePermissions');
+        const originalHtml = btnSave.innerHTML;
+        btnSave.disabled = true;
+        btnSave.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Saving...';
+
+        try {
+            const response = await fetch("{% url 'lab:api_master_lab_permissions_save' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    dept_id: deptId,
+                    dept_name: deptName,
+                    permissions: checkedPerms
+                })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                showNotification(result.message || 'Permissions updated successfully!', 'success');
+            } else {
+                showNotification(result.message || 'Error saving permissions.', 'danger');
+            }
+        } catch (err) {
+            showNotification('Network error while saving permissions: ' + err.message, 'danger');
+        } finally {
+            btnSave.disabled = false;
+            btnSave.innerHTML = originalHtml;
+        }
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function showNotification(msg, type = 'success') {
+        const banner = document.createElement('div');
+        banner.style.position = 'fixed';
+        banner.style.top = '24px';
+        banner.style.right = '24px';
+        banner.style.background = type === 'success' ? '#059669' : (type === 'info' ? '#2563eb' : '#dc2626');
+        banner.style.color = '#ffffff';
+        banner.style.padding = '14px 22px';
+        banner.style.borderRadius = '14px';
+        banner.style.boxShadow = '0 12px 36px rgba(0,0,0,0.28)';
+        banner.style.zIndex = '999999';
+        banner.style.fontWeight = '700';
+        banner.style.fontSize = '0.92rem';
+        banner.style.display = 'flex';
+        banner.style.alignItems = 'center';
+        banner.style.gap = '10px';
+        banner.innerHTML = `<i class="bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-info-circle-fill'}"></i> <span>${msg}</span>`;
+        document.body.appendChild(banner);
+        setTimeout(() => {
+            banner.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            banner.style.opacity = '0';
+            banner.style.transform = 'translateY(-10px)';
+            setTimeout(() => banner.remove(), 400);
+        }, 3200);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateLiveCounters();
+    });
+</script>
+{% endblock %}

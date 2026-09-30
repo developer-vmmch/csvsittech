@@ -115,24 +115,24 @@ class User(AbstractUser):
             if code in perms_dict:
                 return bool(perms_dict[code])
 
-            # Check action dict e.g. perms_dict.get('patient_list_actions')
-            act_obj = perms_dict.get(f"{sub_code}_actions")
-            if isinstance(act_obj, dict):
-                for act in action_aliases:
-                    if act in act_obj:
-                        return bool(act_obj[act])
-
             # Check sub_code.action variants
             for act in action_aliases:
                 k1 = f"{sub_code}.{act}"
                 k2 = f"{sub_code}_{act}"
                 k3 = f"{code.replace('.', '_')}_{act}"
-                if k1 in perms_dict:
+                if k1 in perms_dict and perms_dict[k1] is not None:
                     return bool(perms_dict[k1])
-                if k2 in perms_dict:
+                if k2 in perms_dict and perms_dict[k2] is not None:
                     return bool(perms_dict[k2])
-                if k3 in perms_dict:
+                if k3 in perms_dict and perms_dict[k3] is not None:
                     return bool(perms_dict[k3])
+
+            # Check action dict e.g. perms_dict.get('patient_list_actions')
+            act_obj = perms_dict.get(f"{sub_code}_actions")
+            if isinstance(act_obj, dict):
+                for act in action_aliases:
+                    if act in act_obj and act_obj[act] is not None:
+                        return bool(act_obj[act])
 
             # If action is 'view', also check if submodule or module base key is granted
             if action in ['view', 'access']:
@@ -143,19 +143,7 @@ class User(AbstractUser):
 
             return None
 
-        # 1. Check Role-Wise Permissions (RoleMenuPermission)
-        role_perms = None
-        try:
-            from apps.users.models import RoleMenuPermission
-            role_perms = RoleMenuPermission.get_permissions_for_role(self.role)
-            if role_perms and isinstance(role_perms, dict):
-                res = _check_dict(role_perms, perm_code)
-                if res is not None:
-                    return res
-        except Exception:
-            role_perms = None
-
-        # 2. Check Department-Wise Page Mapping (LandingDepartment.nav_permissions)
+        # 1. Check Department-Wise Page Mapping (LandingDepartment.nav_permissions) FIRST
         try:
             from apps.users.models import LandingDepartment
             for dept_name in depts_list:
@@ -170,6 +158,18 @@ class User(AbstractUser):
                         return res
         except Exception:
             pass
+
+        # 2. Check Role-Wise Permissions (RoleMenuPermission)
+        role_perms = None
+        try:
+            from apps.users.models import RoleMenuPermission
+            role_perms = RoleMenuPermission.get_permissions_for_role(self.role)
+            if role_perms and isinstance(role_perms, dict):
+                res = _check_dict(role_perms, perm_code)
+                if res is not None:
+                    return res
+        except Exception:
+            role_perms = None
 
         # 3. Check aliases e.g. ATC_EDIT -> auto_trigger.atc.update
         aliases = {
@@ -253,7 +253,7 @@ class User(AbstractUser):
             'department_list', 'add_department', 'add_company',
             'ward', 'ward_management', 'ward_allocation', 'ward_service_request', 'ward_transfer', 'branch_transfer', 'branch_transfer_report',
             'master', 'master_departments', 'master_wards', 'master_investigations', 'master_parameters',
-            'lab_master', 'lab_master_dashboard', 'lab_sub_departments',
+            'lab_master', 'lab_master_dashboard', 'lab_sub_departments', 'lab_master_permissions',
             'investigation_parameter_mapping', 'workload_mapping_list', 'mapping_validation',
             'import_lab_workload_csv', 'export_lab_workload_csv', 'legacy_mapping', 'universal_master_import_export',
             'consultant', 'doctor_window', 'service_request_add',
@@ -367,22 +367,23 @@ class User(AbstractUser):
         merged = default_map.copy()
         if db_perms:
             merged.update(db_perms)
-        else:
-            try:
-                from apps.users.models import LandingDepartment
-                depts_list = self.get_departments_list()
-                for dept_name in depts_list:
-                    dept_obj = (
-                        LandingDepartment.objects.filter(name__iexact=dept_name).first()
-                        or LandingDepartment.objects.filter(code__iexact=dept_name.lower().replace(' ', '_')).first()
-                        or LandingDepartment.objects.filter(slug__iexact=dept_name.lower().replace(' ', '-')).first()
-                    )
-                    if dept_obj and dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict):
-                        for k, v in dept_obj.nav_permissions.items():
-                            if v is False and k in merged:
-                                merged[k] = False
-            except Exception:
-                pass
+
+        # Merge Department-level Nav Mapping Permissions
+        try:
+            from apps.users.models import LandingDepartment
+            depts_list = self.get_departments_list()
+            for dept_name in depts_list:
+                dept_obj = (
+                    LandingDepartment.objects.filter(name__iexact=dept_name).first()
+                    or LandingDepartment.objects.filter(code__iexact=dept_name.lower().replace(' ', '_')).first()
+                    or LandingDepartment.objects.filter(slug__iexact=dept_name.lower().replace(' ', '-')).first()
+                )
+                if dept_obj and dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict):
+                    for k, v in dept_obj.nav_permissions.items():
+                        if isinstance(v, bool):
+                            merged[k] = v
+        except Exception:
+            pass
 
         return merged
 

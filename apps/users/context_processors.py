@@ -13,13 +13,16 @@ def dynamic_navbar(request):
     2. Non-admin users: Dynamic filtering based on active Landing Department or assigned User Role permissions.
     """
     user = getattr(request, 'user', None)
+    active_lab_sub_dept = request.session.get('active_lab_sub_department', '') if hasattr(request, 'session') else ''
     if not user or not user.is_authenticated:
-        return {'dynamic_nav_modules': []}
+        return {'dynamic_nav_modules': [], 'active_lab_sub_department': active_lab_sub_dept}
 
     try:
-        return _build_dynamic_navbar(request, user)
+        res = _build_dynamic_navbar(request, user)
+        res['active_lab_sub_department'] = active_lab_sub_dept
+        return res
     except Exception:
-        return {'dynamic_nav_modules': []}
+        return {'dynamic_nav_modules': [], 'active_lab_sub_department': active_lab_sub_dept}
 
 
 def _build_dynamic_navbar(request, user):
@@ -49,7 +52,6 @@ def _build_dynamic_navbar(request, user):
     
     dept_obj = None
     if active_dept_code:
-        # If user has comma-separated depts, check the first or match session
         first_dept = str(active_dept_code).split(',')[0].strip()
         norm_code = first_dept.lower().replace('-', '_')
         dept_obj = (
@@ -61,13 +63,9 @@ def _build_dynamic_navbar(request, user):
         norm_slug = str(active_dept_slug).strip().lower().replace('_', '-')
         dept_obj = LandingDepartment.objects.filter(slug__iexact=norm_slug).first()
 
-    # If user is in "All Departments" universal mode and is admin with no specific active dept:
-    is_universal_mode = False
-    if str(active_dept_code).strip().lower() in ['all', 'all departments', 'all departments (universal access)']:
-        is_universal_mode = True
-
-    if is_admin and (is_universal_mode or (not dept_obj and not request.session.get('active_department'))):
-        # Universal Admin View: Show all active modules and submodules
+    # Universal Admin mode: Admin in "All Departments" or with no specific active department
+    is_universal_mode = str(active_dept_code).strip().lower() in ['all', 'all departments', 'all departments (universal access)']
+    if is_admin and (is_universal_mode or not dept_obj):
         for mod in modules:
             active_subs = list(mod.submodules.filter(is_active=True).order_by('order', 'id'))
             primary_url = mod.url_path
@@ -87,74 +85,28 @@ def _build_dynamic_navbar(request, user):
             })
         return {'dynamic_nav_modules': user_nav_modules}
 
-    # 2. Resolve Role Permissions & Department Permissions
-    from .models import RoleMenuPermission
-    role_perms = RoleMenuPermission.get_permissions_for_role(user.role)
-
-    dept_perms = None
-    if dept_obj and dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict) and len(dept_obj.nav_permissions) > 0:
-        dept_perms = dept_obj.nav_permissions
-    elif not role_perms:
-        if dept_obj:
+    # 2. Strict Department Permission Resolution:
+    # Retrieve department's saved permissions directly from DB
+    dept_perms = {}
+    if dept_obj:
+        if dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict) and len(dept_obj.nav_permissions) > 0:
+            dept_perms = dept_obj.nav_permissions
+        else:
             dept_perms = DEPT_DEFAULT_NAV_MAPPING.get(dept_obj.code, {})
-        elif active_dept_code:
-            norm_code = str(active_dept_code).split(',')[0].strip().lower().replace('-', '_')
-            dept_perms = DEPT_DEFAULT_NAV_MAPPING.get(norm_code, {})
-
-    def _check_perm_map(perms_map, code):
-        if perms_map is None or not isinstance(perms_map, dict):
-            return None
-        # 1. Exact boolean in mapping
-        if code in perms_map:
-            return bool(perms_map[code])
-        if f"{code}.view" in perms_map:
-            return bool(perms_map[f"{code}.view"])
-        # 2. Check granular action dictionary
-        act = perms_map.get(f"{code}_actions")
-        if isinstance(act, dict):
-            if act.get('access') is False and act.get('view') is False:
-                return False
-            if act.get('access') is True or act.get('view') is True:
-                return True
-            if any(act.get(a) is True for a in ['add', 'create', 'edit', 'update', 'delete', 'print', 'export']):
-                return True
-            return False
-        return None
 
     def _is_submodule_permitted(sub_code):
-        # 1. If role permissions are configured in DB:
-        if role_perms is not None and isinstance(role_perms, dict):
-            r_val = _check_perm_map(role_perms, sub_code)
-            # Explicitly locked/disabled in role permissions -> strictly deny!
-            if r_val is False:
-                return False
-            # If role permissions are saved in DB, and this sub_code is True:
-            if r_val is True:
-                # If department permissions are also customized in DB, ensure dept didn't lock it
-                if dept_perms is not None and isinstance(dept_perms, dict):
-                    d_val = _check_perm_map(dept_perms, sub_code)
-                    if d_val is False:
-                        return False
-                return True
-            # If not in role_perms, check if dept grants it
-            if dept_perms is not None and isinstance(dept_perms, dict):
-                d_val = _check_perm_map(dept_perms, sub_code)
-                if d_val is True:
-                    return True
+        # Must be explicitly True in dept_perms
+        if dept_perms.get(sub_code) is not True:
             return False
+        # Check View permission (if view is explicitly False, deny)
+        if dept_perms.get(f"{sub_code}.view") is False:
+            return False
+        act_dict = dept_perms.get(f"{sub_code}_actions")
+        if isinstance(act_dict, dict) and (act_dict.get('access') is False or act_dict.get('view') is False):
+            return False
+        return True
 
-        # 2. If only department permissions exist in DB:
-        if dept_perms is not None and isinstance(dept_perms, dict):
-            d_val = _check_perm_map(dept_perms, sub_code)
-            if d_val is not None:
-                return d_val
-
-        # 3. Fallback to user role menu mapping
-        return bool(user.can_access_menu(sub_code))
-
-    # 3. Filter modules & submodules strictly
-    has_admin_mod_added = False
-
+    # 3. Filter modules & submodules strictly for this department
     for mod in modules:
         active_subs = []
         all_mod_subs = list(mod.submodules.filter(is_active=True).order_by('order', 'id'))
@@ -164,20 +116,12 @@ def _build_dynamic_navbar(request, user):
                 active_subs.append(sub)
 
         # Include parent module ONLY if it has at least one permitted submodule,
-        # OR if it's a standalone single-link module explicitly granted
-        mod_is_granted = False
-        if role_perms and isinstance(role_perms, dict) and mod.code in role_perms:
-            mod_is_granted = bool(role_perms[mod.code])
-        elif dept_perms and isinstance(dept_perms, dict) and mod.code in dept_perms:
-            mod_is_granted = bool(dept_perms[mod.code])
-
+        # OR if it's a standalone single-link module explicitly granted in department permissions
+        mod_is_granted = bool(dept_perms.get(mod.code) is True)
         if len(active_subs) > 0 or (len(all_mod_subs) == 0 and mod_is_granted):
             primary_url = mod.url_path
             if (not primary_url or primary_url == '#') and active_subs:
                 primary_url = active_subs[0].url_path
-
-            if mod.code in ['administration', 'system_section']:
-                has_admin_mod_added = True
 
             user_nav_modules.append({
                 'id': mod.id,
@@ -187,23 +131,6 @@ def _build_dynamic_navbar(request, user):
                 'url_path': primary_url,
                 'color': mod.color,
                 'badge': mod.badge,
-                'submodules': active_subs,
-                'has_submodules': len(active_subs) > 0,
-            })
-
-    # Always ensure Administrators can access Administration menu if on admin paths or needed
-    if is_admin and not has_admin_mod_added and request.path.startswith('/administration/'):
-        admin_mod = modules.filter(code__in=['administration', 'system_section']).first()
-        if admin_mod:
-            active_subs = list(admin_mod.submodules.filter(is_active=True).order_by('order', 'id'))
-            user_nav_modules.append({
-                'id': admin_mod.id,
-                'code': admin_mod.code,
-                'name': admin_mod.name,
-                'icon': admin_mod.icon,
-                'url_path': admin_mod.url_path or (active_subs[0].url_path if active_subs else '#'),
-                'color': admin_mod.color,
-                'badge': admin_mod.badge,
                 'submodules': active_subs,
                 'has_submodules': len(active_subs) > 0,
             })

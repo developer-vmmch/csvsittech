@@ -212,6 +212,13 @@ NAVBAR_MODULES_CONFIG = [
                 'description': 'Sub-lab divisions (Biochemistry, Hematology, Microbiology, Histopathology)',
             },
             {
+                'key': 'lab_master_permissions',
+                'name': 'Lab Permissions',
+                'icon': 'bi-shield-lock',
+                'url': '/lab/master/permissions/',
+                'description': 'Configure access permissions, test entry rights, and validation authority per lab department',
+            },
+            {
                 'key': 'master_wards',
                 'name': 'Hospital Wards',
                 'icon': 'bi-hospital',
@@ -701,7 +708,7 @@ DEPT_DEFAULT_NAV_MAPPING = {
         'auto_trigger_monthly_create': True, 'auto_trigger_monthly': True, 'auto_trigger_monthly_census': True,
         'auto_trigger_atc': True, 'investigation_marking': True, 'auto_trigger_atc_status': True, 'auto_trigger_atc_settings': True,
         'lab_orders': True, 'work_orders': True, 'order_entry': True, 'result_entry_list': True, 'service_request_list': True,
-        'master': True, 'lab_master_dashboard': True, 'lab_sub_departments': True, 'master_investigations': True,
+        'master': True, 'lab_master_dashboard': True, 'lab_sub_departments': True, 'lab_master_permissions': True, 'master_investigations': True,
         'master_parameters': True, 'investigation_parameter_mapping': True, 'master_reference_ranges': True,
         'master_diagnosis_list': True, 'master_diagnosis_investigation_mapping': True, 'master_diagnosis_department_mapping': True,
         'master_age_groups': True, 'mapping_validation': True, 'legacy_mapping': True,

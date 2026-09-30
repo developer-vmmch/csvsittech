@@ -104,6 +104,7 @@ from .master_views import (
     MasterDiagnosisDepartmentMappingView, api_master_diag_dept_map_save,
     MasterAgeGroupListView, api_master_age_group_save,
     master_validation_view,
+    MasterLabPermissionsView, api_master_lab_permissions_save,
 )
 from .result_views import (
     lab_result_detail_view,
@@ -168,6 +169,9 @@ urlpatterns = [
     path('master/api/age-groups/save/', api_master_age_group_save, name='api_master_age_group_save'),
 
     path('master/validation/', master_validation_view, name='master_validation'),
+    path('master/permissions/', MasterLabPermissionsView.as_view(), name='master_permissions'),
+    path('master/department-permissions/', MasterLabPermissionsView.as_view(), name='master_permissions_alias'),
+    path('master/api/permissions/save/', api_master_lab_permissions_save, name='api_master_lab_permissions_save'),
 
     # -----------------------------------------------------------------------
     # DYNAMIC LAB RESULTS & PRINTING
