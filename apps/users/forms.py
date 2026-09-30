@@ -40,6 +40,18 @@ def get_clinical_department_choices():
         pass
     return choices
 
+def get_lab_department_choices():
+    choices = []
+    try:
+        from apps.lab.models import LabDepartment
+        depts = list(LabDepartment.objects.filter(is_active=True))
+        depts.sort(key=lambda d: (0 if 'CENTRAL' in d.name.upper() else 1, d.name))
+        for dept in depts:
+            choices.append((dept.name, dept.name))
+    except Exception:
+        pass
+    return choices
+
 def get_all_department_choices(include_empty=False):
     choices = []
     if include_empty:
@@ -50,6 +62,9 @@ def get_all_department_choices(include_empty=False):
     for d, label in get_clinical_department_choices():
         if (d, label) not in choices:
             choices.append((d, label))
+    for d, label in get_lab_department_choices():
+        if (d, label) not in choices:
+            choices.append((d, f"{label} (Lab)"))
     return choices
 
 
@@ -106,6 +121,15 @@ class UserCreationCustomForm(forms.ModelForm):
             'id': 'id_clinical_departments',
         })
     )
+    lab_departments = FlexibleMultipleChoiceField(
+        choices=(),
+        required=False,
+        label="Lab Department(s)",
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select select-multi-lab',
+            'id': 'id_lab_departments',
+        })
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -115,6 +139,7 @@ class UserCreationCustomForm(forms.ModelForm):
 
         self.fields['erp_departments'].choices = get_erp_department_choices()
         self.fields['clinical_departments'].choices = get_clinical_department_choices()
+        self.fields['lab_departments'].choices = get_lab_department_choices()
 
     class Meta:
         model = User
@@ -157,6 +182,7 @@ class UserCreationCustomForm(forms.ModelForm):
 
         erp_depts = cleaned_data.get('erp_departments') or []
         clin_depts = cleaned_data.get('clinical_departments') or []
+        lab_depts = cleaned_data.get('lab_departments') or []
 
         all_selected = []
         if 'All Departments' in erp_depts:
@@ -167,6 +193,10 @@ class UserCreationCustomForm(forms.ModelForm):
                     all_selected.append(d)
 
         for d in clin_depts:
+            if d and d not in all_selected:
+                all_selected.append(d)
+
+        for d in lab_depts:
             if d and d not in all_selected:
                 all_selected.append(d)
 
@@ -181,6 +211,7 @@ class UserCreationCustomForm(forms.ModelForm):
 
         erp_depts = self.cleaned_data.get('erp_departments') or []
         clin_depts = self.cleaned_data.get('clinical_departments') or []
+        lab_depts = self.cleaned_data.get('lab_departments') or []
 
         all_selected = []
         if 'All Departments' in erp_depts:
@@ -191,6 +222,10 @@ class UserCreationCustomForm(forms.ModelForm):
                     all_selected.append(d)
 
         for d in clin_depts:
+            if d and d not in all_selected:
+                all_selected.append(d)
+
+        for d in lab_depts:
             if d and d not in all_selected:
                 all_selected.append(d)
 
@@ -224,6 +259,15 @@ class UserEditCustomForm(forms.ModelForm):
             'id': 'id_clinical_departments',
         })
     )
+    lab_departments = FlexibleMultipleChoiceField(
+        choices=(),
+        required=False,
+        label="Lab Department(s)",
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select select-multi-lab',
+            'id': 'id_lab_departments',
+        })
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -233,9 +277,11 @@ class UserEditCustomForm(forms.ModelForm):
 
         erp_choices = get_erp_department_choices()
         clin_choices = get_clinical_department_choices()
+        lab_choices = get_lab_department_choices()
 
         self.fields['erp_departments'].choices = erp_choices
         self.fields['clinical_departments'].choices = clin_choices
+        self.fields['lab_departments'].choices = lab_choices
 
         if self.instance and self.instance.department:
             current_raw = str(self.instance.department).strip()
@@ -243,18 +289,23 @@ class UserEditCustomForm(forms.ModelForm):
 
             erp_init = []
             clin_init = []
+            lab_init = []
             erp_keys = [c[0] for c in erp_choices]
+            lab_keys = [c[0] for c in lab_choices]
 
             for d in depts_list:
                 if d.lower() in ['all', 'all departments', 'all departments (universal access)']:
                     erp_init.append('All Departments')
                 elif d in erp_keys:
                     erp_init.append(d)
+                elif d in lab_keys:
+                    lab_init.append(d)
                 else:
                     clin_init.append(d)
 
             self.fields['erp_departments'].initial = erp_init
             self.fields['clinical_departments'].initial = clin_init
+            self.fields['lab_departments'].initial = lab_init
 
     class Meta:
         model = User
@@ -289,6 +340,7 @@ class UserEditCustomForm(forms.ModelForm):
         cleaned_data = super().clean()
         erp_depts = cleaned_data.get('erp_departments') or []
         clin_depts = cleaned_data.get('clinical_departments') or []
+        lab_depts = cleaned_data.get('lab_departments') or []
 
         all_selected = []
         if 'All Departments' in erp_depts:
@@ -299,6 +351,10 @@ class UserEditCustomForm(forms.ModelForm):
                     all_selected.append(d)
 
         for d in clin_depts:
+            if d and d not in all_selected:
+                all_selected.append(d)
+
+        for d in lab_depts:
             if d and d not in all_selected:
                 all_selected.append(d)
 
@@ -313,6 +369,7 @@ class UserEditCustomForm(forms.ModelForm):
 
         erp_depts = self.cleaned_data.get('erp_departments') or []
         clin_depts = self.cleaned_data.get('clinical_departments') or []
+        lab_depts = self.cleaned_data.get('lab_departments') or []
 
         all_selected = []
         if 'All Departments' in erp_depts:
@@ -323,6 +380,10 @@ class UserEditCustomForm(forms.ModelForm):
                     all_selected.append(d)
 
         for d in clin_depts:
+            if d and d not in all_selected:
+                all_selected.append(d)
+
+        for d in lab_depts:
             if d and d not in all_selected:
                 all_selected.append(d)
 

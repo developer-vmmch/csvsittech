@@ -367,6 +367,37 @@
                 {% if form.clinical_departments.errors %}<div class="field-error">{{ form.clinical_departments.errors.0 }}</div>{% endif %}
             </div>
 
+            <!-- 3. Lab Department Selector -->
+            <div class="form-group">
+                <label for="labDeptSelectorBox"><i class="bi bi-funnel-fill" style="color: #7c3aed;"></i> Lab Department(s)</label>
+                <div style="display: none;">{{ form.lab_departments }}</div>
+
+                <div class="vmmc-select-wrapper" id="labDeptWrapper">
+                    <div class="vmmc-selector-box" id="labDeptSelectorBox" tabindex="0">
+                        <div class="vmmc-tags-container" style="display: flex; flex-wrap: wrap; gap: 4px; flex: 1;">
+                            <span class="vmmc-placeholder">-- Select Lab Department(s) --</span>
+                        </div>
+                        <i class="bi bi-chevron-down vmmc-arrow"></i>
+                    </div>
+
+                    <div class="vmmc-dropdown-overlay" id="labDeptDropdown">
+                        <div class="vmmc-search-box">
+                            <input type="text" class="vmmc-search-input" placeholder="Search lab departments..." autocomplete="off">
+                        </div>
+                        <div class="vmmc-actions-bar">
+                            <button type="button" class="vmmc-btn-action btn-all">Select All</button>
+                            <button type="button" class="vmmc-btn-action clear btn-clear">Clear</button>
+                        </div>
+                        <div class="vmmc-options-list"></div>
+                        <div class="vmmc-dropdown-footer">
+                            <span class="count-text">0 selected</span>
+                            <button type="button" class="vmmc-btn-done">Done</button>
+                        </div>
+                    </div>
+                </div>
+                {% if form.lab_departments.errors %}<div class="field-error">{{ form.lab_departments.errors.0 }}</div>{% endif %}
+            </div>
+
             <div class="form-group">
                 <label for="{{ form.employee_id.id_for_label }}">Employee ID / Unique User ID</label>
                 {{ form.employee_id }}
@@ -655,9 +686,10 @@ document.addEventListener('DOMContentLoaded', function() {
         updateDisplay();
     }
 
-    // Initialize ERP and Clinical selectors
+    // Initialize ERP, Clinical, and Lab selectors
     initVmmcMultiSelect('erpDeptWrapper', 'id_erp_departments', '-- Select ERP Module(s) --', true);
     initVmmcMultiSelect('clinDeptWrapper', 'id_clinical_departments', '-- Select Clinical Department(s) --', false);
+    initVmmcMultiSelect('labDeptWrapper', 'id_lab_departments', '-- Select Lab Department(s) --', false);
 });
 </script>
 {% endblock %}
