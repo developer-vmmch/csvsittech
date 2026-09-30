@@ -390,6 +390,12 @@ class Patient(TimeStampedModel):
         """Returns True if the patient currently has an active, undischarged IP admission."""
         return self.active_ip_admission is not None
 
+    def clean(self):
+        super().clean()
+        if self.age_years is not None and (self.age_years < 0 or self.age_years > 99):
+            from django.core.exceptions import ValidationError
+            raise ValidationError({'age_years': 'Age must be between 0 and 99.'})
+
     def save(self, *args, **kwargs):
         if not self.patient_type:
             self.patient_type = self.created_source or 'O'
@@ -414,6 +420,10 @@ class Patient(TimeStampedModel):
             self.op_number = self.generate_next_op_number(is_emergency=is_emer)
         elif is_emer and not str(self.op_number).upper().startswith('E') and not self.pk:
             self.op_number = f"E{self.op_number}"
+
+        if self.age_years is not None and (self.age_years < 0 or self.age_years > 99):
+            from django.core.exceptions import ValidationError
+            raise ValidationError({'age_years': 'Age must be between 0 and 99.'})
 
         super().save(*args, **kwargs)
 

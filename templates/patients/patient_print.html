@@ -571,7 +571,7 @@
                 <svg id="op-barcode" class="banner-barcode-svg"></svg>
             </div>
             <div class="banner-middle-type">
-                OUT PATIENT - {% if print_type == 'REVIEW' or patient.patient_type == 'R' or patient.patient_type == 'REVIEW' or patient.visit_type == 'REVIEW' %}REVIEW{% else %}NEW{% endif %}
+                {% if print_type == 'ADMISSION' or print_type == 'IP' %}IN PATIENT - ADMISSION{% elif print_type == 'REVIEW' or patient.patient_type == 'R' or patient.patient_type == 'REVIEW' or patient.visit_type == 'REVIEW' %}OUT PATIENT - REVIEW{% else %}OUT PATIENT - NEW{% endif %}
             </div>
             <div class="banner-dept">
                 {{ patient.department|default:"GENERAL MEDICINE"|upper }}

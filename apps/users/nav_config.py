@@ -113,6 +113,13 @@ NAVBAR_MODULES_CONFIG = [
                 'description': 'Schedule and conduct follow-up consultations and review notes',
             },
             {
+                'key': 'ip_admission',
+                'name': 'IP Admission',
+                'icon': 'bi-hospital',
+                'url': '/patients/admission/',
+                'description': 'Inpatient admission, bed allocation, and ward assignment',
+            },
+            {
                 'key': 'discharge',
                 'name': 'Discharge Marking',
                 'icon': 'bi-box-arrow-right',
@@ -663,7 +670,7 @@ DEPT_DEFAULT_NAV_MAPPING = {
         'fo_registration_search': True, 'fo_patient_count': True, 'fo_op_ip_census': True,
         'fo_abha_search': True, 'fo_patient_type': True, 'fo_user_log': True,
         'patients': True, 'add_patient': True, 'search_patient': True,
-        'patient_list': True, 'patient_import': True, 'review': True,
+        'patient_list': True, 'patient_import': True, 'review': True, 'ip_admission': True,
         'discharge': True, 'patient_companies': True, 'department_list': True,
         'lab_reports': True, 'op_census': True, 'review_report': True,
     },
@@ -673,14 +680,14 @@ DEPT_DEFAULT_NAV_MAPPING = {
         'fo_registration_search': True, 'fo_patient_count': True, 'fo_op_ip_census': True,
         'fo_abha_search': True, 'fo_patient_type': True, 'fo_user_log': True,
         'patients': True, 'add_patient': True, 'search_patient': True,
-        'patient_list': True, 'patient_import': True, 'review': True,
+        'patient_list': True, 'patient_import': True, 'review': True, 'ip_admission': True,
         'discharge': True, 'patient_companies': True, 'department_list': True,
         'lab_reports': True, 'op_census': True, 'review_report': True,
     },
     'consultant': {
         'dashboard': True,
         'front_office': True, 'fo_landing': True, 'fo_registration_search': True, 'fo_op_ip_census': True,
-        'patients': True, 'search_patient': True, 'patient_list': True, 'review': True,
+        'patients': True, 'search_patient': True, 'patient_list': True, 'review': True, 'ip_admission': True,
         'auto_trigger_section': True, 'doctor_window': True, 'service_request_add': True,
         'ward': True, 'ward_allocation': True, 'branch_transfer': True,
         'lab_orders': True, 'result_entry_list': True, 'service_request_list': True,
@@ -689,7 +696,7 @@ DEPT_DEFAULT_NAV_MAPPING = {
     'billing': {
         'dashboard': True,
         'front_office': True, 'fo_landing': True, 'fo_registration_search': True, 'fo_patient_count': True, 'fo_op_ip_census': True, 'fo_user_log': True,
-        'patients': True, 'search_patient': True, 'patient_list': True, 'review': True, 'patient_companies': True,
+        'patients': True, 'search_patient': True, 'patient_list': True, 'review': True, 'ip_admission': True, 'patient_companies': True,
         'lab_orders': True, 'work_orders': True, 'order_entry': True, 'result_entry_list': True, 'service_request_list': True,
         'lab_reports': True, 'op_census': True, 'report_dashboard': True, 'report_daily': True, 'report_monthly': True,
     },
@@ -711,14 +718,14 @@ DEPT_DEFAULT_NAV_MAPPING = {
     'ward': {
         'dashboard': True,
         'ward': True, 'ward_allocation': True, 'ward_management': True, 'ward_service_request': True, 'branch_transfer': True,
-        'patients': True, 'search_patient': True, 'patient_list': True, 'review': True, 'discharge': True,
+        'patients': True, 'search_patient': True, 'patient_list': True, 'review': True, 'ip_admission': True, 'discharge': True,
         'lab_reports': True, 'branch_transfer_report': True, 'review_report': True, 'op_census': True,
         'master': True, 'master_wards': True,
     },
     'mrd': {
         'dashboard': True,
         'front_office': True, 'fo_registration_search': True, 'fo_patient_count': True, 'fo_op_ip_census': True, 'fo_abha_search': True, 'fo_patient_type': True,
-        'patients': True, 'search_patient': True, 'patient_list': True, 'review': True, 'discharge': True, 'patient_companies': True, 'department_list': True,
+        'patients': True, 'search_patient': True, 'patient_list': True, 'review': True, 'ip_admission': True, 'discharge': True, 'patient_companies': True, 'department_list': True,
         'lab_reports': True, 'review_report': True, 'op_census': True, 'branch_transfer_report': True, 'report_dashboard': True,
         'master': True, 'master_departments': True, 'master_wards': True,
     },
@@ -759,7 +766,7 @@ DEPT_DEFAULT_NAV_MAPPING = {
     'summary': {
         'dashboard': True,
         'front_office': True, 'fo_registration_search': True, 'fo_op_ip_census': True, 'fo_patient_count': True,
-        'patients': True, 'search_patient': True, 'patient_list': True, 'review': True, 'discharge': True,
+        'patients': True, 'search_patient': True, 'patient_list': True, 'review': True, 'ip_admission': True, 'discharge': True,
         'ward': True, 'ward_allocation': True, 'branch_transfer': True,
         'lab_reports': True, 'review_report': True, 'op_census': True, 'branch_transfer_report': True, 'report_dashboard': True,
     },
@@ -773,7 +780,7 @@ DEPT_DEFAULT_NAV_MAPPING = {
     'report': {
         'dashboard': True,
         'front_office': True, 'fo_patient_count': True, 'fo_op_ip_census': True, 'fo_patient_type': True, 'fo_user_log': True, 'fo_abha_search': True,
-        'patients': True, 'search_patient': True, 'patient_list': True, 'review': True,
+        'patients': True, 'search_patient': True, 'patient_list': True, 'review': True, 'ip_admission': True,
         'lab_reports': True, 'report_dashboard': True, 'review_report': True, 'op_census': True, 'branch_transfer_report': True,
         'report_daily': True, 'report_monthly': True, 'report_sub_department': True, 'report_investigation': True,
         'report_hospital_department': True, 'report_abnormal': True,
@@ -781,7 +788,7 @@ DEPT_DEFAULT_NAV_MAPPING = {
     'mis': {
         'dashboard': True,
         'front_office': True, 'fo_landing': True, 'fo_crm': True, 'fo_admission_request': True, 'fo_registration_search': True, 'fo_patient_count': True, 'fo_op_ip_census': True, 'fo_abha_search': True, 'fo_patient_type': True, 'fo_user_log': True,
-        'patients': True, 'patient_list': True, 'review': True, 'discharge': True, 'patient_companies': True, 'department_list': True,
+        'patients': True, 'patient_list': True, 'review': True, 'ip_admission': True, 'discharge': True, 'patient_companies': True, 'department_list': True,
         'ward': True, 'ward_allocation': True, 'branch_transfer': True,
         'lab_reports': True, 'report_dashboard': True, 'review_report': True, 'op_census': True, 'branch_transfer_report': True,
         'report_daily': True, 'report_monthly': True, 'report_sub_department': True, 'report_investigation': True, 'report_hospital_department': True, 'report_abnormal': True,
@@ -790,7 +797,7 @@ DEPT_DEFAULT_NAV_MAPPING = {
     'department': {
         'dashboard': True,
         'front_office': True, 'fo_registration_search': True, 'fo_op_ip_census': True,
-        'patients': True, 'search_patient': True, 'patient_list': True, 'department_list': True, 'review': True,
+        'patients': True, 'search_patient': True, 'patient_list': True, 'department_list': True, 'review': True, 'ip_admission': True,
         'ward': True, 'ward_allocation': True, 'ward_management': True, 'branch_transfer': True,
         'master': True, 'master_departments': True, 'master_wards': True, 'master_investigations': True,
         'lab_reports': True, 'report_hospital_department': True, 'op_census': True, 'review_report': True,
@@ -806,10 +813,14 @@ DEPT_DEFAULT_NAV_MAPPING = {
 def seed_default_nav_modules_if_needed(force=False):
     """
     Seeds or updates default NavModule and NavSubmodule records in the database.
+    Ensures all submodules defined in NAVBAR_MODULES_CONFIG are created/updated and correctly ordered.
     """
     try:
         from apps.users.models import NavModule, NavSubmodule
-        if not force and NavModule.objects.filter(is_active=True).exists():
+        config_sub_keys = {s['key'] for m in NAVBAR_MODULES_CONFIG for s in m.get('submodules', [])}
+        existing_sub_keys = set(NavSubmodule.objects.values_list('code', flat=True))
+
+        if not force and NavModule.objects.filter(is_active=True).exists() and config_sub_keys.issubset(existing_sub_keys):
             return
 
         with transaction.atomic():

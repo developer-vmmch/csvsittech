@@ -8,7 +8,7 @@ from .views import (
     get_department_units, OPCensusView, PatientReviewView, PatientReviewReportView, PatientMedicalHistoryPrintView,
     PatientDischargeView, PatientDischargeSlipView, BranchTransferListView, api_patient_active_admission,
     BranchTransferReportView, export_branch_transfers_csv, api_search_patient_for_allocation, api_available_ward_beds,
-    WardServiceRequestView, api_ward_service_request_patients, api_patient_investigations_results
+    WardServiceRequestView, api_ward_service_request_patients, api_patient_investigations_results, IPAdmissionView
 )
 from .import_views import (
     PatientImportView, PatientImportHistoryView, api_patient_download_template,
@@ -20,6 +20,8 @@ app_name = 'patients'
 urlpatterns = [
     path('', PatientListView.as_view(), name='list'),
     path('review/', PatientReviewView.as_view(), name='review'),
+    path('admission/', IPAdmissionView.as_view(), name='ip_admission'),
+    path('ip-admission/', IPAdmissionView.as_view(), name='ip_admission_alias'),
     path('discharge/', PatientDischargeView.as_view(), name='discharge'),
     path('discharge/<int:pk>/slip/', PatientDischargeSlipView.as_view(), name='discharge_slip'),
     

@@ -194,13 +194,24 @@ class PatientRegistrationForm(forms.ModelForm):
         return patient_id
 
     def clean_age_years(self):
-        val = self.cleaned_data.get('age_years')
-        if val in [None, '']:
-            return 0
-        try:
+        raw_val = self.data.get('age_years')
+        if raw_val is None or str(raw_val).strip() == '':
+            val = self.cleaned_data.get('age_years')
+            if val in [None, '']:
+                return 0
+            if isinstance(val, (int, float)) and (val < 0 or val > 99):
+                raise forms.ValidationError("Age must be between 0 and 99.")
             return int(val)
+        raw_str = str(raw_val).strip()
+        if '.' in raw_str:
+            raise forms.ValidationError("Age must be between 0 and 99.")
+        try:
+            val = int(raw_str)
         except (ValueError, TypeError):
-            return 0
+            raise forms.ValidationError("Age must be between 0 and 99.")
+        if val < 0 or val > 99:
+            raise forms.ValidationError("Age must be between 0 and 99.")
+        return val
 
     def clean_age_months(self):
         val = self.cleaned_data.get('age_months')
@@ -402,18 +413,18 @@ class PatientVisitForm(forms.ModelForm):
         queryset=Department.objects.filter(is_active=True),
         required=True,
         empty_label="Select Department",
-        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_visit_department'})
+        widget=forms.Select(attrs={'class': 'form-select-compact', 'id': 'id_visit_department'})
     )
     unit_obj = forms.ModelChoiceField(
         queryset=DepartmentUnit.objects.filter(is_active=True),
         required=True,
         empty_label="Select Unit / Doctor",
-        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_visit_unit'})
+        widget=forms.Select(attrs={'class': 'form-select-compact', 'id': 'id_visit_unit'})
     )
     ward = forms.ChoiceField(
         choices=WARD_CHOICES,
         required=False,
-        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_visit_ward'})
+        widget=forms.Select(attrs={'class': 'form-select-compact', 'id': 'id_visit_ward'})
     )
 
     class Meta:
@@ -423,16 +434,16 @@ class PatientVisitForm(forms.ModelForm):
             'ipno', 'ward', 'bed', 'ref_no', 'ref_by', 'reg_fees', 'coll_status', 'clinical_notes'
         ]
         widgets = {
-            'visit_type': forms.Select(attrs={'class': 'form-select', 'id': 'id_visit_type'}),
-            'centre': forms.Select(attrs={'class': 'form-select', 'id': 'id_visit_centre'}),
-            'category': forms.Select(attrs={'class': 'form-select', 'id': 'id_visit_category'}),
+            'visit_type': forms.Select(attrs={'class': 'form-select-compact', 'id': 'id_visit_type'}),
+            'centre': forms.Select(attrs={'class': 'form-select-compact', 'id': 'id_visit_centre'}),
+            'category': forms.Select(attrs={'class': 'form-select-compact', 'id': 'id_visit_category'}),
             'ipno': forms.HiddenInput(attrs={'id': 'id_ipno'}),
-            'ward': forms.Select(choices=WARD_CHOICES, attrs={'class': 'form-select', 'id': 'id_visit_ward'}),
-            'bed': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Bed'}),
-            'ref_no': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ref No'}),
-            'ref_by': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Referred By'}),
-            'reg_fees': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01', 'placeholder': '0.00'}),
-            'coll_status': forms.Select(choices=[('Paid', 'Paid'), ('Pending', 'Pending'), ('Waived', 'Waived')], attrs={'class': 'form-select'}),
+            'ward': forms.Select(choices=WARD_CHOICES, attrs={'class': 'form-select-compact', 'id': 'id_visit_ward'}),
+            'bed': forms.TextInput(attrs={'class': 'form-control-compact', 'placeholder': 'Bed'}),
+            'ref_no': forms.TextInput(attrs={'class': 'form-control-compact', 'placeholder': 'Ref No'}),
+            'ref_by': forms.TextInput(attrs={'class': 'form-control-compact', 'placeholder': 'Referred By'}),
+            'reg_fees': forms.TextInput(attrs={'class': 'form-control-compact', 'placeholder': '0.0'}),
+            'coll_status': forms.Select(choices=[('Paid', 'Paid'), ('Pending', 'Pending'), ('Waived', 'Waived')], attrs={'class': 'form-select-compact'}),
             'clinical_notes': forms.Textarea(attrs={'class': 'form-textarea', 'rows': 3, 'placeholder': 'Enter consultation diagnosis / medical notes...'}),
         }
 
@@ -467,7 +478,7 @@ class PatientVisitForm(forms.ModelForm):
                     self.fields['unit_obj'].initial = self.fields['unit_obj'].queryset.first()
             
             # Restrict Visit Type to IP only
-            self.fields['visit_type'].choices = [('IP', 'In-Patient (IP)')]
+            self.fields['visit_type'].choices = [('IP', 'In-P')]
             self.fields['visit_type'].initial = 'IP'
             self.fields['category'].choices = [('EMERGENCY', 'Emergency'), ('CASUALTY', 'Casualty')]
             self.fields['category'].initial = 'EMERGENCY'
@@ -475,6 +486,8 @@ class PatientVisitForm(forms.ModelForm):
         else:
             self.fields['department_obj'].queryset = Department.objects.filter(is_active=True)
             self.fields['unit_obj'].queryset = DepartmentUnit.objects.filter(is_active=True)
+            self.fields['visit_type'].choices = [('REVIEW', 'Review'), ('OP', 'Out-P')]
+            self.fields['visit_type'].initial = 'REVIEW'
 
         Ward.seed_defaults()
         ward_qs = Ward.objects.filter(is_active=True)
@@ -651,4 +664,93 @@ class BranchTransferRequestForm(forms.ModelForm):
             raise forms.ValidationError("Transfer reason / clinical notes are mandatory.")
 
         return cleaned_data
+
+
+class IPAdmissionForm(forms.Form):
+    department_obj = forms.ModelChoiceField(
+        queryset=Department.objects.filter(is_active=True),
+        required=True,
+        empty_label="Select Department",
+        widget=forms.Select(attrs={'class': 'form-select-compact', 'id': 'id_adm_department'})
+    )
+    unit_obj = forms.ModelChoiceField(
+        queryset=DepartmentUnit.objects.filter(is_active=True),
+        required=True,
+        empty_label="Select Unit / Doctor",
+        widget=forms.Select(attrs={'class': 'form-select-compact', 'id': 'id_adm_unit'})
+    )
+    admission_type = forms.ChoiceField(
+        choices=[
+            ('General Admission', 'General Admission'),
+            ('Emergency / Casualty', 'Emergency / Casualty'),
+            ('Planned / Elective', 'Planned / Elective'),
+            ('Day Care', 'Day Care'),
+            ('ICU / Critical Care', 'ICU / Critical Care'),
+            ('Maternity / Delivery', 'Maternity / Delivery'),
+            ('Surgical Admission', 'Surgical Admission'),
+            ('Insurance / Corporate', 'Insurance / Corporate'),
+            ('Other', 'Other'),
+        ],
+        required=True,
+        initial='General Admission',
+        widget=forms.Select(attrs={'class': 'form-select-compact', 'id': 'id_adm_type'})
+    )
+    ward = forms.CharField(
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select-compact', 'id': 'id_adm_ward'})
+    )
+    bed = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control-compact', 'id': 'id_adm_bed', 'readonly': 'readonly', 'placeholder': 'Select Bed'})
+    )
+    admission_date = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control-compact', 'id': 'id_adm_date', 'placeholder': 'dd/mm/yyyy'})
+    )
+    ipno = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control-compact', 'id': 'id_adm_ipno', 'placeholder': 'IP Number'})
+    )
+    status = forms.ChoiceField(
+        choices=[
+            ('Admitted', 'Admitted'),
+            ('Under Observation', 'Under Observation'),
+            ('Planned / Reserved', 'Planned / Reserved'),
+        ],
+        required=True,
+        initial='Admitted',
+        widget=forms.Select(attrs={'class': 'form-select-compact', 'id': 'id_adm_status'})
+    )
+    admission_reason = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'form-textarea', 'id': 'id_adm_reason', 'rows': 3, 'placeholder': 'Enter admission reason / diagnosis / clinical findings...'})
+    )
+
+    def __init__(self, *args, patient=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.patient = patient
+        Ward.seed_defaults()
+        ward_qs = Ward.objects.filter(is_active=True)
+        if patient:
+            gender_raw = str(patient.gender or '').strip().upper()
+            title_raw = str(patient.title or '').strip().upper()
+            age_years = patient.age_years if patient.age_years is not None else 0
+
+            is_paediatric = (0 < age_years < 13) or title_raw in ['BABY', 'MASTER'] or str(patient.category or '').upper() == 'PAEDIATRIC'
+            is_male = (gender_raw in ['MALE', 'M']) or (title_raw in ['MR', 'MASTER'] and not is_paediatric)
+            is_female = (gender_raw in ['FEMALE', 'F']) or (title_raw in ['MRS', 'MS', 'MISS'])
+
+            if is_paediatric:
+                ward_qs = ward_qs.filter(gender_category__in=[Ward.GenderCategoryChoices.PAEDIATRIC, Ward.GenderCategoryChoices.UNISEX])
+            elif is_male:
+                ward_qs = ward_qs.filter(gender_category__in=[Ward.GenderCategoryChoices.MALE, Ward.GenderCategoryChoices.UNISEX])
+            elif is_female:
+                ward_qs = ward_qs.filter(gender_category__in=[Ward.GenderCategoryChoices.FEMALE, Ward.GenderCategoryChoices.UNISEX])
+
+        active_wards = [(w.name, f"{w.name} ({w.code})") for w in ward_qs.order_by('name')]
+        self.fields['ward'].widget = forms.Select(
+            choices=[('', 'Select Ward')] + active_wards,
+            attrs={'class': 'form-select-compact', 'id': 'id_adm_ward'}
+        )
+
 

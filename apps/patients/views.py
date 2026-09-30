@@ -32,7 +32,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 from datetime import datetime
 from .models import Patient, PatientCompany, Department, DepartmentUnit, PatientVisit, BranchTransferRequest, Ward
-from .forms import PatientRegistrationForm, PatientCompanyForm, DepartmentForm, DepartmentUnitForm, PatientVisitForm, BranchTransferRequestForm, WardForm
+from .forms import PatientRegistrationForm, PatientCompanyForm, DepartmentForm, DepartmentUnitForm, PatientVisitForm, BranchTransferRequestForm, WardForm, IPAdmissionForm
 
 from django.contrib.auth import get_user_model
 
@@ -490,21 +490,27 @@ class PatientPrintView(LoginRequiredMixin, MenuAccessRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         patient = self.object
 
-        # Determine if print is OP or REVIEW
+        # Determine if print is OP, REVIEW, or ADMISSION
         type_param = self.request.GET.get('type', '').strip().upper()
-        is_review = (
+        if type_param in ['ADMISSION', 'IP']:
+            print_type = 'ADMISSION'
+        elif (
             type_param == 'REVIEW' or
             patient.patient_type in ['R', 'REVIEW'] or
             patient.visit_through == 'REVIEW' or
             self.request.GET.get('visit_type', '').upper() == 'REVIEW'
-        )
-        print_type = 'REVIEW' if is_review else 'OP'
+        ):
+            print_type = 'REVIEW'
+        else:
+            print_type = 'OP'
 
         visit_id = self.request.GET.get('visit_id')
         visit = None
         if visit_id:
             visit = patient.visits.filter(id=visit_id).first()
-        if not visit and is_review:
+        if not visit and print_type == 'ADMISSION':
+            visit = patient.active_ip_admission or patient.visits.filter(visit_type='IP').order_by('-id').first() or patient.visits.order_by('-id').first()
+        elif not visit and print_type == 'REVIEW':
             visit = patient.visits.order_by('-visit_no').first()
 
         from apps.printing.models import PublicPrintToken
@@ -849,10 +855,19 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        search_type = self.request.GET.get('search_option') or self.request.GET.get('search_type') or 'patient_id'
+        search_query = self.request.GET.get('search_query', '').strip()
         search_id = self.request.GET.get('patient_id', '').strip()
+        search_op_no = self.request.GET.get('op_number', '').strip() or self.request.GET.get('op_no', '').strip()
         search_ipno = self.request.GET.get('ipno', '').strip()
         search_abha = self.request.GET.get('abha_id', '').strip()
         patient = None
+
+        if search_query:
+            if search_type == 'op_no':
+                search_op_no = search_query
+            else:
+                search_id = search_query
 
         if search_ipno:
             patient = Patient.objects.filter(ipno__iexact=search_ipno).first()
@@ -861,17 +876,21 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
                 if visit:
                     patient = visit.patient
             if not patient:
-                messages.warning(self.request, "Patient/IP number not found.")
+                messages.warning(self.request, f"Patient/IP number '{search_ipno}' not found.")
+        elif search_op_no:
+            search_type = 'op_no'
+            patient = Patient.objects.filter(op_number__iexact=search_op_no).first()
+            if not patient:
+                messages.warning(self.request, f"No patient record found for OP Number '{search_op_no}'.")
         elif search_id:
-            patient = Patient.objects.filter(
-                Q(patient_id__iexact=search_id) | Q(ipno__iexact=search_id) | Q(op_number__iexact=search_id)
-            ).first()
+            search_type = 'patient_id'
+            patient = Patient.objects.filter(patient_id__iexact=search_id).first()
             if not patient:
                 visit = PatientVisit.objects.filter(ipno__iexact=search_id).select_related('patient').order_by('-visit_date', '-id').first()
                 if visit:
                     patient = visit.patient
                 else:
-                    messages.warning(self.request, f"No patient record found for ID / IPNO '{search_id}'.")
+                    messages.warning(self.request, f"No patient record found for Patient ID '{search_id}'.")
         elif search_abha:
             patient = Patient.objects.filter(
                 Q(abha_id__iexact=search_abha) | Q(abha_id__icontains=search_abha)
@@ -880,9 +899,17 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
                 messages.warning(self.request, f"No patient record found for ABHA ID '{search_abha}'.")
 
         context['patient'] = patient
-        context['search_id'] = patient.patient_id if patient else search_id
+        context['search_type'] = search_type
+        if patient:
+            context['search_query'] = patient.op_number if search_type == 'op_no' and patient.op_number else patient.patient_id
+            context['search_id'] = patient.patient_id
+            context['search_op_no'] = patient.op_number or ''
+        else:
+            context['search_query'] = search_query or search_op_no or search_id
+            context['search_id'] = search_id
+            context['search_op_no'] = search_op_no
+
         context['search_ipno'] = search_ipno
-        context['search_abha'] = search_abha
         context['all_patients'] = Patient.objects.all().order_by('-id')[:50]
         context['now'] = timezone.now()
         context['last_patient'] = Patient.objects.all().order_by('-id').first()
@@ -894,7 +921,7 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
                 today = timezone.localdate() if hasattr(timezone, 'localdate') else timezone.now().date()
                 dob = patient.dob
                 calc_years = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
-                if calc_years >= 0:
+                if 0 <= calc_years <= 99:
                     patient.age_years = calc_years
 
             is_emergency = (
@@ -938,19 +965,21 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
                 Q(name__icontains='EMERGENCY') | Q(name__icontains='CASUALTY') | Q(code__icontains='EMR')
             ).first() if is_emergency else None
 
-            context['visit_form'] = PatientVisitForm(patient=patient, initial={
-                'department_obj': emer_dept or patient.department_obj,
-                'unit_obj': (emer_dept.units.first() if (emer_dept and emer_dept.units.exists()) else patient.unit_obj),
-                'visit_type': 'IP' if is_emergency else 'OP',
-                'category': 'EMERGENCY' if is_emergency else 'RE_CONSULTATION',
-                'ipno': next_ip if is_emergency else '',
-                'ward': '',
-                'bed': '',
-            })
+            # IMPORTANT: Do NOT automatically copy the last visit Department into the editable Visit Details Department.
+            # Department and Unit start as "Select Department" and "Select Unit / Doctor" unless emergency.
+            initial_data = {
+                'visit_type': 'REVIEW',
+                'category': 'RE_CONSULTATION',
+                'reg_fees': '0.0',
+            }
+
+            context['visit_form'] = PatientVisitForm(patient=patient, initial=initial_data)
         else:
+            context['last_visit'] = None
             context['visit_form'] = PatientVisitForm(patient=None, initial={
-                'visit_type': 'OP',
-                'category': 'CONSULTATION',
+                'visit_type': 'REVIEW',
+                'category': 'RE_CONSULTATION',
+                'reg_fees': '0.0',
             })
             context['visits'] = []
             context['branch_transfers'] = []
@@ -962,12 +991,30 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
         patient_id = request.POST.get('patient_id_hidden') or request.POST.get('patient_id')
         patient = get_object_or_404(Patient, pk=patient_id)
 
-        is_emergency = (
-            str(patient.patient_id or '').upper().startswith('E') or 
-            patient.category in ['EMERGENCY', 'CASUALTY'] or
-            (patient.department_obj and any(k in patient.department_obj.name.upper() for k in ['EMERGENCY', 'CASUALTY'])) or
-            (patient.department and any(k in str(patient.department).upper() for k in ['EMERGENCY', 'CASUALTY']))
-        )
+        # Strict active IP check: Prevent any new visit while already admitted as Inpatient
+        if patient.is_admitted_inpatient:
+            messages.error(request, "The patient is already admitted as an inpatient.")
+            return redirect(f"{reverse('patients:review')}?patient_id={patient.patient_id}")
+
+        # Strict backend validation for age (0–99): Reject negatives, >=100, decimals
+        raw_age = request.POST.get('age_years')
+        if raw_age is None:
+            raw_age = request.POST.get('age')
+        if raw_age is not None and str(raw_age).strip() != '':
+            raw_str = str(raw_age).strip()
+            is_valid = True
+            if '.' in raw_str:
+                is_valid = False
+            else:
+                try:
+                    parsed_age = int(raw_str)
+                    if parsed_age < 0 or parsed_age > 99:
+                        is_valid = False
+                except (ValueError, TypeError):
+                    is_valid = False
+            if not is_valid:
+                messages.error(request, "Age must be between 0 and 99.")
+                return redirect(f"{reverse('patients:review')}?patient_id={patient.patient_id}")
 
         if request.POST.get('action') == 'discharge_patient':
             active_ip = patient.active_ip_admission
@@ -986,11 +1033,6 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
                 messages.success(request, f"Patient centre updated to '{patient.get_centre_display()}'!")
                 return redirect(f"{reverse('patients:review')}?patient_id={patient.patient_id}")
 
-        # Strict active IP check: Prevent any new visit while already admitted as Inpatient
-        if patient.is_admitted_inpatient:
-            messages.error(request, "The patient is already admitted as an inpatient.")
-            return redirect(f"{reverse('patients:review')}?patient_id={patient.patient_id}")
-
         form = PatientVisitForm(request.POST, patient=patient)
         if form.is_valid():
             with transaction.atomic():
@@ -1000,30 +1042,28 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
                 last_visit = patient.visits.order_by('-visit_no').first()
                 visit.visit_no = (last_visit.visit_no + 1) if last_visit else 1
 
-                if is_emergency:
-                    visit.visit_type = 'IP'
-                    if not visit.category or visit.category not in ['EMERGENCY', 'CASUALTY']:
-                        visit.category = 'EMERGENCY'
+                # Review is strictly for OP/Review visits - NO IP, Ward, Bed, or IP Number
+                vt_post = (form.cleaned_data.get('visit_type') or request.POST.get('visit_type') or 'REVIEW').strip()
+                visit.visit_type = vt_post if vt_post in ['REVIEW', 'OP'] else 'REVIEW'
+                visit.ipno = ''
+                visit.ward = ''
+                visit.bed = ''
+
+                raw_rev_date = request.POST.get('review_date') or request.POST.get('visit_date')
+                if raw_rev_date:
+                    try:
+                        p_date = datetime.strptime(raw_rev_date.strip(), '%d/%m/%Y').date()
+                        now_time = timezone.now().time()
+                        visit.visit_date = timezone.make_aware(datetime.combine(p_date, now_time))
+                    except Exception:
+                        visit.visit_date = timezone.now()
+                else:
+                    visit.visit_date = timezone.now()
 
                 if visit.department_obj:
                     visit.department = visit.department_obj.name
                 if visit.unit_obj:
                     visit.unit_doctor = visit.unit_obj.unit_name
-
-                # Assign IP Number ONLY when visit_type is IP (Manual entry or Auto-generated on save)
-                if visit.visit_type == 'IP' or is_emergency:
-                    raw_ip = (visit.ipno or '').strip()
-                    if not raw_ip or 'AUTO' in raw_ip.upper():
-                        visit.ipno = Patient.generate_next_ipno(is_emergency=is_emergency)
-                    else:
-                        if is_emergency and not raw_ip.upper().startswith('E'):
-                            visit.ipno = f"E{raw_ip}"
-                        else:
-                            visit.ipno = raw_ip
-                else:
-                    visit.ipno = ''
-                    visit.ward = ''
-                    visit.bed = ''
 
                 if request.user.is_authenticated:
                     visit.created_by = request.user
@@ -1039,8 +1079,45 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
                     patient.centre = visit.centre
                 if visit.visit_type:
                     patient.visit_through = visit.visit_type
-                if visit.ipno:
-                    patient.ipno = visit.ipno
+
+                # Demographic field updates if provided
+                if 'patient_type' in request.POST:
+                    pt_val = request.POST['patient_type'].strip()
+                    if pt_val in ['O', 'D']:
+                        patient.patient_type = pt_val
+                if raw_age is not None and str(raw_age).strip() != '':
+                    patient.age_years = int(str(raw_age).strip())
+                if 'name' in request.POST and request.POST['name'].strip():
+                    patient.name = request.POST['name'].strip()
+                if 'title' in request.POST and request.POST['title'].strip():
+                    patient.title = request.POST['title'].strip()
+                if 'gender' in request.POST and request.POST['gender'].strip():
+                    patient.gender = request.POST['gender'].strip()
+                if 'guardian_name' in request.POST:
+                    patient.guardian_name = request.POST['guardian_name'].strip()
+                if 'guardian_relationship' in request.POST:
+                    patient.guardian_relationship = request.POST['guardian_relationship'].strip()
+                if 'mobile_no' in request.POST:
+                    patient.mobile_no = request.POST['mobile_no'].strip()
+                if 'aadhar_card' in request.POST:
+                    patient.aadhar_card = request.POST['aadhar_card'].strip()
+                if 'abha_id' in request.POST:
+                    patient.abha_id = request.POST['abha_id'].strip()
+                if 'street' in request.POST:
+                    patient.street = request.POST['street'].strip()
+                if 'village_area' in request.POST:
+                    patient.village_area = request.POST['village_area'].strip()
+                if 'city' in request.POST:
+                    patient.city = request.POST['city'].strip()
+                if 'state' in request.POST:
+                    patient.state = request.POST['state'].strip()
+                if 'pincode' in request.POST:
+                    patient.pincode = request.POST['pincode'].strip()
+                if 'blood_group' in request.POST:
+                    patient.blood_group = request.POST['blood_group'].strip()
+                if 'category' in request.POST and request.POST['category'].strip():
+                    patient.category = request.POST['category'].strip()
+
                 patient.save()
 
             messages.success(request, f"New Visit #{visit.visit_no} recorded successfully for patient '{patient.name}' ({patient.patient_id})!")
@@ -1048,6 +1125,298 @@ class PatientReviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateVie
         else:
             messages.error(request, "Failed to log visit. Please select required Department and Doctor.")
             return redirect(f"{reverse('patients:review')}?patient_id={patient.patient_id}")
+
+
+class IPAdmissionView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
+    menu_key = 'ward_allocation'
+    template_name = 'patients/ip_admission.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        search_type = self.request.GET.get('search_option') or self.request.GET.get('search_type') or 'patient_id'
+        search_query = self.request.GET.get('search_query', '').strip()
+        search_id = self.request.GET.get('patient_id', '').strip()
+        search_op_no = self.request.GET.get('op_number', '').strip() or self.request.GET.get('op_no', '').strip()
+        search_ipno = self.request.GET.get('ipno', '').strip()
+        patient = None
+
+        if search_query:
+            if search_type == 'op_no':
+                search_op_no = search_query
+            else:
+                search_id = search_query
+
+        if search_ipno:
+            patient = Patient.objects.filter(ipno__iexact=search_ipno).first()
+            if not patient:
+                visit = PatientVisit.objects.filter(ipno__iexact=search_ipno).select_related('patient').order_by('-visit_date', '-id').first()
+                if visit:
+                    patient = visit.patient
+            if not patient:
+                messages.warning(self.request, f"Patient/IP number '{search_ipno}' not found.")
+        elif search_op_no:
+            search_type = 'op_no'
+            patient = Patient.objects.filter(op_number__iexact=search_op_no).first()
+            if not patient:
+                messages.warning(self.request, f"No patient record found for OP Number '{search_op_no}'.")
+        elif search_id:
+            search_type = 'patient_id'
+            patient = Patient.objects.filter(patient_id__iexact=search_id).first()
+            if not patient:
+                visit = PatientVisit.objects.filter(ipno__iexact=search_id).select_related('patient').order_by('-visit_date', '-id').first()
+                if visit:
+                    patient = visit.patient
+                else:
+                    messages.warning(self.request, f"No patient record found for Patient ID '{search_id}'.")
+
+        context['patient'] = patient
+        context['search_type'] = search_type
+        if patient:
+            context['search_query'] = patient.op_number if search_type == 'op_no' and patient.op_number else patient.patient_id
+            context['search_id'] = patient.patient_id
+            context['search_op_no'] = patient.op_number or ''
+        else:
+            context['search_query'] = search_query or search_op_no or search_id
+            context['search_id'] = search_id
+            context['search_op_no'] = search_op_no
+
+        context['search_ipno'] = search_ipno
+        context['now'] = timezone.now()
+        context['last_patient'] = Patient.objects.all().order_by('-id').first()
+
+        departments = Department.objects.filter(is_active=True).order_by('name')
+        context['departments'] = departments
+
+        Ward.seed_defaults()
+        ward_qs = Ward.objects.filter(is_active=True)
+
+        if patient:
+            if patient.dob:
+                today = timezone.localdate() if hasattr(timezone, 'localdate') else timezone.now().date()
+                dob = patient.dob
+                calc_years = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                if 0 <= calc_years <= 99:
+                    patient.age_years = calc_years
+
+            is_paediatric = (0 < (patient.age_years or 0) < 13) or str(patient.title or '').upper() in ['BABY', 'MASTER'] or str(patient.category or '').upper() == 'PAEDIATRIC'
+            is_male = str(patient.gender or '').upper() in ['MALE', 'M']
+            is_female = str(patient.gender or '').upper() in ['FEMALE', 'F']
+            if is_paediatric:
+                ward_qs = ward_qs.filter(gender_category__in=[Ward.GenderCategoryChoices.PAEDIATRIC, Ward.GenderCategoryChoices.UNISEX])
+            elif is_male:
+                ward_qs = ward_qs.filter(gender_category__in=[Ward.GenderCategoryChoices.MALE, Ward.GenderCategoryChoices.UNISEX])
+            elif is_female:
+                ward_qs = ward_qs.filter(gender_category__in=[Ward.GenderCategoryChoices.FEMALE, Ward.GenderCategoryChoices.UNISEX])
+
+            context['last_visit'] = patient.visits.order_by('-visit_no', '-id').first()
+            context['active_ip_admission'] = patient.active_ip_admission
+            context['is_admitted_inpatient'] = patient.is_admitted_inpatient
+
+            is_emergency = (
+                str(patient.patient_id or '').upper().startswith('E') or 
+                patient.category in ['EMERGENCY', 'CASUALTY']
+            )
+            next_ip = Patient.generate_next_ipno(is_emergency=is_emergency)
+            context['next_ipno'] = (patient.active_ip_admission.ipno if patient.active_ip_admission and patient.active_ip_admission.ipno else (patient.ipno or next_ip))
+
+            active_ip = patient.active_ip_admission
+            initial_data = {
+                'admission_date': timezone.now().strftime('%d/%m/%Y'),
+                'admission_type': active_ip.category if (active_ip and active_ip.category) else ('Emergency / Casualty' if is_emergency else 'General Admission'),
+                'ward': active_ip.ward if active_ip else '',
+                'bed': active_ip.bed if active_ip else '',
+                'ipno': context['next_ipno'],
+                'status': 'Admitted',
+                'admission_reason': active_ip.clinical_notes if active_ip else (patient.complaint or ''),
+            }
+            if active_ip and active_ip.department_obj:
+                initial_data['department_obj'] = active_ip.department_obj
+                initial_data['unit_obj'] = active_ip.unit_obj
+            elif patient.department_obj:
+                initial_data['department_obj'] = patient.department_obj
+                initial_data['unit_obj'] = patient.unit_obj
+
+            context['admission_form'] = IPAdmissionForm(patient=patient, initial=initial_data)
+        else:
+            context['last_visit'] = None
+            context['next_ipno'] = Patient.generate_next_ipno()
+            context['admission_form'] = IPAdmissionForm(patient=None, initial={
+                'admission_date': timezone.now().strftime('%d/%m/%Y'),
+                'admission_type': 'General Admission',
+                'status': 'Admitted',
+                'ipno': context['next_ipno'],
+            })
+
+        context['wards'] = ward_qs.order_by('name')
+        return context
+
+    def post(self, request, *args, **kwargs):
+        from django.db import transaction
+        patient_id = request.POST.get('patient_id_hidden') or request.POST.get('patient_id')
+        if not patient_id:
+            messages.error(request, "Please search and select a patient first.")
+            return redirect('patients:ip_admission')
+
+        patient = get_object_or_404(Patient, pk=patient_id)
+
+        # Strict backend validation for age (0–99): Reject negatives, >=100, decimals
+        raw_age = request.POST.get('age_years')
+        if raw_age is None:
+            raw_age = request.POST.get('age')
+        if raw_age is not None and str(raw_age).strip() != '':
+            raw_str = str(raw_age).strip()
+            is_valid = True
+            if '.' in raw_str:
+                is_valid = False
+            else:
+                try:
+                    parsed_age = int(raw_str)
+                    if parsed_age < 0 or parsed_age > 99:
+                        is_valid = False
+                except (ValueError, TypeError):
+                    is_valid = False
+            if not is_valid:
+                messages.error(request, "Age must be between 0 and 99.")
+                return redirect(f"{reverse('patients:ip_admission')}?patient_id={patient.patient_id}")
+
+        form = IPAdmissionForm(request.POST, patient=patient)
+        if not form.is_valid():
+            for field, errs in form.errors.items():
+                messages.error(request, f"{field.replace('_', ' ').title()}: {errs[0]}")
+                break
+            return redirect(f"{reverse('patients:ip_admission')}?patient_id={patient.patient_id}")
+
+        dept_obj = form.cleaned_data['department_obj']
+        unit_obj = form.cleaned_data['unit_obj']
+        admission_type = form.cleaned_data['admission_type']
+        ward_name = form.cleaned_data['ward'].strip()
+        bed_number = form.cleaned_data['bed'].strip().upper()
+        raw_adm_date = form.cleaned_data['admission_date'].strip()
+        ip_number = (form.cleaned_data.get('ipno') or '').strip()
+        admission_status = form.cleaned_data['status']
+        admission_reason = (form.cleaned_data.get('admission_reason') or '').strip()
+
+        # Prevent double allocation: Only available beds can be selected
+        clean_ward_name = ward_name.split('(')[0].strip()
+        occupied_by_other = PatientVisit.objects.filter(
+            Q(ward__iexact=ward_name) | Q(ward__iexact=clean_ward_name),
+            bed__iexact=bed_number,
+            visit_type=Patient.VisitChoices.IP,
+            discharge_date__isnull=True
+        ).exclude(patient=patient).select_related('patient').first()
+
+        if occupied_by_other:
+            other_name = occupied_by_other.patient.name if occupied_by_other.patient else 'another patient'
+            messages.error(request, f"Bed '{bed_number}' in '{ward_name}' is already occupied by {other_name}. Double allocation is strictly prohibited.")
+            return redirect(f"{reverse('patients:ip_admission')}?patient_id={patient.patient_id}")
+
+        # Parse admission date
+        try:
+            parsed_date = datetime.strptime(raw_adm_date, '%d/%m/%Y').date()
+            now_time = timezone.now().time()
+            adm_datetime = timezone.make_aware(datetime.combine(parsed_date, now_time))
+        except Exception:
+            adm_datetime = timezone.now()
+
+        is_emergency = (
+            str(patient.patient_id or '').upper().startswith('E') or 
+            'EMERGENCY' in admission_type.upper() or 
+            'CASUALTY' in admission_type.upper()
+        )
+        if not ip_number or 'AUTO' in ip_number.upper():
+            ip_number = Patient.generate_next_ipno(is_emergency=is_emergency)
+        elif is_emergency and not ip_number.upper().startswith('E'):
+            ip_number = f"E{ip_number}"
+
+        with transaction.atomic():
+            # Demographic updates
+            if 'patient_type' in request.POST:
+                pt_val = request.POST['patient_type'].strip()
+                if pt_val in ['O', 'D']:
+                    patient.patient_type = pt_val
+            if 'blood_group' in request.POST:
+                patient.blood_group = request.POST['blood_group'].strip()
+            if raw_age is not None and str(raw_age).strip() != '':
+                patient.age_years = int(str(raw_age).strip())
+            if 'name' in request.POST and request.POST['name'].strip():
+                patient.name = request.POST['name'].strip()
+            if 'title' in request.POST and request.POST['title'].strip():
+                patient.title = request.POST['title'].strip()
+            if 'gender' in request.POST and request.POST['gender'].strip():
+                patient.gender = request.POST['gender'].strip()
+            if 'mobile_no' in request.POST:
+                patient.mobile_no = request.POST['mobile_no'].strip()
+            if 'guardian_name' in request.POST:
+                patient.guardian_name = request.POST['guardian_name'].strip()
+            if 'guardian_relationship' in request.POST:
+                patient.guardian_relationship = request.POST['guardian_relationship'].strip()
+            if 'street' in request.POST:
+                patient.street = request.POST['street'].strip()
+            if 'village_area' in request.POST:
+                patient.village_area = request.POST['village_area'].strip()
+            if 'city' in request.POST:
+                patient.city = request.POST['city'].strip()
+            if 'state' in request.POST:
+                patient.state = request.POST['state'].strip()
+            if 'pincode' in request.POST:
+                patient.pincode = request.POST['pincode'].strip()
+
+            patient.ipno = ip_number
+            patient.visit_through = Patient.VisitChoices.IP
+            patient.department_obj = dept_obj
+            patient.department = dept_obj.name
+            patient.unit_obj = unit_obj
+            patient.unit_doctor = unit_obj.unit_name
+            patient.save()
+
+            active_ip = patient.active_ip_admission
+            if active_ip:
+                active_ip.ward = ward_name
+                active_ip.bed = bed_number
+                active_ip.department_obj = dept_obj
+                active_ip.department = dept_obj.name
+                active_ip.unit_obj = unit_obj
+                active_ip.unit_doctor = unit_obj.unit_name
+                active_ip.category = admission_type
+                active_ip.ipno = ip_number
+                active_ip.clinical_notes = admission_reason or active_ip.clinical_notes
+                active_ip.visit_date = adm_datetime
+                active_ip.save()
+            else:
+                last_v = patient.visits.order_by('-visit_no').first()
+                new_v_no = (last_v.visit_no + 1) if last_v else 1
+                PatientVisit.objects.create(
+                    patient=patient,
+                    visit_type=Patient.VisitChoices.IP,
+                    visit_no=new_v_no,
+                    ipno=ip_number,
+                    ward=ward_name,
+                    bed=bed_number,
+                    department_obj=dept_obj,
+                    department=dept_obj.name,
+                    unit_obj=unit_obj,
+                    unit_doctor=unit_obj.unit_name,
+                    category=admission_type,
+                    clinical_notes=admission_reason,
+                    visit_date=adm_datetime,
+                    created_by=request.user if request.user.is_authenticated else None
+                )
+
+            # Check for any existing AdmissionRequest and mark as ADMITTED
+            from apps.core.models import AdmissionRequest
+            req = AdmissionRequest.objects.filter(
+                patient=patient,
+                status__in=['REQUESTED', 'APPROVED', 'ALLOTTED']
+            ).order_by('-id').first()
+            if req:
+                req.status = 'ADMITTED'
+                req.ward_allocated = ward_name
+                req.bed_allocated = bed_number
+                req.save()
+
+            messages.success(request, f"Patient '{patient.name}' successfully admitted to Ward '{ward_name}', Bed '{bed_number}' (IP #{ip_number})!")
+            return redirect(f"{reverse('patients:ip_admission')}?patient_id={patient.patient_id}")
+
 
 
 class PatientMedicalHistoryPrintView(LoginRequiredMixin, MenuAccessRequiredMixin, DetailView):

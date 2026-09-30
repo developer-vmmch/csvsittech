@@ -254,7 +254,9 @@
             text-align: center;
         }
 
-        .top-nav-dropdown-link:hover {
+        .top-nav-dropdown-link:hover,
+        .top-nav-dropdown-link.active,
+        .top-nav-dropdown-item.active>.top-nav-dropdown-link {
             background: #e0f2fe;
             color: #0369a1;
             font-weight: 700;
@@ -1023,8 +1025,8 @@
                     {% if mod.has_submodules %}
                     <ul class="top-nav-dropdown {% if dynamic_nav_modules|length > 4 and forloop.revcounter <= 2 %}dropdown-right{% endif %}" style="min-width: 250px;">
                         {% for sub in mod.submodules %}
-                        <li class="top-nav-dropdown-item">
-                            <a href="{{ sub.url_path }}" class="top-nav-dropdown-link">
+                        <li class="top-nav-dropdown-item {% if request.path == sub.url_path or sub.url_path == '/patients/admission/' and request.path == '/patients/ip-admission/' %}active{% endif %}">
+                            <a href="{{ sub.url_path }}" class="top-nav-dropdown-link {% if request.path == sub.url_path or sub.url_path == '/patients/admission/' and request.path == '/patients/ip-admission/' %}active{% endif %}">
                                 <i class="bi {{ sub.icon }}"></i>
                                 <span>{{ sub.name }}</span>
                             </a>
@@ -1228,8 +1230,22 @@
             });
         }
 
-        // Dropdown Hover & Click Enhancement
+        // Dropdown Hover & Click Enhancement & Active Highlighting
         document.addEventListener('DOMContentLoaded', () => {
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.top-nav-dropdown-link').forEach(link => {
+                const href = link.getAttribute('href');
+                if (href && href !== '#' && href !== '/') {
+                    if (href === currentPath ||
+                        (href === '/patients/admission/' && currentPath === '/patients/ip-admission/') ||
+                        (href === '/patients/ip-admission/' && currentPath === '/patients/admission/')) {
+                        link.classList.add('active');
+                        link.closest('.top-nav-dropdown-item')?.classList.add('active');
+                        link.closest('.top-nav-item')?.classList.add('active');
+                    }
+                }
+            });
+
             const navItems = document.querySelectorAll('.top-nav-item');
             navItems.forEach(item => {
                 const dropdown = item.querySelector('.top-nav-dropdown');
