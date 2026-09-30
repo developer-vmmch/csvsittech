@@ -3,6 +3,7 @@ import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.http import JsonResponse, HttpResponse
+from django.views import View
 from django.views.generic import ListView, DetailView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
@@ -1022,3 +1023,212 @@ def master_validation_view(request):
     """
     results = run_master_validation()
     return render(request, 'lab/master/master_validation.html', {'results': results})
+
+
+# ---------------------------------------------------------------------------
+# 12. MASTER LAB PERMISSIONS & MAPPING VIEW
+# ---------------------------------------------------------------------------
+
+LAB_PERMISSION_GROUPS = [
+    {
+        'group_id': 'work_orders',
+        'group_title': 'Work Orders & Queue Management',
+        'group_icon': 'bi-card-checklist',
+        'group_color': '#2563eb',
+        'permissions': [
+            {'code': 'work_orders_view', 'name': 'View Work Orders & Status Queue', 'description': 'Search and monitor daily laboratory specimen processing queues'},
+            {'code': 'work_orders_print', 'name': 'Print Work Order Slips', 'description': 'Generate printable internal work order slips and routing slips'},
+            {'code': 'work_orders_cancel', 'name': 'Cancel Work Orders', 'description': 'Authorize cancellation of work order line items before result verification'},
+            {'code': 'work_orders_reassign', 'name': 'Reassign Department / Technician', 'description': 'Route specimens and tests across different lab divisions'},
+        ]
+    },
+    {
+        'group_id': 'order_entry',
+        'group_title': 'Order Entry & Test Requisition',
+        'group_icon': 'bi-plus-circle-dotted',
+        'group_color': '#0d9488',
+        'permissions': [
+            {'code': 'order_entry_create', 'name': 'Direct Test Order Requisition', 'description': 'Create diagnostic lab orders directly for OPD and IPD patients'},
+            {'code': 'order_entry_bulk', 'name': 'Fast & Bulk Order Entry', 'description': 'Rapidly order test profiles, routine health packages, and clinical panels'},
+            {'code': 'order_entry_external', 'name': 'External Referral Order Entry', 'description': 'Log requisitions received from external clinics and outside physicians'},
+        ]
+    },
+    {
+        'group_id': 'sample_collection',
+        'group_title': 'Phlebotomy & Sample Reception',
+        'group_icon': 'bi-droplet-half',
+        'group_color': '#dc2626',
+        'permissions': [
+            {'code': 'sample_collect', 'name': 'Sample Collection / Phlebotomy Acceptance', 'description': 'Record physical sample receipt, collection timestamp, and container volume'},
+            {'code': 'sample_barcode', 'name': 'Barcode Label Generation', 'description': 'Print specialized specimen barcode stickers for vacutainers and vials'},
+            {'code': 'sample_reject', 'name': 'Sample Rejection & Recollection Request', 'description': 'Mark hemolyzed/insufficient samples with clinical rejection remarks'},
+        ]
+    },
+    {
+        'group_id': 'results',
+        'group_title': 'Result Entry & Clinical Verification',
+        'group_icon': 'bi-check2-all',
+        'group_color': '#7c3aed',
+        'permissions': [
+            {'code': 'result_entry', 'name': 'Parameter Result Value Entry', 'description': 'Input numeric observations, qualitative findings, and analyzer values'},
+            {'code': 'result_tech_verify', 'name': 'Technologist Technical Validation', 'description': 'First-tier validation of test results against biological limits'},
+            {'code': 'result_approve', 'name': 'Pathologist / Consultant Final Approval', 'description': 'Authorize electronic signature and release verified diagnostic reports'},
+            {'code': 'result_critical', 'name': 'Critical Panic Value Alerting', 'description': 'Flag panic-range parameters and dispatch urgent phone/SMS notices'},
+        ]
+    },
+    {
+        'group_id': 'reports',
+        'group_title': 'Lab Reports, Cumulative History & Dispatch',
+        'group_icon': 'bi-file-earmark-medical',
+        'group_color': '#0284c7',
+        'permissions': [
+            {'code': 'report_view', 'name': 'View Test Report Previews', 'description': 'Preview final PDF and print-ready formats of authorized diagnostic reports'},
+            {'code': 'report_print', 'name': 'Print Official Laboratory Reports', 'description': 'Print finalized lab reports with official letterhead and QR verification'},
+            {'code': 'report_history', 'name': 'Cumulative Patient Trend History', 'description': 'Review historical serial laboratory results and graph trendlines'},
+            {'code': 'report_dispatch', 'name': 'Report Dispatch to Wards / Patient Portal', 'description': 'Mark reports as physically handed over or electronically published'},
+        ]
+    },
+    {
+        'group_id': 'master',
+        'group_title': 'Laboratory Master Settings & Configuration',
+        'group_icon': 'bi-sliders2',
+        'group_color': '#ea580c',
+        'permissions': [
+            {'code': 'master_departments', 'name': 'Manage Lab Departments', 'description': 'Add, edit, and toggle active status of clinical laboratory divisions'},
+            {'code': 'master_investigations', 'name': 'Manage Investigations Catalog', 'description': 'Configure diagnostic tests, codes, billing tariffs, and specimens'},
+            {'code': 'master_parameters', 'name': 'Manage Parameter Dictionary', 'description': 'Configure observable parameters, units of measure, and delta checks'},
+            {'code': 'master_ref_ranges', 'name': 'Manage Reference Intervals', 'description': 'Define age-specific, gender-specific normal reference intervals'},
+            {'code': 'master_diagnoses', 'name': 'Manage Diagnostic Mappings', 'description': 'Configure ICD-11 diagnosis to test order associations'},
+        ]
+    }
+]
+
+
+def get_default_lab_dept_permissions(dept_name):
+    """
+    Returns default active permissions list for a given lab department.
+    CENTRAL LAB receives all permissions across all modules.
+    """
+    all_codes = []
+    for grp in LAB_PERMISSION_GROUPS:
+        for p in grp['permissions']:
+            all_codes.append(p['code'])
+            
+    if 'CENTRAL' in dept_name.upper():
+        return all_codes
+    
+    # Division-specific standard permissions (Work orders, results, sample collection, reports)
+    division_codes = [
+        'work_orders_view', 'work_orders_print', 'order_entry_create', 'order_entry_bulk',
+        'sample_collect', 'sample_barcode', 'result_entry', 'result_tech_verify',
+        'report_view', 'report_print', 'report_history'
+    ]
+    return division_codes
+
+
+class MasterLabPermissionsView(LoginRequiredMixin, View):
+    """
+    Dedicated Laboratory Master Permissions Configuration View.
+    Allows administrators to configure and fine-tune operational access permissions
+    per Laboratory Department (Central Lab, Biochemistry, Hematology, Microbiology).
+    """
+    template_name = 'lab/master/master_permissions.html'
+
+    def get(self, request):
+        from apps.users.models import LandingDepartment
+        
+        # 1. Fetch all active Lab Departments
+        lab_depts = list(LabDepartment.objects.filter(is_active=True))
+        lab_depts.sort(key=lambda d: (0 if 'CENTRAL' in d.name.upper() else 1, d.name))
+        
+        # 2. Identify currently selected department
+        selected_dept_id = request.GET.get('dept_id')
+        selected_dept = None
+        if selected_dept_id:
+            selected_dept = next((d for d in lab_depts if str(d.id) == str(selected_dept_id)), None)
+        if not selected_dept and lab_depts:
+            selected_dept = lab_depts[0]
+            
+        # 3. Retrieve stored permissions from LandingDepartment (or defaults)
+        lab_landing = LandingDepartment.objects.filter(code='lab').first()
+        stored_perms = {}
+        if lab_landing and isinstance(lab_landing.nav_permissions, dict):
+            stored_perms = lab_landing.nav_permissions.get('lab_dept_permissions', {})
+            
+        active_perm_codes = []
+        if selected_dept:
+            dept_key = selected_dept.name.upper()
+            if dept_key in stored_perms:
+                active_perm_codes = stored_perms[dept_key]
+            else:
+                active_perm_codes = get_default_lab_dept_permissions(selected_dept.name)
+                
+        # Total counts
+        total_perms_count = sum(len(g['permissions']) for g in LAB_PERMISSION_GROUPS)
+        active_count = len(active_perm_codes)
+        
+        return render(request, self.template_name, {
+            'lab_departments': lab_depts,
+            'selected_dept': selected_dept,
+            'permission_groups': LAB_PERMISSION_GROUPS,
+            'active_perm_codes': active_perm_codes,
+            'total_perms_count': total_perms_count,
+            'active_count': active_count,
+        })
+
+
+@require_POST
+@login_required
+def api_master_lab_permissions_save(request):
+    """
+    AJAX API endpoint to save updated permissions for a Laboratory Department.
+    """
+    import json
+    from apps.users.models import LandingDepartment
+    
+    try:
+        data = json.loads(request.body)
+        dept_id = data.get('dept_id')
+        dept_name = data.get('dept_name', '').strip().upper()
+        permissions = data.get('permissions', [])
+        
+        if not dept_name and dept_id:
+            dept = LabDepartment.objects.filter(id=dept_id).first()
+            if dept:
+                dept_name = dept.name.upper()
+                
+        if not dept_name:
+            return JsonResponse({'success': False, 'message': 'Invalid department specified.'}, status=400)
+            
+        # Fetch or initialize LandingDepartment for lab
+        lab_landing, _ = LandingDepartment.objects.get_or_create(
+            code='lab',
+            defaults={
+                'name': 'Laboratory',
+                'slug': 'lab',
+                'icon': 'bi-bezier2',
+                'dashboard_url': '/lab/work-orders/',
+                'nav_permissions': {}
+            }
+        )
+        
+        nav_perms = lab_landing.nav_permissions or {}
+        if not isinstance(nav_perms, dict):
+            nav_perms = {}
+            
+        if 'lab_dept_permissions' not in nav_perms:
+            nav_perms['lab_dept_permissions'] = {}
+            
+        nav_perms['lab_dept_permissions'][dept_name] = permissions
+        lab_landing.nav_permissions = nav_perms
+        lab_landing.save(update_fields=['nav_permissions'])
+        
+        return JsonResponse({
+            'success': True,
+            'message': f"Permissions for '{dept_name}' updated successfully! ({len(permissions)} active permissions)",
+            'dept_name': dept_name,
+            'count': len(permissions)
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+

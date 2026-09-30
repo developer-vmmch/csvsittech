@@ -106,21 +106,25 @@ class DepartmentAccessMiddleware:
 
             if matching_sub:
                 sub_code = matching_sub.code
+                # STRICT department access control: must be explicitly True in dept_perms and view not False
                 is_granted = (
-                    request.user.can_access_menu(sub_code)
-                    or request.user.has_perm_code(sub_code)
-                    or request.user.has_perm_code(f"{sub_code}.view")
-                    or (dept_perms and dept_perms.get(sub_code) is True)
+                    dept_perms.get(sub_code) is True
+                    and dept_perms.get(f"{sub_code}.view", True) is not False
                 )
+                act_dict = dept_perms.get(f"{sub_code}_actions")
+                if isinstance(act_dict, dict) and (act_dict.get('access') is False or act_dict.get('view') is False):
+                    is_granted = False
 
                 if not is_granted:
-                    return _safe_redirect(f"Access Denied: You are not authorized to access '{matching_sub.name}'.")
+                    return _safe_redirect(f"Access Denied: You are not authorized to access '{matching_sub.name}' in the {dept_obj.name} department.")
 
                 # 3. Check granular action permissions for mutation/action routes
                 if request.method == 'POST':
                     is_delete_req = '/delete/' in path or request.POST.get('action') == 'delete'
                     if is_delete_req:
-                        can_del = request.user.has_perm_code(f"{sub_code}.delete")
+                        can_del = dept_perms.get(f"{sub_code}.delete", True)
+                        if isinstance(act_dict, dict) and act_dict.get('delete') is False:
+                            can_del = False
                         if can_del is False:
                             messages.error(request, f"Permission Denied: Delete operation is disabled for '{matching_sub.name}'.")
                             return redirect(matching_sub.url_path or dept_dashboard)
@@ -137,7 +141,6 @@ class DepartmentAccessMiddleware:
 
                     for prefix in other_prefixes:
                         if path.startswith(prefix) and not any(path.startswith(ap) for ap in active_prefixes):
-                            if not user_can_access_department(request.user, other_dept):
-                                return _safe_redirect(f"Access Denied: You are not authorized to access the {other_dept['name']} department.")
+                            return _safe_redirect(f"Access Denied: You are not authorized to access the {other_dept['name']} department.")
 
         return None
