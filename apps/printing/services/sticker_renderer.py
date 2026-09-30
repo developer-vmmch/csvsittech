@@ -45,6 +45,7 @@ class StickerRenderer:
 
         # Public QR URL
         qr_url = token_obj.get_public_url()
+        qr_base64 = self.generate_qr_base64(qr_url, box_size=4, border=0)
 
         return {
             'print_type': print_type,
@@ -58,6 +59,7 @@ class StickerRenderer:
             'gender': patient.gender,
             'age': f"{patient.age_years} Y",
             'qr_url': qr_url,
+            'qr_base64': qr_base64,
             'token': token_obj.token,
         }
 
@@ -83,25 +85,21 @@ class StickerRenderer:
         Renders a pixel-perfect, clean thermal sticker HTML snippet
         strictly adhering to the visual reference design.
         """
-        qr_base64 = self.generate_qr_base64(data['qr_url'], box_size=3, border=0)
+        qr_base64 = data.get('qr_base64') or self.generate_qr_base64(data['qr_url'], box_size=4, border=0)
         sticker_type = data.get('sticker_label', 'OP')
         logo_url = "/static/images/vmmc_logo.png"
-        nabh_url = "/static/images/nabh_logo.png"
-
-        nabh_html = ""
-        if self.include_nabh:
-            nabh_html = f"""<img src="{nabh_url}" style="height: 14px; width: auto; object-fit: contain; margin-left: 4px;" alt="NABH">"""
 
         html = f"""
         <div class="thermal-sticker sticker-{sticker_type.lower()}" style="
-            width: {self.width};
-            min-height: {self.height};
-            max-height: {self.height};
+            width: 100%;
+            max-width: 320px;
+            aspect-ratio: 2 / 1;
             background: #ffffff;
             color: #000000;
-            border: 1px solid #1e293b;
+            border: 1.5px solid #94a3b8;
+            border-radius: 6px;
             box-sizing: border-box;
-            padding: 4px 6px;
+            padding: 8px 10px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             flex-direction: column;
@@ -111,38 +109,52 @@ class StickerRenderer:
             margin: 0 auto;
         ">
             <!-- Header Row -->
-            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid #000; padding-bottom: 2px; margin-bottom: 3px;">
-                <div style="display: flex; align-items: center; gap: 4px;">
-                    <img src="{logo_url}" style="width: 15px; height: 15px; object-fit: contain;" alt="VMMC">
-                    <span style="font-size: 9.5px; font-weight: 800; letter-spacing: 0.3px;">VMMC KARAIKAL</span>
-                    {nabh_html}
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid #000; padding-bottom: 4px; margin-bottom: 4px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <img src="{logo_url}" style="width: 20px; height: 20px; object-fit: contain;" alt="VMMC">
+                    <span style="font-size: 10px; font-weight: 800; letter-spacing: 0.3px;">VMMC KARAIKAL</span>
                 </div>
                 <div style="
-                    font-size: 9px;
+                    font-size: 14px;
                     font-weight: 900;
-                    background: #000000;
-                    color: #ffffff;
-                    padding: 0 4px;
-                    border-radius: 2px;
-                    letter-spacing: 0.5px;
+                    color: #000000;
+                    letter-spacing: 0.8px;
                 ">{sticker_type}</div>
             </div>
 
             <!-- Body: Details (Left) + QR Code (Right) -->
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; flex: 1;">
-                <div style="flex: 1; font-size: 8px; line-height: 1.25; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    <div style="font-weight: 800; font-size: 8.5px; text-transform: uppercase; margin-bottom: 1px;">
-                        <span style="color: #475569;">Name:</span> {data['name']}
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; flex: 1;">
+                <div style="flex: 1; font-size: 9.5px; line-height: 1.35; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <div style="display: flex; gap: 4px;">
+                        <span style="color: #334155; min-width: 38px;">Name</span>
+                        <span>:</span>
+                        <span style="font-weight: 700; color: #000; overflow: hidden; text-overflow: ellipsis;">{data['name']}</span>
                     </div>
-                    <div><span style="color: #475569;">UHID:</span> <span style="font-weight: 800;">{data['uhid']}</span></div>
-                    <div><span style="color: #475569;">OP No:</span> <span style="font-weight: 800;">{data['op_number']}</span></div>
-                    <div style="overflow: hidden; text-overflow: ellipsis;"><span style="color: #475569;">Dept:</span> {data['department']}</div>
-                    <div><span style="color: #475569;">Date:</span> {data['visit_date']}</div>
+                    <div style="display: flex; gap: 4px;">
+                        <span style="color: #334155; min-width: 38px;">UHID</span>
+                        <span>:</span>
+                        <span style="font-weight: 700; color: #000;">{data['uhid']}</span>
+                    </div>
+                    <div style="display: flex; gap: 4px;">
+                        <span style="color: #334155; min-width: 38px;">OP No</span>
+                        <span>:</span>
+                        <span style="font-weight: 700; color: #000;">{data['op_number']}</span>
+                    </div>
+                    <div style="display: flex; gap: 4px; overflow: hidden; text-overflow: ellipsis;">
+                        <span style="color: #334155; min-width: 38px;">Dept</span>
+                        <span>:</span>
+                        <span style="color: #000; overflow: hidden; text-overflow: ellipsis;">{data['department']}</span>
+                    </div>
+                    <div style="display: flex; gap: 4px;">
+                        <span style="color: #334155; min-width: 38px;">Date</span>
+                        <span>:</span>
+                        <span style="color: #000;">{data['visit_date']}</span>
+                    </div>
                 </div>
 
                 <!-- QR Code Box -->
-                <div style="width: 52px; height: 52px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                    <img src="{qr_base64}" style="width: 50px; height: 50px; display: block;" alt="Sticker QR">
+                <div style="width: 68px; height: 68px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <img src="{qr_base64}" style="width: 64px; height: 64px; display: block;" alt="Sticker QR">
                 </div>
             </div>
         </div>
