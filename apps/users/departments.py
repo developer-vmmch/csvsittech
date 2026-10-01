@@ -460,6 +460,13 @@ def user_can_access_department(user, dept_dict_or_slug):
     if any(d in target_dept_keys for d in user_dept_list):
         return True
 
+    # STRICT MODE: If the user has ANY explicit ERP module assignments,
+    # deny access to all other departments. Do NOT fall through to role-based defaults.
+    # This ensures users can ONLY access the modules assigned to them.
+    if user_dept_list:
+        return False
+
+    # --- Fallback: role-based defaults for accounts with NO department assigned ---
     role_to_dept = {
         'manager': ['clinical_department', 'department', 'front_office', 'consultant', 'ward', 'lab', 'ot', 'mrd', 'report', 'mis', 'accounts', 'billing', 'inventory'],
         'doctor': ['consultant', 'ward', 'ot', 'summary', 'clinical_department', 'department', 'lab', 'report'],
@@ -470,7 +477,6 @@ def user_can_access_department(user, dept_dict_or_slug):
         'accountant': ['accounts', 'billing'],
         'cashier': ['billing', 'accounts'],
         'nurse': ['ward', 'ot', 'front_office'],
-        'staff': ['front_office', 'ward', 'billing', 'mrd', 'summary', 'pharmacy', 'inventory', 'blood_bank', 'radiology', 'ot', 'accounts', 'report', 'mis', 'department', 'consultant'],
     }
 
     allowed_depts_for_role = role_to_dept.get(user_role, [])
