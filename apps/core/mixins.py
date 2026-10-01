@@ -36,23 +36,30 @@ class MenuAccessRequiredMixin(AccessMixin):
             except Exception:
                 dept_obj = None
 
+        keys = self.menu_key if isinstance(self.menu_key, (list, tuple)) else ([self.menu_key] if self.menu_key else [])
         if dept_obj:
             dept_perms = dept_obj.nav_permissions if (dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict) and len(dept_obj.nav_permissions) > 0) else DEPT_DEFAULT_NAV_MAPPING.get(dept_obj.code, {})
             is_permitted = False
-            if self.menu_key:
-                is_permitted = (
-                    dept_perms.get(self.menu_key) is True
-                    and dept_perms.get(f"{self.menu_key}.view", True) is not False
-                )
-                act_dict = dept_perms.get(f"{self.menu_key}_actions")
-                if isinstance(act_dict, dict) and (act_dict.get('access') is False or act_dict.get('view') is False):
-                    is_permitted = False
+            if keys:
+                for k in keys:
+                    k_perm = (
+                        dept_perms.get(k) is True
+                        and dept_perms.get(f"{k}.view", True) is not False
+                    )
+                    act_dict = dept_perms.get(f"{k}_actions")
+                    if isinstance(act_dict, dict) and (act_dict.get('access') is False or act_dict.get('view') is False):
+                        k_perm = False
+                    if k_perm:
+                        is_permitted = True
+                        break
+            else:
+                is_permitted = True
 
             if not is_permitted:
                 from django.core.exceptions import PermissionDenied
                 menu_title = self.get_menu_label()
                 raise PermissionDenied(f"Access Denied: '{menu_title}' is not authorized for the {dept_obj.name} department.")
-        elif self.menu_key and not request.user.can_access_menu(self.menu_key):
+        elif keys and not any(request.user.can_access_menu(k) for k in keys):
             from django.core.exceptions import PermissionDenied
             menu_title = self.get_menu_label()
             raise PermissionDenied(f"Permission Denied: Your assigned user role ({request.user.get_role_display()}) does not have access to '{menu_title}'.")

@@ -239,21 +239,22 @@ class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
             q_name = self.request.GET.get('q_name', '').strip()
             q_from_date, q_to_date = get_default_date_range(self.request, 'q_from_date', 'q_to_date')
             q_mobile = self.request.GET.get('q_mobile', '').strip()
-            q_aadhar = self.request.GET.get('q_aadhar', '').strip()
-            q_abha = self.request.GET.get('q_abha', '').strip()
+            q_op_number = self.request.GET.get('q_op_number', '').strip()
+            q_ip_number = self.request.GET.get('q_ip_number', '').strip()
             q_department = self.request.GET.get('q_department', '').strip()
             q_user = self.request.GET.get('q_user', '').strip()
-            q_entry_type = self.request.GET.get('q_entry_type', '').strip().upper()
 
-            has_search_params = any([q_name, q_from_date, q_to_date, q_mobile, q_aadhar, q_abha, q_department, q_user, (q_entry_type and q_entry_type != 'A')])
+            has_search_params = any([
+                q_name, q_from_date, q_to_date, q_mobile,
+                q_op_number, q_ip_number,
+                q_department, q_user
+            ])
 
             if not has_search_params:
                 return Patient.objects.none()
 
-            queryset = Patient.objects.all().order_by('-id')
-
-            if q_entry_type in ['O', 'D']:
-                queryset = queryset.filter(Q(patient_type=q_entry_type) | Q(created_source=q_entry_type))
+            # Exclusively return 'O' (standard/real) patients
+            queryset = Patient.objects.exclude(Q(patient_type='D') | Q(created_source='D')).order_by('-id')
 
             if q_name:
                 queryset = queryset.filter(name__icontains=q_name)
@@ -275,11 +276,11 @@ class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
             if q_mobile:
                 queryset = queryset.filter(mobile_no__icontains=q_mobile)
 
-            if q_aadhar:
-                queryset = queryset.filter(aadhar_card__icontains=q_aadhar)
+            if q_op_number:
+                queryset = queryset.filter(op_number__icontains=q_op_number)
 
-            if q_abha:
-                queryset = queryset.filter(Q(abha_id__icontains=q_abha) | Q(patient_id__icontains=q_abha) | Q(op_number__icontains=q_abha))
+            if q_ip_number:
+                queryset = queryset.filter(Q(ipno__icontains=q_ip_number) | Q(visits__ipno__icontains=q_ip_number)).distinct()
 
             if q_department:
                 if q_department.isdigit():
@@ -303,11 +304,10 @@ class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
         context['q_name'] = self.request.GET.get('q_name', '')
         context['q_from_date'], context['q_to_date'] = get_default_date_range(self.request, 'q_from_date', 'q_to_date')
         context['q_mobile'] = self.request.GET.get('q_mobile', '')
-        context['q_aadhar'] = self.request.GET.get('q_aadhar', '')
-        context['q_abha'] = self.request.GET.get('q_abha', '')
+        context['q_op_number'] = self.request.GET.get('q_op_number', '')
+        context['q_ip_number'] = self.request.GET.get('q_ip_number', '')
         context['q_department'] = self.request.GET.get('q_department', '')
         context['q_user'] = self.request.GET.get('q_user', '')
-        context['q_entry_type'] = self.request.GET.get('q_entry_type', 'A').upper()
 
         Department.seed_defaults()
         context['departments'] = Department.objects.filter(is_active=True).order_by('name')
@@ -315,10 +315,10 @@ class PatientSearchView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
 
         context['has_searched'] = any([
             context['q_name'], context['q_from_date'], context['q_to_date'],
-            context['q_mobile'], context['q_aadhar'], context['q_abha'],
-            context['q_department'], context['q_user'],
-            (context['q_entry_type'] and context['q_entry_type'] != 'A')
+            context['q_mobile'], context['q_op_number'], context['q_ip_number'],
+            context['q_department'], context['q_user']
         ])
+        context['has_filters'] = context['has_searched']
         return context
 
 
@@ -441,8 +441,11 @@ class PatientCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
 
 
 class PatientUpdateView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPermissionRequiredMixin, UpdateView):
-    menu_key = 'patient_list'
-    permission_required = 'patients.patient_list.update'
+    menu_key = ['patient_list', 'search_patient']
+    permission_required = [
+        'patients.patient_list.update', 'patients.patient_list.edit',
+        'patients.search_patient.update', 'patients.search_patient.edit'
+    ]
     model = Patient
     form_class = PatientRegistrationForm
     template_name = 'patients/patient_form.html'
@@ -477,7 +480,17 @@ class PatientUpdateView(LoginRequiredMixin, MenuAccessRequiredMixin, GranularPer
 
         patient.save()
         messages.success(self.request, f"Patient record '{patient.name}' (ID: {patient.patient_id}) updated successfully!")
+        
+        next_url = self.request.GET.get('next') or self.request.POST.get('next')
+        if next_url:
+            return redirect(next_url)
         return redirect('patients:list')
+
+    def form_invalid(self, form):
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(self.request, f"{field.replace('_', ' ').title()}: {error}")
+        return super().form_invalid(form)
 
 
 class PatientPrintView(LoginRequiredMixin, MenuAccessRequiredMixin, DetailView):
