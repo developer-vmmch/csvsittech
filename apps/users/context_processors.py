@@ -69,7 +69,7 @@ def _build_dynamic_navbar(request, user):
 
     # Ensure NavModules exist in DB
     try:
-        if not NavModule.objects.filter(is_active=True).exists():
+        if not NavModule.objects.filter(is_active=True).exists() or not NavSubmodule.objects.filter(code='theme_settings').exists():
             seed_default_nav_modules_if_needed()
     except Exception:
         pass

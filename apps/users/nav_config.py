@@ -816,6 +816,13 @@ DEPT_DEFAULT_NAV_MAPPING = {
     },
 }
 
+# Grant theme settings permissions across all default department profiles
+for _d_dict in DEPT_DEFAULT_NAV_MAPPING.values():
+    _d_dict.setdefault('settings', True)
+    _d_dict.setdefault('theme_settings', True)
+    _d_dict.setdefault('theme_settings.view', True)
+    _d_dict.setdefault('theme_settings.change', True)
+
 
 def seed_default_nav_modules_if_needed(force=False):
     """
@@ -828,6 +835,8 @@ def seed_default_nav_modules_if_needed(force=False):
         existing_sub_keys = set(NavSubmodule.objects.values_list('code', flat=True))
 
         if not force and NavModule.objects.filter(is_active=True).exists() and config_sub_keys.issubset(existing_sub_keys):
+            # Ensure WEB THEME name and styling is updated if previously saved as Settings
+            NavModule.objects.filter(code='settings', name='Settings').update(name='WEB THEME', icon='bi-palette-fill', url_path='/settings/theme/', badge='Visual')
             return
 
         with transaction.atomic():

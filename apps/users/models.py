@@ -100,6 +100,9 @@ class User(AbstractUser):
             'ATC_EMERGENCY_STOP': 'auto_trigger.atc.stop',
             'THEME_SETTINGS_VIEW': 'theme_settings.view',
             'THEME_SETTINGS_CHANGE': 'theme_settings.change',
+            'settings.theme_settings': 'theme_settings.view',
+            'settings.theme_settings.view': 'theme_settings.view',
+            'settings.theme_settings.change': 'theme_settings.change',
         }
         if perm_code in aliases:
             perm_code = aliases[perm_code]
@@ -218,7 +221,7 @@ class User(AbstractUser):
         role_allowed = bool(role_res is True)
 
         # 3. Dedicated Web Theme Permission Evaluation
-        if perm_code in ['theme_settings', 'theme_settings.view', 'theme_settings.change', 'settings.theme_settings']:
+        if perm_code in ['theme_settings', 'theme_settings.view', 'theme_settings.change', 'settings.theme_settings', 'settings.theme_settings.view', 'settings.theme_settings.change']:
             if role_res is not None or dept_res is not None:
                 return bool(dept_allowed and role_allowed)
             return False
@@ -315,7 +318,7 @@ class User(AbstractUser):
                 'auto_trigger_automate_test': True, 'auto_trigger_result_view': True,
                 'auto_trigger_atc': True, 'auto_trigger_atc_status': True, 'auto_trigger_atc_settings': True,
                 'ot': True, 'ot_dashboard': True, 'ot_booking': True, 'ot_schedule': True, 'ot_live': True, 'ot_history': True, 'ot_master': True,
-                'system_section': True, 'administration': False, 'users_roles': False, 'inventory': True, 'settings': False,
+                'system_section': True, 'administration': False, 'users_roles': False, 'inventory': True, 'settings': True, 'theme_settings': True, 'theme_settings.view': True, 'theme_settings.change': True,
             },
             self.Roles.STAFF: {
                 'dashboard': True,
@@ -336,7 +339,7 @@ class User(AbstractUser):
                 'auto_trigger_monthly_create': False, 'auto_trigger_monthly': False, 'auto_trigger_monthly_census': False,
                 'auto_trigger_automate_test': False, 'auto_trigger_result_view': False,
                 'ot': True, 'ot_dashboard': True, 'ot_booking': True, 'ot_schedule': True, 'ot_live': False, 'ot_history': False, 'ot_master': False,
-                'system_section': False, 'administration': False, 'users_roles': False, 'inventory': False, 'settings': False,
+                'system_section': False, 'administration': False, 'users_roles': False, 'inventory': False, 'settings': True, 'theme_settings': True, 'theme_settings.view': True, 'theme_settings.change': True,
             },
             self.Roles.AUDITOR: {
                 'dashboard': True,
@@ -357,7 +360,7 @@ class User(AbstractUser):
                 'auto_trigger_monthly_create': False, 'auto_trigger_monthly': False, 'auto_trigger_monthly_census': False,
                 'auto_trigger_automate_test': False, 'auto_trigger_result_view': False,
                 'ot': True, 'ot_dashboard': True, 'ot_booking': False, 'ot_schedule': True, 'ot_live': False, 'ot_history': True, 'ot_master': False,
-                'system_section': False, 'administration': False, 'users_roles': False, 'inventory': False, 'settings': False,
+                'system_section': False, 'administration': False, 'users_roles': False, 'inventory': False, 'settings': True, 'theme_settings': True, 'theme_settings.view': True, 'theme_settings.change': True,
             },
         }
 
@@ -380,7 +383,7 @@ class User(AbstractUser):
             'auto_trigger_monthly_create': False, 'auto_trigger_monthly': False, 'auto_trigger_monthly_census': False,
             'auto_trigger_automate_test': False, 'auto_trigger_result_view': False,
             'ot': True, 'ot_dashboard': True, 'ot_booking': True, 'ot_schedule': True, 'ot_live': False, 'ot_history': False, 'ot_master': False,
-            'system_section': False, 'administration': False, 'users_roles': False, 'inventory': False, 'settings': False,
+            'system_section': False, 'administration': False, 'users_roles': False, 'inventory': False, 'settings': True, 'theme_settings': True, 'theme_settings.view': True, 'theme_settings.change': True,
         })
         return role_mappings.get(self.role, default_map).copy()
 

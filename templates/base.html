@@ -1013,6 +1013,12 @@
                                     <i class="bi bi-key-fill"></i>
                                     <span>Change Password</span>
                                 </button>
+                                {% if can_manage_theme or user.can_access_theme_settings %}
+                                <a href="{% url 'theme_settings' %}" role="menuitem" class="user-dropdown-item" style="text-decoration:none;">
+                                    <i class="bi bi-palette-fill"></i>
+                                    <span>Theme Settings</span>
+                                </a>
+                                {% endif %}
                                 <div class="user-dropdown-divider"></div>
                                 <form id="vmmcLogoutForm" method="post" action="{% url 'logout' %}" style="margin:0;">
                                     {% csrf_token %}
