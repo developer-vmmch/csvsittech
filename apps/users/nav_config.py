@@ -623,13 +623,6 @@ NAVBAR_MODULES_CONFIG = [
                 'url': '/administration/landing-departments/',
                 'description': 'Create, edit, delete, and customize department login cards on the landing page',
             },
-            {
-                'key': 'role_permissions',
-                'name': 'Role Access Matrix',
-                'icon': 'bi-grid-3x3-gap-fill',
-                'url': '/administration/roles/access-matrix/',
-                'description': 'Comprehensive security permissions and sidebar access control matrix',
-            },
         ]
     },
     {

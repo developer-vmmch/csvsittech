@@ -27,9 +27,9 @@
                 <i class="bi bi-people-fill" style="color: var(--accent-green);"></i> Staff Members
             </a>
             {% endif %}
-            {% if request.user|can_view:'administration.roles' %}
-            <a href="{% url 'users:role_permissions' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
-                <i class="bi bi-sliders" style="color: var(--accent-blue);"></i> Role Access Matrix
+            {% if request.user|can_view:'administration.navbar_mapping' or request.user|can_view:'administration.roles' %}
+            <a href="{% url 'users:navbar_mapping' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
+                <i class="bi bi-diagram-3-fill" style="color: var(--accent-blue);"></i> Nav Bar Mapping
             </a>
             {% endif %}
             {% if request.user|can_create:'administration.user_management' %}
