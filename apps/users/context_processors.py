@@ -14,15 +14,49 @@ def dynamic_navbar(request):
     """
     user = getattr(request, 'user', None)
     active_lab_sub_dept = request.session.get('active_lab_sub_department', '') if hasattr(request, 'session') else ''
+    active_theme = 'vmmc-main'
+    active_font = 'Outfit'
+    active_anim_speed = '1.5'
+    active_pointer_speed = '1.5'
+    active_reduced_motion = False
+    can_manage_theme = False
+
+    if hasattr(request, 'session'):
+        active_anim_speed = request.session.get('theme_anim_speed', '1.5')
+        active_pointer_speed = request.session.get('theme_pointer_speed', '1.5')
+        active_reduced_motion = request.session.get('theme_reduced_motion', False)
+
+    if user and user.is_authenticated:
+        active_theme = getattr(user, 'theme', None) or 'vmmc-main'
+        active_font = getattr(user, 'theme_font', None) or 'Outfit'
+        can_manage_theme = getattr(user, 'can_access_theme_settings', False)
+        user_motion = getattr(user, 'theme_motion', None) or '1.5x'
+        if user_motion == 'off':
+            active_reduced_motion = True
+        elif user_motion.endswith('x'):
+            active_anim_speed = user_motion[:-1]
+
+    base_context = {
+        'active_theme': active_theme,
+        'active_font': active_font,
+        'active_anim_speed': active_anim_speed,
+        'active_pointer_speed': active_pointer_speed,
+        'active_reduced_motion': active_reduced_motion,
+        'can_manage_theme': can_manage_theme,
+        'active_lab_sub_department': active_lab_sub_dept,
+    }
+
     if not user or not user.is_authenticated:
-        return {'dynamic_nav_modules': [], 'active_lab_sub_department': active_lab_sub_dept}
+        base_context['dynamic_nav_modules'] = []
+        return base_context
 
     try:
         res = _build_dynamic_navbar(request, user)
-        res['active_lab_sub_department'] = active_lab_sub_dept
+        res.update(base_context)
         return res
     except Exception:
-        return {'dynamic_nav_modules': [], 'active_lab_sub_department': active_lab_sub_dept}
+        base_context['dynamic_nav_modules'] = []
+        return base_context
 
 
 def _build_dynamic_navbar(request, user):

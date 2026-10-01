@@ -1,0 +1,1125 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Web Theme Settings | VMMC ERP{% endblock %}
+{% block page_heading %}WEB THEME - Web Theme Settings{% endblock %}
+
+{% block content %}
+<style>
+/* =========================================================================
+   WEB THEME SETTINGS — 60-THEME ENGINE & LIVING VISIBILITY PREVIEW
+   ========================================================================= */
+.theme-settings-container {
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 4px 6px 40px 6px;
+    box-sizing: border-box;
+}
+
+.theme-master-card {
+    background: var(--theme-surface, #ffffff);
+    border: 1px solid var(--theme-border, #cbd5e1);
+    border-radius: 12px;
+    padding: 16px 20px 28px 20px;
+    box-shadow: var(--theme-card-shadow, 0 1px 3px rgba(0,0,0,0.06));
+}
+
+.theme-top-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--theme-border-subtle, #e2e8f0);
+}
+
+.theme-page-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--theme-heading, #002060);
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.theme-page-desc {
+    font-size: 0.78rem;
+    color: var(--theme-text-muted, #64748b);
+    margin: 3px 0 0 0;
+}
+
+.theme-action-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Searchable Google Font Box */
+.theme-font-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--theme-surface-alt, #f8fafc);
+    border: 1px solid var(--theme-border, #cbd5e1);
+    border-radius: 6px;
+    padding: 3px 8px;
+    position: relative;
+}
+
+.theme-font-label {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--theme-text, #1e293b);
+    margin: 0;
+    white-space: nowrap;
+}
+
+.theme-font-select {
+    height: 30px;
+    padding: 2px 24px 2px 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 4px;
+    border: 1px solid var(--theme-input-border, #cbd5e1);
+    background-color: var(--theme-input-bg, #ffffff);
+    color: var(--theme-input-text, #0f172a);
+    cursor: pointer;
+    max-width: 170px;
+}
+
+.theme-font-custom-input {
+    height: 30px;
+    padding: 2px 8px;
+    font-size: 0.76rem;
+    border-radius: 4px;
+    border: 1px solid var(--theme-input-border, #cbd5e1);
+    background-color: var(--theme-input-bg, #ffffff);
+    color: var(--theme-input-text, #0f172a);
+    width: 140px;
+}
+
+.btn-theme-action {
+    height: 31px;
+    padding: 0 14px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+    text-decoration: none !important;
+}
+
+.btn-theme-reset {
+    background: var(--theme-surface-alt, #f1f5f9);
+    color: var(--theme-text, #1e293b);
+    border-color: var(--theme-border, #cbd5e1);
+}
+.btn-theme-reset:hover { border-color: var(--theme-primary, #0284c7); }
+
+.btn-theme-save {
+    background: var(--theme-success, #059669);
+    color: #ffffff;
+    border-color: var(--theme-success, #047857);
+}
+.btn-theme-save:hover { opacity: 0.92; }
+
+/* Reduced-motion toggle */
+.motion-toggle-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--theme-text-muted, #64748b);
+    cursor: pointer;
+    background: var(--theme-surface-alt, #f8fafc);
+    border: 1px solid var(--theme-border, #cbd5e1);
+    border-radius: 6px;
+    padding: 3px 10px;
+    height: 31px;
+}
+
+.theme-alert-toast {
+    display: none;
+    background: var(--theme-success-bg, #ecfdf5);
+    color: var(--theme-success-text, #065f46);
+    border: 1px solid var(--theme-success-border, #a7f3d0);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    align-items: center;
+    gap: 8px;
+    animation: vmmcToastSlideIn 0.3s ease;
+}
+
+/* =========================================================================
+   LIVE MASTER ENVIRONMENT PREVIEW
+   Interactive simulation container reflecting currently active theme
+   ========================================================================= */
+.theme-live-master-preview {
+    background: var(--theme-bg, #f1f5f9);
+    border: 1.5px solid var(--theme-border, #cbd5e1);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 22px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+}
+
+.master-preview-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--theme-border-subtle, rgba(0,0,0,0.08));
+}
+
+.master-preview-label {
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--theme-heading, #0284c7);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.master-preview-active-name {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--theme-text-muted, #64748b);
+}
+
+.master-preview-window {
+    background: var(--theme-surface, #ffffff);
+    border: 1px solid var(--theme-border, #cbd5e1);
+    border-radius: 8px;
+    height: 125px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.mp-header {
+    height: 22px;
+    background: var(--theme-header-bg, #ffffff);
+    border-bottom: 1px solid var(--theme-header-border, #e2e8f0);
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--theme-header-text, #0f172a);
+}
+
+.mp-nav {
+    height: 20px;
+    background: var(--theme-nav-bg, #000000);
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.62rem;
+    font-weight: 600;
+}
+.mp-nav-link { color: var(--theme-nav-text, #ffffff); opacity: 0.85; }
+.mp-nav-link.active {
+    color: var(--theme-nav-hover-text, #38bdf8);
+    opacity: 1;
+    font-weight: 700;
+}
+
+.mp-workspace {
+    flex: 1;
+    background: var(--theme-bg, #f8fafc);
+    position: relative;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+}
+
+.mp-stable-content {
+    position: relative;
+    z-index: 2;
+    background: var(--theme-surface, #ffffff);
+    border: 1px solid var(--theme-border, #cbd5e1);
+    border-radius: 6px;
+    padding: 6px 10px;
+    width: 170px;
+    box-shadow: var(--theme-card-shadow, 0 2px 6px rgba(0,0,0,0.05));
+}
+.mp-stable-title {
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: var(--theme-text-primary, #0f172a);
+    margin-bottom: 2px;
+}
+.mp-stable-desc {
+    font-size: 0.58rem;
+    color: var(--theme-text-muted, #64748b);
+}
+
+/* Master Live Floating Preview Cards */
+.mp-floating-stage {
+    position: absolute;
+    inset: 0;
+    pointer-events: none !important;
+    z-index: 1;
+}
+
+.mp-fc {
+    position: absolute;
+    padding: 4px 7px;
+    border-radius: 6px;
+    font-size: 0.58rem;
+    font-weight: 700;
+    border: 1px solid var(--theme-card-border, var(--theme-border, rgba(0,0,0,0.12)));
+    background: var(--theme-surface-elevated, var(--theme-surface, #ffffff));
+    color: var(--theme-text-primary, #0f172a);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    will-change: transform, opacity;
+}
+
+.mp-fc-patient {
+    top: 15%;
+    right: 32%;
+    animation: mpFloatPatient 7s cubic-bezier(0.25, 1, 0.5, 1) infinite alternate;
+}
+.mp-fc-lab {
+    bottom: 12%;
+    right: 18%;
+    animation: mpFloatLab 8s cubic-bezier(0.25, 1, 0.5, 1) infinite alternate;
+    animation-delay: 1.2s;
+}
+.mp-fc-op {
+    top: 25%;
+    right: 5%;
+    animation: mpFloatOp 9s cubic-bezier(0.25, 1, 0.5, 1) infinite alternate;
+    animation-delay: 2.4s;
+}
+
+@keyframes mpFloatPatient {
+    0%   { transform: translate3d(0, 0, 0) scale(0.92); opacity: 0.7; }
+    50%  { transform: translate3d(-20px, 14px, 0) scale(1); opacity: 1; }
+    100% { transform: translate3d(15px, -8px, 0) scale(0.95); opacity: 0.8; }
+}
+@keyframes mpFloatLab {
+    0%   { transform: translate3d(0, 0, 0) scale(0.88); opacity: 0.65; }
+    50%  { transform: translate3d(18px, -16px, 0) scale(0.98); opacity: 0.95; }
+    100% { transform: translate3d(-12px, 8px, 0) scale(0.92); opacity: 0.7; }
+}
+@keyframes mpFloatOp {
+    0%   { transform: translate3d(0, 0, 0) scale(0.85); opacity: 0.6; }
+    50%  { transform: translate3d(-22px, -12px, 0) scale(0.96); opacity: 0.92; }
+    100% { transform: translate3d(10px, 12px, 0) scale(0.9); opacity: 0.75; }
+}
+
+/* =========================================================================
+   THEME CATEGORIES & 6-COLUMN GRID
+   ========================================================================= */
+.theme-category-section { margin-bottom: 24px; }
+.theme-category-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--theme-border-subtle, #f1f5f9);
+}
+.theme-category-title {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--theme-heading, #002060);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.category-count-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    background: var(--theme-surface-alt, #f8fafc);
+    color: var(--theme-text-muted, #64748b);
+    border: 1px solid var(--theme-border-subtle, #e2e8f0);
+    border-radius: 9px;
+    padding: 0 6px;
+    line-height: 1.6;
+}
+
+/* Responsive grid */
+.theme-card-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+}
+@media (max-width: 1400px) { .theme-card-grid { grid-template-columns: repeat(5, 1fr); } }
+@media (max-width: 1100px) { .theme-card-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 850px)  { .theme-card-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 580px)  { .theme-card-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* Theme Card */
+.theme-card-compact {
+    background: var(--theme-surface, #ffffff);
+    border: 1.5px solid var(--theme-border, #cbd5e1);
+    border-radius: 10px;
+    padding: 8px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    user-select: none;
+    position: relative;
+}
+.theme-card-compact:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.10);
+    border-color: var(--theme-primary, #0284c7);
+}
+.theme-card-compact.is-selected {
+    border-color: var(--theme-primary, #0284c7) !important;
+    box-shadow: 0 0 0 2.5px var(--theme-focus, rgba(2,132,199,0.35)) !important;
+}
+
+/* Animated badge indicator */
+.theme-animated-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: linear-gradient(90deg, #a855f7, #06b6d4);
+    color: #ffffff;
+    font-size: 0.58rem;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    z-index: 2;
+}
+
+/* =========================================================================
+   UPGRADED MINI HMS UI PREVIEW (Section 12 Reference)
+   Mini Header + Mini Nav + Mini Content + Moving Floating ERP Cards
+   ========================================================================= */
+.mini-hms-preview {
+    border-radius: 6px;
+    margin-bottom: 7px;
+    height: 94px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.12);
+    position: relative;
+}
+
+.mini-hms-header {
+    height: 14px;
+    padding: 0 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.50rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.mini-hms-title { white-space: nowrap; }
+.mini-hms-role {
+    font-size: 0.44rem;
+    background: rgba(255, 255, 255, 0.25);
+    padding: 0.5px 3px;
+    border-radius: 2px;
+}
+
+.mini-hms-nav-bar {
+    height: 13px;
+    padding: 0 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.46rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.mini-nav-tab {
+    cursor: default;
+    opacity: 0.75;
+}
+.mini-nav-tab.active {
+    opacity: 1;
+    font-weight: 800;
+}
+
+.mini-hms-canvas {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    padding: 2px;
+}
+
+/* 4 Miniature Moving Floating Cards Inside Each Preview */
+.mini-float-card {
+    position: absolute;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 0.44rem;
+    font-weight: 700;
+    line-height: 1.1;
+    pointer-events: none !important;
+    white-space: nowrap;
+    border: 1px solid rgba(0,0,0,0.12);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    will-change: transform, opacity;
+    display: flex;
+    align-items: center;
+    gap: 2.5px;
+}
+
+.mini-dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.mini-card-lab {
+    top: 6px;
+    left: 6px;
+    animation: miniCardDriftLab 6s ease-in-out infinite alternate;
+}
+.mini-card-patient {
+    top: 6px;
+    right: 6px;
+    animation: miniCardDriftPt 7s ease-in-out infinite alternate;
+    animation-delay: 1.2s;
+}
+.mini-card-op {
+    bottom: 6px;
+    left: 8px;
+    animation: miniCardDriftOp 8s ease-in-out infinite alternate;
+    animation-delay: 2.3s;
+}
+.mini-card-review {
+    bottom: 6px;
+    right: 8px;
+    animation: miniCardDriftRev 7.5s ease-in-out infinite alternate;
+    animation-delay: 3.4s;
+}
+
+@keyframes miniCardDriftLab {
+    0%   { transform: translate3d(0, 0, 0) scale(0.9); }
+    50%  { transform: translate3d(6px, 8px, 0) scale(1); }
+    100% { transform: translate3d(-2px, 4px, 0) scale(0.92); }
+}
+
+@keyframes miniCardDriftPt {
+    0%   { transform: translate3d(0, 0, 0) scale(0.92); }
+    50%  { transform: translate3d(-8px, 6px, 0) scale(1); }
+    100% { transform: translate3d(4px, -2px, 0) scale(0.95); }
+}
+
+@keyframes miniCardDriftOp {
+    0%   { transform: translate3d(0, 0, 0) scale(0.88); }
+    50%  { transform: translate3d(8px, -6px, 0) scale(0.98); }
+    100% { transform: translate3d(-3px, -2px, 0) scale(0.9); }
+}
+
+@keyframes miniCardDriftRev {
+    0%   { transform: translate3d(0, 0, 0) scale(0.9); }
+    50%  { transform: translate3d(-6px, -7px, 0) scale(1); }
+    100% { transform: translate3d(3px, 2px, 0) scale(0.94); }
+}
+
+/* Card info row */
+.theme-info-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 4px;
+    padding-top: 2px;
+}
+.theme-meta-left { min-width: 0; flex: 1; }
+.theme-card-name {
+    font-size: 0.77rem;
+    font-weight: 800;
+    color: var(--theme-text, #1e293b);
+    margin: 0 0 1px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.theme-card-type {
+    font-size: 0.66rem;
+    font-weight: 600;
+    color: var(--theme-text-muted, #64748b);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Selection indicator */
+.theme-indicator {
+    font-size: 0.70rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.theme-indicator-radio { color: var(--theme-text-muted, #94a3b8); font-size: 0.86rem; }
+.theme-indicator-selected { color: var(--theme-primary, #0284c7); display: none; }
+.theme-card-compact.is-selected .theme-indicator-radio { display: none; }
+.theme-card-compact.is-selected .theme-indicator-selected { display: inline-flex; }
+</style>
+
+<div class="theme-settings-container">
+<div class="theme-master-card">
+
+    <!-- TOP BAR -->
+    <div class="theme-top-bar">
+        <div>
+            <h1 class="theme-page-title">
+                <i class="bi bi-palette-fill" style="color: var(--theme-primary, #0284c7);"></i>
+                Web Theme Settings
+            </h1>
+            <p class="theme-page-desc">
+                60-theme visual environment engine with living floating ERP cards, dynamic Google Fonts catalog & Mac-style motion.
+            </p>
+        </div>
+
+        <div class="theme-action-controls">
+            <!-- Reduced Motion Toggle -->
+            <label class="motion-toggle-box" title="Disable animations in Animated World themes">
+                <input type="checkbox" id="reduce_motion_toggle" onchange="applyReducedMotion(this.checked)">
+                <i class="bi bi-wind"></i> Reduced Motion
+            </label>
+
+            <!-- Searchable Google Fonts -->
+            <div class="theme-font-box">
+                <label class="theme-font-label" for="font_family_select">
+                    <i class="bi bi-fonts"></i> Font:
+                </label>
+                <select id="font_family_select" class="theme-font-select" onchange="previewFont(this.value)">
+                    {% for f in fonts %}
+                    <option value="{{ f.id }}" {% if current_font == f.id %}selected{% endif %}>{{ f.name }}</option>
+                    {% endfor %}
+                </select>
+                <input type="text" id="custom_font_input" class="theme-font-custom-input" placeholder="Google Font..." title="Type any of 1,900+ Google Fonts" onkeydown="if(event.key==='Enter')applyCustomGoogleFont(this.value)">
+            </div>
+
+            <!-- Animation Speed -->
+            <div class="theme-font-box" title="Visual animation cycle speed">
+                <label class="theme-font-label" for="anim_speed_select">
+                    <i class="bi bi-speedometer2"></i> Speed:
+                </label>
+                <select id="anim_speed_select" class="theme-font-select" style="max-width:82px;" onchange="applyAnimationSpeed(this.value)">
+                    <option value="0.5x" {% if current_anim_speed == '0.5' %}selected{% endif %}>0.5x</option>
+                    <option value="0.75x" {% if current_anim_speed == '0.75' %}selected{% endif %}>0.75x</option>
+                    <option value="1x" {% if current_anim_speed == '1' %}selected{% endif %}>1x</option>
+                    <option value="1.25x" {% if current_anim_speed == '1.25' %}selected{% endif %}>1.25x</option>
+                    <option value="1.5x" {% if current_anim_speed == '1.5' or not current_anim_speed %}selected{% endif %}>1.5x (Default)</option>
+                    <option value="2x" {% if current_anim_speed == '2' %}selected{% endif %}>2x</option>
+                    <option value="2.5x" {% if current_anim_speed == '2.5' %}selected{% endif %}>2.5x</option>
+                    <option value="3x" {% if current_anim_speed == '3' %}selected{% endif %}>3x</option>
+                </select>
+            </div>
+
+            <!-- Pointer Response -->
+            <div class="theme-font-box" title="Pointer parallax responsiveness">
+                <label class="theme-font-label" for="pointer_speed_select">
+                    <i class="bi bi-cursor-fill"></i> Pointer:
+                </label>
+                <select id="pointer_speed_select" class="theme-font-select" style="max-width:82px;" onchange="applyPointerSpeed(this.value)">
+                    <option value="0.5x" {% if current_pointer_speed == '0.5' %}selected{% endif %}>0.5x (Slow)</option>
+                    <option value="1x" {% if current_pointer_speed == '1' %}selected{% endif %}>1x (Normal)</option>
+                    <option value="1.5x" {% if current_pointer_speed == '1.5' or not current_pointer_speed %}selected{% endif %}>1.5x (Fast)</option>
+                    <option value="2x" {% if current_pointer_speed == '2' %}selected{% endif %}>2x (Very Fast)</option>
+                    <option value="3x" {% if current_pointer_speed == '3' %}selected{% endif %}>3x</option>
+                </select>
+            </div>
+
+            <!-- Reset -->
+            <button type="button" class="btn-theme-action btn-theme-reset" onclick="resetToDefaultTheme()">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset
+            </button>
+
+            <!-- Save -->
+            <button type="button" class="btn-theme-action btn-theme-save" onclick="saveThemePreferences()">
+                <i class="bi bi-check-circle-fill"></i> Save Theme
+            </button>
+        </div>
+    </div>
+
+    <!-- LIVE MASTER ENVIRONMENT PREVIEW -->
+    <div class="theme-live-master-preview" id="masterPreviewContainer">
+        <div class="master-preview-topbar">
+            <span class="master-preview-label">
+                <i class="bi bi-broadcast-pin text-sky-600"></i> LIVE ENVIRONMENT PREVIEW
+            </span>
+            <span class="master-preview-active-name" id="masterPreviewActiveName">
+                Theme: <strong>{{ current_theme }}</strong>
+            </span>
+        </div>
+        <div class="master-preview-window">
+            <!-- Mini Header -->
+            <div class="mp-header">
+                <span class="flex items-center gap-1.5"><i class="bi bi-hospital"></i> Vinayaka Missions Hospital - Karaikal</span>
+                <span class="flex items-center gap-2"><i class="bi bi-clock"></i> 11:42 AM <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span></span>
+            </div>
+            <!-- Mini Nav -->
+            <div class="mp-nav">
+                <span class="mp-nav-link active">Dashboard</span>
+                <span class="mp-nav-link">Patients</span>
+                <span class="mp-nav-link">OP Registration</span>
+                <span class="mp-nav-link">Laboratory</span>
+                <span class="mp-nav-link">IP Admission</span>
+                <span class="mp-nav-link">Reports</span>
+            </div>
+            <!-- Mini Workspace with Live Floating Cards -->
+            <div class="mp-workspace">
+                <div class="mp-stable-content">
+                    <div class="mp-stable-title"><i class="bi bi-speedometer2"></i> Clinical Overview</div>
+                    <div class="mp-stable-desc">Today's Footfall: 142 • In-Patients: 38 • Bed Occupancy: 84%</div>
+                </div>
+                <!-- Floating Stage (Living Visual Composition) -->
+                <div class="mp-floating-stage">
+                    <div class="mp-fc mp-fc-patient">
+                        <i class="bi bi-person-fill text-sky-500"></i>
+                        <span>PATIENT #9042</span>
+                    </div>
+                    <div class="mp-fc mp-fc-lab">
+                        <i class="bi bi-activity text-emerald-500"></i>
+                        <span>LAB: CBC VERIFIED</span>
+                    </div>
+                    <div class="mp-fc mp-fc-op">
+                        <i class="bi bi-receipt text-amber-500"></i>
+                        <span>OP TOKEN #14</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="theme_save_alert" class="theme-alert-toast">
+        <i class="bi bi-check2-circle" style="font-size: 1.05rem;"></i>
+        <span id="theme_save_msg">Theme saved successfully.</span>
+    </div>
+
+    <!-- 60 THEMES GROUPED BY CATEGORY -->
+    {% regroup themes by category as theme_categories %}
+
+    {% for category in theme_categories %}
+    <div class="theme-category-section">
+        <div class="theme-category-header">
+            <h2 class="theme-category-title">
+                {% if category.grouper == "ANIMATED WORLDS" %}
+                    <i class="bi bi-stars" style="color: var(--theme-primary); font-size: 0.72rem;"></i>
+                {% elif category.grouper == "MULTICOLOR THEMES" %}
+                    <i class="bi bi-palette2" style="color: var(--theme-primary); font-size: 0.72rem;"></i>
+                {% elif category.grouper == "TRANSPARENT / GLASS THEMES" %}
+                    <i class="bi bi-circle-half" style="color: var(--theme-primary); font-size: 0.72rem;"></i>
+                {% elif category.grouper == "DARK THEMES" %}
+                    <i class="bi bi-moon-fill" style="color: var(--theme-primary); font-size: 0.66rem;"></i>
+                {% elif category.grouper == "LIGHT THEMES" %}
+                    <i class="bi bi-sun-fill" style="color: var(--theme-primary); font-size: 0.68rem;"></i>
+                {% else %}
+                    <i class="bi bi-square-fill" style="color: var(--theme-primary); font-size: 0.58rem;"></i>
+                {% endif %}
+                {{ category.grouper }}
+            </h2>
+            <span class="category-count-badge">{{ category.list|length }}</span>
+        </div>
+
+        <div class="theme-card-grid">
+            {% for t in category.list %}
+            <div class="theme-card-compact {% if current_theme == t.id %}is-selected{% endif %}"
+                 id="theme_card_{{ t.id }}"
+                 data-theme-id="{{ t.id }}"
+                 data-theme-name="{{ t.name }}"
+                 onclick="previewTheme('{{ t.id }}')">
+
+                {% if t.type == "Animated World" %}
+                <span class="theme-animated-badge"><i class="bi bi-play-fill"></i> Live</span>
+                {% endif %}
+
+                <!-- Upgraded Mini HMS Preview (Section 12: mini header, mini nav, mini content, moving cards) -->
+                <div class="mini-hms-preview" style="background: {{ t.preview.bg }}; border-color: {{ t.preview.border }};">
+                    <!-- Mini Top Header -->
+                    <div class="mini-hms-header" style="background: {{ t.preview.primary }}; color: #ffffff;">
+                        <span class="mini-hms-title">VMMC ERP</span>
+                        <span class="mini-hms-role">ADMIN</span>
+                    </div>
+                    <!-- Mini Navigation -->
+                    <div class="mini-hms-nav-bar" style="background: {{ t.preview.surface }}; border-bottom: 1px solid {{ t.preview.border }}; color: {{ t.preview.text }};">
+                        <span class="mini-nav-tab active" style="color: {{ t.preview.primary }};">Dash</span>
+                        <span class="mini-nav-tab">Pt</span>
+                        <span class="mini-nav-tab">Lab</span>
+                        <span class="mini-nav-tab">Rep</span>
+                    </div>
+                    <!-- Mini Content Canvas with Moving Floating Cards -->
+                    <div class="mini-hms-canvas" style="background: {{ t.preview.bg }};">
+                        <div class="mini-float-card mini-card-lab" style="background: {{ t.preview.surface }}; color: {{ t.preview.text }}; border-color: {{ t.preview.border }};">
+                            <span class="mini-dot" style="background: {{ t.preview.primary }};"></span> LAB
+                        </div>
+                        <div class="mini-float-card mini-card-patient" style="background: {{ t.preview.surface }}; color: {{ t.preview.text }}; border-color: {{ t.preview.border }};">
+                            <span class="mini-dot" style="background: #10b981;"></span> PATIENT
+                        </div>
+                        <div class="mini-float-card mini-card-op" style="background: {{ t.preview.surface }}; color: {{ t.preview.text }}; border-color: {{ t.preview.border }};">
+                            <span class="mini-dot" style="background: #f59e0b;"></span> OP
+                        </div>
+                        <div class="mini-float-card mini-card-review" style="background: {{ t.preview.surface }}; color: {{ t.preview.text }}; border-color: {{ t.preview.border }};">
+                            <span class="mini-dot" style="background: #8b5cf6;"></span> REVIEW
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info -->
+                <div class="theme-info-box">
+                    <div class="theme-meta-left">
+                        <h3 class="theme-card-name" title="{{ t.name }}">{{ t.name }}</h3>
+                        <p class="theme-card-type">{{ t.type }}</p>
+                    </div>
+                    <div class="theme-indicator">
+                        <span class="theme-indicator-radio" title="Click to select">○</span>
+                        <span class="theme-indicator-selected"><i class="bi bi-check2"></i></span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+
+</div>
+</div>
+
+<script>
+    let selectedTheme = "{{ current_theme|default:'vmmc-main' }}";
+    let selectedFont  = "{{ current_font|default:'Outfit' }}";
+    let selectedAnimSpeed = "{{ current_anim_speed|default:'1.5' }}";
+    let selectedPointerSpeed = "{{ current_pointer_speed|default:'1.5' }}";
+
+    // Restore saved preferences
+    (function(){
+        var rm = localStorage.getItem('vmmc_reduced_motion');
+        var isReduced = (rm !== null) ? (rm === 'true') : ('{{ current_reduced_motion|yesno:"true,false" }}' === 'true');
+        var el = document.getElementById('reduce_motion_toggle');
+        if (el) el.checked = isReduced;
+        if (isReduced) {
+            document.documentElement.style.setProperty('--theme-anim-duration', '0s');
+            document.documentElement.classList.add('reduce-motion');
+        }
+
+        var speed = localStorage.getItem('vmmc_anim_speed') || selectedAnimSpeed || '1.5';
+        selectedAnimSpeed = speed;
+        var as = document.getElementById('anim_speed_select');
+        if (as) as.value = (speed.endsWith('x') ? speed : speed + 'x');
+        document.documentElement.style.setProperty('--theme-animation-speed', speed.replace('x', ''));
+        document.documentElement.setAttribute('data-animation-speed', speed.replace('x', ''));
+
+        var ptr = localStorage.getItem('vmmc_pointer_speed') || selectedPointerSpeed || '1.5';
+        selectedPointerSpeed = ptr;
+        var ps = document.getElementById('pointer_speed_select');
+        if (ps) ps.value = (ptr.endsWith('x') ? ptr : ptr + 'x');
+        document.documentElement.style.setProperty('--theme-pointer-speed', ptr.replace('x', ''));
+        document.documentElement.setAttribute('data-pointer-speed', ptr.replace('x', ''));
+    })();
+
+    function applyAnimationSpeed(val) {
+        if (!val) return;
+        var num = parseFloat(val.replace('x', ''));
+        if (isNaN(num)) num = 1.5;
+        selectedAnimSpeed = num.toString();
+        document.documentElement.style.setProperty('--theme-animation-speed', num.toString());
+        document.documentElement.setAttribute('data-animation-speed', num.toString());
+        localStorage.setItem('vmmc_anim_speed', num.toString());
+    }
+
+    function applyPointerSpeed(val) {
+        if (!val) return;
+        var num = parseFloat(val.replace('x', ''));
+        if (isNaN(num)) num = 1.5;
+        selectedPointerSpeed = num.toString();
+        document.documentElement.style.setProperty('--theme-pointer-speed', num.toString());
+        document.documentElement.setAttribute('data-pointer-speed', num.toString());
+        localStorage.setItem('vmmc_pointer_speed', num.toString());
+    }
+
+    function applyReducedMotion(on) {
+        localStorage.setItem('vmmc_reduced_motion', on ? 'true' : 'false');
+        if (on) {
+            document.documentElement.classList.add('reduce-motion');
+            document.documentElement.style.setProperty('--theme-anim-duration', '0s');
+        } else {
+            document.documentElement.classList.remove('reduce-motion');
+            document.documentElement.style.removeProperty('--theme-anim-duration');
+        }
+    }
+
+    function previewTheme(themeId) {
+        if (!themeId) return;
+        selectedTheme = themeId;
+        document.documentElement.setAttribute('data-theme', themeId);
+        localStorage.setItem('vmmc_theme', themeId);
+        document.querySelectorAll('.theme-card-compact').forEach(c => {
+            var match = c.getAttribute('data-theme-id') === themeId;
+            c.classList.toggle('is-selected', match);
+            if (match) {
+                var name = c.getAttribute('data-theme-name') || themeId;
+                var l = document.getElementById('masterPreviewActiveName');
+                if (l) l.innerHTML = 'Theme: <strong>' + name + '</strong> (' + themeId + ')';
+            }
+        });
+    }
+
+    function previewFont(fontId) {
+        if (!fontId) return;
+        selectedFont = fontId;
+        applyFontWithTamilFallback(fontId);
+        localStorage.setItem('vmmc_theme_font', fontId);
+    }
+
+    function applyFontWithTamilFallback(fontName) {
+        if (!fontName || fontName === 'System UI') {
+            document.documentElement.setAttribute('data-font', 'System UI');
+            document.documentElement.style.setProperty('--theme-font-family', 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Tamil", sans-serif');
+            current_font = 'System UI';
+            return;
+        }
+
+        var linkId = 'vmmcDynamicFontLink';
+        var link = document.getElementById(linkId);
+        if (!link) {
+            link = document.createElement('link');
+            link.id = linkId;
+            link.rel = 'stylesheet';
+            document.head.appendChild(link);
+        }
+        var encoded = encodeURIComponent(fontName.replace(/\s+/g, '+'));
+        link.href = 'https://fonts.googleapis.com/css2?family=' + encoded + ':wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;600;700&display=swap';
+
+        // Verification & Safe Fallback mechanism (Section 14 & 15)
+        if (document.fonts && typeof document.fonts.load === 'function') {
+            var timeoutPromise = new Promise(function(_, reject) {
+                setTimeout(function() { reject(new Error('Font load timeout')); }, 3500);
+            });
+            Promise.race([document.fonts.load('1rem "' + fontName + '"'), timeoutPromise])
+                .then(function(loaded) {
+                    if (loaded && loaded.length > 0) {
+                        document.documentElement.setAttribute('data-font', fontName);
+                        document.documentElement.style.setProperty('--theme-font-family', "'" + fontName + "', 'Noto Sans Tamil', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif");
+                        current_font = fontName;
+                    } else {
+                        throw new Error('Font empty');
+                    }
+                })
+                .catch(function(err) {
+                    console.warn('Font ' + fontName + ' unavailable, falling back to Outfit + Tamil:', err);
+                    document.documentElement.setAttribute('data-font', 'Outfit');
+                    document.documentElement.style.setProperty('--theme-font-family', "'Outfit', 'Noto Sans Tamil', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif");
+                    current_font = 'Outfit';
+                    var sel = document.getElementById('font_family_select');
+                    if (sel) sel.value = 'Outfit';
+                    showToast('Font unavailable — using fallback (Outfit & Tamil)', 'warning');
+                });
+        } else {
+            document.documentElement.setAttribute('data-font', fontName);
+            document.documentElement.style.setProperty('--theme-font-family', "'" + fontName + "', 'Noto Sans Tamil', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif");
+            current_font = fontName;
+        }
+    }
+
+    function applyCustomGoogleFont(val) {
+        var clean = (val || '').trim();
+        if (!clean) return;
+        var sel = document.getElementById('font_family_select');
+        var found = false;
+        if (sel) {
+            for (var i = 0; i < sel.options.length; i++) {
+                if (sel.options[i].value.toLowerCase() === clean.toLowerCase()) {
+                    sel.selectedIndex = i;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                var opt = document.createElement('option');
+                opt.value = clean;
+                opt.textContent = clean + ' (Google Font)';
+                sel.appendChild(opt);
+                sel.value = clean;
+            }
+        }
+        previewFont(clean);
+        showToast("Verifying Google Font: \"" + clean + "\" (with Tamil fallback)...", "info");
+    }
+
+    function resetToDefaultTheme() {
+        previewTheme('vmmc-main');
+        var fs = document.getElementById('font_family_select');
+        if (fs) { fs.value = 'Outfit'; previewFont('Outfit'); }
+        var rm = document.getElementById('reduce_motion_toggle');
+        if (rm) { rm.checked = false; applyReducedMotion(false); }
+        var as = document.getElementById('anim_speed_select');
+        if (as) { as.value = '1.5x'; applyAnimationSpeed('1.5x'); }
+        var ps = document.getElementById('pointer_speed_select');
+        if (ps) { ps.value = '1.5x'; applyPointerSpeed('1.5x'); }
+        showToast("Reset to VMMC Main (1.5x speed). Click 'Save Theme' to persist.", "info");
+    }
+
+    async function saveThemePreferences() {
+        var saveBtn = document.querySelector('.btn-theme-save');
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving…';
+        }
+
+        var csrfToken = getCookie('csrftoken') || '';
+        var isReduced = document.getElementById('reduce_motion_toggle') ? document.getElementById('reduce_motion_toggle').checked : false;
+
+        var payload = {
+            theme: selectedTheme,
+            font: selectedFont,
+            reduced_motion: isReduced,
+            animation_speed: selectedAnimSpeed || '1.5',
+            pointer_speed: selectedPointerSpeed || '1.5'
+        };
+
+        try {
+            var response = await fetch("{% url 'save_theme_preference' %}", {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            var contentType = response.headers.get('content-type') || '';
+            var data = null;
+
+            if (contentType.includes('application/json')) {
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    showToast("Server returned invalid JSON response.", "error");
+                    return;
+                }
+            }
+
+            if (response.ok) {
+                if (data && data.status === 'success') {
+                    showToast("Theme saved successfully.", "success");
+                    localStorage.setItem('vmmc_theme', selectedTheme);
+                    localStorage.setItem('vmmc_theme_font', selectedFont);
+                    localStorage.setItem('vmmc_anim_speed', payload.animation_speed);
+                    localStorage.setItem('vmmc_pointer_speed', payload.pointer_speed);
+                    localStorage.setItem('vmmc_reduced_motion', payload.reduced_motion ? 'true' : 'false');
+                } else {
+                    var errDetail = (data && data.message) ? data.message : "Theme could not be saved.";
+                    showToast(errDetail, "error");
+                }
+            } else {
+                if (response.status === 401) {
+                    showToast("Your session has expired. Please log in again to save themes.", "error");
+                } else if (response.status === 403) {
+                    if (data && data.message && data.message.includes('CSRF')) {
+                        showToast("Theme could not be saved because the security token expired. Refresh the page and try again.", "error");
+                    } else {
+                        showToast("You do not have permission to change the Web Theme.", "error");
+                    }
+                } else if (response.status === 404) {
+                    showToast("Theme save endpoint was not found (404).", "error");
+                } else if (response.status === 405) {
+                    showToast("Wrong request method used for theme save (405).", "error");
+                } else if (response.status === 400) {
+                    var msg = (data && data.message) ? data.message : "Invalid theme parameters submitted (400).";
+                    showToast(msg, "error");
+                } else if (response.status >= 500) {
+                    showToast("Server error while saving the theme (500). Check the server log.", "error");
+                } else {
+                    showToast("Theme save failed with status " + response.status + ".", "error");
+                }
+            }
+        } catch (err) {
+            console.error("Network error during theme save:", err);
+            showToast("Unable to reach the server. Please check your network connection.", "error");
+        } finally {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Save Theme';
+            }
+        }
+    }
+
+    function showToast(msg, type) {
+        var a = document.getElementById('theme_save_alert');
+        var m = document.getElementById('theme_save_msg');
+        if (!a || !m) return;
+
+        m.textContent = msg;
+        if (type === 'error') {
+            a.style.background = 'var(--theme-danger-bg, #fef2f2)';
+            a.style.color = 'var(--theme-danger-text, #991b1b)';
+            a.style.borderColor = 'var(--theme-danger-border, #fca5a5)';
+            a.querySelector('i').className = 'bi bi-exclamation-triangle-fill';
+        } else if (type === 'info') {
+            a.style.background = 'var(--theme-info-bg, #f0f9ff)';
+            a.style.color = 'var(--theme-info-text, #075985)';
+            a.style.borderColor = 'var(--theme-info-border, #bae6fd)';
+            a.querySelector('i').className = 'bi bi-info-circle-fill';
+        } else {
+            a.style.background = 'var(--theme-success-bg, #ecfdf5)';
+            a.style.color = 'var(--theme-success-text, #065f46)';
+            a.style.borderColor = 'var(--theme-success-border, #a7f3d0)';
+            a.querySelector('i').className = 'bi bi-check2-circle';
+        }
+
+        a.style.display = 'flex';
+        clearTimeout(window.__themeToastTimer);
+        window.__themeToastTimer = setTimeout(function() {
+            a.style.display = 'none';
+        }, 5000);
+    }
+
+    function getCookie(name) {
+        var cv = null;
+        if (document.cookie && document.cookie !== '') {
+            document.cookie.split(';').forEach(c => {
+                c = c.trim();
+                if (c.startsWith(name + '=')) cv = decodeURIComponent(c.substring(name.length + 1));
+            });
+        }
+        return cv;
+    }
+</script>
+{% endblock %}

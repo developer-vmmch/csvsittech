@@ -1,3 +1,5 @@
+import re
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.urls import reverse_lazy, reverse
@@ -2780,3 +2782,897 @@ class UserPasswordChangeView(LoginRequiredMixin, View):
             'success': True,
             'message': 'Password changed successfully.',
         })
+
+
+class ThemeSettingsView(LoginRequiredMixin, TemplateView):
+    template_name = 'users/theme_settings.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        if not getattr(request.user, 'can_access_theme_settings', False):
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied("Access Denied: You do not have permission to access Theme Settings.")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['themes'] = [
+            # MAIN THEME
+            {
+                'id': 'vmmc-main',
+                'name': 'VMMC Main',
+                'type': 'Main Theme',
+                'category': 'MAIN THEME',
+                'desc': 'Default VMMC hospital blue/white clinical identity with navy accents',
+                'preview': {'bg': '#f1f5f9', 'surface': '#ffffff', 'primary': '#0284c7', 'text': '#0f172a', 'border': '#cbd5e1'}
+            },
+            # 5 LIGHT THEMES
+            {
+                'id': 'clinical-blue',
+                'name': 'Clinical Blue',
+                'type': 'Light Theme',
+                'category': 'LIGHT THEMES',
+                'desc': 'Clean hospital blue with navy text and structured borders',
+                'preview': {'bg': '#eaf2f9', 'surface': '#ffffff', 'primary': '#1971c2', 'text': '#0e294b', 'border': '#bcd4e6'}
+            },
+            {
+                'id': 'medical-teal',
+                'name': 'Medical Teal',
+                'type': 'Light Theme',
+                'category': 'LIGHT THEMES',
+                'desc': 'Clinical teal palette with deep spruce typography',
+                'preview': {'bg': '#e6f6f4', 'surface': '#ffffff', 'primary': '#0d9488', 'text': '#042f2e', 'border': '#99f6e4'}
+            },
+            {
+                'id': 'soft-green',
+                'name': 'Soft Green',
+                'type': 'Light Theme',
+                'category': 'LIGHT THEMES',
+                'desc': 'Restrained hospital sage green with forest accents',
+                'preview': {'bg': '#eaf4ed', 'surface': '#ffffff', 'primary': '#15803d', 'text': '#132e1b', 'border': '#bbf7d0'}
+            },
+            {
+                'id': 'royal-indigo',
+                'name': 'Royal Indigo',
+                'type': 'Light Theme',
+                'category': 'LIGHT THEMES',
+                'desc': 'Crisp indigo surfaces with deep midnight text',
+                'preview': {'bg': '#edeafc', 'surface': '#ffffff', 'primary': '#4f46e5', 'text': '#1e1b4b', 'border': '#c7d2fe'}
+            },
+            {
+                'id': 'warm-slate',
+                'name': 'Warm Slate',
+                'type': 'Light Theme',
+                'category': 'LIGHT THEMES',
+                'desc': 'Low visual fatigue off-white with slate grey tones',
+                'preview': {'bg': '#e7e4dc', 'surface': '#fbf9f5', 'primary': '#4a5d6e', 'text': '#2c3238', 'border': '#cfc9be'}
+            },
+            # 5 DARK THEMES
+            {
+                'id': 'midnight-blue',
+                'name': 'Midnight Blue',
+                'type': 'Dark Theme',
+                'category': 'DARK THEMES',
+                'desc': 'Deep navy background with high-contrast sky accents',
+                'preview': {'bg': '#090e17', 'surface': '#0f172a', 'primary': '#0284c7', 'text': '#f1f5f9', 'border': '#334155'}
+            },
+            {
+                'id': 'dark-teal',
+                'name': 'Dark Teal',
+                'type': 'Dark Theme',
+                'category': 'DARK THEMES',
+                'desc': 'Charcoal-teal background with vibrant cyan elements',
+                'preview': {'bg': '#061414', 'surface': '#0a2121', 'primary': '#0d9488', 'text': '#f0fdfa', 'border': '#1a4a4a'}
+            },
+            {
+                'id': 'graphite',
+                'name': 'Graphite',
+                'type': 'Dark Theme',
+                'category': 'DARK THEMES',
+                'desc': 'Neutral charcoal surface with electric blue highlights',
+                'preview': {'bg': '#121316', 'surface': '#1b1d22', 'primary': '#3b82f6', 'text': '#f3f4f6', 'border': '#374151'}
+            },
+            {
+                'id': 'deep-indigo',
+                'name': 'Deep Indigo',
+                'type': 'Dark Theme',
+                'category': 'DARK THEMES',
+                'desc': 'Dark amethyst surfaces with soft violet typography',
+                'preview': {'bg': '#0b0918', 'surface': '#141228', 'primary': '#7c3aed', 'text': '#f5f3ff', 'border': '#312c5b'}
+            },
+            {
+                'id': 'dark-emerald',
+                'name': 'Dark Emerald',
+                'type': 'Dark Theme',
+                'category': 'DARK THEMES',
+                'desc': 'Deep night green with radiant emerald indicators',
+                'preview': {'bg': '#05130e', 'surface': '#0a2118', 'primary': '#059669', 'text': '#ecfdf5', 'border': '#1a4d3a'}
+            },
+            # 5 TRANSPARENT / GLASS THEMES
+            {
+                'id': 'glass-blue',
+                'name': 'Glass Blue',
+                'type': 'Glass Theme',
+                'category': 'TRANSPARENT / GLASS THEMES',
+                'desc': 'Translucent frosted azure surfaces with subtle blur',
+                'preview': {'bg': '#dbeafe', 'surface': 'rgba(255,255,255,0.88)', 'primary': '#0284c7', 'text': '#0f2c59', 'border': '#93c5fd'}
+            },
+            {
+                'id': 'glass-teal',
+                'name': 'Glass Teal',
+                'type': 'Glass Theme',
+                'category': 'TRANSPARENT / GLASS THEMES',
+                'desc': 'Translucent frosted mint surfaces with turquoise trim',
+                'preview': {'bg': '#ccfbf1', 'surface': 'rgba(255,255,255,0.88)', 'primary': '#0d9488', 'text': '#042f2e', 'border': '#99f6e4'}
+            },
+            {
+                'id': 'glass-purple',
+                'name': 'Glass Purple',
+                'type': 'Glass Theme',
+                'category': 'TRANSPARENT / GLASS THEMES',
+                'desc': 'Translucent frosted violet surfaces with lavender accents',
+                'preview': {'bg': '#ede9fe', 'surface': 'rgba(255,255,255,0.88)', 'primary': '#7c3aed', 'text': '#2e1065', 'border': '#c4b5fd'}
+            },
+            {
+                'id': 'glass-emerald',
+                'name': 'Glass Emerald',
+                'type': 'Glass Theme',
+                'category': 'TRANSPARENT / GLASS THEMES',
+                'desc': 'Translucent frosted jade surfaces with green borders',
+                'preview': {'bg': '#d1fae5', 'surface': 'rgba(255,255,255,0.88)', 'primary': '#059669', 'text': '#064e3b', 'border': '#6ee7b7'}
+            },
+            {
+                'id': 'glass-smoke',
+                'name': 'Glass Smoke',
+                'type': 'Glass Theme',
+                'category': 'TRANSPARENT / GLASS THEMES',
+                'desc': 'Smoked dark glass with backdrop diffusion and sky trim',
+                'preview': {'bg': '#1e293b', 'surface': 'rgba(30,41,59,0.85)', 'primary': '#38bdf8', 'text': '#f8fafc', 'border': '#475569'}
+            },
+            # 5 WEB INSPIRED THEMES
+            {
+                'id': 'material-inspired',
+                'name': 'Material Inspired',
+                'type': 'Web Inspired',
+                'category': 'WEB INSPIRED THEMES',
+                'desc': 'Material design principles with tonal surfaces and paired roles',
+                'preview': {'bg': '#fdf8fd', 'surface': '#ffffff', 'primary': '#6750a4', 'text': '#1d1b20', 'border': '#cac4d0'}
+            },
+            {
+                'id': 'github-primer',
+                'name': 'GitHub Inspired',
+                'type': 'Web Inspired',
+                'category': 'WEB INSPIRED THEMES',
+                'desc': 'Neutral surfaces, crisp borders, and accessible accents',
+                'preview': {'bg': '#f6f8fa', 'surface': '#ffffff', 'primary': '#0969da', 'text': '#1f2328', 'border': '#d0d7de'}
+            },
+            {
+                'id': 'atlassian-design',
+                'name': 'Atlassian Inspired',
+                'type': 'Web Inspired',
+                'category': 'WEB INSPIRED THEMES',
+                'desc': 'Enterprise tokens, vibrant cards, and high readability',
+                'preview': {'bg': '#ebecf0', 'surface': '#ffffff', 'primary': '#0052cc', 'text': '#172b4d', 'border': '#dfe1e6'}
+            },
+            {
+                'id': 'vercel-geist',
+                'name': 'Vercel Inspired',
+                'type': 'Web Inspired',
+                'category': 'WEB INSPIRED THEMES',
+                'desc': 'Minimal surfaces, crisp contrast, and restrained accents',
+                'preview': {'bg': '#eaeaea', 'surface': '#ffffff', 'primary': '#000000', 'text': '#111111', 'border': '#cccccc'}
+            },
+            {
+                'id': 'notion-minimal',
+                'name': 'Notion Inspired',
+                'type': 'Web Inspired',
+                'category': 'WEB INSPIRED THEMES',
+                'desc': 'Warm neutral surfaces, clean typography, and comfortable reading',
+                'preview': {'bg': '#efede8', 'surface': '#ffffff', 'primary': '#2eaadc', 'text': '#37352f', 'border': '#e1dfdc'}
+            },
+            # 5 NEW LIGHT THEMES
+            {
+                'id': 'sunrise-amber',
+                'name': 'Sunrise Amber',
+                'type': 'Light Theme',
+                'category': 'LIGHT THEMES',
+                'desc': 'Warm amber identity with gold accents and soft cream surfaces',
+                'preview': {'bg': '#fdf6e3', 'surface': '#ffffff', 'primary': '#d97706', 'text': '#3d2c00', 'border': '#fcd34d'}
+            },
+            {
+                'id': 'cherry-blossom',
+                'name': 'Cherry Blossom',
+                'type': 'Light Theme',
+                'category': 'LIGHT THEMES',
+                'desc': 'Soft pink-rose with medical white surfaces and rose accents',
+                'preview': {'bg': '#fdf2f8', 'surface': '#ffffff', 'primary': '#db2777', 'text': '#3d0e2c', 'border': '#fbcfe8'}
+            },
+            {
+                'id': 'arctic-white',
+                'name': 'Arctic White',
+                'type': 'Light Theme',
+                'category': 'LIGHT THEMES',
+                'desc': 'Pure white with icy sky-blue borders and crisp contrast',
+                'preview': {'bg': '#f0f9ff', 'surface': '#ffffff', 'primary': '#0ea5e9', 'text': '#0c2a3d', 'border': '#bae6fd'}
+            },
+            {
+                'id': 'lavender-mist',
+                'name': 'Lavender Mist',
+                'type': 'Light Theme',
+                'category': 'LIGHT THEMES',
+                'desc': 'Soft lavender with plum headings and violet focus rings',
+                'preview': {'bg': '#f5f0ff', 'surface': '#ffffff', 'primary': '#8b5cf6', 'text': '#2d1a5e', 'border': '#ddd6fe'}
+            },
+            {
+                'id': 'sage-neutral',
+                'name': 'Sage Neutral',
+                'type': 'Light Theme',
+                'category': 'LIGHT THEMES',
+                'desc': 'Earthy sage-green surfaces with terracotta accent palette',
+                'preview': {'bg': '#f0f4ef', 'surface': '#ffffff', 'primary': '#5a7d52', 'text': '#1e2d1e', 'border': '#c3d9be'}
+            },
+            # 5 NEW DARK THEMES
+            {
+                'id': 'obsidian',
+                'name': 'Obsidian',
+                'type': 'Dark Theme',
+                'category': 'DARK THEMES',
+                'desc': 'Pure black with chrome-white accents and high contrast',
+                'preview': {'bg': '#0a0a0a', 'surface': '#141414', 'primary': '#e2e8f0', 'text': '#f2f2f2', 'border': '#2a2a2a'}
+            },
+            {
+                'id': 'dark-rose',
+                'name': 'Dark Rose',
+                'type': 'Dark Theme',
+                'category': 'DARK THEMES',
+                'desc': 'Deep garnet background with crimson-rose glow accents',
+                'preview': {'bg': '#120009', 'surface': '#200014', 'primary': '#f43f86', 'text': '#ffe4ef', 'border': '#5c0038'}
+            },
+            {
+                'id': 'deep-amber',
+                'name': 'Deep Amber',
+                'type': 'Dark Theme',
+                'category': 'DARK THEMES',
+                'desc': 'Rich chocolate-amber background with golden text and glow',
+                'preview': {'bg': '#120900', 'surface': '#1e1100', 'primary': '#f59e0b', 'text': '#fef3c7', 'border': '#4a2f00'}
+            },
+            {
+                'id': 'dark-sapphire',
+                'name': 'Dark Sapphire',
+                'type': 'Dark Theme',
+                'category': 'DARK THEMES',
+                'desc': 'Deep cobalt ocean with electric blue trim and high readability',
+                'preview': {'bg': '#00091a', 'surface': '#00112b', 'primary': '#3b82f6', 'text': '#dbeafe', 'border': '#0d3070'}
+            },
+            {
+                'id': 'dark-purple-rain',
+                'name': 'Dark Purple Rain',
+                'type': 'Dark Theme',
+                'category': 'DARK THEMES',
+                'desc': 'Deep grape background with neon violet glow typography',
+                'preview': {'bg': '#0d0018', 'surface': '#160025', 'primary': '#a855f7', 'text': '#f3e8ff', 'border': '#3b0060'}
+            },
+            # 5 NEW GLASS THEMES
+            {
+                'id': 'glass-rose',
+                'name': 'Glass Rose',
+                'type': 'Glass Theme',
+                'category': 'TRANSPARENT / GLASS THEMES',
+                'desc': 'Frosted pink-rose glass with soft blossom gradient',
+                'preview': {'bg': '#fce7f3', 'surface': 'rgba(255,255,255,0.88)', 'primary': '#db2777', 'text': '#3d0e2c', 'border': '#f9a8d4'}
+            },
+            {
+                'id': 'glass-amber',
+                'name': 'Glass Amber',
+                'type': 'Glass Theme',
+                'category': 'TRANSPARENT / GLASS THEMES',
+                'desc': 'Frosted golden-amber glass with warm cream gradient',
+                'preview': {'bg': '#fef3c7', 'surface': 'rgba(255,255,255,0.88)', 'primary': '#d97706', 'text': '#3d2c00', 'border': '#fcd34d'}
+            },
+            {
+                'id': 'glass-midnight',
+                'name': 'Glass Midnight',
+                'type': 'Glass Theme',
+                'category': 'TRANSPARENT / GLASS THEMES',
+                'desc': 'Dark frosted glass with deep navy and sky-blue highlights',
+                'preview': {'bg': '#0f172a', 'surface': 'rgba(15,23,42,0.87)', 'primary': '#38bdf8', 'text': '#f1f5f9', 'border': '#334155'}
+            },
+            {
+                'id': 'glass-ocean',
+                'name': 'Glass Ocean',
+                'type': 'Glass Theme',
+                'category': 'TRANSPARENT / GLASS THEMES',
+                'desc': 'Frosted deep-sea cyan glass with ocean gradient',
+                'preview': {'bg': '#cffafe', 'surface': 'rgba(255,255,255,0.88)', 'primary': '#06b6d4', 'text': '#0c2a3d', 'border': '#a5f3fc'}
+            },
+            {
+                'id': 'glass-galaxy',
+                'name': 'Glass Galaxy',
+                'type': 'Glass Theme',
+                'category': 'TRANSPARENT / GLASS THEMES',
+                'desc': 'Dark frosted glass with deep-space nebula gradient and magenta glow',
+                'preview': {'bg': '#0d0118', 'surface': 'rgba(25,5,50,0.85)', 'primary': '#c026d3', 'text': '#f3e8ff', 'border': '#581c87'}
+            },
+            # 20 MULTICOLOR THEMES
+            {
+                'id': 'sunset-gradient',
+                'name': 'Sunset Gradient',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Vivid orange-to-blue sunset gradient environment',
+                'preview': {'bg': '#ff6b35', 'surface': 'rgba(255,245,235,0.94)', 'primary': '#e85d04', 'text': '#1a0a00', 'border': '#f7c59f'}
+            },
+            {
+                'id': 'ocean-depth',
+                'name': 'Ocean Depth',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Deep blue-teal-green ocean gradient with sea surface reflections',
+                'preview': {'bg': '#06b6d4', 'surface': 'rgba(6,90,110,0.90)', 'primary': '#22d3ee', 'text': '#cffafe', 'border': '#0284c7'}
+            },
+            {
+                'id': 'northern-lights',
+                'name': 'Northern Lights',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Aurora-inspired purple-green-blue night environment',
+                'preview': {'bg': '#0d0118', 'surface': 'rgba(10,20,40,0.88)', 'primary': '#22d3ee', 'text': '#e0f2fe', 'border': '#1e40af'}
+            },
+            {
+                'id': 'cosmic-dawn',
+                'name': 'Cosmic Dawn',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Deep midnight navy to purple cosmic environment',
+                'preview': {'bg': '#0f0c29', 'surface': 'rgba(20,18,50,0.88)', 'primary': '#c026d3', 'text': '#e9e3ff', 'border': '#4c1d95'}
+            },
+            {
+                'id': 'retro-synthwave',
+                'name': 'Retro Synthwave',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': '1980s synthwave neon pink-cyan on deep dark purple',
+                'preview': {'bg': '#0d001a', 'surface': 'rgba(26,0,50,0.90)', 'primary': '#ff71ce', 'text': '#f8e8ff', 'border': '#5a0060'}
+            },
+            {
+                'id': 'neon-pulse',
+                'name': 'Neon Pulse',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Pure black with electric lime-green neon accents',
+                'preview': {'bg': '#050505', 'surface': '#0e0e0e', 'primary': '#39ff14', 'text': '#e8ffe8', 'border': '#1e4d1e'}
+            },
+            {
+                'id': 'royal-flush',
+                'name': 'Royal Flush',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Deep midnight-to-cobalt royal blue environment',
+                'preview': {'bg': '#000428', 'surface': 'rgba(0,10,50,0.90)', 'primary': '#3b82f6', 'text': '#dbeafe', 'border': '#1e3a8a'}
+            },
+            {
+                'id': 'autumn-harvest',
+                'name': 'Autumn Harvest',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Deep rust-orange to golden harvest gradient environment',
+                'preview': {'bg': '#7f3500', 'surface': 'rgba(100,40,0,0.88)', 'primary': '#fbbf24', 'text': '#fff7ed', 'border': '#92400e'}
+            },
+            {
+                'id': 'golden-hour',
+                'name': 'Golden Hour',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Dark warm-amber surface with gold glow identity',
+                'preview': {'bg': '#0f0a00', 'surface': '#1a1200', 'primary': '#f59e0b', 'text': '#fffbeb', 'border': '#6b4800'}
+            },
+            {
+                'id': 'volcanic',
+                'name': 'Volcanic',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Dark red lava gradient with molten orange atmosphere',
+                'preview': {'bg': '#1a0000', 'surface': 'rgba(40,5,5,0.90)', 'primary': '#ef4444', 'text': '#fff5f5', 'border': '#7f1d1d'}
+            },
+            {
+                'id': 'spring-bloom',
+                'name': 'Spring Bloom',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Green-to-yellow-to-pink spring garden gradient',
+                'preview': {'bg': '#d1fae5', 'surface': 'rgba(255,255,255,0.90)', 'primary': '#16a34a', 'text': '#0f2d1a', 'border': '#86efac'}
+            },
+            {
+                'id': 'ice-storm',
+                'name': 'Ice Storm',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Pale blue-white icy gradient with deep cyan storm accents',
+                'preview': {'bg': '#e0f7ff', 'surface': 'rgba(255,255,255,0.92)', 'primary': '#0ea5e9', 'text': '#00293d', 'border': '#7dd3fc'}
+            },
+            {
+                'id': 'blossom-dusk',
+                'name': 'Blossom Dusk',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Dusk purple-to-rose gradient with cherry blossom identity',
+                'preview': {'bg': '#2d1b4e', 'surface': 'rgba(45,18,70,0.88)', 'primary': '#f06292', 'text': '#fce4ec', 'border': '#7e3a8c'}
+            },
+            {
+                'id': 'electric-lime',
+                'name': 'Electric Lime',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Deep black with electric lime-green glow accent',
+                'preview': {'bg': '#030a00', 'surface': '#0a1500', 'primary': '#84cc16', 'text': '#eeffcc', 'border': '#254a00'}
+            },
+            {
+                'id': 'deep-crimson',
+                'name': 'Deep Crimson',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Rich dark crimson with ruby glow and warm red typography',
+                'preview': {'bg': '#0d0000', 'surface': '#1a0000', 'primary': '#e11d48', 'text': '#ffe8e8', 'border': '#5a0010'}
+            },
+            {
+                'id': 'desert-sand',
+                'name': 'Desert Sand',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Warm tan-to-sienna desert gradient environment',
+                'preview': {'bg': '#d4a76a', 'surface': 'rgba(110,60,10,0.88)', 'primary': '#ffa726', 'text': '#fff8e7', 'border': '#a05010'}
+            },
+            {
+                'id': 'tropical-paradise',
+                'name': 'Tropical Paradise',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Cyan-to-lime tropical paradise with vivid teal accents',
+                'preview': {'bg': '#00c9ff', 'surface': 'rgba(255,255,255,0.88)', 'primary': '#00b894', 'text': '#00291a', 'border': '#92fe9d'}
+            },
+            {
+                'id': 'candy-pop',
+                'name': 'Candy Pop',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Bubblegum pink-purple-blue playful gradient',
+                'preview': {'bg': '#ff9de2', 'surface': 'rgba(255,255,255,0.90)', 'primary': '#e040fb', 'text': '#2d0a4e', 'border': '#d4a1ff'}
+            },
+            {
+                'id': 'deep-sea',
+                'name': 'Deep Sea',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Navy-to-teal-to-cyan deep ocean environment',
+                'preview': {'bg': '#001f3f', 'surface': 'rgba(0,30,60,0.90)', 'primary': '#00b4d8', 'text': '#caf0f8', 'border': '#00416a'}
+            },
+            {
+                'id': 'forest-fire',
+                'name': 'Forest Fire',
+                'type': 'Multicolor',
+                'category': 'MULTICOLOR THEMES',
+                'desc': 'Deep forest green to burnt orange fire gradient',
+                'preview': {'bg': '#1a2e00', 'surface': 'rgba(30,20,0,0.88)', 'primary': '#ff6b00', 'text': '#fff5e0', 'border': '#6b3800'}
+            },
+            # 10 ANIMATED THEMES
+            {
+                'id': 'snow-world',
+                'name': 'Snow World',
+                'type': 'Animated World',
+                'category': 'ANIMATED WORLDS',
+                'desc': 'Icy blue environment with gentle falling snow particle layer',
+                'preview': {'bg': '#d6eaf8', 'surface': 'rgba(255,255,255,0.92)', 'primary': '#0ea5e9', 'text': '#0a2540', 'border': '#bae6fd'}
+            },
+            {
+                'id': 'aurora-world',
+                'name': 'Aurora World',
+                'type': 'Animated World',
+                'category': 'ANIMATED WORLDS',
+                'desc': 'Deep space environment with aurora borealis color-shift animation',
+                'preview': {'bg': '#020f14', 'surface': 'rgba(5,20,28,0.88)', 'primary': '#10b981', 'text': '#d1fae5', 'border': '#064e3b'}
+            },
+            {
+                'id': 'underwater-world',
+                'name': 'Underwater World',
+                'type': 'Animated World',
+                'category': 'ANIMATED WORLDS',
+                'desc': 'Deep ocean environment with slowly rising bubble animations',
+                'preview': {'bg': '#001f3f', 'surface': 'rgba(0,30,60,0.90)', 'primary': '#00b4d8', 'text': '#caf0f8', 'border': '#00416a'}
+            },
+            {
+                'id': 'space-explorer',
+                'name': 'Space Explorer',
+                'type': 'Animated World',
+                'category': 'ANIMATED WORLDS',
+                'desc': 'Deep space environment with twinkling star particle layer',
+                'preview': {'bg': '#02020a', 'surface': 'rgba(5,5,20,0.90)', 'primary': '#6060ee', 'text': '#e8e8ff', 'border': '#1a1a50'}
+            },
+            {
+                'id': 'cyber-city',
+                'name': 'Cyber City',
+                'type': 'Animated World',
+                'category': 'ANIMATED WORLDS',
+                'desc': 'Cyberpunk neon-cyan environment with animated scanline overlay',
+                'preview': {'bg': '#000510', 'surface': 'rgba(0,8,22,0.90)', 'primary': '#00bcd4', 'text': '#00ffff', 'border': '#003340'}
+            },
+            {
+                'id': 'enchanted-forest',
+                'name': 'Enchanted Forest',
+                'type': 'Animated World',
+                'category': 'ANIMATED WORLDS',
+                'desc': 'Dark enchanted forest with glowing floating particle animations',
+                'preview': {'bg': '#020c04', 'surface': 'rgba(5,18,8,0.90)', 'primary': '#16a34a', 'text': '#c8ffcc', 'border': '#0d3a18'}
+            },
+            {
+                'id': 'cloud-kingdom',
+                'name': 'Cloud Kingdom',
+                'type': 'Animated World',
+                'category': 'ANIMATED WORLDS',
+                'desc': 'Sky-blue environment with softly drifting cloud overlay',
+                'preview': {'bg': '#87ceeb', 'surface': 'rgba(255,255,255,0.92)', 'primary': '#0ea5e9', 'text': '#0a1a40', 'border': '#bae6fd'}
+            },
+            {
+                'id': 'future-robot-lab',
+                'name': 'Future Robot Lab',
+                'type': 'Animated World',
+                'category': 'ANIMATED WORLDS',
+                'desc': 'Cold grey HUD environment with animated grid-scan overlay',
+                'preview': {'bg': '#0a0c10', 'surface': 'rgba(14,18,25,0.90)', 'primary': '#4ea8de', 'text': '#d0d8e8', 'border': '#1a2a3a'}
+            },
+            {
+                'id': 'rover-world',
+                'name': 'Rover World',
+                'type': 'Animated World',
+                'category': 'ANIMATED WORLDS',
+                'desc': 'Mars landscape environment with gentle dust-drift animation',
+                'preview': {'bg': '#1a0a00', 'surface': 'rgba(30,14,4,0.90)', 'primary': '#c87040', 'text': '#f5dcc8', 'border': '#4a2010'}
+            },
+            {
+                'id': 'dream-world',
+                'name': 'Dream World',
+                'type': 'Animated World',
+                'category': 'ANIMATED WORLDS',
+                'desc': 'Dreamy pastel environment with gentle color-shift pulse animation',
+                'preview': {'bg': '#fde8ff', 'surface': 'rgba(255,255,255,0.90)', 'primary': '#a855f7', 'text': '#2d0a4e', 'border': '#f0abfc'}
+            },
+        ]
+        context['fonts'] = [
+            {'id': 'Outfit', 'name': 'Outfit (Hospital Default)', 'category': 'Modern Sans'},
+            {'id': 'Inter', 'name': 'Inter (Clean UI)', 'category': 'Modern Sans'},
+            {'id': 'Plus Jakarta Sans', 'name': 'Plus Jakarta Sans (Premium)', 'category': 'Modern Sans'},
+            {'id': 'DM Sans', 'name': 'DM Sans (Geometric)', 'category': 'Modern Sans'},
+            {'id': 'Roboto', 'name': 'Roboto (Google Standard)', 'category': 'Humanist'},
+            {'id': 'Open Sans', 'name': 'Open Sans (Accessible)', 'category': 'Humanist'},
+            {'id': 'Noto Sans', 'name': 'Noto Sans (Multilingual / Tamil)', 'category': 'Humanist'},
+            {'id': 'Poppins', 'name': 'Poppins (Geometric Display)', 'category': 'Display'},
+            {'id': 'Montserrat', 'name': 'Montserrat (Crisp Corporate)', 'category': 'Display'},
+            {'id': 'Nunito', 'name': 'Nunito (Soft Rounded)', 'category': 'Modern Sans'},
+            {'id': 'Raleway', 'name': 'Raleway (Elegant Thin)', 'category': 'Modern Sans'},
+            {'id': 'Lato', 'name': 'Lato (Warm Sans)', 'category': 'Humanist'},
+            {'id': 'Source Sans 3', 'name': 'Source Sans 3 (Adobe)', 'category': 'Humanist'},
+            {'id': 'Work Sans', 'name': 'Work Sans (Architectural)', 'category': 'Modern Sans'},
+            {'id': 'Fira Sans', 'name': 'Fira Sans (Technical)', 'category': 'Modern Sans'},
+            {'id': 'IBM Plex Sans', 'name': 'IBM Plex Sans (Industrial)', 'category': 'Modern Sans'},
+            {'id': 'Space Grotesk', 'name': 'Space Grotesk (Tech / Gaming)', 'category': 'Tech / Gaming'},
+            {'id': 'Syne', 'name': 'Syne (Futuristic Display)', 'category': 'Tech / Gaming'},
+            {'id': 'Playfair Display', 'name': 'Playfair Display (Editorial)', 'category': 'Serif'},
+            {'id': 'Merriweather', 'name': 'Merriweather (Readable Serif)', 'category': 'Serif'},
+            {'id': 'JetBrains Mono', 'name': 'JetBrains Mono (Monospace)', 'category': 'Monospace'},
+            {'id': 'System UI', 'name': 'System UI (Native OS)', 'category': 'System'},
+        ]
+        context['current_theme'] = getattr(self.request.user, 'theme', 'vmmc-main') or 'vmmc-main'
+        context['current_font'] = getattr(self.request.user, 'theme_font', 'Outfit') or 'Outfit'
+        user_motion = getattr(self.request.user, 'theme_motion', '1.5x') or '1.5x'
+        context['current_reduced_motion'] = (user_motion == 'off')
+        context['current_anim_speed'] = user_motion[:-1] if user_motion.endswith('x') else '1.5'
+        context['current_pointer_speed'] = self.request.session.get('theme_pointer_speed', '1.5') if hasattr(self.request, 'session') else '1.5'
+        return context
+
+    def post(self, request, *args, **kwargs):
+        theme_id = request.POST.get('theme', '').strip()
+        font_id = request.POST.get('font', '').strip()
+        reduced_motion = request.POST.get('reduced_motion')
+        anim_speed = request.POST.get('animation_speed', '1.5').strip()
+        pointer_speed = request.POST.get('pointer_speed', '1.5').strip()
+
+        valid_themes = [
+            # Main
+            'vmmc-main',
+            # Light (10)
+            'clinical-blue', 'medical-teal', 'soft-green', 'royal-indigo', 'warm-slate',
+            'sunrise-amber', 'cherry-blossom', 'arctic-white', 'lavender-mist', 'sage-neutral',
+            # Dark (10)
+            'midnight-blue', 'dark-teal', 'graphite', 'deep-indigo', 'dark-emerald',
+            'obsidian', 'dark-rose', 'deep-amber', 'dark-sapphire', 'dark-purple-rain',
+            # Glass (10)
+            'glass-blue', 'glass-teal', 'glass-purple', 'glass-emerald', 'glass-smoke',
+            'glass-rose', 'glass-amber', 'glass-midnight', 'glass-ocean', 'glass-galaxy',
+            # Web Inspired (5)
+            'material-inspired', 'github-primer', 'atlassian-design', 'vercel-geist', 'notion-minimal',
+            # Multicolor (20)
+            'sunset-gradient', 'ocean-depth', 'northern-lights', 'cosmic-dawn', 'retro-synthwave',
+            'neon-pulse', 'royal-flush', 'autumn-harvest', 'golden-hour', 'volcanic',
+            'spring-bloom', 'ice-storm', 'blossom-dusk', 'electric-lime', 'deep-crimson',
+            'desert-sand', 'tropical-paradise', 'candy-pop', 'deep-sea', 'forest-fire',
+            # Animated (10)
+            'snow-world', 'aurora-world', 'underwater-world', 'space-explorer', 'cyber-city',
+            'enchanted-forest', 'cloud-kingdom', 'future-robot-lab', 'rover-world', 'dream-world',
+        ]
+
+        if theme_id in valid_themes:
+            request.user.theme = theme_id
+        if font_id and re.match(r'^[A-Za-z0-9\s\-+]{2,60}$', font_id):
+            request.user.theme_font = font_id
+
+        motion_val = 'off' if reduced_motion in [True, 'true', 'on', '1', 1] else f"{anim_speed}x"
+        request.user.theme_motion = motion_val
+
+        request.user.save(update_fields=['theme', 'theme_font', 'theme_motion'])
+
+        if hasattr(request, 'session'):
+            request.session['theme'] = request.user.theme
+            request.session['theme_font'] = request.user.theme_font
+            request.session['theme_motion'] = request.user.theme_motion
+            request.session['theme_anim_speed'] = anim_speed
+            request.session['theme_pointer_speed'] = pointer_speed
+            request.session['theme_reduced_motion'] = (motion_val == 'off')
+
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', ''):
+            return JsonResponse({
+                'status': 'success',
+                'theme': request.user.theme,
+                'font': request.user.theme_font,
+                'theme_motion': request.user.theme_motion,
+                'animation_speed': anim_speed,
+                'pointer_speed': pointer_speed,
+                'reduced_motion': (motion_val == 'off'),
+                'message': 'Theme settings saved successfully.'
+            })
+
+        messages.success(request, f"Theme settings applied successfully: '{request.user.theme}' with '{request.user.theme_font}' font.")
+        return redirect('theme_settings')
+
+
+@csrf_protect
+def save_theme_preference_api(request):
+    """
+    API endpoint for asynchronous live theme preference persistence.
+    Requires Theme Settings permission.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({'status': 'error', 'message': 'Authentication required. Please log in.'}, status=401)
+    if not getattr(request.user, 'can_access_theme_settings', False):
+        return JsonResponse({'status': 'error', 'message': 'Permission denied: Web Theme permission required.'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST method required.'}, status=405)
+
+    data = {}
+    if request.content_type == 'application/json':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+        except Exception:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON payload received.'}, status=400)
+    else:
+        data = request.POST
+
+    theme_id = (data.get('theme') or '').strip()
+    font_id = (data.get('font') or '').strip()
+    reduced_motion = data.get('reduced_motion')
+    anim_speed = str(data.get('animation_speed', '') or '').strip()
+    pointer_speed = str(data.get('pointer_speed', '') or '').strip()
+
+    valid_themes = [
+        # Main
+        'vmmc-main',
+        # Light (10)
+        'clinical-blue', 'medical-teal', 'soft-green', 'royal-indigo', 'warm-slate',
+        'sunrise-amber', 'cherry-blossom', 'arctic-white', 'lavender-mist', 'sage-neutral',
+        # Dark (10)
+        'midnight-blue', 'dark-teal', 'graphite', 'deep-indigo', 'dark-emerald',
+        'obsidian', 'dark-rose', 'deep-amber', 'dark-sapphire', 'dark-purple-rain',
+        # Glass (10)
+        'glass-blue', 'glass-teal', 'glass-purple', 'glass-emerald', 'glass-smoke',
+        'glass-rose', 'glass-amber', 'glass-midnight', 'glass-ocean', 'glass-galaxy',
+        # Web Inspired (5)
+        'material-inspired', 'github-primer', 'atlassian-design', 'vercel-geist', 'notion-minimal',
+        # Multicolor (20)
+        'sunset-gradient', 'ocean-depth', 'northern-lights', 'cosmic-dawn', 'retro-synthwave',
+        'neon-pulse', 'royal-flush', 'autumn-harvest', 'golden-hour', 'volcanic',
+        'spring-bloom', 'ice-storm', 'blossom-dusk', 'electric-lime', 'deep-crimson',
+        'desert-sand', 'tropical-paradise', 'candy-pop', 'deep-sea', 'forest-fire',
+        # Animated (10)
+        'snow-world', 'aurora-world', 'underwater-world', 'space-explorer', 'cyber-city',
+        'enchanted-forest', 'cloud-kingdom', 'future-robot-lab', 'rover-world', 'dream-world',
+    ]
+
+    valid_anim_speeds = {
+        '0.5x': '0.5', '0.75x': '0.75', '1x': '1', '1.25x': '1.25', '1.5x': '1.5', '2x': '2', '2.5x': '2.5', '3x': '3',
+        '0.5': '0.5', '0.75': '0.75', '1': '1', '1.25': '1.25', '1.5': '1.5', '2': '2', '2.5': '2.5', '3': '3'
+    }
+    valid_pointer_speeds = {
+        '0.5x': '0.5', '1x': '1', '1.5x': '1.5', '2x': '2', '3x': '3',
+        '0.5': '0.5', '1': '1', '1.5': '1.5', '2': '2', '3': '3',
+        'Slow': '0.5', 'Normal': '1', 'Fast': '1.5', 'Very Fast': '2'
+    }
+
+    clean_anim_speed = valid_anim_speeds.get(anim_speed, '1.5')
+    clean_pointer_speed = valid_pointer_speeds.get(pointer_speed, '1.5')
+
+    updated = False
+    update_fields = []
+
+    if theme_id and theme_id in valid_themes:
+        request.user.theme = theme_id
+        updated = True
+        update_fields.append('theme')
+    elif theme_id:
+        return JsonResponse({'status': 'error', 'message': f'Invalid theme "{theme_id}" specified.'}, status=400)
+
+    if font_id and re.match(r'^[A-Za-z0-9\s\-+]{2,60}$', font_id):
+        request.user.theme_font = font_id
+        updated = True
+        update_fields.append('theme_font')
+    elif font_id:
+        return JsonResponse({'status': 'error', 'message': f'Invalid font name "{font_id}" specified.'}, status=400)
+
+    motion_val = 'off' if reduced_motion in [True, 'true', 'on', '1', 1] else f"{clean_anim_speed}x"
+    request.user.theme_motion = motion_val
+    updated = True
+    update_fields.append('theme_motion')
+
+    if updated:
+        request.user.save(update_fields=list(set(update_fields)))
+
+        if hasattr(request, 'session'):
+            request.session['theme'] = request.user.theme
+            request.session['theme_font'] = request.user.theme_font
+            request.session['theme_motion'] = request.user.theme_motion
+            request.session['theme_anim_speed'] = clean_anim_speed
+            request.session['theme_pointer_speed'] = clean_pointer_speed
+            request.session['theme_reduced_motion'] = (motion_val == 'off')
+
+        return JsonResponse({
+            'status': 'success',
+            'theme': request.user.theme,
+            'font': request.user.theme_font,
+            'theme_motion': request.user.theme_motion,
+            'animation_speed': clean_anim_speed,
+            'pointer_speed': clean_pointer_speed,
+            'reduced_motion': (motion_val == 'off'),
+            'message': 'Theme preferences saved successfully.'
+        })
+
+    return JsonResponse({'status': 'error', 'message': 'No valid preferences provided to update.'}, status=400)
+
+
+def hex_to_rgb(hex_code):
+    hex_code = (hex_code or '').strip().lstrip('#')
+    if len(hex_code) == 3:
+        hex_code = ''.join([c*2 for c in hex_code])
+    if len(hex_code) >= 6:
+        try:
+            return int(hex_code[0:2], 16), int(hex_code[2:4], 16), int(hex_code[4:6], 16)
+        except ValueError:
+            pass
+    return 128, 128, 128
+
+
+def get_relative_luminance(r, g, b):
+    def channel(c):
+        c = c / 255.0
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+
+
+def calculate_contrast_ratio(hex1, hex2):
+    r1, g1, b1 = hex_to_rgb(hex1)
+    r2, g2, b2 = hex_to_rgb(hex2)
+    l1 = get_relative_luminance(r1, g1, b1)
+    l2 = get_relative_luminance(r2, g2, b2)
+    lighter = max(l1, l2)
+    darker = min(l1, l2)
+    return round((lighter + 0.05) / (darker + 0.05), 2)
+
+
+class ThemeAuditView(LoginRequiredMixin, TemplateView):
+    """
+    Development-only Web Theme Visual Test Lab & WCAG AA Contrast Audit.
+    Displays an interactive matrix of all 60 themes with component previews,
+    a WCAG AA contrast analysis table, and a Page Visual Test Lab index.
+    """
+    template_name = 'users/theme_audit.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        if not getattr(request.user, 'can_access_theme_settings', False):
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied("Access Denied: You do not have permission to access Theme Audit.")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        tsv = ThemeSettingsView()
+        tsv.request = self.request
+        tsv_context = tsv.get_context_data()
+        themes = tsv_context.get('themes', [])
+
+        audit_results = []
+        total_checks = 0
+        total_passed = 0
+
+        for t in themes:
+            p = t.get('preview', {})
+            cat = t.get('category', '').upper()
+            is_dark = ('DARK' in cat) or ('ANIMATED' in cat and t['id'] not in ['cloud-kingdom', 'dream-world', 'snow-world'])
+
+            def clean_hex(val, fallback):
+                if val and val.startswith('#'):
+                    return val
+                return fallback
+
+            surf_hex = clean_hex(p.get('surface'), '#111827' if is_dark else '#ffffff')
+            text_hex = clean_hex(p.get('text'), '#f8fafc' if is_dark else '#0f172a')
+            prim_hex = clean_hex(p.get('primary'), '#38bdf8' if is_dark else '#0284c7')
+
+            # 1. Primary Text against Surface (WCAG AA: >= 4.5)
+            cr_text = calculate_contrast_ratio(text_hex, surf_hex)
+            pass_text = cr_text >= 4.5
+
+            # 2. Dropdown Text against Dropdown Surface (WCAG AA: >= 4.5)
+            drop_bg = '#1e293b' if is_dark else '#ffffff'
+            drop_text = '#f8fafc' if is_dark else '#0f172a'
+            cr_dropdown = calculate_contrast_ratio(drop_text, drop_bg)
+            pass_dropdown = cr_dropdown >= 4.5
+
+            # 3. Card Title against Card Surface (WCAG AA: >= 4.5)
+            cr_card = calculate_contrast_ratio(text_hex, surf_hex)
+            pass_card = cr_card >= 4.5
+
+            # 4. Button Primary Text against Primary Background (WCAG AA Large: >= 3.0)
+            btn_text = '#ffffff' if calculate_contrast_ratio('#ffffff', prim_hex) >= 3.0 else '#000000'
+            cr_btn = calculate_contrast_ratio(btn_text, prim_hex)
+            pass_btn = cr_btn >= 3.0
+
+            # 5. Table Header against Header Background (WCAG AA Large: >= 3.0)
+            th_bg = prim_hex
+            th_text = '#ffffff' if calculate_contrast_ratio('#ffffff', th_bg) >= 3.0 else '#000000'
+            cr_th = calculate_contrast_ratio(th_text, th_bg)
+            pass_th = cr_th >= 3.0
+
+            theme_pass = pass_text and pass_dropdown and pass_card and pass_btn and pass_th
+            total_checks += 5
+            total_passed += sum([pass_text, pass_dropdown, pass_card, pass_btn, pass_th])
+
+            audit_results.append({
+                'theme': t,
+                'is_dark': is_dark,
+                'cr_text': cr_text,
+                'pass_text': pass_text,
+                'cr_dropdown': cr_dropdown,
+                'pass_dropdown': pass_dropdown,
+                'cr_card': cr_card,
+                'pass_card': pass_card,
+                'cr_btn': cr_btn,
+                'pass_btn': pass_btn,
+                'cr_th': cr_th,
+                'pass_th': pass_th,
+                'overall_pass': theme_pass,
+                'surf_hex': surf_hex,
+                'text_hex': text_hex,
+                'prim_hex': prim_hex,
+                'drop_bg': drop_bg,
+                'drop_text': drop_text,
+            })
+
+        context['audit_results'] = audit_results
+        context['total_themes'] = len(themes)
+        context['total_checks'] = total_checks
+        context['total_passed'] = total_passed
+        context['pass_percentage'] = round((total_passed / total_checks * 100), 1) if total_checks else 100
+        context['current_theme'] = getattr(self.request.user, 'theme', 'vmmc-main') or 'vmmc-main'
+        return context
+
+

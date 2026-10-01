@@ -653,12 +653,19 @@ NAVBAR_MODULES_CONFIG = [
     {
         'id': 'settings',
         'key': 'settings',
-        'name': 'Settings',
-        'icon': 'bi-gear-fill',
-        'color': '#475569',
-        'badge': 'Config',
-        'description': 'Hospital branding parameters, timestamps, timezone, and system preferences',
+        'name': 'WEB THEME',
+        'icon': 'bi-palette-fill',
+        'color': '#0284c7',
+        'badge': 'Visual',
+        'description': 'Global hospital ERP theme engine, contrast protection, and typography',
         'submodules': [
+            {
+                'key': 'theme_settings',
+                'name': 'Web Theme Settings',
+                'icon': 'bi-palette-fill',
+                'url': '/settings/theme/',
+                'description': 'Customize global theme, colors, contrast, and typography',
+            },
             {
                 'key': 'settings',
                 'name': 'System Configuration',

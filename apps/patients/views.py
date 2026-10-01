@@ -1217,7 +1217,11 @@ class IPAdmissionView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView)
                 patient.category in ['EMERGENCY', 'CASUALTY']
             )
             next_ip = Patient.generate_next_ipno(is_emergency=is_emergency)
-            context['next_ipno'] = (patient.active_ip_admission.ipno if patient.active_ip_admission and patient.active_ip_admission.ipno else (patient.ipno or next_ip))
+            saved_ip = self.request.GET.get('saved_ip', '').strip()
+            if saved_ip:
+                context['next_ipno'] = saved_ip
+            else:
+                context['next_ipno'] = (patient.active_ip_admission.ipno if patient.active_ip_admission and patient.active_ip_admission.ipno else (patient.ipno or next_ip))
 
             active_ip = patient.active_ip_admission
             initial_data = {
@@ -1246,6 +1250,25 @@ class IPAdmissionView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView)
                 'status': 'Admitted',
                 'ipno': context['next_ipno'],
             })
+
+        # Preserve source: OP vs Review per Part 5 specification
+        source_param = (self.request.GET.get('source') or self.request.GET.get('from') or self.request.GET.get('visit_through') or '').strip().upper()
+        if 'REVIEW' in source_param:
+            source_visit_through = 'Review'
+        elif 'OP' in source_param:
+            source_visit_through = 'OP'
+        else:
+            if patient:
+                last_non_ip = patient.visits.exclude(visit_type=Patient.VisitChoices.IP).order_by('-visit_date', '-id').first()
+                if last_non_ip and last_non_ip.visit_type == Patient.VisitChoices.REVIEW:
+                    source_visit_through = 'Review'
+                elif patient.visit_through and 'REVIEW' in str(patient.visit_through).upper():
+                    source_visit_through = 'Review'
+                else:
+                    source_visit_through = 'OP'
+            else:
+                source_visit_through = 'OP'
+        context['source_visit_through'] = source_visit_through
 
         context['wards'] = ward_qs.order_by('name')
         return context
@@ -1288,27 +1311,39 @@ class IPAdmissionView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView)
 
         dept_obj = form.cleaned_data['department_obj']
         unit_obj = form.cleaned_data['unit_obj']
-        admission_type = form.cleaned_data['admission_type']
-        ward_name = form.cleaned_data['ward'].strip()
-        bed_number = form.cleaned_data['bed'].strip().upper()
+        admission_type = form.cleaned_data.get('admission_type') or 'General Admission'
+        ward_name = (form.cleaned_data.get('ward') or '').strip()
+        raw_bed = (form.cleaned_data.get('bed') or '').strip().upper()
+        bed_number = '' if raw_bed in ['NO BED ASSIGNED', 'NONE', 'SELECT BED', 'NO_BED', '--'] else raw_bed
         raw_adm_date = form.cleaned_data['admission_date'].strip()
         ip_number = (form.cleaned_data.get('ipno') or '').strip()
         admission_status = form.cleaned_data['status']
         admission_reason = (form.cleaned_data.get('admission_reason') or '').strip()
 
-        # Prevent double allocation: Only available beds can be selected
-        clean_ward_name = ward_name.split('(')[0].strip()
-        occupied_by_other = PatientVisit.objects.filter(
-            Q(ward__iexact=ward_name) | Q(ward__iexact=clean_ward_name),
-            bed__iexact=bed_number,
-            visit_type=Patient.VisitChoices.IP,
-            discharge_date__isnull=True
-        ).exclude(patient=patient).select_related('patient').first()
+        # Prevent double allocation if a specific bed was selected (Part 10 authoritative check)
+        if bed_number and ward_name:
+            clean_ward_name = ward_name.split('(')[0].strip()
+            occupied_by_other = PatientVisit.objects.filter(
+                Q(ward__iexact=ward_name) | Q(ward__iexact=clean_ward_name),
+                bed__iexact=bed_number,
+                visit_type=Patient.VisitChoices.IP,
+                discharge_date__isnull=True
+            ).exclude(patient=patient).select_related('patient').first()
 
-        if occupied_by_other:
-            other_name = occupied_by_other.patient.name if occupied_by_other.patient else 'another patient'
-            messages.error(request, f"Bed '{bed_number}' in '{ward_name}' is already occupied by {other_name}. Double allocation is strictly prohibited.")
-            return redirect(f"{reverse('patients:ip_admission')}?patient_id={patient.patient_id}")
+            if occupied_by_other:
+                other_name = occupied_by_other.patient.name if occupied_by_other.patient else 'another patient'
+                messages.error(request, f"Bed '{bed_number}' in '{ward_name}' is currently occupied by {other_name}. Double allocation is strictly prohibited.")
+                return redirect(f"{reverse('patients:ip_admission')}?patient_id={patient.patient_id}")
+
+            from apps.core.models import AdmissionRequest
+            blocked_by_other = AdmissionRequest.objects.filter(
+                Q(ward__name__iexact=ward_name) | Q(ward__code__iexact=ward_name) | Q(ward__name__iexact=clean_ward_name),
+                bed_room__iexact=bed_number,
+                status__in=['ALLOTTED', 'APPROVED']
+            ).exclude(patient=patient).first()
+            if blocked_by_other:
+                messages.error(request, f"Bed '{bed_number}' in '{ward_name}' is currently blocked or reserved. Please select an available bed.")
+                return redirect(f"{reverse('patients:ip_admission')}?patient_id={patient.patient_id}")
 
         # Parse admission date
         try:
@@ -1414,8 +1449,11 @@ class IPAdmissionView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView)
                 req.bed_allocated = bed_number
                 req.save()
 
-            messages.success(request, f"Patient '{patient.name}' successfully admitted to Ward '{ward_name}', Bed '{bed_number}' (IP #{ip_number})!")
-            return redirect(f"{reverse('patients:ip_admission')}?patient_id={patient.patient_id}")
+            if bed_number:
+                messages.success(request, f"Patient '{patient.name}' successfully admitted to Ward '{ward_name}', Bed '{bed_number}' (IP #{ip_number})!")
+            else:
+                messages.success(request, f"Patient '{patient.name}' successfully admitted without specific bed assigned (IP #{ip_number})!")
+            return redirect(f"{reverse('patients:ip_admission')}?patient_id={patient.patient_id}&saved_ip={ip_number}")
 
 
 
@@ -2745,7 +2783,12 @@ def api_available_ward_beds(request):
         alt1 = f"B-{i:02d}"
         alt2 = f"{prefix}-{i:02d}"
         alt3 = f"{prefix}-{i:03d}"
-        check_aliases = [bed_str.upper(), alt1.upper(), alt2.upper(), alt3.upper()]
+        alt4 = f"{prefix}{i}"
+        alt5 = f"{prefix} {i}"
+        alt6 = f"{prefix} {i:02d}"
+        alt7 = f"{prefix} {i:03d}"
+        alt8 = f"{prefix}-{i}"
+        check_aliases = [bed_str.upper(), alt1.upper(), alt2.upper(), alt3.upper(), alt4.upper(), alt5.upper(), alt6.upper(), alt7.upper(), alt8.upper()]
 
         is_occ = any(a in occupied_set for a in check_aliases)
         is_blk = any(a in blocked_set for a in check_aliases)
@@ -2756,6 +2799,7 @@ def api_available_ward_beds(request):
             p_ip = v_match.ipno or '' if v_match else ''
             bed_obj = {
                 'code': bed_str,
+                'bed_number': bed_str,
                 'status': 'occupied',
                 'patient_name': p_name,
                 'ipno': p_ip,
@@ -2768,8 +2812,10 @@ def api_available_ward_beds(request):
             p_name = r_match.patient.name if (r_match and r_match.patient) else ''
             bed_obj = {
                 'code': bed_str,
+                'bed_number': bed_str,
                 'status': 'blocked',
                 'patient_name': p_name,
+                'ipno': '',
                 'is_available': False,
                 'is_occupied': False,
                 'is_blocked': True
@@ -2778,6 +2824,7 @@ def api_available_ward_beds(request):
             available_beds.append(bed_str)
             bed_obj = {
                 'code': bed_str,
+                'bed_number': bed_str,
                 'status': 'available',
                 'patient_name': '',
                 'ipno': '',

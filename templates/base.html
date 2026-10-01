@@ -1,14 +1,54 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="{{ active_theme|default:'vmmc-main' }}" data-font="{{ active_font|default:'Outfit' }}" data-animation-speed="{{ active_anim_speed|default:'1.5' }}" data-pointer-speed="{{ active_pointer_speed|default:'1.5' }}" class="{% if active_reduced_motion %}reduce-motion{% endif %}">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Vinayaka Missions Medical College and Hospital - Karaikal | Hospital Information Management
         System{% endblock %}</title>
+    
+    <!-- Instant Anti-FOUC Theme, Font & Animation Hydration Script -->
+    <script>
+        (function() {
+            var storedTheme = localStorage.getItem('vmmc_theme') || '{{ active_theme|default:"vmmc-main" }}';
+            var storedFont = localStorage.getItem('vmmc_theme_font') || '{{ active_font|default:"Outfit" }}';
+            var storedSpeed = localStorage.getItem('vmmc_anim_speed') || '{{ active_anim_speed|default:"1.5" }}';
+            var storedPointer = localStorage.getItem('vmmc_pointer_speed') || '{{ active_pointer_speed|default:"1.5" }}';
+            var storedReduced = localStorage.getItem('vmmc_reduced_motion');
+            var isReduced = (storedReduced !== null) ? (storedReduced === 'true') : ('{{ active_reduced_motion|yesno:"true,false" }}' === 'true');
+
+            document.documentElement.setAttribute('data-theme', storedTheme);
+            document.documentElement.setAttribute('data-font', storedFont);
+            document.documentElement.setAttribute('data-animation-speed', storedSpeed);
+            document.documentElement.setAttribute('data-pointer-speed', storedPointer);
+            document.documentElement.style.setProperty('--theme-animation-speed', storedSpeed);
+            document.documentElement.style.setProperty('--theme-pointer-speed', storedPointer);
+
+            if (isReduced) {
+                document.documentElement.classList.add('reduce-motion');
+                document.documentElement.style.setProperty('--theme-anim-duration', '0s');
+            } else {
+                document.documentElement.classList.remove('reduce-motion');
+            }
+
+            // Surface-aware dynamic font family injection with mandatory Tamil fallback
+            if (storedFont && storedFont !== 'System UI') {
+                document.documentElement.style.setProperty('--theme-font-family', "'" + storedFont + "', 'Noto Sans Tamil', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif");
+            }
+        })();
+    </script>
+
+    <!-- Preconnect to Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link id="vmmcDynamicFontLink" rel="stylesheet" href="https://fonts.googleapis.com/css2?family={{ active_font|default:'Outfit'|urlencode }}:wght@300;400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;600;700&display=swap">
+
+    <link rel="stylesheet" href="{% static 'css/theme-system.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/vmmc-select.css' %}">
+    <link rel="stylesheet" href="{% static 'css/theme-overrides.css' %}">
+    <link rel="stylesheet" href="{% static 'css/floating-visibility.css' %}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -32,9 +72,9 @@
             height: 100%;
             margin: 0 !important;
             padding: 0 !important;
-            background-color: #ffffff;
-            color: #0f172a;
-            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--theme-bg, #f1f5f9);
+            color: var(--theme-text, #0f172a);
+            font-family: var(--theme-font-family, 'Outfit', sans-serif);
         }
 
         .site-wrapper {
@@ -135,10 +175,10 @@
         }
 
         /* ==========================================================
-         HORIZONTAL BLACK NAVIGATION BAR
+         HORIZONTAL THEMED NAVIGATION BAR
          ========================================================== */
         .top-navbar-container {
-            background: #000000;
+            background: var(--theme-nav-bg, #000000);
             position: sticky;
             top: 0;
             width: 100%;
@@ -167,7 +207,7 @@
         }
 
         .top-nav-link {
-            color: #ffffff !important;
+            color: var(--theme-nav-text, #ffffff) !important;
             text-decoration: none !important;
             font-size: 0.80rem;
             font-weight: 600;
@@ -177,25 +217,25 @@
             gap: 4px;
             white-space: nowrap;
             transition: background 0.15s ease, color 0.15s ease;
-            border-right: 1px solid rgba(255, 255, 255, 0.12);
+            border-right: 1px solid var(--theme-nav-border, rgba(255, 255, 255, 0.12));
             cursor: pointer;
             user-select: none;
         }
 
         .top-nav-item:first-child .top-nav-link {
-            border-left: 1px solid rgba(255, 255, 255, 0.12);
+            border-left: 1px solid var(--theme-nav-border, rgba(255, 255, 255, 0.12));
         }
 
         .top-nav-item:hover>.top-nav-link,
         .top-nav-item.is-open>.top-nav-link {
-            background: #1e293b;
-            color: #38bdf8 !important;
+            background: var(--theme-nav-hover-bg, #1e293b);
+            color: var(--theme-nav-hover-text, #38bdf8) !important;
         }
 
         .top-nav-item.active>.top-nav-link {
-            background: #132742;
-            color: #38bdf8 !important;
-            border-bottom: 2px solid #38bdf8;
+            background: var(--theme-nav-active-bg, #132742);
+            color: var(--theme-nav-active-text, #38bdf8) !important;
+            border-bottom: 2px solid var(--theme-nav-active-indicator, #38bdf8);
         }
 
         /* Submenu Dropdowns */
@@ -205,11 +245,11 @@
             top: 100%;
             left: 0;
             min-width: 240px;
-            background: #ffffff !important;
-            border: 1px solid #cbd5e1;
-            border-top: 3px solid #0284c7;
+            background: var(--theme-nav-dropdown-bg, #ffffff) !important;
+            border: 1px solid var(--theme-nav-dropdown-border, #cbd5e1);
+            border-top: 3px solid var(--theme-nav-dropdown-top-accent, #0284c7);
             border-radius: 0 0 8px 8px;
-            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24) !important;
+            box-shadow: var(--theme-nav-dropdown-shadow, 0 16px 36px rgba(0, 0, 0, 0.24)) !important;
             z-index: 99999 !important;
             padding: 6px 0;
             margin: 0;
@@ -239,7 +279,7 @@
             align-items: center;
             gap: 10px;
             padding: 7px 16px;
-            color: #1e293b;
+            color: var(--theme-nav-dropdown-text, #1e293b);
             text-decoration: none;
             font-size: 0.82rem;
             font-weight: 500;
@@ -249,7 +289,7 @@
 
         .top-nav-dropdown-link i {
             font-size: 0.95rem;
-            color: #0284c7;
+            color: var(--theme-nav-dropdown-icon, #0284c7);
             width: 16px;
             text-align: center;
         }
@@ -257,14 +297,14 @@
         .top-nav-dropdown-link:hover,
         .top-nav-dropdown-link.active,
         .top-nav-dropdown-item.active>.top-nav-dropdown-link {
-            background: #e0f2fe;
-            color: #0369a1;
+            background: var(--theme-nav-dropdown-hover-bg, #e0f2fe);
+            color: var(--theme-nav-dropdown-hover-text, #0369a1);
             font-weight: 700;
         }
 
         .top-nav-dropdown-divider {
             height: 1px;
-            background: #e2e8f0;
+            background: var(--theme-nav-dropdown-divider, #e2e8f0);
             margin: 5px 0;
         }
 
@@ -279,11 +319,11 @@
             left: 100%;
             top: 0;
             min-width: 220px;
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-top: 2px solid #0284c7;
+            background: var(--theme-nav-dropdown-bg, #ffffff);
+            border: 1px solid var(--theme-nav-dropdown-border, #cbd5e1);
+            border-top: 2px solid var(--theme-nav-dropdown-top-accent, #0284c7);
             border-radius: 0 8px 8px 8px;
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+            box-shadow: var(--theme-nav-dropdown-shadow, 0 12px 28px rgba(0, 0, 0, 0.18));
             z-index: 1060;
             padding: 6px 0;
             list-style: none;
@@ -301,7 +341,7 @@
             width: 100%;
             max-width: 100%;
             padding: 10px 20px 24px;
-            background-color: #f8fafc;
+            background-color: var(--theme-bg, #f8fafc);
             animation: vmmcPageFadeIn var(--vmmc-anim-smooth) var(--vmmc-ease-out) forwards;
             will-change: opacity, transform;
         }
@@ -508,8 +548,8 @@
         .form-control:focus,
         .form-input:focus,
         .form-control-compact:focus {
-            border-color: #0284c7 !important;
-            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+            border-color: var(--theme-input-focus-border, #0284c7) !important;
+            box-shadow: 0 0 0 3px var(--theme-input-focus-ring, rgba(2, 132, 199, 0.15)) !important;
             outline: none !important;
         }
 
@@ -519,7 +559,7 @@
         }
 
         table tbody tr:hover {
-            background-color: #f8fafc;
+            background-color: var(--theme-table-row-hover, #f8fafc);
         }
 
         /* Modal & Popup Animations */
@@ -935,73 +975,50 @@
                             <i class="bi bi-chevron-down" style="font-size:0.6rem;color:#64748b;margin-left:2px;"></i>
                         </button>
 
-                        <!-- Dropdown Panel -->
+                        <!-- Dropdown Panel (Semantic theme decoupled) -->
                         <div id="userAccountDropdown"
+                             class="user-account-dropdown"
                              style="display:none;position:absolute;top:calc(100% + 10px);right:0;
-                                    min-width:220px;background:#ffffff;
-                                    border:1px solid #e2e8f0;border-top:3px solid #0284c7;
-                                    border-radius:0 0 10px 10px;
-                                    box-shadow:0 16px 36px rgba(0,0,0,0.18);
+                                    min-width:230px;border-radius:0 0 10px 10px;
                                     z-index:99998;overflow:hidden;"
                              role="menu">
                             <!-- User identity header -->
-                            <div style="padding:12px 16px 10px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">
-                                <div style="font-size:0.88rem;font-weight:700;color:#0b2569;">
+                            <div class="user-dropdown-header">
+                                <div class="user-dropdown-name">
                                     {{ user.get_full_name|default:user.username }}
                                 </div>
-                                <div style="font-size:0.78rem;color:#64748b;margin-top:1px;">
+                                <div class="user-dropdown-username">
                                     @{{ user.username }}
                                 </div>
                                 {% if request.session.active_lab_sub_department %}
                                 <div style="margin-top:4px;">
-                                    <span style="font-size:0.72rem;background:#ede9fe;color:#6d28d9;padding:2px 7px;border-radius:4px;font-weight:700;"><i class="bi bi-funnel-fill" style="margin-right:3px;"></i>Lab: {{ request.session.active_lab_sub_department }}</span>
+                                    <span class="badge" style="background:var(--theme-info-bg);color:var(--info-text);font-size:0.72rem;padding:2px 7px;border-radius:4px;font-weight:700;"><i class="bi bi-funnel-fill" style="margin-right:3px;"></i>Lab: {{ request.session.active_lab_sub_department }}</span>
                                 </div>
                                 {% elif user.role %}
                                 <div style="margin-top:4px;">
-                                    <span style="font-size:0.72rem;background:#e0f2fe;color:#0369a1;padding:2px 7px;border-radius:4px;font-weight:600;">{{ user.get_role_display }}</span>
-                                    {% if user.department %}<span style="font-size:0.72rem;color:#64748b;margin-left:4px;">{{ user.department }}</span>{% endif %}
+                                    <span class="badge" style="background:var(--theme-info-bg);color:var(--info-text);font-size:0.72rem;padding:2px 7px;border-radius:4px;font-weight:600;">{{ user.get_role_display }}</span>
+                                    {% if user.department %}<span class="user-dropdown-dept" style="font-size:0.72rem;margin-left:4px;">{{ user.department }}</span>{% endif %}
                                 </div>
                                 {% endif %}
                             </div>
                             <!-- Actions -->
                             <div style="padding:6px 0;">
                                 <button type="button" onclick="vmmcOpenProfileModal(); vmmcCloseUserDropdown();"
-                                        role="menuitem"
-                                        style="width:100%;background:none;border:none;cursor:pointer;
-                                               display:flex;align-items:center;gap:10px;
-                                               padding:8px 16px;font-size:0.83rem;font-weight:500;
-                                               color:#1e293b;text-align:left;
-                                               transition:background 0.12s ease;"
-                                        onmouseover="this.style.background='#e0f2fe';this.style.color='#0369a1';"
-                                        onmouseout="this.style.background='none';this.style.color='#1e293b';">
-                                    <i class="bi bi-person-badge-fill" style="color:#0284c7;width:16px;text-align:center;"></i>
-                                    View Profile
+                                        role="menuitem" class="user-dropdown-item">
+                                    <i class="bi bi-person-badge-fill"></i>
+                                    <span>View Profile</span>
                                 </button>
                                 <button type="button" onclick="vmmcOpenPasswordModal(); vmmcCloseUserDropdown();"
-                                        role="menuitem"
-                                        style="width:100%;background:none;border:none;cursor:pointer;
-                                               display:flex;align-items:center;gap:10px;
-                                               padding:8px 16px;font-size:0.83rem;font-weight:500;
-                                               color:#1e293b;text-align:left;
-                                               transition:background 0.12s ease;"
-                                        onmouseover="this.style.background='#e0f2fe';this.style.color='#0369a1';"
-                                        onmouseout="this.style.background='none';this.style.color='#1e293b';">
-                                    <i class="bi bi-key-fill" style="color:#0284c7;width:16px;text-align:center;"></i>
-                                    Change Password
+                                        role="menuitem" class="user-dropdown-item">
+                                    <i class="bi bi-key-fill"></i>
+                                    <span>Change Password</span>
                                 </button>
-                                <div style="height:1px;background:#e2e8f0;margin:4px 0;"></div>
+                                <div class="user-dropdown-divider"></div>
                                 <form id="vmmcLogoutForm" method="post" action="{% url 'logout' %}" style="margin:0;">
                                     {% csrf_token %}
-                                    <button type="submit" id="vmmcLogoutBtn" role="menuitem"
-                                            style="width:100%;background:none;border:none;cursor:pointer;
-                                                   display:flex;align-items:center;gap:10px;
-                                                   padding:8px 16px;font-size:0.83rem;font-weight:500;
-                                                   color:#dc2626;text-align:left;
-                                                   transition:background 0.12s ease;"
-                                            onmouseover="this.style.background='#fee2e2';"
-                                            onmouseout="this.style.background='none';">
-                                        <i class="bi bi-box-arrow-right" style="color:#dc2626;width:16px;text-align:center;"></i>
-                                        Logout
+                                    <button type="submit" id="vmmcLogoutBtn" role="menuitem" class="user-dropdown-item user-dropdown-logout">
+                                        <i class="bi bi-box-arrow-right"></i>
+                                        <span>Logout</span>
                                     </button>
                                 </form>
                             </div>
@@ -1279,25 +1296,25 @@
     </script>
 
     {% if user.is_authenticated %}
-    <!-- PROFILE MODAL -->
+    <!-- PROFILE MODAL (Surface-aware) -->
     <div id="vmmcProfileModal"
-         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100000;align-items:center;justify-content:center;padding:16px;"
+         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100000;align-items:center;justify-content:center;padding:16px;"
          role="dialog" aria-modal="true" aria-labelledby="vmmcProfileModalTitle">
-        <div style="background:#ffffff;border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,0.22);max-width:520px;width:100%;overflow:hidden;animation:vmmcModalFadeZoom 220ms cubic-bezier(0.16,1,0.3,1) forwards;">
+        <div class="vmmc-modal-card" style="border-radius:12px;max-width:520px;width:100%;overflow:hidden;animation:vmmcModalFadeZoom 220ms cubic-bezier(0.16,1,0.3,1) forwards;">
             <div style="background:linear-gradient(135deg,#0b2569 0%,#0284c7 100%);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
                 <h5 id="vmmcProfileModalTitle" style="margin:0;font-size:0.95rem;font-weight:700;display:flex;align-items:center;gap:8px;"><i class="bi bi-person-badge-fill"></i> My Profile</h5>
                 <button type="button" onclick="vmmcCloseProfileModal()" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;line-height:1;opacity:0.8;" aria-label="Close">&times;</button>
             </div>
-            <div style="display:flex;align-items:center;gap:14px;padding:14px 18px 10px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">
-                <div style="width:52px;height:52px;border-radius:50%;background:#e0f2fe;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <i class="bi bi-person-fill" style="font-size:1.6rem;color:#0284c7;"></i>
+            <div class="vmmc-modal-header" style="display:flex;align-items:center;gap:14px;padding:14px 18px 10px;">
+                <div style="width:52px;height:52px;border-radius:50%;background:rgba(2,132,199,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="bi bi-person-fill" style="font-size:1.6rem;color:var(--theme-primary, #0284c7);"></i>
                 </div>
                 <div>
-                    <div id="profileModalFullName" style="font-size:0.95rem;font-weight:700;color:#0b2569;">{{ user.get_full_name|default:user.username }}</div>
-                    <div style="font-size:0.8rem;color:#64748b;">@{{ user.username }}</div>
+                    <div id="profileModalFullName" style="font-size:0.95rem;font-weight:700;color:var(--theme-heading, var(--theme-text));">{{ user.get_full_name|default:user.username }}</div>
+                    <div style="font-size:0.8rem;color:var(--text-muted, #64748b);">@{{ user.username }}</div>
                     <div style="margin-top:3px;">
-                        <span style="font-size:0.72rem;background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:4px;font-weight:600;">{{ user.get_role_display }}</span>
-                        {% if user.department %}<span style="font-size:0.72rem;color:#64748b;margin-left:4px;">{{ user.department }}</span>{% endif %}
+                        <span class="badge" style="background:var(--theme-info-bg);color:var(--info-text);font-size:0.72rem;padding:2px 8px;border-radius:4px;font-weight:600;">{{ user.get_role_display }}</span>
+                        {% if user.department %}<span style="font-size:0.72rem;color:var(--text-muted, #64748b);margin-left:4px;">{{ user.department }}</span>{% endif %}
                     </div>
                 </div>
             </div>
@@ -1307,51 +1324,51 @@
                     <div id="profileErrorSummary" style="display:none;background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:0.8rem;color:#991b1b;"></div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
                         <div>
-                            <label style="display:block;font-size:0.77rem;font-weight:600;color:#475569;margin-bottom:3px;">First Name</label>
-                            <input type="text" name="first_name" value="{{ user.first_name }}" placeholder="First name" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
+                            <label class="vmmc-modal-label" style="display:block;font-size:0.77rem;font-weight:600;margin-bottom:3px;">First Name</label>
+                            <input type="text" name="first_name" value="{{ user.first_name }}" placeholder="First name" class="vmmc-modal-input" style="width:100%;padding:7px 10px;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
                             <div class="profile-field-error" data-field="first_name" style="color:#dc2626;font-size:0.75rem;margin-top:2px;display:none;"></div>
                         </div>
                         <div>
-                            <label style="display:block;font-size:0.77rem;font-weight:600;color:#475569;margin-bottom:3px;">Last Name</label>
-                            <input type="text" name="last_name" value="{{ user.last_name }}" placeholder="Last name" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
+                            <label class="vmmc-modal-label" style="display:block;font-size:0.77rem;font-weight:600;margin-bottom:3px;">Last Name</label>
+                            <input type="text" name="last_name" value="{{ user.last_name }}" placeholder="Last name" class="vmmc-modal-input" style="width:100%;padding:7px 10px;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
                             <div class="profile-field-error" data-field="last_name" style="color:#dc2626;font-size:0.75rem;margin-top:2px;display:none;"></div>
                         </div>
                     </div>
                     <div style="margin-bottom:12px;">
-                        <label style="display:block;font-size:0.77rem;font-weight:600;color:#475569;margin-bottom:3px;">Email Address</label>
-                        <input type="email" name="email" value="{{ user.email }}" placeholder="user@vmmc.edu.in" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
+                        <label class="vmmc-modal-label" style="display:block;font-size:0.77rem;font-weight:600;margin-bottom:3px;">Email Address</label>
+                        <input type="email" name="email" value="{{ user.email }}" placeholder="user@vmmc.edu.in" class="vmmc-modal-input" style="width:100%;padding:7px 10px;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
                         <div class="profile-field-error" data-field="email" style="color:#dc2626;font-size:0.75rem;margin-top:2px;display:none;"></div>
                     </div>
                     <div style="margin-bottom:12px;">
-                        <label style="display:block;font-size:0.77rem;font-weight:600;color:#475569;margin-bottom:3px;">Mobile / Phone Number</label>
-                        <input type="text" name="phone_number" value="{{ user.phone_number|default:'' }}" placeholder="Mobile number" maxlength="20" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
+                        <label class="vmmc-modal-label" style="display:block;font-size:0.77rem;font-weight:600;margin-bottom:3px;">Mobile / Phone Number</label>
+                        <input type="text" name="phone_number" value="{{ user.phone_number|default:'' }}" placeholder="Mobile number" maxlength="20" class="vmmc-modal-input" style="width:100%;padding:7px 10px;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
                         <div class="profile-field-error" data-field="phone_number" style="color:#dc2626;font-size:0.75rem;margin-top:2px;display:none;"></div>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;">
                         <div>
-                            <label style="display:block;font-size:0.77rem;font-weight:600;color:#94a3b8;margin-bottom:3px;">Username (read-only)</label>
-                            <input type="text" value="{{ user.username }}" readonly style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.83rem;box-sizing:border-box;background:#f8fafc;color:#64748b;">
+                            <label class="vmmc-modal-label" style="display:block;font-size:0.77rem;font-weight:600;margin-bottom:3px;opacity:0.7;">Username (read-only)</label>
+                            <input type="text" value="{{ user.username }}" readonly class="vmmc-modal-input" style="width:100%;padding:7px 10px;border-radius:6px;font-size:0.83rem;box-sizing:border-box;">
                         </div>
                         <div>
-                            <label style="display:block;font-size:0.77rem;font-weight:600;color:#94a3b8;margin-bottom:3px;">Employee ID (read-only)</label>
-                            <input type="text" value="{{ user.employee_id|default:'—' }}" readonly style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.83rem;box-sizing:border-box;background:#f8fafc;color:#64748b;">
+                            <label class="vmmc-modal-label" style="display:block;font-size:0.77rem;font-weight:600;margin-bottom:3px;opacity:0.7;">Employee ID (read-only)</label>
+                            <input type="text" value="{{ user.employee_id|default:'—' }}" readonly class="vmmc-modal-input" style="width:100%;padding:7px 10px;border-radius:6px;font-size:0.83rem;box-sizing:border-box;">
                         </div>
                     </div>
-                    <div style="font-size:0.73rem;color:#94a3b8;margin-top:6px;"><i class="bi bi-shield-lock-fill" style="color:#cbd5e1;"></i> Username, Role, and Employee ID can only be changed by an Administrator.</div>
+                    <div style="font-size:0.73rem;color:var(--text-muted, #94a3b8);margin-top:6px;"><i class="bi bi-shield-lock-fill" style="color:var(--theme-primary, #0284c7);"></i> Username, Role, and Employee ID can only be changed by an Administrator.</div>
                 </div>
-                <div style="padding:12px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;">
-                    <button type="button" onclick="vmmcCloseProfileModal()" style="padding:7px 16px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;font-size:0.83rem;font-weight:600;color:#475569;cursor:pointer;">Cancel</button>
-                    <button type="submit" id="profileSaveBtn" style="padding:7px 18px;border:none;border-radius:6px;background:#0284c7;color:#fff;font-size:0.83rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="bi bi-check-lg"></i> Save Changes</button>
+                <div class="vmmc-modal-footer" style="padding:12px 18px;display:flex;justify-content:flex-end;gap:10px;">
+                    <button type="button" onclick="vmmcCloseProfileModal()" class="btn btn-secondary" style="padding:7px 16px;border-radius:6px;font-size:0.83rem;font-weight:600;cursor:pointer;">Cancel</button>
+                    <button type="submit" id="profileSaveBtn" class="btn btn-primary" style="padding:7px 18px;border-radius:6px;font-size:0.83rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="bi bi-check-lg"></i> Save Changes</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- CHANGE PASSWORD MODAL -->
+    <!-- CHANGE PASSWORD MODAL (Surface-aware) -->
     <div id="vmmcPasswordModal"
-         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100000;align-items:center;justify-content:center;padding:16px;"
+         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100000;align-items:center;justify-content:center;padding:16px;"
          role="dialog" aria-modal="true" aria-labelledby="vmmcPasswordModalTitle">
-        <div style="background:#ffffff;border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,0.22);max-width:420px;width:100%;overflow:hidden;animation:vmmcModalFadeZoom 220ms cubic-bezier(0.16,1,0.3,1) forwards;">
+        <div class="vmmc-modal-card" style="border-radius:12px;max-width:420px;width:100%;overflow:hidden;animation:vmmcModalFadeZoom 220ms cubic-bezier(0.16,1,0.3,1) forwards;">
             <div style="background:linear-gradient(135deg,#0b2569 0%,#0284c7 100%);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
                 <h5 id="vmmcPasswordModalTitle" style="margin:0;font-size:0.95rem;font-weight:700;display:flex;align-items:center;gap:8px;"><i class="bi bi-key-fill"></i> Change Password</h5>
                 <button type="button" onclick="vmmcClosePasswordModal()" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;line-height:1;opacity:0.8;" aria-label="Close">&times;</button>
@@ -1361,33 +1378,33 @@
                 <div style="padding:18px;">
                     <div id="pwErrorSummary" style="display:none;background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:0.8rem;color:#991b1b;"></div>
                     <div style="margin-bottom:14px;">
-                        <label style="display:block;font-size:0.77rem;font-weight:600;color:#475569;margin-bottom:4px;">Current Password *</label>
+                        <label class="vmmc-modal-label" style="display:block;font-size:0.77rem;font-weight:600;margin-bottom:4px;">Current Password *</label>
                         <div style="position:relative;">
-                            <input type="password" name="old_password" id="pwOld" placeholder="Enter your current password" style="width:100%;padding:8px 36px 8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
-                            <button type="button" onclick="vmmcTogglePw('pwOld','eyeOld')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:0.95rem;"><i id="eyeOld" class="bi bi-eye-slash-fill"></i></button>
+                            <input type="password" name="old_password" id="pwOld" placeholder="Enter your current password" class="vmmc-modal-input" style="width:100%;padding:8px 36px 8px 10px;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
+                            <button type="button" onclick="vmmcTogglePw('pwOld','eyeOld')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted, #94a3b8);font-size:0.95rem;"><i id="eyeOld" class="bi bi-eye-slash-fill"></i></button>
                         </div>
                         <div class="pw-field-error" data-field="old_password" style="color:#dc2626;font-size:0.75rem;margin-top:3px;display:none;"></div>
                     </div>
                     <div style="margin-bottom:14px;">
-                        <label style="display:block;font-size:0.77rem;font-weight:600;color:#475569;margin-bottom:4px;">New Password *</label>
+                        <label class="vmmc-modal-label" style="display:block;font-size:0.77rem;font-weight:600;margin-bottom:4px;">New Password *</label>
                         <div style="position:relative;">
-                            <input type="password" name="new_password" id="pwNew" placeholder="Enter new password" style="width:100%;padding:8px 36px 8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
-                            <button type="button" onclick="vmmcTogglePw('pwNew','eyeNew')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:0.95rem;"><i id="eyeNew" class="bi bi-eye-slash-fill"></i></button>
+                            <input type="password" name="new_password" id="pwNew" placeholder="Enter new password" class="vmmc-modal-input" style="width:100%;padding:8px 36px 8px 10px;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
+                            <button type="button" onclick="vmmcTogglePw('pwNew','eyeNew')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted, #94a3b8);font-size:0.95rem;"><i id="eyeNew" class="bi bi-eye-slash-fill"></i></button>
                         </div>
                         <div class="pw-field-error" data-field="new_password" style="color:#dc2626;font-size:0.75rem;margin-top:3px;display:none;"></div>
                     </div>
                     <div style="margin-bottom:6px;">
-                        <label style="display:block;font-size:0.77rem;font-weight:600;color:#475569;margin-bottom:4px;">Confirm New Password *</label>
+                        <label class="vmmc-modal-label" style="display:block;font-size:0.77rem;font-weight:600;margin-bottom:4px;">Confirm New Password *</label>
                         <div style="position:relative;">
-                            <input type="password" name="confirm_password" id="pwConfirm" placeholder="Re-enter new password" style="width:100%;padding:8px 36px 8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
-                            <button type="button" onclick="vmmcTogglePw('pwConfirm','eyeConfirm')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:0.95rem;"><i id="eyeConfirm" class="bi bi-eye-slash-fill"></i></button>
+                            <input type="password" name="confirm_password" id="pwConfirm" placeholder="Re-enter new password" class="vmmc-modal-input" style="width:100%;padding:8px 36px 8px 10px;border-radius:6px;font-size:0.83rem;box-sizing:border-box;outline:none;">
+                            <button type="button" onclick="vmmcTogglePw('pwConfirm','eyeConfirm')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted, #94a3b8);font-size:0.95rem;"><i id="eyeConfirm" class="bi bi-eye-slash-fill"></i></button>
                         </div>
                         <div class="pw-field-error" data-field="confirm_password" style="color:#dc2626;font-size:0.75rem;margin-top:3px;display:none;"></div>
                     </div>
                 </div>
-                <div style="padding:12px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;">
-                    <button type="button" onclick="vmmcClosePasswordModal()" style="padding:7px 16px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;font-size:0.83rem;font-weight:600;color:#475569;cursor:pointer;">Cancel</button>
-                    <button type="submit" id="pwSaveBtn" style="padding:7px 18px;border:none;border-radius:6px;background:#0284c7;color:#fff;font-size:0.83rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="bi bi-check-lg"></i> Change Password</button>
+                <div class="vmmc-modal-footer" style="padding:12px 18px;display:flex;justify-content:flex-end;gap:10px;">
+                    <button type="button" onclick="vmmcClosePasswordModal()" class="btn btn-secondary" style="padding:7px 16px;border-radius:6px;font-size:0.83rem;font-weight:600;cursor:pointer;">Cancel</button>
+                    <button type="submit" id="pwSaveBtn" class="btn btn-primary" style="padding:7px 18px;border-radius:6px;font-size:0.83rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="bi bi-check-lg"></i> Change Password</button>
                 </div>
             </form>
         </div>
@@ -1568,6 +1585,59 @@
     })();
     </script>
     {% endif %}
+
+    <!-- Rover World Environmental Layers (pointer-events: none) -->
+    <div class="rover-stars" aria-hidden="true"></div>
+    <div class="rover-dust" aria-hidden="true"></div>
+    <div class="rover-vehicle" aria-hidden="true">
+        <svg viewBox="0 0 100 50" width="80" height="40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="25" y="15" width="48" height="20" rx="4" fill="#c87040" stroke="#f5dcc8" stroke-width="1.5"/>
+            <rect x="20" y="10" width="56" height="5" rx="2" fill="#2d3748" stroke="#f5dcc8" stroke-width="1"/>
+            <line x1="60" y1="10" x2="60" y2="2" stroke="#f5dcc8" stroke-width="2"/>
+            <circle cx="60" cy="2" r="3" fill="#f97316"/>
+            <line x1="32" y1="10" x2="28" y2="4" stroke="#94a3b8" stroke-width="1.5"/>
+            <circle cx="27" cy="3" r="1.5" fill="#38bdf8"/>
+            <line x1="30" y1="30" x2="20" y2="42" stroke="#4a5568" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="50" y1="30" x2="48" y2="42" stroke="#4a5568" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="68" y1="30" x2="78" y2="42" stroke="#4a5568" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="20" cy="42" r="6" fill="#1a202c" stroke="#c87040" stroke-width="1.5"/>
+            <circle cx="48" cy="42" r="6" fill="#1a202c" stroke="#c87040" stroke-width="1.5"/>
+            <circle cx="78" cy="42" r="6" fill="#1a202c" stroke="#c87040" stroke-width="1.5"/>
+            <circle cx="20" cy="42" r="2.5" fill="#f5dcc8"/>
+            <circle cx="48" cy="42" r="2.5" fill="#f5dcc8"/>
+            <circle cx="78" cy="42" r="2.5" fill="#f5dcc8"/>
+        </svg>
+    </div>
+
+    <!-- Throttled Theme Pointer Engine (Hardware-Accelerated CSS Custom Properties) -->
+    <script>
+    (function() {
+        var ticking = false;
+        var pX = 0, pY = 0;
+        function updatePointer(e) {
+            pX = (e.clientX / window.innerWidth - 0.5) * 36;
+            pY = (e.clientY / window.innerHeight - 0.5) * 36;
+            if (!ticking) {
+                window.requestAnimationFrame(function() {
+                    if (document.documentElement.classList.contains('reduce-motion')) {
+                        document.documentElement.style.setProperty('--pointer-x', '0px');
+                        document.documentElement.style.setProperty('--pointer-y', '0px');
+                    } else {
+                        var mult = parseFloat(document.documentElement.getAttribute('data-pointer-speed') || '1.5');
+                        if (isNaN(mult)) mult = 1.5;
+                        document.documentElement.style.setProperty('--pointer-x', (pX * mult).toFixed(1) + 'px');
+                        document.documentElement.style.setProperty('--pointer-y', (pY * mult).toFixed(1) + 'px');
+                    }
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        }
+        if (window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
+            window.addEventListener('pointermove', updatePointer, { passive: true });
+        }
+    })();
+    </script>
 
     {% block extra_js %}{% endblock %}
 </body>

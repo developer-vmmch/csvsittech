@@ -1,0 +1,702 @@
+/* =========================================================================
+   VMMC ERP — FLOATING VISIBILITY LAYER / MOVING CARD AMBIENT ENGINE
+   Mac-Style Organic Physics • Multi-Depth Staging • Theme Reactive
+   Performance: Hardware Accelerated (translate3d, scale, rotate, opacity)
+   Safety: pointer-events: none (ambient background layer behind ERP content)
+   Dynamic Speed: --theme-animation-speed & --theme-pointer-speed
+   ========================================================================= */
+
+:root {
+    --theme-animation-speed: 1.5;
+    --theme-pointer-speed: 1.5;
+    --pointer-x: 0px;
+    --pointer-y: 0px;
+}
+
+/* Container: Ambient decorative canvas behind main ERP content */
+.floating-visibility-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none !important;
+    user-select: none !important;
+    overflow: hidden;
+    z-index: 0;
+    contain: layout style paint;
+}
+
+/* Inside dashboard container when used as local relative ambient layer */
+.dashboard-ambient-container {
+    position: relative;
+    width: 100%;
+    min-height: 100%;
+}
+.dashboard-ambient-container > .floating-visibility-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+.dashboard-ambient-container > .dashboard-content-layer {
+    position: relative;
+    z-index: 2;
+}
+
+/* =========================================================================
+   BASE FLOATING CARD COMPONENT
+   ========================================================================= */
+.floating-card {
+    position: absolute;
+    width: 210px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    pointer-events: none !important;
+    user-select: none !important;
+    background: var(--theme-surface-elevated, var(--theme-surface, #ffffff));
+    color: var(--theme-text-primary, var(--theme-text, #0f172a));
+    border: 1px solid var(--theme-card-border, var(--theme-border, rgba(148, 163, 184, 0.25)));
+    box-shadow: var(--theme-card-shadow, 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1));
+    will-change: transform, opacity, margin;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform-origin: center center;
+    backdrop-filter: var(--theme-backdrop-blur, blur(10px));
+    -webkit-backdrop-filter: var(--theme-backdrop-blur, blur(10px));
+    /* Pointer-driven parallax attraction / displacement */
+    margin-left: calc(var(--pointer-x, 0px) * var(--fv-depth-factor, 0.4));
+    margin-top: calc(var(--pointer-y, 0px) * var(--fv-depth-factor, 0.4));
+    transition: box-shadow 0.3s ease, border-color 0.3s ease, margin 0.12s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Internal Card Typography & Micro-Layouts */
+.fc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--theme-border-subtle, rgba(148, 163, 184, 0.18));
+    padding-bottom: 5px;
+}
+
+.fc-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--theme-heading, var(--theme-primary, #0284c7));
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.fc-title i {
+    font-size: 0.82rem;
+}
+
+.fc-badge {
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 1.5px 6px;
+    border-radius: 9999px;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.fc-badge-success {
+    background: var(--theme-success-bg, #ecfdf5);
+    color: var(--theme-success-text, #065f46);
+    border: 1px solid var(--theme-success-border, #a7f3d0);
+}
+
+.fc-badge-info {
+    background: var(--theme-info-bg, #f0f9ff);
+    color: var(--theme-info-text, #0369a1);
+    border: 1px solid var(--theme-info-border, #bae6fd);
+}
+
+.fc-badge-warning {
+    background: var(--theme-warning-bg, #fffbeb);
+    color: var(--theme-warning-text, #92400e);
+    border: 1px solid var(--theme-warning-border, #fde68a);
+}
+
+.fc-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.fc-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.68rem;
+}
+
+.fc-label {
+    color: var(--theme-text-muted, #64748b);
+    font-weight: 500;
+}
+
+.fc-value {
+    color: var(--theme-text-primary, var(--theme-text, #0f172a));
+    font-weight: 600;
+}
+
+.fc-value-mono {
+    font-family: monospace, sans-serif;
+    font-size: 0.67rem;
+    letter-spacing: 0.5px;
+}
+
+/* Micro bar chart indicator */
+.fc-sparkline {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 14px;
+    margin-top: 4px;
+    padding-top: 2px;
+}
+.fc-spark-bar {
+    width: 6px;
+    border-radius: 2px;
+    background: var(--theme-primary, #0284c7);
+    opacity: 0.75;
+}
+
+/* =========================================================================
+   DEPTH STAGING SYSTEM
+   Depth 1 to 4 with scale, opacity, blur, stacking z-index & parallax factor
+   ========================================================================= */
+.fv-depth-1 {
+    z-index: 1;
+    opacity: 0.45;
+    transform: scale(0.82);
+    filter: blur(1px);
+    --fv-depth-factor: 0.20;
+}
+
+.fv-depth-2 {
+    z-index: 2;
+    opacity: 0.70;
+    transform: scale(0.92);
+    filter: blur(0.4px);
+    --fv-depth-factor: 0.45;
+}
+
+.fv-depth-3 {
+    z-index: 4;
+    opacity: 1;
+    transform: scale(1.0);
+    filter: blur(0px);
+    --fv-depth-factor: 0.75;
+}
+
+.fv-depth-4 {
+    z-index: 2;
+    opacity: 0.55;
+    transform: scale(0.86);
+    filter: blur(0.6px);
+    --fv-depth-factor: 0.30;
+}
+
+/* =========================================================================
+   CARD A — PATH A: Right -> Center -> Upper-Right
+   Start: Right side (top 20%, right 5%)
+   Visibility Cycle: VISIBLE -> MOVE -> SCALE -> FADE -> HIDDEN -> REAPPEAR -> MOVE
+   ========================================================================= */
+.floating-card.card-a {
+    top: 20%;
+    right: 5%;
+    --base-dur-a: 14s;
+    --base-del-a: 0s;
+    animation: fvPathA calc(var(--base-dur-a) / var(--theme-animation-speed, 1.5)) cubic-bezier(0.25, 1, 0.5, 1) infinite;
+    animation-delay: calc(var(--base-del-a) / var(--theme-animation-speed, 1.5));
+}
+
+@keyframes fvPathA {
+    0% {
+        opacity: 0;
+        transform: translate3d(80px, 0, 0) scale(0.8) rotate(3deg);
+    }
+    12% {
+        opacity: 0.75;
+        transform: translate3d(0, 0, 0) scale(0.92) rotate(1deg);
+    }
+    32% {
+        opacity: 0.95;
+        transform: translate3d(-140px, 40px, 0) scale(1) rotate(-1.5deg);
+    }
+    54% {
+        opacity: 0.85;
+        transform: translate3d(-90px, -60px, 0) scale(0.94) rotate(2deg);
+    }
+    75% {
+        opacity: 0.45;
+        transform: translate3d(40px, -90px, 0) scale(0.84) rotate(-1deg);
+        filter: blur(0.8px);
+    }
+    88% {
+        opacity: 0;
+        transform: translate3d(120px, -110px, 0) scale(0.75) rotate(4deg);
+    }
+    100% {
+        opacity: 0;
+        transform: translate3d(80px, 0, 0) scale(0.8) rotate(3deg);
+    }
+}
+
+/* =========================================================================
+   CARD B — PATH B: Upper-Right -> Lower-Right
+   Start: Top-Right (top 12%, right 20%)
+   ========================================================================= */
+.floating-card.card-b {
+    top: 12%;
+    right: 20%;
+    --base-dur-b: 16s;
+    --base-del-b: 1.8s;
+    animation: fvPathB calc(var(--base-dur-b) / var(--theme-animation-speed, 1.5)) cubic-bezier(0.25, 1, 0.5, 1) infinite;
+    animation-delay: calc(var(--base-del-b) / var(--theme-animation-speed, 1.5));
+}
+
+@keyframes fvPathB {
+    0% {
+        opacity: 0;
+        transform: translate3d(50px, -60px, 0) scale(0.78) rotate(-2deg);
+    }
+    14% {
+        opacity: 0.65;
+        transform: translate3d(0, 0, 0) scale(0.88) rotate(1deg);
+    }
+    38% {
+        opacity: 0.95;
+        transform: translate3d(-60px, 120px, 0) scale(0.98) rotate(-2deg);
+    }
+    60% {
+        opacity: 0.70;
+        transform: translate3d(30px, 220px, 0) scale(0.90) rotate(1.5deg);
+    }
+    80% {
+        opacity: 0.35;
+        transform: translate3d(90px, 270px, 0) scale(0.82) rotate(-3deg);
+        filter: blur(1px);
+    }
+    92% {
+        opacity: 0;
+        transform: translate3d(130px, 300px, 0) scale(0.74);
+    }
+    100% {
+        opacity: 0;
+        transform: translate3d(50px, -60px, 0) scale(0.78) rotate(-2deg);
+    }
+}
+
+/* =========================================================================
+   CARD C — PATH C: Lower-Right -> Center -> Upper-Right
+   Start: Lower-Right (top 55%, right 8%)
+   ========================================================================= */
+.floating-card.card-c {
+    top: 55%;
+    right: 8%;
+    --base-dur-c: 15s;
+    --base-del-c: 3.5s;
+    animation: fvPathC calc(var(--base-dur-c) / var(--theme-animation-speed, 1.5)) cubic-bezier(0.25, 1, 0.5, 1) infinite;
+    animation-delay: calc(var(--base-del-c) / var(--theme-animation-speed, 1.5));
+}
+
+@keyframes fvPathC {
+    0% {
+        opacity: 0;
+        transform: translate3d(70px, 80px, 0) scale(0.82) rotate(2deg);
+    }
+    15% {
+        opacity: 0.75;
+        transform: translate3d(0, 0, 0) scale(0.92) rotate(-1deg);
+    }
+    40% {
+        opacity: 1;
+        transform: translate3d(-130px, -110px, 0) scale(1) rotate(1.8deg);
+    }
+    65% {
+        opacity: 0.68;
+        transform: translate3d(-40px, -230px, 0) scale(0.88) rotate(-2deg);
+    }
+    82% {
+        opacity: 0.30;
+        transform: translate3d(60px, -290px, 0) scale(0.80) rotate(2deg);
+        filter: blur(0.9px);
+    }
+    94% {
+        opacity: 0;
+        transform: translate3d(100px, -330px, 0) scale(0.75);
+    }
+    100% {
+        opacity: 0;
+        transform: translate3d(70px, 80px, 0) scale(0.82) rotate(2deg);
+    }
+}
+
+/* =========================================================================
+   CARD D — PATH D: Far-Right -> Center -> Far-Right
+   Start: Mid-Right (top 40%, right 2%)
+   ========================================================================= */
+.floating-card.card-d {
+    top: 40%;
+    right: 2%;
+    --base-dur-d: 17s;
+    --base-del-d: 5.2s;
+    animation: fvPathD calc(var(--base-dur-d) / var(--theme-animation-speed, 1.5)) cubic-bezier(0.25, 1, 0.5, 1) infinite;
+    animation-delay: calc(var(--base-del-d) / var(--theme-animation-speed, 1.5));
+}
+
+@keyframes fvPathD {
+    0% {
+        opacity: 0;
+        transform: translate3d(90px, 0, 0) scale(0.75) rotate(-3deg);
+    }
+    16% {
+        opacity: 0.60;
+        transform: translate3d(0, 0, 0) scale(0.85) rotate(0deg);
+    }
+    42% {
+        opacity: 0.90;
+        transform: translate3d(-180px, -30px, 0) scale(0.96) rotate(-2.5deg);
+    }
+    68% {
+        opacity: 0.75;
+        transform: translate3d(-80px, 50px, 0) scale(0.90) rotate(2deg);
+    }
+    85% {
+        opacity: 0.35;
+        transform: translate3d(60px, 30px, 0) scale(0.80) rotate(-1deg);
+        filter: blur(1.2px);
+    }
+    95% {
+        opacity: 0;
+        transform: translate3d(120px, 20px, 0) scale(0.72);
+    }
+    100% {
+        opacity: 0;
+        transform: translate3d(90px, 0, 0) scale(0.75) rotate(-3deg);
+    }
+}
+
+/* =========================================================================
+   CARD E — PATH E: Upper-Left -> Center -> Upper-Left
+   Start: Upper-Left (top 15%, left 2%)
+   ========================================================================= */
+.floating-card.card-e {
+    top: 15%;
+    left: 2%;
+    --base-dur-e: 15.5s;
+    --base-del-e: 7s;
+    animation: fvPathE calc(var(--base-dur-e) / var(--theme-animation-speed, 1.5)) cubic-bezier(0.25, 1, 0.5, 1) infinite;
+    animation-delay: calc(var(--base-del-e) / var(--theme-animation-speed, 1.5));
+}
+
+@keyframes fvPathE {
+    0% {
+        opacity: 0;
+        transform: translate3d(-90px, -40px, 0) scale(0.8) rotate(-2deg);
+    }
+    15% {
+        opacity: 0.65;
+        transform: translate3d(0, 0, 0) scale(0.88) rotate(1.5deg);
+    }
+    40% {
+        opacity: 0.95;
+        transform: translate3d(110px, 50px, 0) scale(0.98) rotate(-1deg);
+    }
+    65% {
+        opacity: 0.70;
+        transform: translate3d(60px, -40px, 0) scale(0.90) rotate(2deg);
+    }
+    84% {
+        opacity: 0.30;
+        transform: translate3d(-50px, -80px, 0) scale(0.82) rotate(-2deg);
+        filter: blur(1px);
+    }
+    94% {
+        opacity: 0;
+        transform: translate3d(-100px, -100px, 0) scale(0.75);
+    }
+    100% {
+        opacity: 0;
+        transform: translate3d(-90px, -40px, 0) scale(0.8) rotate(-2deg);
+    }
+}
+
+/* =========================================================================
+   CARD F — PATH F: Lower-Left -> Center -> Lower-Left
+   Start: Lower-Left (top 60%, left 4%)
+   ========================================================================= */
+.floating-card.card-f {
+    top: 60%;
+    left: 4%;
+    --base-dur-f: 16.5s;
+    --base-del-f: 8.8s;
+    animation: fvPathF calc(var(--base-dur-f) / var(--theme-animation-speed, 1.5)) cubic-bezier(0.25, 1, 0.5, 1) infinite;
+    animation-delay: calc(var(--base-del-f) / var(--theme-animation-speed, 1.5));
+}
+
+@keyframes fvPathF {
+    0% {
+        opacity: 0;
+        transform: translate3d(-80px, 70px, 0) scale(0.78) rotate(2.5deg);
+    }
+    14% {
+        opacity: 0.70;
+        transform: translate3d(0, 0, 0) scale(0.88) rotate(-1deg);
+    }
+    42% {
+        opacity: 0.92;
+        transform: translate3d(120px, -60px, 0) scale(0.96) rotate(1.8deg);
+    }
+    66% {
+        opacity: 0.65;
+        transform: translate3d(50px, 50px, 0) scale(0.88) rotate(-2deg);
+    }
+    84% {
+        opacity: 0.32;
+        transform: translate3d(-40px, 80px, 0) scale(0.80) rotate(1deg);
+        filter: blur(0.8px);
+    }
+    95% {
+        opacity: 0;
+        transform: translate3d(-90px, 110px, 0) scale(0.72);
+    }
+    100% {
+        opacity: 0;
+        transform: translate3d(-80px, 70px, 0) scale(0.78) rotate(2.5deg);
+    }
+}
+
+/* =========================================================================
+   THEME-SPECIFIC ENVIRONMENTS & GAMING MODES
+   Cyber, Space, Rover, Aurora, Snow, Glass
+   ========================================================================= */
+
+/* Cyber Mode (HUD-like neon glow) */
+[data-theme="cyber-city"] .floating-card,
+[data-theme="future-robot-lab"] .floating-card,
+[data-theme="retro-synthwave"] .floating-card,
+[data-theme="neon-pulse"] .floating-card {
+    background: rgba(10, 16, 30, 0.88) !important;
+    border-color: var(--theme-accent, #00f0ff) !important;
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.25), 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(12px) !important;
+}
+[data-theme="cyber-city"] .fc-title,
+[data-theme="future-robot-lab"] .fc-title {
+    color: #00f0ff !important;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+}
+
+/* Space Explorer (Holographic cyan/purple glow) */
+[data-theme="space-explorer"] .floating-card,
+[data-theme="cosmic-dawn"] .floating-card {
+    background: rgba(15, 10, 35, 0.88) !important;
+    border-color: #8b5cf6 !important;
+    box-shadow: 0 0 18px rgba(139, 92, 246, 0.3), 0 10px 28px rgba(0, 0, 0, 0.7) !important;
+    backdrop-filter: blur(14px) !important;
+}
+[data-theme="space-explorer"] .fc-title {
+    color: #c084fc !important;
+    text-shadow: 0 0 10px rgba(192, 132, 252, 0.5);
+}
+
+/* Rover World (Warm Martian dust glow & layered depth) */
+[data-theme="rover-world"] .floating-card {
+    background: rgba(30, 16, 12, 0.90) !important;
+    border-color: rgba(200, 112, 64, 0.55) !important;
+    box-shadow: 0 0 16px rgba(200, 112, 64, 0.35), 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+}
+[data-theme="rover-world"] .fc-title {
+    color: #f97316 !important;
+}
+[data-theme="rover-world"] .fc-badge-info {
+    background: rgba(200, 112, 64, 0.25) !important;
+    color: #fdba74 !important;
+    border-color: rgba(200, 112, 64, 0.6) !important;
+}
+
+/* Aurora World (Northern lights green/teal glow) */
+[data-theme="aurora-world"] .floating-card,
+[data-theme="northern-lights"] .floating-card {
+    background: rgba(8, 28, 28, 0.90) !important;
+    border-color: #2dd4bf !important;
+    box-shadow: 0 0 16px rgba(45, 212, 191, 0.3), 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+}
+[data-theme="aurora-world"] .fc-title {
+    color: #5eead4 !important;
+}
+
+/* Snow World (Frosted Ice Blue) */
+[data-theme="snow-world"] .floating-card {
+    background: rgba(240, 249, 255, 0.82) !important;
+    border-color: #7dd3fc !important;
+    box-shadow: 0 4px 18px rgba(125, 211, 252, 0.35), 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    backdrop-filter: blur(16px) !important;
+}
+[data-theme="snow-world"] .fc-title {
+    color: #0284c7 !important;
+}
+
+/* Glass Themes (Translucent backdrop blur) */
+[data-theme^="glass-"] .floating-card {
+    background: rgba(255, 255, 255, 0.65) !important;
+    border-color: rgba(255, 255, 255, 0.75) !important;
+    backdrop-filter: blur(18px) !important;
+    -webkit-backdrop-filter: blur(18px) !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="glass-midnight"] .floating-card,
+[data-theme="glass-galaxy"] .floating-card {
+    background: rgba(15, 23, 42, 0.75) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* =========================================================================
+   THEME SETTINGS MINI-PREVIEW INTEGRATION
+   Renders miniature animated floating cards inside the theme preview card
+   ========================================================================= */
+.mini-hms-preview {
+    position: relative;
+    overflow: hidden;
+}
+
+.mini-preview-floating-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none !important;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.mini-preview-card {
+    position: absolute;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 0.48rem;
+    font-weight: 700;
+    line-height: 1.1;
+    pointer-events: none !important;
+    white-space: nowrap;
+    border: 1px solid var(--p-border, rgba(0,0,0,0.1));
+    background: var(--p-surface, #ffffff);
+    color: var(--p-text, #0f172a);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    will-change: transform, opacity;
+}
+
+.mini-card-patient {
+    top: 36%;
+    right: 8%;
+    animation: miniFloatPatient calc(6s / var(--theme-animation-speed, 1.5)) ease-in-out infinite alternate;
+}
+.mini-card-lab {
+    top: 50%;
+    left: 8%;
+    animation: miniFloatLab calc(7s / var(--theme-animation-speed, 1.5)) ease-in-out infinite alternate;
+    animation-delay: calc(1.2s / var(--theme-animation-speed, 1.5));
+}
+.mini-card-op {
+    bottom: 12%;
+    right: 22%;
+    animation: miniFloatOp calc(8s / var(--theme-animation-speed, 1.5)) ease-in-out infinite alternate;
+    animation-delay: calc(2.5s / var(--theme-animation-speed, 1.5));
+}
+
+@keyframes miniFloatPatient {
+    0%   { transform: translate3d(0, 0, 0) scale(0.88); opacity: 0.6; }
+    50%  { transform: translate3d(-10px, -6px, 0) scale(1); opacity: 0.95; }
+    100% { transform: translate3d(6px, 4px, 0) scale(0.92); opacity: 0.7; }
+}
+
+@keyframes miniFloatLab {
+    0%   { transform: translate3d(0, 0, 0) scale(0.85); opacity: 0.55; }
+    50%  { transform: translate3d(12px, -8px, 0) scale(0.98); opacity: 0.9; }
+    100% { transform: translate3d(-4px, 5px, 0) scale(0.9); opacity: 0.65; }
+}
+
+@keyframes miniFloatOp {
+    0%   { transform: translate3d(0, 0, 0) scale(0.82); opacity: 0.5; }
+    50%  { transform: translate3d(-8px, -10px, 0) scale(0.96); opacity: 0.85; }
+    100% { transform: translate3d(8px, -4px, 0) scale(0.88); opacity: 0.6; }
+}
+
+/* =========================================================================
+   RESPONSIVENESS (MOBILE / TABLET)
+   Safe on small screens: reduce count, size, opacity and distance
+   ========================================================================= */
+@media (max-width: 1024px) {
+    .floating-card {
+        width: 180px;
+        padding: 8px 11px;
+    }
+    .floating-card.card-d,
+    .floating-card.card-f {
+        display: none !important; /* Hide secondary cards on tablet */
+    }
+}
+
+@media (max-width: 768px) {
+    .floating-visibility-layer {
+        opacity: 0.45; /* Soften overall presence on mobile */
+    }
+    .floating-card {
+        width: 150px;
+        padding: 6px 9px;
+        border-radius: 8px;
+        margin: 0 !important; /* Disable pointer parallax on touch devices */
+    }
+    /* Only 2 ambient cards active on mobile screens */
+    .floating-card.card-b,
+    .floating-card.card-d,
+    .floating-card.card-e,
+    .floating-card.card-f {
+        display: none !important;
+    }
+    .floating-card.card-a {
+        top: 25%;
+        right: 2%;
+        transform: scale(0.72) !important;
+    }
+    .floating-card.card-c {
+        top: 65%;
+        right: 2%;
+        transform: scale(0.70) !important;
+    }
+}
+
+/* =========================================================================
+   ACCESSIBILITY: REDUCED MOTION SUPPORT
+   Respects user preferences and explicitly disables continuous motion
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce), html.reduce-motion {
+    .floating-card,
+    .mini-preview-card,
+    .mini-float-card,
+    .mp-fc {
+        animation: none !important;
+        opacity: 0.25 !important;
+        transform: none !important;
+        margin: 0 !important;
+        transition: none !important;
+    }
+}
+
+/* Print safety: Never show floating cards in print */
+@media print {
+    .floating-visibility-layer,
+    .mini-preview-floating-layer {
+        display: none !important;
+    }
+}

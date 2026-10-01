@@ -10,6 +10,7 @@ from .views import (
     nav_submodule_create, nav_submodule_edit, nav_submodule_rename, nav_submodule_remap, nav_submodule_toggle_active, nav_submodule_delete,
     nav_reset_defaults,
     UserProfileUpdateView, UserPasswordChangeView,
+    ThemeSettingsView, save_theme_preference_api,
 )
 
 app_name = 'users'
@@ -65,4 +66,8 @@ urlpatterns = [
     # Self-service profile and password
     path('profile/update/', UserProfileUpdateView.as_view(), name='profile_update'),
     path('profile/change-password/', UserPasswordChangeView.as_view(), name='change_password'),
+    path('settings/theme/', ThemeSettingsView.as_view(), name='theme_settings_alias'),
+    path('settings/theme/save/', save_theme_preference_api, name='save_theme_preference_alias'),
+    path('web-theme/', ThemeSettingsView.as_view(), name='web_theme_alias'),
+    path('web-theme/save/', save_theme_preference_api, name='web_theme_save_alias'),
 ]

@@ -1,43 +1,43 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-    /* Main Crisp Light Theme Backgrounds */
-    --bg-dark: #f8fafc;
-    --bg-card: #ffffff;
-    --border-color: #e2e8f0;
-    --border-dark: #cbd5e1;
+    /* Theme Engine Mapped Backgrounds */
+    --bg-dark: var(--theme-bg, #f8fafc);
+    --bg-card: var(--theme-surface, #ffffff);
+    --border-color: var(--theme-border, #e2e8f0);
+    --border-dark: var(--theme-border-strong, #cbd5e1);
     
-    /* Hospital ERP Teal & Slate Palette */
-    --accent-teal: #0d9488;
-    --accent-blue: #0284c7;
-    --accent-indigo: #025a68;
+    /* Hospital ERP Theme Palette Mapped */
+    --accent-teal: var(--theme-accent, #0d9488);
+    --accent-blue: var(--theme-primary, #0284c7);
+    --accent-indigo: var(--theme-secondary, #025a68);
     --accent-purple: #7c3aed;
-    --accent-green: #10b981;
-    --accent-red: #ef4444;
-    --accent-amber: #d97706;
+    --accent-green: var(--theme-success, #10b981);
+    --accent-red: var(--theme-danger, #ef4444);
+    --accent-amber: var(--theme-warning, #d97706);
 
     /* Text Tokens */
-    --text-main: #0f172a;
-    --text-muted: #64748b;
-    --text-color: #1e293b;
+    --text-main: var(--theme-text-primary, var(--theme-text, #0f172a));
+    --text-muted: var(--theme-text-secondary, #64748b);
+    --text-color: var(--theme-text, #1e293b);
 
-    /* Sidebar Dark Navy-Teal Tokens */
-    --sidebar-bg: #071d2b;
-    --sidebar-border: #0f2e42;
-    --sidebar-text: #94a3b8;
-    --sidebar-active-bg: #0e7490;
-    --sidebar-active-text: #ffffff;
+    /* Sidebar Tokens */
+    --sidebar-bg: var(--theme-sidebar-bg, #071d2b);
+    --sidebar-border: var(--theme-sidebar-border, #0f2e42);
+    --sidebar-text: var(--theme-sidebar-text, #94a3b8);
+    --sidebar-active-bg: var(--theme-sidebar-active-bg, #0e7490);
+    --sidebar-active-text: var(--theme-sidebar-active-text, #ffffff);
     
     /* Input Control Tokens */
-    --input-bg: #ffffff;
-    --input-border: #cbd5e1;
-    --input-text: #0f172a;
-    --input-focus-border: #0d9488;
+    --input-bg: var(--theme-input-bg, #ffffff);
+    --input-border: var(--theme-input-border, #cbd5e1);
+    --input-text: var(--theme-input-text, #0f172a);
+    --input-focus-border: var(--theme-input-focus-border, #0d9488);
 
     --sidebar-width: 260px;
     --sidebar-collapsed-width: 72px;
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+    --shadow-md: var(--theme-card-shadow, 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04));
 }
 
 * {
@@ -381,34 +381,34 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
-    background: #ecfdf5;
-    border: 1px solid #a7f3d0;
+    background: var(--theme-clock-bg, #ecfdf5);
+    border: 1px solid var(--theme-clock-border, #a7f3d0);
     padding: 0.35rem 0.85rem;
     border-radius: 9999px;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #065f46;
+    color: var(--theme-clock-text, #065f46);
     box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
 }
 
 .live-clock-widget i {
-    color: #059669;
+    color: var(--theme-clock-time-color, #059669);
     font-size: 0.92rem;
 }
 
 .live-date {
-    color: #475569;
+    color: var(--theme-clock-date-color, #475569);
     font-weight: 600;
 }
 
 .clock-divider {
-    color: #cbd5e1;
+    color: var(--theme-clock-divider, #cbd5e1);
     font-weight: 400;
     margin: 0 2px;
 }
 
 .live-time {
-    color: #047857;
+    color: var(--theme-clock-time-color, #047857);
     font-weight: 800;
     font-family: monospace, sans-serif;
     letter-spacing: 0.5px;
@@ -418,17 +418,17 @@ body {
     display: none;
     align-items: center;
     gap: 0.35rem;
-    background: #ecfdf5;
-    border: 1px solid #a7f3d0;
+    background: var(--theme-clock-bg, #ecfdf5);
+    border: 1px solid var(--theme-clock-border, #a7f3d0);
     padding: 0.3rem 0.65rem;
     border-radius: 9999px;
     font-size: 0.78rem;
     font-weight: 700;
-    color: #047857;
+    color: var(--theme-clock-text, #047857);
 }
 
 .live-clock-mobile i {
-    color: #059669;
+    color: var(--theme-clock-time-color, #059669);
     font-size: 0.85rem;
 }
 
@@ -437,11 +437,11 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
-    background: #f8fafc;
+    background: var(--theme-user-badge-bg, #f8fafc);
     padding: 0.3rem 0.75rem 0.3rem 0.35rem;
     border-radius: 9999px;
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
+    border: 1px solid var(--theme-user-badge-border, var(--border-color));
+    color: var(--theme-user-badge-text, var(--text-color));
     font-size: 0.84rem;
     font-weight: 600;
 }

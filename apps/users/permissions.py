@@ -368,6 +368,19 @@ PERMISSION_MODULES = [
                 "description": "Automated test creation controls, test triggers, and emergency stops"
             },
         ]
+    },
+    {
+        "module": "settings",
+        "label": "Web Theme",
+        "icon": "bi-palette-fill",
+        "sub_modules": [
+            {
+                "code": "theme_settings",
+                "label": "Web Theme Settings",
+                "actions": ["view", "change"],
+                "description": "Customize global hospital ERP theme, palette, contrast, and typography"
+            },
+        ]
     }
 ]
 

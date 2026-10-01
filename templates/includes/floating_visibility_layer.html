@@ -1,0 +1,143 @@
+{% load static %}
+<!-- =========================================================================
+     VMMC ERP — REUSABLE FLOATING VISIBILITY LAYER COMPONENT
+     Ambient decorative visual cards floating behind content
+     Fully accessibility safe (pointer-events: none, aria-hidden="true")
+     Theme-aware: inherits selected theme surface, borders, shadows & text tokens
+     ========================================================================= -->
+<div class="floating-visibility-layer" aria-hidden="true" role="presentation">
+    <!-- Card A: Patient Record (Path A: Right -> Center -> Upper-Right) -->
+    <div class="floating-card card-a fv-depth-3">
+        <div class="fc-header">
+            <span class="fc-title"><i class="bi bi-person-badge-fill"></i> Patient Record</span>
+            <span class="fc-badge fc-badge-success">Active</span>
+        </div>
+        <div class="fc-body">
+            <div class="fc-row">
+                <span class="fc-label">Patient</span>
+                <span class="fc-value">R. Suresh (Demo)</span>
+            </div>
+            <div class="fc-row">
+                <span class="fc-label">UHID</span>
+                <span class="fc-value fc-value-mono">VMMC-2026-9042</span>
+            </div>
+            <div class="fc-row">
+                <span class="fc-label">Specialty</span>
+                <span class="fc-value">Cardiology</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card B: Lab Result (Path B: Upper-Right -> Lower-Right) -->
+    <div class="floating-card card-b fv-depth-2">
+        <div class="fc-header">
+            <span class="fc-title"><i class="bi bi-clipboard2-pulse-fill"></i> Lab Result</span>
+            <span class="fc-badge fc-badge-info">Verified</span>
+        </div>
+        <div class="fc-body">
+            <div class="fc-row">
+                <span class="fc-label">Panel</span>
+                <span class="fc-value">CBC Hemogram</span>
+            </div>
+            <div class="fc-row">
+                <span class="fc-label">Lab ID</span>
+                <span class="fc-value fc-value-mono">LB-8821-KKL</span>
+            </div>
+            <div class="fc-sparkline" title="Micro preview">
+                <span class="fc-spark-bar" style="height: 6px;"></span>
+                <span class="fc-spark-bar" style="height: 10px;"></span>
+                <span class="fc-spark-bar" style="height: 14px;"></span>
+                <span class="fc-spark-bar" style="height: 8px;"></span>
+                <span class="fc-spark-bar" style="height: 12px;"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card C: OP Registration (Path C: Lower-Right -> Center -> Upper-Right) -->
+    <div class="floating-card card-c fv-depth-3">
+        <div class="fc-header">
+            <span class="fc-title"><i class="bi bi-receipt-cutoff"></i> OP Token</span>
+            <span class="fc-badge fc-badge-info">Token #14</span>
+        </div>
+        <div class="fc-body">
+            <div class="fc-row">
+                <span class="fc-label">Clinic</span>
+                <span class="fc-value">General Medicine</span>
+            </div>
+            <div class="fc-row">
+                <span class="fc-label">Counter</span>
+                <span class="fc-value">Desk 02</span>
+            </div>
+            <div class="fc-row">
+                <span class="fc-label">Queue</span>
+                <span class="fc-value">4 Patients</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card D: Bed Allocation (Path D: Far-Right -> Center -> Far-Right) -->
+    <div class="floating-card card-d fv-depth-1">
+        <div class="fc-header">
+            <span class="fc-title"><i class="bi bi-hospital-fill"></i> Bed Status</span>
+            <span class="fc-badge fc-badge-warning">Occupied</span>
+        </div>
+        <div class="fc-body">
+            <div class="fc-row">
+                <span class="fc-label">Ward</span>
+                <span class="fc-value">Ward 3B (Semi-Pvt)</span>
+            </div>
+            <div class="fc-row">
+                <span class="fc-label">Bed No</span>
+                <span class="fc-value fc-value-mono">B-12</span>
+            </div>
+            <div class="fc-row">
+                <span class="fc-label">Condition</span>
+                <span class="fc-value">Stable</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card E: Clinical Review (Path E: Upper-Left -> Center -> Upper-Left) -->
+    <div class="floating-card card-e fv-depth-2">
+        <div class="fc-header">
+            <span class="fc-title"><i class="bi bi-calendar-check-fill"></i> OPD Review</span>
+            <span class="fc-badge fc-badge-success">Scheduled</span>
+        </div>
+        <div class="fc-body">
+            <div class="fc-row">
+                <span class="fc-label">Consultant</span>
+                <span class="fc-value">Dr. K. Anand</span>
+            </div>
+            <div class="fc-row">
+                <span class="fc-label">Time</span>
+                <span class="fc-value fc-value-mono">11:45 AM</span>
+            </div>
+            <div class="fc-row">
+                <span class="fc-label">Room</span>
+                <span class="fc-value">OPD Room 06</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card F: IP Admission (Path F: Lower-Left -> Center -> Lower-Left) -->
+    <div class="floating-card card-f fv-depth-4">
+        <div class="fc-header">
+            <span class="fc-title"><i class="bi bi-file-earmark-medical-fill"></i> IP Admission</span>
+            <span class="fc-badge fc-badge-info">Admitted</span>
+        </div>
+        <div class="fc-body">
+            <div class="fc-row">
+                <span class="fc-label">IP No</span>
+                <span class="fc-value fc-value-mono">IP-2026-0382</span>
+            </div>
+            <div class="fc-row">
+                <span class="fc-label">Care Unit</span>
+                <span class="fc-value">Surgical Ward II</span>
+            </div>
+            <div class="fc-row">
+                <span class="fc-label">Vitals</span>
+                <span class="fc-value">SpO2 99% • 120/80</span>
+            </div>
+        </div>
+    </div>
+</div>

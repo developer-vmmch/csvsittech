@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from apps.users.views import DepartmentSelectView, DepartmentLoginView, RoleLoginView, ERPLogoutView
+from apps.users.views import DepartmentSelectView, DepartmentLoginView, RoleLoginView, ERPLogoutView, ThemeSettingsView, ThemeAuditView, save_theme_preference_api
 from django.views.generic.base import RedirectView
 
 urlpatterns = [
@@ -19,6 +19,12 @@ urlpatterns = [
     path('administration/', include(('apps.users.urls', 'users'), namespace='users')),
     path('users/', RedirectView.as_view(url='/administration/', permanent=False)),
     path('users/<path:subpath>/', RedirectView.as_view(url='/administration/%(subpath)s/', permanent=False)),
+    path('settings/theme/', ThemeSettingsView.as_view(), name='theme_settings'),
+    path('settings/theme/save/', save_theme_preference_api, name='save_theme_preference'),
+    path('settings/theme/audit/', ThemeAuditView.as_view(), name='theme_audit'),
+    path('web-theme/', ThemeSettingsView.as_view(), name='web_theme_settings'),
+    path('web-theme/save/', save_theme_preference_api, name='web_theme_save'),
+    path('web-theme/audit/', ThemeAuditView.as_view(), name='web_theme_audit'),
     path('ot/', include(('apps.ot.urls', 'ot'), namespace='ot')),
     path('', include('apps.printing.urls')),
 ]

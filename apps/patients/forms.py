@@ -691,17 +691,17 @@ class IPAdmissionForm(forms.Form):
             ('Insurance / Corporate', 'Insurance / Corporate'),
             ('Other', 'Other'),
         ],
-        required=True,
+        required=False,
         initial='General Admission',
         widget=forms.Select(attrs={'class': 'form-select-compact', 'id': 'id_adm_type'})
     )
     ward = forms.CharField(
-        required=True,
+        required=False,
         widget=forms.Select(attrs={'class': 'form-select-compact', 'id': 'id_adm_ward'})
     )
     bed = forms.CharField(
-        required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control-compact', 'id': 'id_adm_bed', 'readonly': 'readonly', 'placeholder': 'Select Bed'})
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control-compact is-readonly', 'id': 'id_adm_bed', 'readonly': 'readonly', 'placeholder': 'No Bed Assigned'})
     )
     admission_date = forms.CharField(
         required=True,

@@ -1,311 +1,361 @@
 {% extends "base.html" %}
-{% load static %}
 
-{% block title %}IP Admission - Inpatient Record Log | VMMCH{% endblock %}
+{% block title %}IP Admission | VMMC ERP{% endblock %}
+{% block page_heading %}IP ADMISSION{% endblock %}
 
-{% block extra_css %}
+{% block content %}
 <style>
     /* =========================================================================
-       LOCAL HOSPITAL REVIEW & IP ADMISSION DESIGN SYSTEM (VMMCH THEME)
+       PATIENT IP ADMISSION & BED ALLOCATION - STRICT 4x4 CSS GRID ARCHITECTURE
+       Exact visual and structural match to Patient Review.
+       Pixel-perfect, contrast-safe, theme-tokenized layout.
        ========================================================================= */
-    .review-wrapper {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        background-color: #f1f5f9;
-        min-height: calc(100vh - 80px);
-        padding: 10px 16px 40px 16px;
-        color: #1e293b;
+    .ip-page-container {
+        width: 100%;
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: 0 4px 16px 4px;
+        box-sizing: border-box;
     }
 
-    /* Sub-Header: Heading + Last Patient Id */
-    .page-title-row {
+    /* Master Card */
+    .ip-master-card {
+        background: var(--theme-surface, #ffffff);
+        border: 1px solid var(--theme-border, #cbd5e1);
+        border-radius: 8px;
+        padding: 10px 14px 14px 14px;
+        box-shadow: var(--theme-card-shadow, 0 1px 3px rgba(0, 0, 0, 0.05));
+    }
+
+    /* Header Bar */
+    .ip-header-bar {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        padding-bottom: 8px;
         margin-bottom: 8px;
-        padding: 0 2px;
+        border-bottom: 1px solid var(--theme-border-subtle, #f1f5f9);
     }
-    .main-section-title {
-        font-size: 0.98rem;
-        font-weight: 900;
-        letter-spacing: 0.04em;
-        color: #0f2c59;
+    .ip-title-text {
+        font-size: 0.92rem;
+        font-weight: 800;
+        color: var(--theme-heading, #002060);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        letter-spacing: 0.02em;
         text-transform: uppercase;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        margin: 0;
     }
-    .last-patient-box {
-        font-size: 0.81rem;
-        font-weight: 700;
-        color: #334155;
-        background: #ffffff;
-        border: 1px solid #cbd5e1;
-        padding: 2px 10px;
-        border-radius: 4px;
-    }
-    .last-patient-box strong {
-        color: #0284c7;
-        font-family: ui-monospace, monospace;
-    }
-
-    /* Main Container Cards */
-    .review-card {
-        background: #ffffff;
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
-        padding: 10px 14px 14px 14px;
-        margin-bottom: 10px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-    }
-
-    /* Top Search Bar (Exact Matching Layout) */
-    .top-search-panel {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 16px 24px;
-        padding: 6px 12px;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 5px;
-        margin-bottom: 12px;
-    }
-    .search-subgroup {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .search-radio-group {
-        display: inline-flex;
-        align-items: center;
-        gap: 12px;
+    .ip-badge-last-id {
         font-size: 0.82rem;
+        color: var(--theme-text-muted, #475569);
         font-weight: 600;
-        color: #334155;
     }
-    .search-radio-group label {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        cursor: pointer;
-        margin-bottom: 0;
-    }
-    .search-radio-group input[type="radio"] {
-        accent-color: #0284c7;
-        cursor: pointer;
+    .ip-badge-last-id strong {
+        color: var(--theme-primary, #0284c7);
+        font-size: 0.90rem;
+        margin-left: 4px;
     }
 
-    /* Standardized Compact Inputs & Dropdowns */
+    /* Common Form Control Sizing & Baseline Alignment (30-32px Height) */
     .form-control-compact,
     input.form-control-compact {
-        height: 30px !important;
-        min-height: 30px !important;
-        padding: 2px 8px !important;
-        font-size: 0.82rem !important;
-        line-height: 1.4 !important;
-        border: 1px solid #cbd5e1 !important;
+        height: 31px !important;
+        min-height: 31px !important;
+        max-height: 31px !important;
+        padding: 3px 8px !important;
+        font-size: 0.81rem !important;
+        line-height: 1.35 !important;
+        color: var(--theme-input-text, #0f172a) !important;
+        background-color: var(--theme-input-bg, #ffffff) !important;
+        border: 1px solid var(--theme-input-border, #cbd5e1) !important;
         border-radius: 4px !important;
-        color: #0f172a !important;
-        background-color: #ffffff !important;
         box-sizing: border-box !important;
-        vertical-align: middle !important;
+        width: 100%;
         transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-    .form-control-compact:focus {
-        border-color: #0284c7 !important;
-        outline: none !important;
-        box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.18) !important;
-    }
-    .form-control-compact[readonly] {
-        background-color: #f1f5f9 !important;
-        color: #334155 !important;
-        border-color: #cbd5e1 !important;
-        cursor: default !important;
-    }
-    .form-control-compact.is-invalid {
-        border-color: #dc2626 !important;
-        box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15) !important;
-        background-color: #fef2f2 !important;
     }
 
     .form-select-compact,
-    select.form-select-compact,
-    select.form-control-compact {
-        height: 30px !important;
-        min-height: 30px !important;
-        padding: 2px 24px 2px 8px !important;
-        font-size: 0.82rem !important;
-        line-height: 1.4 !important;
-        border: 1px solid #cbd5e1 !important;
+    select.form-select-compact {
+        height: 31px !important;
+        min-height: 31px !important;
+        max-height: 31px !important;
+        padding: 3px 24px 3px 8px !important;
+        font-size: 0.81rem !important;
+        line-height: 1.35 !important;
+        color: var(--theme-input-text, #0f172a) !important;
+        background-color: var(--theme-input-bg, #ffffff) !important;
+        border: 1px solid var(--theme-input-border, #cbd5e1) !important;
         border-radius: 4px !important;
-        color: #0f172a !important;
-        background-color: #ffffff !important;
         box-sizing: border-box !important;
-        vertical-align: middle !important;
-        cursor: pointer !important;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23334155' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
-        background-repeat: no-repeat !important;
-        background-position: right 7px center !important;
-        background-size: 11px 9px !important;
-        -webkit-appearance: none !important;
-        -moz-appearance: none !important;
-        appearance: none !important;
+        width: 100%;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23334155' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 7px center;
+        background-size: 11px 9px;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
         transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    .form-select-compact:focus,
-    select.form-select-compact:focus {
-        border-color: #0284c7 !important;
+
+    .form-control-compact:focus,
+    .form-select-compact:focus {
+        border-color: var(--theme-focus, #0284c7) !important;
         outline: none !important;
         box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.18) !important;
     }
-    .form-select-compact:disabled,
-    select.form-select-compact:disabled,
-    select.form-select-compact[disabled] {
-        background-color: #f1f5f9 !important;
-        color: #475569 !important;
-        border-color: #cbd5e1 !important;
-        cursor: not-allowed !important;
-        opacity: 0.95 !important;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
-    }
 
-    #id_adm_department, #id_adm_unit, #id_adm_ward {
-        width: 100% !important;
-        min-width: 155px !important;
-    }
-    #id_adm_type {
-        width: 100% !important;
-        min-width: 135px !important;
-    }
-    #id_adm_status {
-        width: 100% !important;
-        min-width: 105px !important;
-    }
-
-    .btn-search-go {
-        height: 30px !important;
-        min-height: 30px !important;
-        padding: 0 14px !important;
-        background: #0f172a !important;
-        color: #ffffff !important;
-        border: 1px solid #0f172a !important;
-        border-radius: 0 4px 4px 0 !important;
-        font-size: 0.82rem !important;
-        font-weight: 700 !important;
-        cursor: pointer !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        flex-shrink: 0 !important;
-        line-height: 1 !important;
-        transition: background 0.15s ease;
-    }
-    .btn-search-go:hover {
-        background: #1e293b !important;
-    }
-
-    /* Grid Row & Field Pairs */
-    .patient-info-row {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px 14px;
-        margin-bottom: 7px;
-    }
-    .field-pair {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 0.81rem;
-    }
-    .field-pair-label {
-        font-weight: 700;
-        color: #1e293b;
-        white-space: nowrap;
-        margin-bottom: 0;
-    }
-    .text-danger {
-        color: #dc2626;
-        margin-left: 2px;
-    }
-
-    .input-group-compact {
-        display: inline-flex;
-        align-items: center;
-    }
-    .input-group-compact .form-control-compact {
-        border-top-right-radius: 0;
-        border-bottom-right-radius: 0;
-        border-right: none;
-    }
-    .btn-icon-addon {
-        height: 30px !important;
-        min-height: 30px !important;
-        padding: 0 8px !important;
-        background: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
-        border-left: none !important;
-        border-top-right-radius: 4px !important;
-        border-bottom-right-radius: 4px !important;
-        color: #64748b !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        font-size: 0.80rem !important;
+    /* Readonly Field Styling */
+    .is-readonly,
+    .form-control-compact[readonly],
+    .form-select-compact.is-readonly {
+        background-color: var(--theme-input-bg-readonly, #f8fafc) !important;
+        color: var(--theme-text, #1e293b) !important;
+        border-color: var(--theme-border-subtle, #cbd5e1) !important;
         cursor: default !important;
-        line-height: 1 !important;
+        user-select: text !important;
+    }
+    .form-select-compact.is-readonly {
+        pointer-events: none !important;
+        background-image: none !important;
+        padding-right: 8px !important;
     }
 
-    /* Readonly Last Visit Reference Row */
-    .last-visit-ref-container {
+    /* Strict Field Cell */
+    .field-cell {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 3px;
+        min-width: 0;
+        position: relative;
+    }
+    .field-cell-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--theme-text, #1e293b);
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+
+    /* PATIENT SEARCH ROW (Identical layout to Review) */
+    .patient-search-row {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 12px 20px;
-        background: #eff6ff;
-        border: 1px solid #bfdbfe;
-        border-radius: 5px;
-        padding: 6px 12px;
-        margin-top: 10px;
+        justify-content: space-between;
+        gap: 12px;
+        background: var(--theme-surface-alt, #f8fafc);
+        border: 1px solid var(--theme-border-subtle, #e2e8f0);
+        border-radius: 6px;
+        padding: 6px 10px;
         margin-bottom: 10px;
     }
-    .last-visit-ref-container .field-pair-label {
-        color: #1e40af;
+    .search-left-group {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .search-radio-options {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .search-radio-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.80rem;
+        font-weight: 700;
+        color: var(--theme-text, #1e293b);
+        cursor: pointer;
+        margin: 0;
+    }
+    .search-input-group {
+        display: inline-flex;
+        align-items: stretch;
+    }
+    .search-input-group .form-control-compact {
+        border-top-right-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+        width: 180px;
+        font-weight: 700;
+    }
+    .btn-search-go {
+        height: 31px;
+        padding: 0 14px;
+        font-size: 0.80rem;
+        font-weight: 700;
+        background: var(--theme-primary, #0284c7);
+        color: var(--theme-primary-text, #ffffff);
+        border: 1px solid var(--theme-primary, #0284c7);
+        border-top-right-radius: 4px;
+        border-bottom-right-radius: 4px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.15s ease;
+    }
+    .btn-search-go:hover {
+        opacity: 0.9;
+    }
+    .search-right-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
-    /* Admission Details Section Container */
-    .adm-details-container {
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
-        background: #ffffff;
-        position: relative;
-        padding: 12px 14px 10px 14px;
-        margin-top: 14px;
+    /* =========================================================================
+       PATIENT INFORMATION: STRICT 4 COLUMNS × 4 ROWS GRID (Identical to Review)
+       Equal column widths, aligned labels & inputs, no shuffling, no overlap.
+       ========================================================================= */
+    .patient-grid-4x4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px 14px;
         margin-bottom: 12px;
     }
-    .adm-details-tab-badge {
-        position: absolute;
-        top: -11px;
-        left: 14px;
-        background: #0284c7;
-        color: #ffffff;
-        font-size: 0.78rem;
-        font-weight: 800;
-        padding: 1px 12px;
-        border-radius: 3px;
-        letter-spacing: 0.02em;
-        text-transform: uppercase;
+
+    /* Addon input wrapper */
+    .input-with-addon {
+        display: flex;
+        align-items: stretch;
+        width: 100%;
+    }
+    .input-with-addon .form-control-compact {
+        border-top-right-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+    }
+    .addon-btn {
+        height: 31px;
+        padding: 0 8px;
+        background: var(--theme-surface-alt, #f1f5f9);
+        border: 1px solid var(--theme-input-border, #cbd5e1);
+        border-left: none;
+        border-top-right-radius: 4px;
+        border-bottom-right-radius: 4px;
+        color: var(--theme-text-muted, #64748b);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    /* BED ALLOCATION UI SECTION (Visually & Functionally Unique) */
+    /* Bloodgroup with +/- toggle */
+    .bloodgroup-composite {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 4px;
+        align-items: center;
+    }
+    .rh-toggle-box {
+        display: inline-flex;
+        align-items: center;
+        background: var(--theme-surface-alt, #f1f5f9);
+        border: 1px solid var(--theme-input-border, #cbd5e1);
+        border-radius: 4px;
+        padding: 1px;
+        height: 31px;
+        box-sizing: border-box;
+    }
+    .rh-toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 25px;
+        padding: 0 5px;
+        font-size: 0.90rem;
+        font-weight: 800;
+        border-radius: 3px;
+        cursor: pointer;
+        margin: 0;
+        user-select: none;
+        transition: all 0.15s ease;
+    }
+    .rh-toggle-btn.active {
+        background: var(--theme-primary, #0284c7);
+        color: var(--theme-primary-text, #ffffff);
+    }
+    .rh-toggle-btn.inactive {
+        background: transparent;
+        color: var(--theme-text-muted, #475569);
+    }
+
+    /* =========================================================================
+       LAST VISIT: CLEAN 3-COLUMN ROW (No "Last Visit" Heading)
+       Last Visit Date | Department | Unit / Doctor
+       ========================================================================= */
+    .last-visit-clean-row {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr 1.5fr;
+        gap: 12px;
+        background: var(--theme-surface-alt, #f8fafc);
+        border: 1px solid var(--theme-border-subtle, #e2e8f0);
+        border-radius: 6px;
+        padding: 8px 12px;
+        margin-bottom: 12px;
+    }
+
+    /* =========================================================================
+       ADMISSION DETAILS: EXACTLY TWO LOGICAL ROWS (Admission Type Removed)
+       ROW 1: Department | Unit / Doctor | Ward | Bed
+       ROW 2: Admission Date | IP Number | Admission Status | Admission Reason / Diagnosis
+       ========================================================================= */
+    .adm-details-card {
+        border: 1px solid var(--theme-border, #cbd5e1);
+        border-radius: 6px;
+        background: var(--theme-surface, #ffffff);
+        position: relative;
+        padding: 12px 12px 10px 12px;
+        margin-bottom: 12px;
+    }
+    .adm-details-badge {
+        position: absolute;
+        top: -10px;
+        left: 12px;
+        background: var(--theme-primary, #0284c7);
+        color: var(--theme-primary-text, #ffffff);
+        font-size: 0.75rem;
+        font-weight: 800;
+        padding: 1px 10px;
+        border-radius: 3px;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+    }
+    .adm-grid-row1 {
+        display: grid;
+        grid-template-columns: 1.5fr 1.5fr 1.3fr 1.1fr;
+        gap: 10px 14px;
+        align-items: flex-end;
+        margin-bottom: 10px;
+    }
+    .adm-grid-row2 {
+        display: grid;
+        grid-template-columns: 1.1fr 1.1fr 1.1fr 2.1fr;
+        gap: 10px 14px;
+        align-items: flex-end;
+    }
+
+    /* =========================================================================
+       WARD BED ALLOCATION PANEL
+       Authoritative bed availability interface with visual bed cards.
+       ========================================================================= */
     .bed-allocation-card {
-        border: 2px solid #0284c7;
-        border-radius: 8px;
-        background: #f0f9ff;
-        padding: 12px 16px;
-        margin-top: 14px;
-        margin-bottom: 14px;
-        box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08);
+        border: 1px solid var(--theme-border, #cbd5e1);
+        border-radius: 6px;
+        background: var(--theme-surface-alt, #f8fafc);
+        padding: 10px 14px;
+        margin-bottom: 12px;
     }
     .bed-allocation-header {
         display: flex;
@@ -313,133 +363,210 @@
         align-items: center;
         flex-wrap: wrap;
         gap: 10px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #bae6fd;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--theme-border-subtle, #e2e8f0);
     }
-    .bed-allocation-title {
-        font-size: 0.90rem;
-        font-weight: 800;
-        color: #0369a1;
+    .bed-alloc-summary-bar {
         display: inline-flex;
         align-items: center;
+        flex-wrap: wrap;
         gap: 8px;
+    }
+    .bed-alloc-title {
+        font-size: 0.82rem;
+        font-weight: 800;
+        color: var(--theme-heading, #002060);
         text-transform: uppercase;
         letter-spacing: 0.03em;
-    }
-    .bed-summary-pill {
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        padding: 3px 9px;
+    }
+    .bed-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
         border-radius: 4px;
         font-size: 0.74rem;
         font-weight: 700;
-        border: 1px solid transparent;
     }
-    .bed-summary-avail { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
-    .bed-summary-occ { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
-    .bed-summary-blocked { background: #fffbeb; color: #b45309; border-color: #fde68a; }
-    .bed-summary-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
-    .dot-avail { background: #10b981; }
-    .dot-occ { background: #ef4444; }
-    .dot-blocked { background: #f59e0b; }
+    .bed-pill-total {
+        background: var(--theme-surface, #ffffff);
+        color: var(--theme-text, #1e293b);
+        border: 1px solid var(--theme-border, #cbd5e1);
+    }
+    .bed-pill-avail {
+        background: var(--theme-success-bg, #ecfdf5);
+        color: var(--theme-success-text, #047857);
+        border: 1px solid var(--theme-success-border, #a7f3d0);
+    }
+    .bed-pill-occ {
+        background: var(--theme-danger-bg, #fef2f2);
+        color: var(--theme-danger-text, #b91c1c);
+        border: 1px solid var(--theme-danger-border, #fecaca);
+    }
+    .bed-pill-blk {
+        background: var(--theme-surface, #f1f5f9);
+        color: var(--theme-text-muted, #475569);
+        border: 1px solid var(--theme-border, #cbd5e1);
+    }
+    .bed-pill-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+    }
 
+    /* Bed Pulse Animation for Available Beds */
+    @keyframes bed-pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45);
+        }
+        70% {
+            box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        }
+    }
+
+    /* Responsive Bed Cards Grid */
     .ward-beds-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
         gap: 8px;
-        max-height: 240px;
+        max-height: 200px;
         overflow-y: auto;
-        padding: 4px;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
+        padding: 6px;
+        background: var(--theme-surface, #ffffff);
+        border: 1px solid var(--theme-border-subtle, #e2e8f0);
         border-radius: 6px;
     }
-    .bed-item {
-        font-size: 0.78rem;
+
+    /* Bed Card Base */
+    .bed-card {
+        font-size: 0.77rem;
         font-weight: 700;
-        padding: 8px 6px;
+        padding: 6px 8px;
         border-radius: 5px;
         border: 1.5px solid transparent;
         text-align: center;
         display: flex;
-        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        gap: 3px;
+        justify-content: space-between;
+        gap: 6px;
         transition: all 0.15s ease;
         user-select: none;
+        white-space: nowrap;
+        background: var(--theme-surface-alt, #f8fafc);
     }
-    .bed-item-available {
-        background: #f0fdf4;
-        border-color: #86efac;
-        color: #166534;
-        cursor: pointer;
+    .bed-card .bed-left {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
     }
-    .bed-item-available:hover {
-        background: #dcfce7;
-        border-color: #22c55e;
-        color: #14532d;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 5px rgba(34, 197, 94, 0.2);
-    }
-    .bed-item-selected, .bed-item-available.active-selected {
-        background: #0284c7 !important;
-        border-color: #0369a1 !important;
-        color: #ffffff !important;
-        box-shadow: 0 2px 6px rgba(2, 132, 199, 0.4) !important;
-        transform: scale(1.03);
-    }
-    .bed-item-occupied {
-        background: #fef2f2;
-        border-color: #fecaca;
-        color: #991b1b;
-        cursor: not-allowed;
-        opacity: 0.85;
-    }
-    .bed-item-occupied .bed-status-tag {
-        font-size: 0.62rem;
-        font-weight: 700;
-        background: #fee2e2;
-        color: #b91c1c;
-        padding: 1px 4px;
-        border-radius: 3px;
+    .bed-card .bed-tag {
+        font-size: 0.68rem;
+        font-weight: 800;
         text-transform: uppercase;
-    }
-    .bed-item-blocked {
-        background: #fffbeb;
-        border-color: #fde68a;
-        color: #92400e;
-        cursor: not-allowed;
-        opacity: 0.85;
-    }
-    .bed-item-blocked .bed-status-tag {
-        font-size: 0.62rem;
-        font-weight: 700;
-        background: #fef3c7;
-        color: #b45309;
-        padding: 1px 4px;
+        padding: 1px 5px;
         border-radius: 3px;
-        text-transform: uppercase;
     }
 
-    /* Actions Bar */
-    .review-action-bar {
+    /* GREEN: Available with subtle pulse */
+    .bed-card-available {
+        background: var(--theme-bed-avail-bg, #f0fdf4) !important;
+        border-color: var(--theme-bed-avail-border, #86efac) !important;
+        color: var(--theme-bed-avail-text, #166534) !important;
+        cursor: pointer;
+        animation: bed-pulse 2.4s infinite ease-in-out;
+    }
+    .bed-card-available:hover {
+        background: #dcfce7 !important;
+        border-color: #22c55e !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(34, 197, 94, 0.25) !important;
+    }
+    .bed-card-available .bed-tag {
+        background: rgba(16, 185, 129, 0.18);
+        color: #065f46;
+    }
+
+    /* BLUE: Selected */
+    .bed-card-available.is-selected,
+    .bed-card-selected {
+        animation: none !important;
+        background: var(--theme-primary, #0284c7) !important;
+        border-color: var(--theme-primary, #0369a1) !important;
+        color: var(--theme-primary-text, #ffffff) !important;
+        box-shadow: 0 2px 5px rgba(2, 132, 199, 0.4) !important;
+        font-weight: 800;
+    }
+    .bed-card-available.is-selected .bed-tag {
+        background: rgba(255, 255, 255, 0.25);
+        color: #ffffff;
+    }
+
+    /* RED: Occupied (Static) */
+    .bed-card-occupied {
+        background: var(--theme-bed-occ-bg, #fef2f2) !important;
+        border-color: var(--theme-bed-occ-border, #fecaca) !important;
+        color: var(--theme-bed-occ-text, #991b1b) !important;
+        cursor: not-allowed;
+        opacity: 0.90;
+    }
+    .bed-card-occupied .bed-tag {
+        background: rgba(239, 68, 68, 0.16);
+        color: #991b1b;
+    }
+
+    /* GRAY: Blocked (Static) */
+    .bed-card-blocked {
+        background: var(--theme-surface-alt, #f1f5f9) !important;
+        border-color: var(--theme-border, #cbd5e1) !important;
+        color: var(--theme-text-muted, #475569) !important;
+        cursor: not-allowed;
+        opacity: 0.90;
+    }
+    .bed-card-blocked .bed-tag {
+        background: rgba(100, 116, 139, 0.16);
+        color: #334155;
+    }
+
+    /* No Bed Available Banner */
+    .no-bed-alert-banner {
+        background: var(--theme-warning-bg, #fffbeb);
+        color: var(--theme-warning-text, #92400e);
+        border: 1px solid var(--theme-warning-border, #fde68a);
+        border-radius: 4px;
+        padding: 8px 12px;
+        margin-bottom: 8px;
+        font-size: 0.81rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Bottom Action Bar */
+    .ip-action-bar {
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 10px;
         justify-content: center;
         align-items: center;
-        margin-top: 16px;
+        margin-top: 14px;
         padding-top: 10px;
+        border-top: 1px solid var(--theme-border-subtle, #f1f5f9);
     }
     .btn-action-base {
-        height: 34px;
-        padding: 0 18px;
-        font-size: 0.84rem;
+        height: 32px;
+        padding: 0 16px;
+        font-size: 0.82rem;
         font-weight: 700;
-        border-radius: 5px;
+        border-radius: 4px;
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -447,154 +574,141 @@
         cursor: pointer;
         border: 1px solid transparent;
         transition: all 0.15s ease;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
     .btn-action-save {
-        background: #059669;
-        color: #ffffff !important;
-        border-color: #047857;
+        background: var(--theme-success, #059669);
+        color: var(--theme-success-text, #ffffff) !important;
+        border-color: var(--theme-success, #047857);
     }
-    .btn-action-save:hover {
-        background: #047857;
-    }
+    .btn-action-save:hover { opacity: 0.9; }
     .btn-action-reset {
-        background: #ffffff;
-        color: #334155 !important;
-        border-color: #cbd5e1;
+        background: var(--theme-surface, #ffffff);
+        color: var(--theme-text, #0f172a) !important;
+        border-color: var(--theme-border, #cbd5e1);
     }
-    .btn-action-reset:hover {
-        background: #f1f5f9;
-        border-color: #94a3b8;
-    }
+    .btn-action-reset:hover { background: var(--theme-surface-alt, #f1f5f9); }
     .btn-action-blue {
-        background: #0284c7;
-        color: #ffffff !important;
-        border-color: #0369a1;
+        background: var(--theme-primary, #0284c7);
+        color: var(--theme-primary-text, #ffffff) !important;
+        border-color: var(--theme-primary, #0284c7);
     }
-    .btn-action-blue:hover {
-        background: #0369a1;
+    .btn-action-blue:hover { opacity: 0.9; }
+
+    /* Responsive adjustments */
+    @media (max-width: 1024px) {
+        .patient-grid-4x4 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .adm-grid-row1 {
+            grid-template-columns: 1fr 1fr;
+        }
+        .adm-grid-row2 {
+            grid-template-columns: 1fr 1fr;
+        }
     }
-    .btn-action-purple {
-        background: #7c3aed;
-        color: #ffffff !important;
-        border-color: #6d28d9;
-    }
-    .btn-action-purple:hover {
-        background: #6d28d9;
-    }
-    .btn-action-cyan {
-        background: #0ea5e9;
-        color: #ffffff !important;
-        border-color: #0284c7;
-    }
-    .btn-action-cyan:hover {
-        background: #0284c7;
+    @media (max-width: 640px) {
+        .patient-grid-4x4,
+        .last-visit-clean-row,
+        .adm-grid-row1,
+        .adm-grid-row2 {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
-{% endblock %}
 
-{% block content %}
-<div class="review-wrapper">
+<div class="ip-page-container">
 
-    <!-- SUB-HEADER: TITLE + CURRENT IP ADMISSION STATUS -->
-    <div class="page-title-row">
-        <div class="main-section-title">
-            <i class="bi bi-hospital" style="color: #0284c7;"></i> IP ADMISSION
-        </div>
-        <div class="last-patient-box">
-            {% if active_ip_admission %}
-            <span style="color: #059669;"><i class="bi bi-check-circle-fill"></i> Currently Admitted: IP# <strong>{{ active_ip_admission.ipno }}</strong> ({{ active_ip_admission.ward }} / {{ active_ip_admission.bed }})</span>
-            {% elif last_patient or patient %}
-            <span style="font-size: 0.84rem; color: #475569; font-weight: 600; text-transform: none;">
-                Last Patient Id: <strong style="color: #002060; font-size: 0.95rem; margin-left: 6px;">{% if last_patient %}{{ last_patient.patient_id }}{% elif patient %}{{ patient.patient_id }}{% endif %}</strong>
-            </span>
+    <div class="ip-master-card">
+
+        <!-- PAGE HEADER: IP ADMISSION + Last Patient ID on Right -->
+        <div class="ip-header-bar">
+            <h1 class="ip-title-text">
+                <i class="bi bi-hospital" style="color: var(--theme-primary, #0284c7);"></i>
+                IP ADMISSION
+            </h1>
+            {% if last_patient or patient %}
+            <div class="ip-badge-last-id">
+                Last Patient Id: <strong>{% if last_patient %}{{ last_patient.patient_id }}{% elif patient %}{{ patient.patient_id }}{% endif %}</strong>
+            </div>
             {% endif %}
         </div>
-    </div>
 
-    <!-- MAIN FORM CARD -->
-    <div class="review-card">
-
-        <!-- =========================================================================
-             PATIENT SEARCH PANEL
-             Centre: [VMMCH] | (o) Patient Id ( ) OP No | [Search] [Go] | IPNO: [_____] [Go]
-             ========================================================================= -->
-        <div class="top-search-panel">
-            <div class="search-subgroup">
-                <span class="field-pair-label" style="color: #0284c7;">Centre:</span>
-                <select id="review_centre_select" class="form-select-compact" style="width: 105px; font-weight: 700;">
-                    <option value="VMMCH" selected>VMMCH</option>
-                    <option value="MAIN">MAIN</option>
-                    <option value="BRANCH">BRANCH</option>
-                </select>
-            </div>
-
-            <div class="search-subgroup">
-                <div class="search-radio-group">
-                    <label>
-                        <input type="radio" name="search_type_radio" id="radio_patient_id" value="patient_id" 
-                               {% if search_type != 'op_no' %}checked{% endif %} onchange="updateSearchPlaceholder()">
+        <!-- PATIENT SEARCH: Clean horizontal search row (No Centre field) -->
+        <div class="patient-search-row">
+            <div class="search-left-group">
+                <div class="search-radio-options">
+                    <label class="search-radio-label">
+                        <input type="radio" name="search_option" value="patient_id" id="radio_patient_id" 
+                               {% if search_type != 'op_no' %}checked{% endif %} 
+                               onchange="updateSearchPlaceholder()">
                         Patient Id
                     </label>
-                    <label>
-                        <input type="radio" name="search_type_radio" id="radio_op_no" value="op_no" 
-                               {% if search_type == 'op_no' %}checked{% endif %} onchange="updateSearchPlaceholder()">
+                    <label class="search-radio-label">
+                        <input type="radio" name="search_option" value="op_no" id="radio_op_no" 
+                               {% if search_type == 'op_no' %}checked{% endif %} 
+                               onchange="updateSearchPlaceholder()">
                         OP No
                     </label>
                 </div>
+
+                <div class="search-input-group">
+                    <input type="text" id="main_search_input" class="form-control-compact" 
+                           value="{{ search_query|default:'' }}" 
+                           placeholder="{% if search_type == 'op_no' %}Enter OP No{% else %}Enter Patient Id / OP No{% endif %}">
+                    <button type="button" class="btn-search-go" onclick="executeSelectedSearch()" title="Search Patient">
+                        Go
+                    </button>
+                </div>
             </div>
 
-            <div class="search-subgroup">
-                <input type="text" id="main_search_input" class="form-control-compact" 
-                       value="{{ search_query|default:'' }}" 
-                       placeholder="{% if search_type == 'op_no' %}Enter OP No{% else %}Enter Patient Id / OP No{% endif %}" 
-                       style="width: 195px; font-weight: 600;">
-                <button type="button" class="btn-search-go" onclick="executeSelectedSearch()" title="Search Patient">
-                    Go
-                </button>
-            </div>
-
-            <div class="search-subgroup" style="margin-left: auto;">
-                <span class="field-pair-label" for="review_ipno">IPNO:</span>
-                <input type="text" id="review_ipno" class="form-control-compact" 
-                       value="{{ search_ipno|default:'' }}" 
-                       placeholder="Enter IP Number" style="width: 145px; font-weight: 600;">
-                <button type="button" class="btn-search-go" onclick="submitIpnoSearch()" title="Search by IP Number">
-                    Go
-                </button>
+            <!-- Right side: IPNO (auto-generated / read-only, not manually editable) -->
+            <div class="search-right-group">
+                <span class="field-cell-label" for="search_ipno_display">IPNO:</span>
+                <input type="text" id="search_ipno_display" class="form-control-compact is-readonly" 
+                       value="{{ saved_ip|default:next_ipno }}" readonly aria-readonly="true" 
+                       style="width: 130px; font-weight: 700; color: var(--theme-primary, #0284c7); text-align: center;" 
+                       title="Auto-generated IP Number">
             </div>
         </div>
 
+        <!-- MAIN FORM WRAPPER -->
         <form method="post" id="ip_admission_form" action="{% url 'patients:ip_admission' %}">
             {% csrf_token %}
             <input type="hidden" name="patient_id" id="patient_id_hidden" value="{% if patient %}{{ patient.id }}{% endif %}">
+            <input type="hidden" name="patient_id_hidden" value="{% if patient %}{{ patient.id }}{% endif %}">
+            <!-- Hidden Centre to maintain backend compatibility without visible UI control -->
             <input type="hidden" name="centre" value="VMMCH">
+            <!-- Hidden Patient Title to preserve backend data -->
+            <input type="hidden" name="title" id="hidden_title" value="{{ patient.title|default:'-' }}">
+            <!-- Hidden Admission Type (Completely removed from visible UI per specification) -->
+            <input type="hidden" name="admission_type" id="hidden_admission_type" value="{{ admission_form.admission_type.value|default:'General Admission' }}">
 
             <!-- =========================================================================
-                 PATIENT INFORMATION SECTION (Matching Review / VMMC HMS Compact Layout)
+                 PATIENT INFORMATION GRID: EXACT SAME 4 COLUMNS × 4 ROWS AS REVIEW
+                 ROW 1: Name:* | Gender:* | DOB: | Age:*
+                 ROW 2: Category:* | Visit Through: | Guardian Name:* | Mobile No:
+                 ROW 3: Aadhar Card: | ABHA Number: | Street: | Village / Area:*
+                 ROW 4: City: | State: | Pincode: | Bloodgroup: [Select] [+] [-]
+                 Readonly after lookup EXCEPT Age (editable 0-99).
                  ========================================================================= -->
-            <!-- ROW 1: Name:* [Title v] [Name] | Gender:* | Dob: [cal] | Age:* | Category:* | Guardian Name:* [S/O v] [Name] -->
-            <div class="patient-info-row">
-                <div class="field-pair">
-                    <label class="field-pair-label" for="display_title">Name:<span class="text-danger">*</span></label>
-                    <select name="title" id="display_title" class="form-select-compact" style="width: 75px; font-weight: 600;">
-                        <option value="-" {% if not patient or patient.title == '-' %}selected{% endif %}>-</option>
-                        <option value="Mr" {% if patient and patient.title|upper == 'MR' %}selected{% endif %}>Mr</option>
-                        <option value="Mrs" {% if patient and patient.title|upper == 'MRS' %}selected{% endif %}>Mrs</option>
-                        <option value="Ms" {% if patient and patient.title|upper == 'MS' %}selected{% endif %}>Ms</option>
-                        <option value="Miss" {% if patient and patient.title|upper == 'MISS' %}selected{% endif %}>Miss</option>
-                        <option value="Master" {% if patient and patient.title|upper == 'MASTER' %}selected{% endif %}>Master</option>
-                        <option value="Dr" {% if patient and patient.title|upper == 'DR' %}selected{% endif %}>Dr</option>
-                        <option value="Baby" {% if patient and patient.title|upper == 'BABY' %}selected{% endif %}>Baby</option>
-                    </select>
-                    <input type="text" name="name" id="display_patient_name" class="form-control-compact" 
+            <div class="patient-grid-4x4">
+                <!-- ROW 1 - Col 1: Name (Single field, Title dropdown removed) -->
+                <div class="field-cell">
+                    <label class="field-cell-label" for="display_patient_name">Name:<span class="text-danger">*</span></label>
+                    <input type="text" name="name" id="display_patient_name" 
+                           class="form-control-compact {% if patient %}is-readonly{% endif %}" 
                            value="{% if patient %}{{ patient.name }}{% endif %}" 
-                           placeholder="Enter Patient Name" style="width: 220px; font-weight: 700;">
+                           {% if patient %}readonly aria-readonly="true"{% endif %}
+                           placeholder="Patient Name" style="font-weight: 700; text-transform: uppercase;">
                 </div>
 
-                <div class="field-pair">
-                    <label class="field-pair-label" for="display_gender">Gender:<span class="text-danger">*</span></label>
-                    <select name="gender" id="display_gender" class="form-select-compact" style="width: 95px; font-weight: 600;">
+                <!-- ROW 1 - Col 2: Gender -->
+                <div class="field-cell">
+                    <label class="field-cell-label" for="display_gender">Gender:<span class="text-danger">*</span></label>
+                    <select name="gender" id="display_gender" 
+                            class="form-select-compact {% if patient %}is-readonly{% endif %}" 
+                            {% if patient %}tabindex="-1" aria-readonly="true"{% endif %}>
                         <option value="" {% if not patient or not patient.gender %}selected{% endif %}>Select</option>
                         <option value="Male" {% if patient and patient.gender == 'Male' %}selected{% endif %}>Male</option>
                         <option value="Female" {% if patient and patient.gender == 'Female' %}selected{% endif %}>Female</option>
@@ -602,33 +716,40 @@
                     </select>
                 </div>
 
-                <div class="field-pair">
-                    <label class="field-pair-label" for="display_dob">Dob:</label>
-                    <div class="input-group-compact">
-                        <input type="text" name="dob" id="display_dob" class="form-control-compact" 
+                <!-- ROW 1 - Col 3: DOB -->
+                <div class="field-cell">
+                    <label class="field-cell-label" for="display_dob">DOB:</label>
+                    <div class="input-with-addon">
+                        <input type="text" name="dob" id="display_dob" 
+                               class="form-control-compact {% if patient %}is-readonly{% endif %}" 
                                value="{% if patient and patient.dob %}{{ patient.dob|date:'d/m/Y' }}{% endif %}" 
-                               placeholder="dd/mm/yyyy" style="width: 105px;">
-                        <button type="button" class="btn-icon-addon" disabled>
-                            <i class="bi bi-calendar"></i>
-                        </button>
+                               {% if patient %}readonly aria-readonly="true"{% endif %}
+                               placeholder="dd/mm/yyyy">
+                        <span class="addon-btn"><i class="bi bi-calendar"></i></span>
                     </div>
                 </div>
 
-                <!-- AGE FIELD: 0-99 INTEGERS ONLY, NO PERMANENT HELPER TEXT, ONLY SHOW ERROR ON INVALID VALUE -->
-                <div class="field-pair" style="position: relative;">
-                    <label class="field-pair-label" for="display_age_years">Age:<span class="text-danger">*</span></label>
+                <!-- ROW 1 - Col 4: Age (EDITABLE 0-99) -->
+                <div class="field-cell">
+                    <label class="field-cell-label" for="display_age_years">Age:<span class="text-danger">*</span></label>
                     <input type="text" name="age_years" id="display_age_years" class="form-control-compact" 
                            value="{% if patient and patient.age_years is not None %}{{ patient.age_years }}{% endif %}" 
-                           placeholder="Years" style="width: 65px;">
-                    <span id="age_error_msg" style="display: none; position: absolute; top: calc(100% + 2px); left: 0; white-space: nowrap; color: #dc2626; background: #fff; border: 1px solid #fecaca; border-radius: 4px; padding: 2px 6px; font-size: 0.73rem; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.08); z-index: 50;">Age must be between 0 and 99.</span>
+                           placeholder="Years" style="font-weight: 700;">
+                    <span id="age_error_msg" style="display: none; position: absolute; top: calc(100% + 2px); left: 0; white-space: nowrap; color: #dc2626; background: #fff; border: 1px solid #fecaca; border-radius: 4px; padding: 2px 6px; font-size: 0.72rem; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.08); z-index: 50;">
+                        Age must be between 0 and 99.
+                    </span>
                 </div>
 
-                <div class="field-pair">
-                    <label class="field-pair-label" for="display_category">Category:<span class="text-danger">*</span></label>
-                    <select name="category" id="display_category" class="form-select-compact" style="width: 145px; font-weight: 600;">
+                <!-- ROW 2 - Col 1: Category -->
+                <div class="field-cell">
+                    <label class="field-cell-label" for="display_category">Category:<span class="text-danger">*</span></label>
+                    <select name="category" id="display_category" 
+                            class="form-select-compact {% if patient %}is-readonly{% endif %}" 
+                            {% if patient %}tabindex="-1" aria-readonly="true"{% endif %}>
                         <option value="CONSULTATION" {% if not patient or patient.category == 'CONSULTATION' %}selected{% endif %}>CONSULTATION</option>
                         <option value="GENERAL" {% if patient and patient.category == 'GENERAL' %}selected{% endif %}>GENERAL</option>
                         <option value="EMERGENCY" {% if patient and patient.category == 'EMERGENCY' %}selected{% endif %}>EMERGENCY</option>
+                        <option value="CASUALTY" {% if patient and patient.category == 'CASUALTY' %}selected{% endif %}>CASUALTY</option>
                         <option value="SPECIAL" {% if patient and patient.category == 'SPECIAL' %}selected{% endif %}>SPECIAL</option>
                         <option value="VIP" {% if patient and patient.category == 'VIP' %}selected{% endif %}>VIP</option>
                         <option value="CAMP" {% if patient and patient.category == 'CAMP' %}selected{% endif %}>CAMP</option>
@@ -636,100 +757,145 @@
                     </select>
                 </div>
 
-                <div class="field-pair">
-                    <label class="field-pair-label" for="guardian_rel">Guardian Name:<span class="text-danger">*</span></label>
-                    <select name="guardian_relationship" id="guardian_rel" class="form-select-compact" style="width: 65px; font-weight: 600;">
-                        <option value="-" {% if not patient or patient.guardian_relationship == '-' %}selected{% endif %}>-</option>
-                        <option value="S/O" {% if patient and patient.guardian_relationship == 'S/O' %}selected{% endif %}>S/O</option>
-                        <option value="D/O" {% if patient and patient.guardian_relationship == 'D/O' %}selected{% endif %}>D/O</option>
-                        <option value="W/O" {% if patient and patient.guardian_relationship == 'W/O' %}selected{% endif %}>W/O</option>
-                        <option value="C/O" {% if patient and patient.guardian_relationship == 'C/O' %}selected{% endif %}>C/O</option>
-                        <option value="H/O" {% if patient and patient.guardian_relationship == 'H/O' %}selected{% endif %}>H/O</option>
-                        <option value="F/O" {% if patient and patient.guardian_relationship == 'F/O' %}selected{% endif %}>F/O</option>
-                        <option value="M/O" {% if patient and patient.guardian_relationship == 'M/O' %}selected{% endif %}>M/O</option>
-                        <option value="G/O" {% if patient and patient.guardian_relationship == 'G/O' %}selected{% endif %}>G/O</option>
+                <!-- ROW 2 - Col 2: Visit Through (Preserve OP vs Review) -->
+                <div class="field-cell">
+                    <label class="field-cell-label" for="vt_select">Visit Through:</label>
+                    <select name="visit_through" id="vt_select" 
+                            class="form-select-compact {% if patient %}is-readonly{% endif %}" 
+                            {% if patient %}tabindex="-1" aria-readonly="true"{% endif %}>
+                        <option value="OP" {% if source_visit_through == 'OP' or not patient %}selected{% endif %}>OP</option>
+                        <option value="Review" {% if source_visit_through == 'Review' %}selected{% endif %}>Review</option>
+                        <option value="IP" {% if source_visit_through == 'IP' %}selected{% endif %}>IP</option>
                     </select>
-                    <input type="text" name="guardian_name" id="display_guardian_name" class="form-control-compact" 
-                           value="{% if patient %}{{ patient.guardian_name|default:'' }}{% endif %}" 
-                           placeholder="Enter Guardian Name" style="width: 185px;">
                 </div>
-            </div>
 
-            <!-- ROW 2: Mobile No (without 91) | Aadhar Card | ABHA Number | Street | Village / Area:* -->
-            <div class="patient-info-row">
-                <div class="field-pair">
-                    <label class="field-pair-label" for="display_mobile_no">Mobile No (without 91):</label>
-                    <input type="text" name="mobile_no" id="display_mobile_no" class="form-control-compact" 
+                <!-- ROW 2 - Col 3: Guardian Name -->
+                <div class="field-cell">
+                    <label class="field-cell-label" for="display_guardian_name">Guardian Name:<span class="text-danger">*</span></label>
+                    <div style="display: grid; grid-template-columns: 75px 1fr; gap: 4px;">
+                        <select name="guardian_relationship" id="guardian_rel" 
+                                class="form-select-compact {% if patient %}is-readonly{% endif %}" 
+                                {% if patient %}tabindex="-1" aria-readonly="true"{% endif %}>
+                            <option value="-" {% if not patient or patient.guardian_relationship == '-' %}selected{% endif %}>-</option>
+                            <option value="S/O" {% if patient and patient.guardian_relationship == 'S/O' %}selected{% endif %}>S/O</option>
+                            <option value="D/O" {% if patient and patient.guardian_relationship == 'D/O' %}selected{% endif %}>D/O</option>
+                            <option value="W/O" {% if patient and patient.guardian_relationship == 'W/O' %}selected{% endif %}>W/O</option>
+                            <option value="C/O" {% if patient and patient.guardian_relationship == 'C/O' %}selected{% endif %}>C/O</option>
+                            <option value="H/O" {% if patient and patient.guardian_relationship == 'H/O' %}selected{% endif %}>H/O</option>
+                            <option value="F/O" {% if patient and patient.guardian_relationship == 'F/O' %}selected{% endif %}>F/O</option>
+                            <option value="M/O" {% if patient and patient.guardian_relationship == 'M/O' %}selected{% endif %}>M/O</option>
+                            <option value="G/O" {% if patient and patient.guardian_relationship == 'G/O' %}selected{% endif %}>G/O</option>
+                        </select>
+                        <input type="text" name="guardian_name" id="display_guardian_name" 
+                               class="form-control-compact {% if patient %}is-readonly{% endif %}" 
+                               value="{% if patient %}{{ patient.guardian_name|default:'' }}{% endif %}" 
+                               {% if patient %}readonly aria-readonly="true"{% endif %}
+                               placeholder="Guardian Name">
+                    </div>
+                </div>
+
+                <!-- ROW 2 - Col 4: Mobile No -->
+                <div class="field-cell">
+                    <label class="field-cell-label" for="display_mobile_no">Mobile No:</label>
+                    <input type="text" name="mobile_no" id="display_mobile_no" 
+                           class="form-control-compact {% if patient %}is-readonly{% endif %}" 
                            value="{% if patient %}{{ patient.mobile_no|default:'' }}{% endif %}" 
-                           placeholder="Enter 10 digit number" style="width: 145px;">
+                           {% if patient %}readonly aria-readonly="true"{% endif %}
+                           placeholder="10 digit number">
                 </div>
 
-                <div class="field-pair">
-                    <label class="field-pair-label" for="display_aadhar_card">Aadhar Card:</label>
-                    <input type="text" name="aadhar_card" id="display_aadhar_card" class="form-control-compact" 
+                <!-- ROW 3 - Col 1: Aadhar Card -->
+                <div class="field-cell">
+                    <label class="field-cell-label" for="display_aadhar_card">Aadhar Card:</label>
+                    <input type="text" name="aadhar_card" id="display_aadhar_card" 
+                           class="form-control-compact {% if patient %}is-readonly{% endif %}" 
                            value="{% if patient %}{{ patient.aadhar_card|default:'' }}{% endif %}" 
-                           placeholder="Enter 12 digit number" style="width: 145px;">
+                           {% if patient %}readonly aria-readonly="true"{% endif %}
+                           placeholder="12 digit number">
                 </div>
 
-                <div class="field-pair">
-                    <label class="field-pair-label" for="display_abha_id">ABHA Number:</label>
-                    <input type="text" name="abha_id" id="display_abha_id" class="form-control-compact" 
+                <!-- ROW 3 - Col 2: ABHA Number -->
+                <div class="field-cell">
+                    <label class="field-cell-label" for="display_abha_id">ABHA Number:</label>
+                    <input type="text" name="abha_id" id="display_abha_id" 
+                           class="form-control-compact {% if patient %}is-readonly{% endif %}" 
                            value="{% if patient %}{{ patient.abha_id|default:'' }}{% endif %}" 
-                           placeholder="Enter ABHA number" style="width: 145px;">
+                           {% if patient %}readonly aria-readonly="true"{% endif %}
+                           placeholder="ABHA number">
                 </div>
 
-                <div class="field-pair">
-                    <label class="field-pair-label" for="display_street">Street:</label>
-                    <input type="text" name="street" id="display_street" class="form-control-compact" 
+                <!-- ROW 3 - Col 3: Street -->
+                <div class="field-cell">
+                    <label class="field-cell-label" for="display_street">Street:</label>
+                    <input type="text" name="street" id="display_street" 
+                           class="form-control-compact {% if patient %}is-readonly{% endif %}" 
                            value="{% if patient %}{{ patient.street|default:'' }}{% endif %}" 
-                           placeholder="Enter Street Address" style="width: 190px;">
+                           {% if patient %}readonly aria-readonly="true"{% endif %}
+                           placeholder="Street Address">
                 </div>
 
-                <div class="field-pair">
-                    <label class="field-pair-label" for="display_village">Village / Area:<span class="text-danger">*</span></label>
-                    <input type="text" name="village_area" id="display_village" class="form-control-compact" 
+                <!-- ROW 3 - Col 4: Village / Area -->
+                <div class="field-cell">
+                    <label class="field-cell-label" for="display_village">Village / Area:<span class="text-danger">*</span></label>
+                    <input type="text" name="village_area" id="display_village" 
+                           class="form-control-compact {% if patient %}is-readonly{% endif %}" 
                            value="{% if patient %}{{ patient.village_area|default:'' }}{% endif %}" 
-                           placeholder="Enter Village / Area" style="width: 155px;">
+                           {% if patient %}readonly aria-readonly="true"{% endif %}
+                           placeholder="Village / Area">
                 </div>
-            </div>
 
-            <!-- ROW 3: City | State | Pincode | Bloodgroup [Select] [+] [-] -->
-            <div class="patient-info-row">
-                <div class="field-pair">
-                    <label class="field-pair-label" for="display_city">City:</label>
-                    <select name="city" id="display_city" class="form-select-compact" style="width: 110px;">
+                <!-- ROW 4 - Col 1: City -->
+                <div class="field-cell">
+                    <label class="field-cell-label" for="display_city">City:</label>
+                    <select name="city" id="display_city" 
+                            class="form-select-compact {% if patient %}is-readonly{% endif %}" 
+                            {% if patient %}tabindex="-1" aria-readonly="true"{% endif %}>
                         <option value="Karaikal" {% if not patient or patient.city == 'Karaikal' %}selected{% endif %}>Karaikal</option>
                         <option value="Nagapattinam" {% if patient and patient.city == 'Nagapattinam' %}selected{% endif %}>Nagapattinam</option>
                         <option value="Thiruvarur" {% if patient and patient.city == 'Thiruvarur' %}selected{% endif %}>Thiruvarur</option>
                         <option value="Mayiladuthurai" {% if patient and patient.city == 'Mayiladuthurai' %}selected{% endif %}>Mayiladuthurai</option>
                         <option value="Puducherry" {% if patient and patient.city == 'Puducherry' %}selected{% endif %}>Puducherry</option>
                         <option value="Chennai" {% if patient and patient.city == 'Chennai' %}selected{% endif %}>Chennai</option>
+                        {% if patient and patient.city and patient.city not in 'Karaikal,Nagapattinam,Thiruvarur,Mayiladuthurai,Puducherry,Chennai' %}
+                        <option value="{{ patient.city }}" selected>{{ patient.city }}</option>
+                        {% endif %}
                     </select>
                 </div>
 
-                <div class="field-pair">
-                    <label class="field-pair-label" for="display_state">State:</label>
-                    <select name="state" id="display_state" class="form-select-compact" style="width: 120px;">
+                <!-- ROW 4 - Col 2: State -->
+                <div class="field-cell">
+                    <label class="field-cell-label" for="display_state">State:</label>
+                    <select name="state" id="display_state" 
+                            class="form-select-compact {% if patient %}is-readonly{% endif %}" 
+                            {% if patient %}tabindex="-1" aria-readonly="true"{% endif %}>
                         <option value="Puducherry" {% if not patient or patient.state == 'Puducherry' %}selected{% endif %}>Puducherry</option>
                         <option value="Tamil Nadu" {% if patient and patient.state == 'Tamil Nadu' %}selected{% endif %}>Tamil Nadu</option>
                         <option value="Kerala" {% if patient and patient.state == 'Kerala' %}selected{% endif %}>Kerala</option>
                         <option value="Andhra Pradesh" {% if patient and patient.state == 'Andhra Pradesh' %}selected{% endif %}>Andhra Pradesh</option>
                         <option value="Karnataka" {% if patient and patient.state == 'Karnataka' %}selected{% endif %}>Karnataka</option>
+                        {% if patient and patient.state and patient.state not in 'Puducherry,Tamil Nadu,Kerala,Andhra Pradesh,Karnataka' %}
+                        <option value="{{ patient.state }}" selected>{{ patient.state }}</option>
+                        {% endif %}
                     </select>
                 </div>
 
-                <div class="field-pair">
-                    <label class="field-pair-label" for="display_pincode">Pincode:</label>
-                    <input type="text" name="pincode" id="display_pincode" class="form-control-compact" 
+                <!-- ROW 4 - Col 3: Pincode -->
+                <div class="field-cell">
+                    <label class="field-cell-label" for="display_pincode">Pincode:</label>
+                    <input type="text" name="pincode" id="display_pincode" 
+                           class="form-control-compact {% if patient %}is-readonly{% endif %}" 
                            value="{% if patient %}{{ patient.pincode|default:'' }}{% endif %}" 
-                           placeholder="Enter Pincode" style="width: 95px;">
+                           {% if patient %}readonly aria-readonly="true"{% endif %}
+                           placeholder="Pincode">
                 </div>
 
-                <!-- BLOODGROUP: COMPACT [Select] [+] [-] -->
-                <div class="field-pair">
-                    <label class="field-pair-label" for="display_blood_group">Bloodgroup:</label>
-                    <div style="display: inline-flex; align-items: center; gap: 4px;">
-                        <select name="blood_group" id="display_blood_group" class="form-select-compact" style="width: 85px;">
+                <!-- ROW 4 - Col 4: Bloodgroup with +/- toggle -->
+                <div class="field-cell">
+                    <label class="field-cell-label" for="display_blood_group">Bloodgroup:</label>
+                    <div class="bloodgroup-composite">
+                        <select name="blood_group" id="display_blood_group" 
+                                class="form-select-compact {% if patient %}is-readonly{% endif %}" 
+                                {% if patient %}tabindex="-1" aria-readonly="true"{% endif %}>
                             <option value="" {% if not patient or not patient.blood_group %}selected{% endif %}>Select</option>
                             <option value="A+" {% if patient and patient.blood_group == 'A+' %}selected{% endif %}>A+</option>
                             <option value="A-" {% if patient and patient.blood_group == 'A-' %}selected{% endif %}>A-</option>
@@ -744,13 +910,17 @@
                             <option value="AB" {% if patient and patient.blood_group == 'AB' %}selected{% endif %}>AB</option>
                             <option value="O" {% if patient and patient.blood_group == 'O' %}selected{% endif %}>O</option>
                         </select>
-                        <div class="rh-segmented-wrap" style="display: inline-flex; align-items: center; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 1px; height: 24px;" title="Category (+ = O / - = D)">
-                            <label class="rh-seg-btn" id="lbl_pt_plus" onclick="togglePtType('O')" style="display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 5px; font-size: 0.95rem; font-weight: 800; border-radius: 3px; cursor: pointer; user-select: none; margin: 0; transition: all 0.15s ease; background: {% if not patient or not patient.patient_type or patient.patient_type == 'O' %}#0284c7; color: #ffffff;{% else %}transparent; color: #475569;{% endif %}" title="Category O (+)">
-                                <input type="radio" name="patient_type" id="radio_pt_o" value="O" {% if not patient or not patient.patient_type or patient.patient_type == 'O' %}checked{% endif %} style="display: none;">
+                        <div class="rh-toggle-box" title="Category (+ = O / - = D)">
+                            <label class="rh-toggle-btn {% if not patient or not patient.patient_type or patient.patient_type == 'O' %}active{% else %}inactive{% endif %}" 
+                                   id="lbl_pt_plus" onclick="togglePtType('O')" title="Category O (+)">
+                                <input type="radio" name="patient_type" id="radio_pt_o" value="O" 
+                                       {% if not patient or not patient.patient_type or patient.patient_type == 'O' %}checked{% endif %} style="display: none;">
                                 +
                             </label>
-                            <label class="rh-seg-btn" id="lbl_pt_minus" onclick="togglePtType('D')" style="display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 5px; font-size: 0.95rem; font-weight: 800; border-radius: 3px; cursor: pointer; user-select: none; margin: 0; transition: all 0.15s ease; background: {% if patient and patient.patient_type == 'D' %}#0284c7; color: #ffffff;{% else %}transparent; color: #475569;{% endif %}" title="Category D (-)">
-                                <input type="radio" name="patient_type" id="radio_pt_d" value="D" {% if patient and patient.patient_type == 'D' %}checked{% endif %} style="display: none;">
+                            <label class="rh-toggle-btn {% if patient and patient.patient_type == 'D' %}active{% else %}inactive{% endif %}" 
+                                   id="lbl_pt_minus" onclick="togglePtType('D')" title="Category D (-)">
+                                <input type="radio" name="patient_type" id="radio_pt_d" value="D" 
+                                       {% if patient and patient.patient_type == 'D' %}checked{% endif %} style="display: none;">
                                 -
                             </label>
                         </div>
@@ -759,210 +929,229 @@
             </div>
 
             <!-- =========================================================================
-                 COMPACT READONLY LAST VISIT INFORMATION ROW (Directly above Admission Details)
-                 Order: Last Visit Date | Department | Unit / Doctor
+                 LAST VISIT: CLEAN 3-COLUMN ROW (No "Last Visit" Heading)
+                 Last Visit Date | Department | Unit / Doctor
                  ========================================================================= -->
-            <div class="last-visit-ref-container">
-                <div class="field-pair">
-                    <label class="field-pair-label" for="ref_last_visit_date">Last Visit Date:</label>
-                    <div class="input-group-compact">
-                        <input type="text" id="ref_last_visit_date" class="form-control-compact" 
+            <div class="last-visit-clean-row">
+                <div class="field-cell">
+                    <label class="field-cell-label" for="ref_last_visit_date">Last Visit Date:</label>
+                    <div class="input-with-addon">
+                        <input type="text" id="ref_last_visit_date" class="form-control-compact is-readonly" 
                                value="{% if last_visit and last_visit.visit_date %}{{ last_visit.visit_date|date:'d/m/Y' }}{% endif %}" 
-                               readonly placeholder="dd/mm/yyyy" style="width: 105px;">
-                        <button type="button" class="btn-icon-addon" disabled>
-                            <i class="bi bi-calendar"></i>
-                        </button>
+                               readonly aria-readonly="true" placeholder="dd/mm/yyyy">
+                        <span class="addon-btn"><i class="bi bi-calendar"></i></span>
                     </div>
                 </div>
 
-                <div class="field-pair">
-                    <label class="field-pair-label" for="ref_last_visit_dept">Department:</label>
-                    <select id="ref_last_visit_dept" class="form-select-compact" disabled style="width: 180px; font-weight: 600;">
-                        <option>{% if last_visit %}{{ last_visit.initial_department_name|default:last_visit.department }}{% endif %}</option>
+                <div class="field-cell">
+                    <label class="field-cell-label" for="ref_last_visit_dept">Department:</label>
+                    <select id="ref_last_visit_dept" class="form-select-compact is-readonly" tabindex="-1" aria-readonly="true">
+                        <option>{% if last_visit %}{{ last_visit.initial_department_name|default:last_visit.department }}{% else %}--{% endif %}</option>
                     </select>
                 </div>
 
-                <div class="field-pair">
-                    <label class="field-pair-label" for="ref_last_visit_unit">Unit / Doctor:</label>
-                    <select id="ref_last_visit_unit" class="form-select-compact" disabled style="width: 220px; font-weight: 600;">
-                        <option>{% if last_visit %}{{ last_visit.unit_doctor }}{% endif %}</option>
+                <div class="field-cell">
+                    <label class="field-cell-label" for="ref_last_visit_unit">Unit / Doctor:</label>
+                    <select id="ref_last_visit_unit" class="form-select-compact is-readonly" tabindex="-1" aria-readonly="true">
+                        <option>{% if last_visit %}{{ last_visit.unit_doctor }}{% else %}--{% endif %}</option>
                     </select>
                 </div>
             </div>
 
             <!-- =========================================================================
-                 ADMISSION DETAILS SECTION
-                 Department | Unit | Admission Type | Ward | Available Beds | Bed | Admission Date | IP Number | Status | Check Available Beds
+                 ADMISSION DETAILS: EXACTLY TWO LOGICAL ROWS
+                 ROW 1 (4 columns): Department | Unit / Doctor | Ward | Bed
+                 ROW 2 (4 columns): Admission Date | IP Number | Admission Status | Admission Reason / Diagnosis
+                 (Admission Type is completely removed from this UI)
                  ========================================================================= -->
-            <div class="adm-details-container">
-                <div class="adm-details-tab-badge">
-                    Admission Details
+            <div class="adm-details-card">
+                <div class="adm-details-badge">
+                    ADMISSION DETAILS
                 </div>
 
-                <div class="patient-info-row" style="align-items: center; gap: 8px 12px; margin-top: 4px; flex-wrap: wrap;">
-                    <div class="field-pair" style="flex: 1; min-width: 155px; max-width: 190px;">
-                        <label class="field-pair-label" for="id_adm_department">Department:<span class="text-danger">*</span></label>
-                        <div style="width: 100%;">
+                <!-- ROW 1 (4 Columns): Department | Unit / Doctor | Ward | Bed -->
+                <div class="adm-grid-row1">
+                    <!-- 1. Department -->
+                    <div class="field-cell">
+                        <label class="field-cell-label" for="id_adm_department">Department:<span class="text-danger">*</span></label>
+                        <div>
                             {{ admission_form.department_obj }}
                         </div>
                     </div>
 
-                    <div class="field-pair" style="flex: 1; min-width: 170px; max-width: 210px;">
-                        <label class="field-pair-label" for="id_adm_unit">Unit / Doctor:<span class="text-danger">*</span></label>
-                        <div style="width: 100%;">
+                    <!-- 2. Unit / Doctor -->
+                    <div class="field-cell">
+                        <label class="field-cell-label" for="id_adm_unit">Unit / Doctor:<span class="text-danger">*</span></label>
+                        <div>
                             {{ admission_form.unit_obj }}
                         </div>
                     </div>
 
-                    <div class="field-pair" style="flex: 0 0 auto;">
-                        <label class="field-pair-label" for="id_adm_type">Admission Type:<span class="text-danger">*</span></label>
-                        <div style="width: 140px;">
-                            {{ admission_form.admission_type }}
-                        </div>
-                    </div>
-
-                    <div class="field-pair" style="flex: 0 0 auto;">
-                        <label class="field-pair-label" for="id_adm_ward">Ward:<span class="text-danger">*</span></label>
-                        <div style="width: 150px;">
-                            {{ admission_form.ward }}
-                        </div>
-                    </div>
-
-                    <div class="field-pair" style="flex: 0 0 auto;">
-                        <label class="field-pair-label" for="id_avail_beds_select">Available Beds:<span class="text-danger">*</span></label>
-                        <div style="display: inline-flex; align-items: center; gap: 4px;">
-                            <select id="id_avail_beds_select" class="form-select-compact" style="width: 110px;" onchange="onAvailableBedSelected(this.value)">
-                                <option value="">Select Bed</option>
+                    <!-- 3. Ward -->
+                    <div class="field-cell">
+                        <label class="field-cell-label" for="id_adm_ward">Ward:</label>
+                        <div>
+                            <select name="ward" id="id_adm_ward" class="form-select-compact" onchange="loadAvailableBedsForWard()">
+                                <option value="">Select Ward</option>
+                                {% for w in wards %}
+                                <option value="{{ w.name }}" data-ward-id="{{ w.id }}" {% if admission_form.ward.value == w.name or admission_form.ward.value == w.code %}selected{% endif %}>
+                                    {{ w.name }}{% if w.code %} ({{ w.code }}){% endif %}
+                                </option>
+                                {% endfor %}
                             </select>
-                            <button type="button" class="btn-icon-addon" onclick="loadAvailableBedsForWard()" title="Refresh Available Beds" style="height: 30px; width: 30px; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; background: #ffffff;">
-                                <i class="bi bi-arrow-clockwise" style="color: #0284c7; font-size: 0.9rem;"></i>
-                            </button>
                         </div>
                     </div>
 
-                    <div class="field-pair" style="flex: 0 0 auto;">
-                        <label class="field-pair-label" for="id_adm_bed">Bed:<span class="text-danger">*</span></label>
-                        <div style="width: 75px;">
-                            {{ admission_form.bed }}
+                    <!-- 4. Bed (Selected from allocation panel below, readonly) -->
+                    <div class="field-cell">
+                        <label class="field-cell-label" for="id_adm_bed">Bed:</label>
+                        <div>
+                            <input type="text" name="bed" id="id_adm_bed" class="form-control-compact is-readonly" 
+                                   value="{{ admission_form.bed.value|default:'' }}" readonly aria-readonly="true" 
+                                   placeholder="Select from Allocation" style="font-weight: 700; color: var(--theme-primary, #0284c7);">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 2 (4 Columns): Admission Date | IP Number | Admission Status | Admission Reason / Diagnosis -->
+                <div class="adm-grid-row2">
+                    <!-- 1. Admission Date -->
+                    <div class="field-cell">
+                        <label class="field-cell-label" for="id_adm_date">Admission Date:<span class="text-danger">*</span></label>
+                        <div class="input-with-addon">
+                            <input type="text" name="admission_date" id="id_adm_date" class="form-control-compact" 
+                                   value="{{ admission_form.admission_date.value|default:now|date:'d/m/Y' }}" placeholder="dd/mm/yyyy">
+                            <span class="addon-btn"><i class="bi bi-calendar"></i></span>
                         </div>
                     </div>
 
-                    <div class="field-pair" style="flex: 0 0 auto;">
-                        <label class="field-pair-label" for="id_adm_date">Admission Date:<span class="text-danger">*</span></label>
-                        <div class="input-group-compact">
-                            {{ admission_form.admission_date }}
-                            <button type="button" class="btn-icon-addon" disabled>
-                                <i class="bi bi-calendar"></i>
-                            </button>
-                        </div>
+                    <!-- 2. IP Number (Auto-generated / readonly, not manually editable) -->
+                    <div class="field-cell">
+                        <label class="field-cell-label" for="id_adm_ipno">IP Number:<span class="text-danger">*</span></label>
+                        <input type="text" name="ipno" id="id_adm_ipno" class="form-control-compact is-readonly" 
+                               value="{{ saved_ip|default:admission_form.ipno.value|default:next_ipno }}" readonly aria-readonly="true" 
+                               placeholder="Auto-generated" style="font-weight: 700; color: var(--theme-primary, #0284c7);">
                     </div>
 
-                    <div class="field-pair" style="flex: 0 0 auto;">
-                        <label class="field-pair-label" for="id_adm_ipno">IP Number:</label>
-                        <div style="width: 105px;">
-                            {{ admission_form.ipno }}
-                        </div>
-                    </div>
-
-                    <div class="field-pair" style="flex: 0 0 auto;">
-                        <label class="field-pair-label" for="id_adm_status">Admission Status:<span class="text-danger">*</span></label>
-                        <div style="width: 115px;">
+                    <!-- 3. Admission Status -->
+                    <div class="field-cell">
+                        <label class="field-cell-label" for="id_adm_status">Admission Status:<span class="text-danger">*</span></label>
+                        <div>
                             {{ admission_form.status }}
                         </div>
                     </div>
 
-                    <div class="field-pair" style="flex: 0 0 auto; margin-left: auto;">
-                        <button type="button" class="btn-action-base" onclick="scrollToBedAllocation()" title="Check available beds grid" style="height: 30px; padding: 0 10px; font-size: 0.78rem; font-weight: 700; border-radius: 4px; border: 1px solid #0284c7; background: #ffffff; color: #0284c7; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
-                            <i class="bi bi-layout-text-window-reverse"></i> Check Available Beds
-                        </button>
+                    <!-- 4. Admission Reason / Diagnosis -->
+                    <div class="field-cell">
+                        <label class="field-cell-label" for="id_adm_reason">Admission Reason / Diagnosis:</label>
+                        <input type="text" name="admission_reason" id="id_adm_reason" class="form-control-compact" 
+                               value="{{ admission_form.admission_reason.value|default:'' }}" 
+                               placeholder="Provisional diagnosis or clinical findings...">
                     </div>
-                </div>
-
-                <!-- ADMISSION REASON / DIAGNOSIS (Horizontal Row) -->
-                <div class="field-pair" style="width: 100%; display: flex; align-items: center; gap: 8px; margin-top: 8px;">
-                    <label class="field-pair-label" for="id_adm_reason" style="white-space: nowrap;">
-                        Admission Reason / Diagnosis:
-                    </label>
-                    <input type="text" name="admission_reason" id="id_adm_reason" class="form-control-compact" style="flex: 1; min-width: 250px;" placeholder="Enter reason / diagnosis for admission">
                 </div>
             </div>
 
             <!-- =========================================================================
-                 BED ALLOCATION UI (Visually & Functionally Unique to IP Admission)
-                 Ward -> Available Beds -> Select Bed -> Bed availability/refresh -> Check Available Beds
+                 WARD / BED ALLOCATION PANEL
+                 Dedicated authoritative bed availability interface below Admission Details.
+                 Total Beds | Available | Occupied | Blocked | [Refresh]
+                 Compact visual bed cards with bed icon & animation:
+                 GREEN: Available (subtle pulse) | RED: Occupied | GRAY: Blocked | BLUE: Selected
+                 CRITICAL: If Available == 0, patient can still be admitted without a bed!
                  ========================================================================= -->
-            <div class="bed-allocation-card" id="bed_allocation_section">
+            <div class="bed-allocation-card" id="bed_allocation_panel">
                 <div class="bed-allocation-header">
-                    <div class="bed-allocation-title">
-                        <i class="bi bi-layout-text-window-reverse"></i>
-                        <span>Ward Bed Allocation Matrix: <strong id="ward_name_display" style="color: #0c4a6e;">Please Select Ward</strong></span>
+                    <div class="bed-alloc-summary-bar">
+                        <span class="bed-alloc-title"><i class="bi bi-hospital-fill"></i> WARD BED ALLOCATION</span>
+                        <span id="badge_ward_label" style="font-size: 0.80rem; font-weight: 700; color: var(--theme-text, #1e293b);">[ No Ward Selected ]</span>
+                        <span class="bed-pill bed-pill-total">
+                            Total Beds: <strong id="badge_total_num" style="margin-left: 2px;">0</strong>
+                        </span>
+                        <span class="bed-pill bed-pill-avail">
+                            <span class="bed-pill-dot" style="background: #10b981;"></span>
+                            Available: <strong id="badge_avail_num" style="margin-left: 2px;">0</strong>
+                        </span>
+                        <span class="bed-pill bed-pill-occ">
+                            <span class="bed-pill-dot" style="background: #ef4444;"></span>
+                            Occupied: <strong id="badge_occ_num" style="margin-left: 2px;">0</strong>
+                        </span>
+                        <span class="bed-pill bed-pill-blk">
+                            <span class="bed-pill-dot" style="background: #64748b;"></span>
+                            Blocked: <strong id="badge_blk_num" style="margin-left: 2px;">0</strong>
+                        </span>
                     </div>
 
-                    <div style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <span class="bed-summary-pill bed-summary-avail" id="badge_avail_count_pill">
-                            <span class="bed-summary-dot dot-avail"></span> Available: <strong id="badge_avail_num">0</strong>
-                        </span>
-                        <span class="bed-summary-pill bed-summary-occ" id="badge_occ_count_pill">
-                            <span class="bed-summary-dot dot-occ"></span> Occupied: <strong id="badge_occ_num">0</strong>
-                        </span>
-                        <span class="bed-summary-pill bed-summary-blocked" id="badge_blk_count_pill" style="display: none;">
-                            <span class="bed-summary-dot dot-blocked"></span> Blocked: <strong id="badge_blk_num">0</strong>
-                        </span>
-                        <button type="button" class="btn-action-base btn-action-blue" style="height: 27px; padding: 0 10px; font-size: 0.76rem;" onclick="loadAvailableBedsForWard()" title="Refresh Available Beds">
-                            <i class="bi bi-arrow-repeat"></i> Check Available Beds
+                    <div>
+                        <button type="button" class="btn-action-base btn-action-reset" onclick="loadAvailableBedsForWard()" style="height: 26px; padding: 0 10px; font-size: 0.74rem;">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
                         </button>
                     </div>
                 </div>
 
-                <div id="ip_ward_beds_grid" class="ward-beds-grid">
-                    <div style="grid-column: 1 / -1; font-size: 0.80rem; color: #64748b; font-style: italic; padding: 12px; text-align: center;">
-                        <i class="bi bi-info-circle" style="margin-right: 4px;"></i> Select a Ward from Admission Details above to view and allocate beds.
+                <!-- CRITICAL: NO BED AVAILABLE BANNER (Shown when Available == 0) -->
+                <div id="no_bed_alert_banner" class="no-bed-alert-banner" style="display: none;">
+                    <i class="bi bi-exclamation-triangle-fill" style="color: #d97706; font-size: 1.05rem;"></i>
+                    <span>All beds are currently occupied or blocked. You can still save the admission. The patient will be admitted without a specific bed.</span>
+                </div>
+
+                <!-- Visual Bed Cards Grid -->
+                <div class="ward-beds-grid" id="ward_beds_grid">
+                    <div style="grid-column: 1 / -1; font-size: 0.78rem; color: var(--theme-text-muted, #64748b); padding: 12px; text-align: center;">
+                        <i class="bi bi-info-circle"></i> Please select a ward from Admission Details to view and allocate beds.
                     </div>
                 </div>
             </div>
 
             <!-- =========================================================================
-                 IP ADMISSION ACTIONS BAR
-                 Save Admission | Reset | Print - Admission | Label - IP | Bed Allocation
+                 BOTTOM ACTION BUTTONS
+                 Save / Admit Patient (always enabled for valid patient, even with 0 beds)
+                 Reset | Print | Label - I | Print - OP | Label-A4
                  ========================================================================= -->
-            <div class="review-action-bar">
+            <div class="ip-action-bar">
                 <button type="submit" class="btn-action-base btn-action-save" id="btn_save_admission"
-                        {% if not patient %}disabled title="Please search and select a patient first" style="opacity: 0.7; cursor: not-allowed;"{% endif %}>
-                    <i class="bi bi-floppy"></i> Save Admission
+                        {% if not patient %}disabled title="Please search and select a patient first" style="opacity: 0.65; cursor: not-allowed;"{% endif %}>
+                    <i class="bi bi-door-open-fill"></i> Save / Admit Patient
                 </button>
                 <button type="button" class="btn-action-base btn-action-reset" onclick="window.location.href='{% url 'patients:ip_admission' %}'">
                     <i class="bi bi-arrow-counterclockwise"></i> Reset
                 </button>
                 {% if patient %}
-                <a href="{% url 'patients:print' patient.id %}?type=ADMISSION" target="_blank" class="btn-action-base btn-action-blue" title="Print Admission Slip">
-                    <i class="bi bi-printer"></i> Print - Admission
+                <a href="{% url 'patients:medical_history_print' patient.id %}" target="_blank" class="btn-action-base btn-action-blue">
+                    <i class="bi bi-printer"></i> Print
                 </a>
-                <button type="button" onclick="window.print()" class="btn-action-base btn-action-cyan" title="Print IP Wristband / Label">
-                    <i class="bi bi-tag"></i> Label - IP
+                <button type="button" onclick="window.print()" class="btn-action-base btn-action-blue">
+                    <i class="bi bi-tag"></i> Label - I
                 </button>
-                <button type="button" onclick="scrollToBedAllocation()" class="btn-action-base btn-action-blue" title="Navigate to Bed Allocation Matrix">
-                    <i class="bi bi-layout-text-window-reverse"></i> Bed Allocation
+                <a href="{% url 'patients:print' patient.id %}" target="_blank" class="btn-action-base btn-action-blue">
+                    <i class="bi bi-printer"></i> Print - OP
+                </a>
+                <button type="button" onclick="window.print()" class="btn-action-base btn-action-blue">
+                    <i class="bi bi-file-earmark-text"></i> Label-A4
                 </button>
                 {% else %}
-                <button type="button" class="btn-action-base btn-action-blue" disabled style="opacity: 0.6; cursor: not-allowed;">
-                    <i class="bi bi-printer"></i> Print - Admission
+                <button type="button" class="btn-action-base btn-action-blue" disabled style="opacity: 0.55; cursor: not-allowed;">
+                    <i class="bi bi-printer"></i> Print
                 </button>
-                <button type="button" class="btn-action-base btn-action-cyan" disabled style="opacity: 0.6; cursor: not-allowed;">
-                    <i class="bi bi-tag"></i> Label - IP
+                <button type="button" class="btn-action-base btn-action-blue" disabled style="opacity: 0.55; cursor: not-allowed;">
+                    <i class="bi bi-tag"></i> Label - I
                 </button>
-                <button type="button" class="btn-action-base btn-action-blue" disabled style="opacity: 0.6; cursor: not-allowed;">
-                    <i class="bi bi-layout-text-window-reverse"></i> Bed Allocation
+                <button type="button" class="btn-action-base btn-action-blue" disabled style="opacity: 0.55; cursor: not-allowed;">
+                    <i class="bi bi-printer"></i> Print - OP
+                </button>
+                <button type="button" class="btn-action-base btn-action-blue" disabled style="opacity: 0.55; cursor: not-allowed;">
+                    <i class="bi bi-file-earmark-text"></i> Label-A4
                 </button>
                 {% endif %}
             </div>
 
         </form>
+
     </div>
 
 </div>
 
 <script>
-    // Search execution function: Patient Id vs OP No
+    // Search execution: Patient Id vs OP No
     function executeSelectedSearch() {
         const isOp = document.getElementById('radio_op_no').checked;
         const searchType = isOp ? 'op_no' : 'patient_id';
@@ -984,20 +1173,6 @@
         window.location.href = url.toString();
     }
 
-    // IPNO search function
-    function submitIpnoSearch() {
-        const input = document.getElementById('review_ipno');
-        const val = input ? input.value.trim() : '';
-        if (!val) {
-            alert("Please enter an IP Number to search.");
-            if (input) input.focus();
-            return;
-        }
-        const url = new URL("{% url 'patients:ip_admission' %}", window.location.origin);
-        url.searchParams.set('ipno', val);
-        window.location.href = url.toString();
-    }
-
     function updateSearchPlaceholder() {
         const isOp = document.getElementById('radio_op_no').checked;
         const input = document.getElementById('main_search_input');
@@ -1006,16 +1181,8 @@
         }
     }
 
-    function scrollToBedAllocation() {
-        const sec = document.getElementById('bed_allocation_section');
-        if (sec) {
-            sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
-
     // =========================================================================
     // AGE VALIDATION (0–99 YEARS ONLY, REJECT NEGATIVE, DECIMAL, >=100)
-    // Only displays error after invalid value entered; no permanent helper text
     // =========================================================================
     function validateAgeField(showErrorImmediately = true) {
         const ageInput = document.getElementById('display_age_years');
@@ -1082,14 +1249,10 @@
                 let months = today.getMonth() - dob.getMonth();
                 let days = today.getDate() - dob.getDate();
 
-                if (days < 0) {
-                    months -= 1;
-                }
-                if (months < 0) {
-                    years -= 1;
-                }
+                if (days < 0) months -= 1;
+                if (months < 0) years -= 1;
 
-                if (years >= 0 && years <= 99 && ageInput) {
+                if (years >= 0 && ageInput) {
                     ageInput.value = years;
                 }
             }
@@ -1097,163 +1260,169 @@
         validateAgeField(true);
     }
 
-    // Patient Type segmented toggle (+ = O, - = D)
-    function togglePtType(val) {
-        const radioO = document.getElementById('radio_pt_o');
-        const radioD = document.getElementById('radio_pt_d');
-        const lblO = document.getElementById('lbl_pt_plus');
-        const lblD = document.getElementById('lbl_pt_minus');
-        if (val === 'O') {
-            if (radioO) radioO.checked = true;
-            if (lblO) { lblO.style.background = '#0284c7'; lblO.style.color = '#ffffff'; }
-            if (lblD) { lblD.style.background = 'transparent'; lblD.style.color = '#475569'; }
-        } else {
-            if (radioD) radioD.checked = true;
-            if (lblD) { lblD.style.background = '#0284c7'; lblD.style.color = '#ffffff'; }
-            if (lblO) { lblO.style.background = 'transparent'; lblO.style.color = '#475569'; }
-        }
-    }
-
     // =========================================================================
-    // BED ALLOCATION INTERACTIVE LOGIC (SOURCE OF TRUTH REUSE)
-    // Ward -> Available Beds -> Select Bed -> Prevent Double Allocation
+    // AUTHORITATIVE BED AVAILABILITY & VISUAL BED CARD SELECTION
+    // The allocation panel is the sole authoritative bed availability interface.
     // =========================================================================
-    const wardSelect = document.getElementById('id_adm_ward');
-    const bedInput = document.getElementById('id_adm_bed');
-    const bedsGrid = document.getElementById('ip_ward_beds_grid');
-    const availBedsSelect = document.getElementById('id_avail_beds_select');
-    const wardNameDisplay = document.getElementById('ward_name_display');
-    const availBedsCount = document.getElementById('id_avail_beds_count');
-    const badgeAvailNum = document.getElementById('badge_avail_num');
-    const badgeOccNum = document.getElementById('badge_occ_num');
-    const badgeBlkPill = document.getElementById('badge_blk_count_pill');
-    const badgeBlkNum = document.getElementById('badge_blk_num');
-
-    function onAvailableBedSelected(bedCode) {
-        if (!bedCode) {
-            if (bedInput) bedInput.value = '';
-            if (bedsGrid) {
-                const allAvail = bedsGrid.querySelectorAll('.bed-item-available');
-                allAvail.forEach(b => b.classList.remove('active-selected'));
-            }
-            return;
-        }
-        if (bedInput) bedInput.value = bedCode;
-        if (bedsGrid) {
-            const allAvail = bedsGrid.querySelectorAll('.bed-item-available');
-            allAvail.forEach(b => {
-                if (b.dataset.bedCode === bedCode || b.textContent.includes(bedCode)) {
-                    b.classList.add('active-selected');
-                } else {
-                    b.classList.remove('active-selected');
-                }
-            });
-        }
-    }
-
-    function selectAdmissionBed(bedCode, btnElem) {
-        if (!bedCode) return;
-        if (bedInput) bedInput.value = bedCode;
-        if (availBedsSelect) {
-            availBedsSelect.value = bedCode;
-        }
-        if (bedsGrid) {
-            const allAvail = bedsGrid.querySelectorAll('.bed-item-available');
-            allAvail.forEach(b => b.classList.remove('active-selected'));
-        }
-        if (btnElem) {
-            btnElem.classList.add('active-selected');
-        }
-    }
+    let currentWardBeds = [];
 
     function loadAvailableBedsForWard() {
+        const wardSelect = document.getElementById('id_adm_ward');
+        const bedsGrid = document.getElementById('ward_beds_grid');
+        const bedInput = document.getElementById('id_adm_bed');
+        const badgeTotalNum = document.getElementById('badge_total_num');
+        const badgeAvailNum = document.getElementById('badge_avail_num');
+        const badgeOccNum = document.getElementById('badge_occ_num');
+        const badgeBlkNum = document.getElementById('badge_blk_num');
+        const badgeWardLabel = document.getElementById('badge_ward_label');
+        const noBedBanner = document.getElementById('no_bed_alert_banner');
+
         if (!wardSelect) return;
-        const wardVal = (wardSelect.value || '').trim();
-        if (!wardVal) {
-            if (wardNameDisplay) wardNameDisplay.textContent = 'Please Select Ward';
-            if (availBedsCount) availBedsCount.textContent = '0';
+        const selectedOpt = wardSelect.options[wardSelect.selectedIndex];
+        const wardName = wardSelect.value.trim();
+        const wardId = selectedOpt ? selectedOpt.getAttribute('data-ward-id') : '';
+
+        if (!wardName) {
+            if (badgeWardLabel) badgeWardLabel.textContent = '[ No Ward Selected ]';
+            if (badgeTotalNum) badgeTotalNum.textContent = '0';
             if (badgeAvailNum) badgeAvailNum.textContent = '0';
             if (badgeOccNum) badgeOccNum.textContent = '0';
-            if (availBedsSelect) availBedsSelect.innerHTML = '<option value="">Select Bed</option>';
-            if (bedsGrid) bedsGrid.innerHTML = '<div style="grid-column: 1 / -1; font-size: 0.80rem; color: #64748b; font-style: italic; padding: 12px; text-align: center;"><i class="bi bi-info-circle" style="margin-right: 4px;"></i> Select a Ward from Admission Details above to view and allocate beds.</div>';
+            if (badgeBlkNum) badgeBlkNum.textContent = '0';
+            if (noBedBanner) noBedBanner.style.display = 'none';
+            if (bedsGrid) bedsGrid.innerHTML = '<div style="grid-column: 1 / -1; font-size: 0.78rem; color: var(--theme-text-muted, #64748b); padding: 12px; text-align: center;"><i class="bi bi-info-circle"></i> Please select a ward from Admission Details to view and allocate beds.</div>';
             return;
         }
 
-        const cleanWard = wardVal.split('(')[0].trim();
-        if (wardNameDisplay) wardNameDisplay.textContent = cleanWard;
-        if (availBedsCount) availBedsCount.textContent = '...';
-        if (badgeAvailNum) badgeAvailNum.textContent = '...';
-        if (badgeOccNum) badgeOccNum.textContent = '...';
-        if (badgeBlkPill) badgeBlkPill.style.display = 'none';
-        if (bedsGrid) bedsGrid.innerHTML = '<div style="grid-column: 1 / -1; font-size: 0.80rem; color: #64748b; font-style: italic; padding: 12px; text-align: center;"><i class="bi bi-arrow-repeat spin" style="margin-right: 4px;"></i> Loading live ward bed status...</div>';
+        if (badgeWardLabel) badgeWardLabel.textContent = `[ ${wardName} ]`;
+        if (bedsGrid) bedsGrid.innerHTML = '<div style="grid-column: 1 / -1; font-size: 0.78rem; color: var(--theme-primary, #0284c7); padding: 12px; text-align: center;"><i class="spinner-border spinner-border-sm"></i> Loading ward bed status...</div>';
 
-        fetch(`{% url "patients:api_available_ward_beds" %}?ward=${encodeURIComponent(cleanWard)}`)
-            .then(r => r.json())
+        const apiUrl = `{% url 'patients:api_available_ward_beds' %}?ward=${encodeURIComponent(wardName)}&ward_id=${encodeURIComponent(wardId || '')}`;
+        fetch(apiUrl)
+            .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    const avail = data.total_available !== undefined ? data.total_available : (data.available_bed_codes ? data.available_bed_codes.length : 0);
+                    const total = data.total_capacity !== undefined ? data.total_capacity : (data.beds ? data.beds.length : 0);
+                    const avail = data.total_available !== undefined ? data.total_available : 0;
                     const occ = data.total_occupied !== undefined ? data.total_occupied : 0;
                     const blk = data.total_blocked !== undefined ? data.total_blocked : 0;
 
-                    if (availBedsCount) availBedsCount.textContent = avail;
+                    if (badgeTotalNum) badgeTotalNum.textContent = total;
                     if (badgeAvailNum) badgeAvailNum.textContent = avail;
                     if (badgeOccNum) badgeOccNum.textContent = occ;
-                    if (badgeBlkPill) {
-                        if (blk > 0) {
-                            badgeBlkPill.style.display = 'inline-flex';
-                            if (badgeBlkNum) badgeBlkNum.textContent = blk;
+                    if (badgeBlkNum) badgeBlkNum.textContent = blk;
+
+                    // CRITICAL: NO BED AVAILABLE BANNER
+                    // If Available = 0 and total > 0, show the banner reminding that admission is still saveable!
+                    if (noBedBanner) {
+                        if (avail === 0 && total > 0) {
+                            noBedBanner.style.display = 'flex';
                         } else {
-                            badgeBlkPill.style.display = 'none';
+                            noBedBanner.style.display = 'none';
                         }
                     }
 
-                    const currentBed = (bedInput ? bedInput.value : '').trim().toUpperCase();
-                    const bedsList = data.beds || [];
+                    // Use all_beds for authoritative status objects
+                    const bedsList = data.all_beds || [];
+                    currentWardBeds = bedsList;
 
-                    if (availBedsSelect) {
-                        availBedsSelect.innerHTML = '<option value="">Select Bed</option>';
-                    }
+                    const currentBed = (bedInput ? bedInput.value : '').trim().toUpperCase();
 
                     let html = '';
                     if (bedsList.length > 0) {
                         bedsList.forEach(b => {
-                            const bCode = (b.code || '').trim();
+                            const bCode = (b.code || b.bed_number || '').trim();
                             const isSelected = (currentBed && currentBed === bCode.toUpperCase());
+
                             if (b.is_available) {
-                                if (availBedsSelect) {
-                                    const opt = document.createElement('option');
-                                    opt.value = bCode;
-                                    opt.textContent = bCode;
-                                    if (isSelected) opt.selected = true;
-                                    availBedsSelect.appendChild(opt);
-                                }
-                                html += `<button type="button" class="bed-item bed-item-available ${isSelected ? 'active-selected' : ''}" data-bed-code="${bCode}" onclick="selectAdmissionBed('${bCode}', this)" title="Select Available Bed ${bCode}">🛏 ${bCode}</button>`;
+                                html += `
+                                <div class="bed-card bed-card-available ${isSelected ? 'is-selected' : ''}" 
+                                     id="bed_card_${bCode}" 
+                                     data-bed-code="${bCode}" 
+                                     onclick="selectAdmissionBed('${bCode}')" 
+                                     title="Available: Click to select bed ${bCode}">
+                                    <span class="bed-left">
+                                        <span class="bed-icon">🛏</span>
+                                        <strong>${bCode}</strong>
+                                    </span>
+                                    <span class="bed-tag">${isSelected ? 'Selected' : 'Available'}</span>
+                                </div>`;
                             } else if (b.is_occupied) {
                                 const tooltip = `Occupied${b.patient_name ? ' by ' + b.patient_name : ''}${b.ipno ? ' (' + b.ipno + ')' : ''}`;
-                                html += `<div class="bed-item bed-item-occupied" title="${tooltip}">🛏 ${bCode} <span class="bed-status-tag">Occupied</span></div>`;
+                                html += `
+                                <div class="bed-card bed-card-occupied" title="${tooltip}">
+                                    <span class="bed-left">
+                                        <span class="bed-icon">🛏</span>
+                                        <span>${bCode}</span>
+                                    </span>
+                                    <span class="bed-tag">Occupied</span>
+                                </div>`;
                             } else if (b.is_blocked) {
                                 const tooltip = `Blocked / Reserved${b.patient_name ? ' for ' + b.patient_name : ''}`;
-                                html += `<div class="bed-item bed-item-blocked" title="${tooltip}">🛏 ${bCode} <span class="bed-status-tag">Blocked</span></div>`;
+                                html += `
+                                <div class="bed-card bed-card-blocked" title="${tooltip}">
+                                    <span class="bed-left">
+                                        <span class="bed-icon">🛏</span>
+                                        <span>${bCode}</span>
+                                    </span>
+                                    <span class="bed-tag">Blocked</span>
+                                </div>`;
                             } else {
-                                html += `<div class="bed-item bed-item-occupied" title="Unavailable">🛏 ${bCode} <span class="bed-status-tag">Unavailable</span></div>`;
+                                html += `
+                                <div class="bed-card bed-card-occupied" title="Unavailable">
+                                    <span class="bed-left">
+                                        <span class="bed-icon">🛏</span>
+                                        <span>${bCode}</span>
+                                    </span>
+                                    <span class="bed-tag">Unavailable</span>
+                                </div>`;
                             }
                         });
                         bedsGrid.innerHTML = html;
                     } else {
-                        bedsGrid.innerHTML = '<div style="grid-column: 1 / -1; font-size: 0.80rem; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; padding: 10px; text-align: center; font-weight: 600;"><i class="bi bi-exclamation-triangle-fill" style="margin-right: 4px;"></i> No beds configured for this ward.</div>';
+                        bedsGrid.innerHTML = '<div style="grid-column: 1 / -1; font-size: 0.78rem; color: #92400e; padding: 10px; text-align: center;"><i class="bi bi-exclamation-triangle"></i> No beds configured for this ward.</div>';
                     }
                 } else {
-                    if (availBedsCount) availBedsCount.textContent = '0';
                     if (badgeAvailNum) badgeAvailNum.textContent = '0';
-                    if (availBedsSelect) availBedsSelect.innerHTML = '<option value="">Select Bed</option>';
-                    bedsGrid.innerHTML = `<div style="grid-column: 1 / -1; font-size: 0.80rem; color: #dc2626; padding: 10px; text-align: center;">${data.message || 'Error loading beds.'}</div>`;
+                    bedsGrid.innerHTML = `<div style="grid-column: 1 / -1; font-size: 0.78rem; color: #dc2626; padding: 10px; text-align: center;">${data.message || 'Error loading beds.'}</div>`;
                 }
             })
             .catch(err => {
                 console.error("Error fetching ward beds:", err);
-                if (availBedsCount) availBedsCount.textContent = '!';
-                bedsGrid.innerHTML = '<div style="grid-column: 1 / -1; font-size: 0.80rem; color: #dc2626; padding: 10px; text-align: center;">Error connecting to bed server.</div>';
+                if (badgeAvailNum) badgeAvailNum.textContent = '!';
+                bedsGrid.innerHTML = '<div style="grid-column: 1 / -1; font-size: 0.78rem; color: #dc2626; padding: 10px; text-align: center;">Error connecting to bed server.</div>';
             });
+    }
+
+    // Called when clicking an available bed card
+    function selectAdmissionBed(bedCode) {
+        if (!bedCode) return;
+        const bedInput = document.getElementById('id_adm_bed');
+
+        // Check if already selected -> toggle off
+        if (bedInput && bedInput.value === bedCode) {
+            bedInput.value = '';
+            document.querySelectorAll('.bed-card-available').forEach(c => {
+                c.classList.remove('is-selected');
+                const tag = c.querySelector('.bed-tag');
+                if (tag) tag.textContent = 'Available';
+            });
+            return;
+        }
+
+        if (bedInput) bedInput.value = bedCode;
+
+        // Update card highlights
+        document.querySelectorAll('.bed-card-available').forEach(c => {
+            const code = c.getAttribute('data-bed-code');
+            const tag = c.querySelector('.bed-tag');
+            if (code === bedCode) {
+                c.classList.add('is-selected');
+                if (tag) tag.textContent = 'Selected';
+            } else {
+                c.classList.remove('is-selected');
+                if (tag) tag.textContent = 'Available';
+            }
+        });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -1271,17 +1440,7 @@
             dobInput.addEventListener('change', calculateAgeFromDob);
         }
 
-        // Search inputs enter key
-        const ipnoInput = document.getElementById('review_ipno');
-        if (ipnoInput) {
-            ipnoInput.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    submitIpnoSearch();
-                }
-            });
-        }
-
+        // Enter key listener on Main Search field
         const searchInput = document.getElementById('main_search_input');
         if (searchInput) {
             searchInput.addEventListener('keydown', function (e) {
@@ -1292,9 +1451,23 @@
             });
         }
 
-        // Department -> Unit AJAX Loading
-        const deptSel = document.getElementById('id_adm_department');
-        const unitSel = document.getElementById('id_adm_unit');
+        // Form submit safety: validate age
+        // CRITICAL: Bed selection is NOT mandatory! If no bed is available, patient will be admitted without a specific bed.
+        const admForm = document.getElementById('ip_admission_form');
+        if (admForm) {
+            admForm.addEventListener('submit', function (e) {
+                if (!validateAgeField(true)) {
+                    e.preventDefault();
+                    alert("Age must be between 0 and 99.");
+                    if (ageInput) ageInput.focus();
+                    return false;
+                }
+            });
+        }
+
+        // Dynamic Department -> Unit/Doctor selection
+        const deptSel = document.getElementById('id_adm_department') || document.getElementById('id_department_obj');
+        const unitSel = document.getElementById('id_adm_unit') || document.getElementById('id_unit_obj');
         if (deptSel && unitSel) {
             deptSel.addEventListener('change', function () {
                 const dId = this.value;
@@ -1320,46 +1493,28 @@
             });
         }
 
-        // Ward Selection triggers Live Bed Allocation Refresh
-        if (wardSelect) {
-            wardSelect.addEventListener('change', function () {
-                if (bedInput) bedInput.value = '';
-                if (availBedsSelect) availBedsSelect.value = '';
-                loadAvailableBedsForWard();
-            });
-
-            // Initial load if ward already selected
-            if (wardSelect.value) {
-                loadAvailableBedsForWard();
-            }
-        }
-
-        // Form Submission Validation
-        const admForm = document.getElementById('ip_admission_form');
-        if (admForm) {
-            admForm.addEventListener('submit', function (e) {
-                if (!validateAgeField(true)) {
-                    e.preventDefault();
-                    alert("Age must be between 0 and 99.");
-                    if (ageInput) ageInput.focus();
-                    return false;
-                }
-
-                if (!wardSelect || !wardSelect.value) {
-                    e.preventDefault();
-                    alert("Please select a Ward for IP admission.");
-                    if (wardSelect) wardSelect.focus();
-                    return false;
-                }
-
-                if (!bedInput || !bedInput.value) {
-                    e.preventDefault();
-                    alert("Please select an available Bed from the Bed Allocation Matrix.");
-                    scrollToBedAllocation();
-                    return false;
-                }
-            });
+        // Automatically load beds if a ward is pre-selected
+        const wardSelect = document.getElementById('id_adm_ward');
+        if (wardSelect && wardSelect.value) {
+            loadAvailableBedsForWard();
         }
     });
+
+    // Patient Type segmented toggle (+ = O, - = D)
+    function togglePtType(val) {
+        const radioO = document.getElementById('radio_pt_o');
+        const radioD = document.getElementById('radio_pt_d');
+        const lblO = document.getElementById('lbl_pt_plus');
+        const lblD = document.getElementById('lbl_pt_minus');
+        if (val === 'O') {
+            if (radioO) radioO.checked = true;
+            if (lblO) { lblO.classList.add('active'); lblO.classList.remove('inactive'); }
+            if (lblD) { lblD.classList.remove('active'); lblD.classList.add('inactive'); }
+        } else {
+            if (radioD) radioD.checked = true;
+            if (lblD) { lblD.classList.add('active'); lblD.classList.remove('inactive'); }
+            if (lblO) { lblO.classList.remove('active'); lblO.classList.add('inactive'); }
+        }
+    }
 </script>
 {% endblock %}

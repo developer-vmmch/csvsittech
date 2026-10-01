@@ -17,6 +17,9 @@ class User(AbstractUser):
     department = models.CharField(max_length=500, blank=True, null=True, help_text="Assigned department(s) (comma-separated or 'All Departments')")
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     employee_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    theme = models.CharField(max_length=100, default='vmmc-main', blank=True, help_text="User interface theme preference")
+    theme_font = models.CharField(max_length=50, default='Outfit', blank=True, help_text="User interface font family preference")
+    theme_motion = models.CharField(max_length=20, default='medium', blank=True, help_text="User interface motion level: off, low, medium, high")
 
     def get_departments_list(self):
         """Returns the list of department names assigned to this user."""
@@ -178,9 +181,15 @@ class User(AbstractUser):
             'ATC_EDIT': 'auto_trigger.atc.update',
             'ATC_TRIGGER': 'auto_trigger.atc.trigger',
             'ATC_EMERGENCY_STOP': 'auto_trigger.atc.stop',
+            'THEME_SETTINGS_VIEW': 'theme_settings.view',
+            'THEME_SETTINGS_CHANGE': 'theme_settings.change',
         }
         if perm_code in aliases:
             return self.has_perm_code(aliases[perm_code])
+
+        # Theme Settings permission: dedicated permission - only granted if explicitly allowed in role/dept perms
+        if perm_code in ['theme_settings', 'theme_settings.view', 'theme_settings.change', 'settings.theme_settings']:
+            return False
 
         # 4. Default fallback for specific legacy roles if not configured in DB
         if self.role == self.Roles.MANAGER:
@@ -191,6 +200,12 @@ class User(AbstractUser):
                 return True
 
         return False
+
+    @property
+    def can_access_theme_settings(self):
+        if self.is_admin_role:
+            return True
+        return self.has_perm_code('theme_settings.view') or self.has_perm_code('theme_settings')
 
     @property
     def can_atc_view(self):
@@ -266,7 +281,7 @@ class User(AbstractUser):
             'auto_trigger_automate_test', 'auto_trigger_result_view',
             'auto_trigger_atc', 'auto_trigger_atc_status', 'auto_trigger_atc_settings',
             'ot', 'ot_dashboard', 'ot_booking', 'ot_schedule', 'ot_live', 'ot_history', 'ot_master',
-            'system_section', 'administration', 'users_roles', 'inventory', 'settings',
+            'system_section', 'administration', 'users_roles', 'inventory', 'settings', 'theme_settings',
         ]
 
         role_str = (self.role or '').strip().upper()
@@ -385,6 +400,7 @@ class User(AbstractUser):
         except Exception:
             pass
 
+        merged['theme_settings'] = self.can_access_theme_settings
         return merged
 
     def can_access_menu(self, menu_key):

@@ -1,0 +1,1510 @@
+/* =========================================================================
+   VMMC HOSPITAL ERP — THEME OVERRIDES v2
+   Global component token wiring: every CSS rule here reads from theme CSS
+   variables. This file must be loaded AFTER theme-system.css.
+   
+   THIS FILE: fixes the bypass problem where hard-coded colors in base.html,
+   style.css and Bootstrap override theme tokens.
+   
+   Load order: Bootstrap → style.css → theme-system.css → theme-overrides.css
+   ========================================================================= */
+
+/* =========================================================================
+   0. FONT APPLICATION
+   ========================================================================= */
+html, body,
+input, select, textarea, button,
+.form-control, .form-select, .btn {
+    font-family: var(--theme-font-family) !important;
+}
+
+/* =========================================================================
+   1. PAGE BACKGROUND — body and main layout containers
+   ========================================================================= */
+body {
+    background-color: var(--theme-bg) !important;
+    color: var(--theme-text) !important;
+    transition: background-color var(--theme-duration-normal) var(--theme-ease-smooth),
+                color var(--theme-duration-fast) var(--theme-ease-smooth);
+}
+
+.main-layout,
+.main-site-content,
+.content-body {
+    background-color: var(--theme-bg) !important;
+    color: var(--theme-text) !important;
+}
+
+/* =========================================================================
+   2. APPLICATION HEADER (app-header + sidebar toggle)
+   ========================================================================= */
+.app-header {
+    background: var(--theme-header-bg) !important;
+    border-bottom-color: var(--theme-header-border) !important;
+    box-shadow: var(--theme-header-shadow) !important;
+}
+
+.page-heading-title {
+    color: var(--theme-text) !important;
+}
+
+.sidebar-toggle-btn {
+    background: var(--theme-sidebar-toggle-bg) !important;
+    border-color: var(--theme-sidebar-toggle-border) !important;
+    color: var(--theme-sidebar-toggle-text) !important;
+}
+
+.sidebar-toggle-btn:hover {
+    background: var(--theme-sidebar-toggle-hover-bg) !important;
+    color: var(--theme-sidebar-toggle-hover-text) !important;
+    border-color: var(--theme-sidebar-toggle-hover-bg) !important;
+}
+
+/* =========================================================================
+   3. HOSPITAL HEADER BANNER (hospital-top-banner)
+   ========================================================================= */
+.hospital-top-banner {
+    background: var(--theme-header-bg) !important;
+    border-bottom: 1px solid var(--theme-header-border) !important;
+}
+
+.hospital-main-title {
+    color: var(--theme-header-brand-primary) !important;
+}
+
+.hospital-sub-title {
+    color: var(--theme-header-brand-secondary) !important;
+}
+
+.header-info-line {
+    background: var(--theme-header-info-bg) !important;
+    border-color: var(--theme-header-info-border) !important;
+    color: var(--theme-header-info-text) !important;
+}
+
+.header-info-separator {
+    color: var(--theme-text-muted) !important;
+}
+
+/* =========================================================================
+   4. TOP NAVIGATION BAR — THE CRITICAL DARK BYPASS FIX
+   All hard-coded #000000, #ffffff, #1e293b replaced with theme tokens
+   ========================================================================= */
+.top-navbar-container {
+    background: var(--theme-nav-bg) !important;
+    box-shadow: var(--theme-nav-shadow) !important;
+}
+
+.top-nav-link {
+    color: var(--theme-nav-text) !important;
+    border-right-color: var(--theme-nav-border) !important;
+    transition: background var(--theme-duration-fast) var(--theme-ease-smooth),
+                color var(--theme-duration-fast) var(--theme-ease-smooth) !important;
+}
+
+.top-nav-item:first-child .top-nav-link {
+    border-left-color: var(--theme-nav-border) !important;
+}
+
+.top-nav-item:hover > .top-nav-link,
+.top-nav-item.is-open > .top-nav-link {
+    background: var(--theme-nav-hover-bg) !important;
+    color: var(--theme-nav-hover-text) !important;
+}
+
+.top-nav-item.active > .top-nav-link {
+    background: var(--theme-nav-active-bg) !important;
+    color: var(--theme-nav-active-text) !important;
+    border-bottom-color: var(--theme-nav-active-indicator) !important;
+}
+
+/* =========================================================================
+   5. NAVIGATION DROPDOWNS — THE BIGGEST FIX (was white !important)
+   ========================================================================= */
+.top-nav-dropdown {
+    background: var(--theme-nav-dropdown-bg) !important;
+    border-color: var(--theme-nav-dropdown-border) !important;
+    border-top-color: var(--theme-nav-dropdown-top-accent) !important;
+    box-shadow: var(--theme-nav-dropdown-shadow) !important;
+    animation: vmmcDropdownFadeIn var(--theme-duration-fast) var(--theme-ease-spring);
+}
+
+.top-nav-dropdown-link {
+    color: var(--theme-nav-dropdown-text) !important;
+    transition: background var(--theme-duration-fast) ease,
+                color var(--theme-duration-fast) ease !important;
+}
+
+.top-nav-dropdown-link i {
+    color: var(--theme-nav-dropdown-icon) !important;
+}
+
+.top-nav-dropdown-link:hover,
+.top-nav-dropdown-link.active,
+.top-nav-dropdown-item.active > .top-nav-dropdown-link {
+    background: var(--theme-nav-dropdown-hover-bg) !important;
+    color: var(--theme-nav-dropdown-hover-text) !important;
+}
+
+.top-nav-dropdown-divider {
+    background: var(--theme-nav-dropdown-divider) !important;
+}
+
+/* Nested submenu */
+.top-nav-nested-menu {
+    background: var(--theme-nav-dropdown-bg) !important;
+    border-color: var(--theme-nav-dropdown-border) !important;
+    border-top-color: var(--theme-nav-dropdown-top-accent) !important;
+    box-shadow: var(--theme-nav-dropdown-shadow) !important;
+}
+
+@keyframes vmmcDropdownFadeIn {
+    from { opacity: 0; transform: translateY(-4px) scale(0.99); }
+    to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+/* =========================================================================
+   6. SIDEBAR — Full theme override
+   ========================================================================= */
+#mainSidebar {
+    background-color: var(--theme-sidebar-bg) !important;
+    border-right-color: var(--theme-sidebar-border) !important;
+    transition: background-color var(--theme-duration-normal) var(--theme-ease-smooth) !important;
+}
+
+/* Sidebar scrollbar */
+#mainSidebar {
+    scrollbar-color: var(--theme-sidebar-scrollbar) transparent;
+}
+#mainSidebar::-webkit-scrollbar-thumb {
+    background: var(--theme-sidebar-scrollbar) !important;
+}
+
+.sidebar-brand {
+    background-color: var(--theme-sidebar-bg) !important;
+    border-bottom-color: var(--theme-sidebar-border) !important;
+}
+
+.brand-name {
+    color: var(--theme-sidebar-hover-text) !important;
+}
+
+.nav-section-title {
+    color: var(--theme-sidebar-section-title) !important;
+}
+
+.nav-item a {
+    color: var(--theme-sidebar-text) !important;
+}
+
+.nav-item a:hover {
+    background: var(--theme-sidebar-hover-bg) !important;
+    color: var(--theme-sidebar-hover-text) !important;
+}
+
+.nav-item.active > a,
+.nav-item.active a {
+    background: var(--theme-sidebar-active-bg) !important;
+    color: var(--theme-sidebar-active-text) !important;
+    box-shadow: var(--theme-sidebar-active-shadow) !important;
+}
+
+.submenu-list li a {
+    color: var(--theme-sidebar-text) !important;
+}
+
+.submenu-list li a:hover {
+    background: var(--theme-sidebar-hover-bg) !important;
+    color: var(--theme-sidebar-hover-text) !important;
+}
+
+.submenu-list li.active a {
+    background: var(--theme-sidebar-submenu-active-bg) !important;
+    color: var(--theme-sidebar-submenu-active-text) !important;
+    border-left-color: var(--theme-sidebar-submenu-active-border) !important;
+}
+
+/* =========================================================================
+   7. FOOTER
+   ========================================================================= */
+.hospital-bottom-footer {
+    background: var(--theme-footer-bg) !important;
+    color: var(--theme-footer-text) !important;
+    border-top-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.hospital-bottom-footer a {
+    color: var(--theme-footer-text) !important;
+}
+
+/* =========================================================================
+   8. LIVE CLOCK WIDGET
+   ========================================================================= */
+.live-clock-widget,
+.live-clock-mobile {
+    background: var(--theme-clock-bg) !important;
+    border-color: var(--theme-clock-border) !important;
+    color: var(--theme-clock-text) !important;
+}
+
+.live-clock-widget i,
+.live-clock-mobile i {
+    color: var(--theme-clock-time-color) !important;
+}
+
+.live-time {
+    color: var(--theme-clock-time-color) !important;
+}
+
+.live-date {
+    color: var(--theme-clock-date-color) !important;
+}
+
+.clock-divider {
+    color: var(--theme-clock-divider) !important;
+}
+
+/* =========================================================================
+   9. USER BADGE & AVATAR
+   ========================================================================= */
+.user-badge {
+    background: var(--theme-user-badge-bg) !important;
+    color: var(--theme-user-badge-text) !important;
+    border-color: var(--theme-user-badge-border) !important;
+}
+
+/* =========================================================================
+   10. CARDS & PANELS — Complete surface override
+   ========================================================================= */
+.card,
+.panel,
+.fo-panel,
+.form-container,
+.filter-card,
+.reg-filter-card,
+.crm-form-card,
+.ar-form-card,
+.analytics-card,
+.census-summary-card,
+.log-section-card,
+.stat-card,
+.overview-card,
+.dept-card,
+.type-card,
+.fo-kpi-card,
+.fo-module-card,
+.adm-details-container,
+.patient-header-card,
+.review-card,
+.bed-grid-container {
+    background: var(--theme-surface) !important;
+    border-color: var(--theme-border) !important;
+    color: var(--theme-text) !important;
+    box-shadow: var(--theme-card-shadow) !important;
+    transition: transform var(--theme-duration-fast) var(--theme-ease-spring),
+                box-shadow var(--theme-duration-fast) var(--theme-ease-spring),
+                background-color var(--theme-duration-normal) var(--theme-ease-smooth) !important;
+}
+
+.card-header,
+.panel-header {
+    background: var(--theme-surface-alt) !important;
+    border-bottom-color: var(--theme-border-subtle) !important;
+    color: var(--theme-heading) !important;
+}
+
+.card-footer,
+.panel-footer {
+    background: var(--theme-surface-alt) !important;
+    border-top-color: var(--theme-border-subtle) !important;
+}
+
+/* Card hover — mac-style spring elevation */
+.card:hover,
+.panel:hover,
+.fo-kpi-card:hover,
+.fo-module-card:hover,
+.stat-card:hover,
+.type-card:hover,
+.census-summary-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: var(--theme-card-shadow-hover) !important;
+}
+
+/* =========================================================================
+   11. FORM INPUTS — Complete theme override
+   ========================================================================= */
+.form-control,
+.form-select,
+.form-input,
+.form-control-compact,
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+select,
+textarea {
+    background-color: var(--theme-input-bg) !important;
+    color: var(--theme-input-text) !important;
+    border-color: var(--theme-input-border) !important;
+    transition: border-color var(--theme-duration-fast) ease,
+                box-shadow var(--theme-duration-fast) ease,
+                background-color var(--theme-duration-normal) var(--theme-ease-smooth) !important;
+}
+
+.form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: var(--theme-placeholder) !important;
+    opacity: 1 !important;
+}
+
+/* Focus state — uses theme focus ring */
+.form-control:focus,
+.form-select:focus,
+.form-input:focus,
+.form-control-compact:focus,
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+input[type="tel"]:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--theme-input-focus-border) !important;
+    box-shadow: 0 0 0 var(--theme-focus-ring-width) var(--theme-input-focus-ring) !important;
+    outline: none !important;
+    background-color: var(--theme-input-bg) !important;
+}
+
+/* Read-only */
+.form-control[readonly],
+input[readonly],
+textarea[readonly] {
+    background-color: var(--theme-input-readonly-bg) !important;
+    color: var(--theme-input-readonly-text) !important;
+    cursor: default;
+}
+
+/* Disabled */
+.form-control:disabled,
+.form-select:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+button:disabled,
+.btn:disabled,
+.btn.disabled {
+    background-color: var(--theme-input-disabled-bg) !important;
+    color: var(--theme-input-disabled-text) !important;
+    border-color: var(--theme-input-disabled-border) !important;
+    cursor: not-allowed !important;
+    opacity: 1 !important;
+}
+
+/* Form labels */
+.form-label,
+.form-group label,
+label {
+    color: var(--theme-label) !important;
+}
+
+/* Select option — fixes dark-theme invisible dropdown options */
+select option,
+select optgroup {
+    background-color: var(--theme-nav-dropdown-bg) !important;
+    color: var(--theme-nav-dropdown-text) !important;
+}
+
+/* =========================================================================
+   12. BUTTONS — Theme-aware primary, secondary and action buttons
+   ========================================================================= */
+.btn-primary,
+.btn-action-save,
+.btn-fo-primary {
+    background-color: var(--theme-primary) !important;
+    border-color: var(--theme-primary) !important;
+    color: var(--theme-primary-text) !important;
+}
+
+.btn-primary:hover,
+.btn-action-save:hover,
+.btn-fo-primary:hover {
+    background-color: var(--theme-primary-hover) !important;
+    border-color: var(--theme-primary-hover) !important;
+    color: var(--theme-primary-text) !important;
+}
+
+.btn-secondary,
+.btn-fo-secondary {
+    background-color: var(--theme-surface-alt) !important;
+    border-color: var(--theme-border) !important;
+    color: var(--theme-text) !important;
+}
+
+.btn-secondary:hover,
+.btn-fo-secondary:hover {
+    background-color: var(--theme-surface-elevated) !important;
+    border-color: var(--theme-primary) !important;
+    color: var(--theme-primary) !important;
+}
+
+/* Button spring press */
+button:hover:not(:disabled),
+.btn:hover:not(:disabled) {
+    transform: translateY(-1px) !important;
+}
+
+button:active:not(:disabled),
+.btn:active:not(:disabled) {
+    transform: translateY(1px) scale(0.99) !important;
+}
+
+/* =========================================================================
+   13. TABLES — Complete dark/light override
+   ========================================================================= */
+.table {
+    color: var(--theme-text) !important;
+    border-color: var(--theme-table-border) !important;
+}
+
+.table th,
+thead th {
+    background-color: var(--theme-table-header-bg) !important;
+    color: var(--theme-table-header-text) !important;
+    border-color: var(--theme-table-border) !important;
+}
+
+.table td {
+    background-color: var(--theme-surface) !important;
+    color: var(--theme-text) !important;
+    border-color: var(--theme-table-border) !important;
+}
+
+.table-striped > tbody > tr:nth-of-type(even) > * {
+    background-color: var(--theme-table-row-even) !important;
+    color: var(--theme-text) !important;
+}
+
+.table-hover > tbody > tr:hover > * {
+    background-color: var(--theme-table-row-hover) !important;
+    color: var(--theme-text) !important;
+}
+
+/* Scrollable table wrapper */
+.table-responsive {
+    background: var(--theme-surface) !important;
+    border-color: var(--theme-border) !important;
+}
+
+/* =========================================================================
+   14. MODALS — Full dark-mode safe treatment
+   ========================================================================= */
+.modal-content {
+    background: var(--theme-surface) !important;
+    border-color: var(--theme-border) !important;
+    color: var(--theme-text) !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28) !important;
+    backdrop-filter: var(--theme-backdrop-blur);
+    -webkit-backdrop-filter: var(--theme-backdrop-blur);
+    animation: vmmcModalFadeZoom var(--theme-duration-fast) var(--theme-ease-spring) !important;
+}
+
+.modal-header {
+    background: var(--theme-surface-alt) !important;
+    border-bottom-color: var(--theme-border) !important;
+    color: var(--theme-heading) !important;
+}
+
+.modal-body {
+    background: var(--theme-surface) !important;
+    color: var(--theme-text) !important;
+}
+
+.modal-footer {
+    background: var(--theme-surface-alt) !important;
+    border-top-color: var(--theme-border-subtle) !important;
+}
+
+.modal-title {
+    color: var(--theme-heading) !important;
+}
+
+.btn-close {
+    filter: var(--theme-close-btn-filter, none);
+}
+
+/* Make close button visible in dark themes */
+[data-theme*="midnight"] .btn-close,
+[data-theme*="dark"] .btn-close,
+[data-theme*="graphite"] .btn-close,
+[data-theme*="obsidian"] .btn-close,
+[data-theme*="deep"] .btn-close,
+[data-theme*="cyber"] .btn-close,
+[data-theme*="space"] .btn-close,
+[data-theme*="aurora"] .btn-close,
+[data-theme*="underwater"] .btn-close,
+[data-theme*="enchanted"] .btn-close,
+[data-theme*="future"] .btn-close,
+[data-theme*="rover"] .btn-close,
+[data-theme*="neon"] .btn-close,
+[data-theme*="volcanic"] .btn-close,
+[data-theme*="blossom-dusk"] .btn-close,
+[data-theme*="electric"] .btn-close,
+[data-theme*="forest-fire"] .btn-close {
+    filter: invert(1) !important;
+}
+
+@keyframes vmmcModalFadeZoom {
+    from { opacity: 0; transform: scale(0.97) translateY(6px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* =========================================================================
+   15. BOOTSTRAP DROPDOWNS & USER ACCOUNT DROPDOWN (WCAG AA Contrast)
+   ========================================================================= */
+.dropdown-menu {
+    background: var(--dropdown-bg, var(--theme-nav-dropdown-bg, #ffffff)) !important;
+    border-color: var(--dropdown-border, var(--theme-nav-dropdown-border, #cbd5e1)) !important;
+    box-shadow: var(--dropdown-shadow, var(--theme-nav-dropdown-shadow)) !important;
+    color: var(--dropdown-text, var(--theme-nav-dropdown-text, #0f172a)) !important;
+    animation: vmmcDropdownFadeIn var(--theme-duration-fast) var(--theme-ease-spring);
+}
+
+.dropdown-item {
+    color: var(--dropdown-text, var(--theme-nav-dropdown-text, #0f172a)) !important;
+    background: transparent !important;
+}
+
+.dropdown-item i {
+    color: var(--dropdown-icon, var(--theme-nav-dropdown-icon, var(--theme-primary))) !important;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background: var(--dropdown-hover-bg, var(--theme-nav-dropdown-hover-bg, #eff6ff)) !important;
+    color: var(--dropdown-hover-text, var(--theme-nav-dropdown-hover-text, #0369a1)) !important;
+    outline: none !important;
+}
+
+.dropdown-item:hover i,
+.dropdown-item:focus i {
+    color: var(--dropdown-hover-icon, var(--dropdown-hover-text, var(--theme-nav-dropdown-hover-text))) !important;
+}
+
+.dropdown-item.active,
+.dropdown-item:active {
+    background: var(--theme-nav-dropdown-active-bg, #dbeafe) !important;
+    color: var(--theme-nav-dropdown-active-text, #1d4ed8) !important;
+}
+
+.dropdown-divider {
+    background: var(--dropdown-divider, var(--theme-nav-dropdown-divider, #e2e8f0)) !important;
+    border-color: var(--dropdown-divider, var(--theme-nav-dropdown-divider, #e2e8f0)) !important;
+}
+
+.dropdown-header {
+    color: var(--text-muted, var(--theme-text-muted, #64748b)) !important;
+}
+
+/* User account dropdown — Complete semantic decoupling */
+#userAccountDropdown,
+.user-account-dropdown {
+    background: var(--dropdown-bg, var(--theme-nav-dropdown-bg, #ffffff)) !important;
+    border: 1px solid var(--dropdown-border, var(--theme-nav-dropdown-border, #cbd5e1)) !important;
+    border-top: 3px solid var(--dropdown-top-accent, var(--theme-nav-dropdown-top-accent, var(--theme-primary))) !important;
+    box-shadow: var(--dropdown-shadow, var(--theme-nav-dropdown-shadow, 0 16px 36px rgba(0,0,0,0.22))) !important;
+    color: var(--dropdown-text, var(--theme-nav-dropdown-text, #0f172a)) !important;
+}
+
+.user-dropdown-header {
+    background: var(--theme-surface-alt, #f8fafc) !important;
+    border-bottom: 1px solid var(--dropdown-divider, var(--theme-nav-dropdown-divider, #e2e8f0)) !important;
+    padding: 12px 16px 10px;
+}
+
+.user-dropdown-name {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--dropdown-heading, var(--theme-heading, #0b2569)) !important;
+}
+
+.user-dropdown-username {
+    font-size: 0.78rem;
+    color: var(--dropdown-muted, var(--theme-text-muted, #64748b)) !important;
+    margin-top: 1px;
+}
+
+.user-dropdown-dept {
+    color: var(--dropdown-muted, var(--theme-text-muted, #64748b)) !important;
+}
+
+.user-dropdown-item {
+    color: var(--dropdown-text, var(--theme-nav-dropdown-text, #0f172a)) !important;
+    background: transparent !important;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 16px;
+    font-size: 0.83rem;
+    font-weight: 500;
+    text-align: left;
+    transition: background var(--theme-duration-fast) ease, color var(--theme-duration-fast) ease;
+}
+
+.user-dropdown-item i {
+    color: var(--dropdown-icon, var(--theme-nav-dropdown-icon, var(--theme-primary, #0284c7))) !important;
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.user-dropdown-item:hover,
+.user-dropdown-item:focus {
+    background: var(--dropdown-hover-bg, var(--theme-nav-dropdown-hover-bg, #eff6ff)) !important;
+    color: var(--dropdown-hover-text, var(--theme-nav-dropdown-hover-text, #0369a1)) !important;
+    outline: none !important;
+}
+
+.user-dropdown-item:hover i,
+.user-dropdown-item:focus i {
+    color: var(--dropdown-hover-icon, var(--dropdown-hover-text, #0369a1)) !important;
+}
+
+.user-dropdown-logout {
+    color: var(--danger-text, #dc2626) !important;
+}
+
+.user-dropdown-logout i {
+    color: var(--danger-text, #dc2626) !important;
+}
+
+.user-dropdown-logout:hover,
+.user-dropdown-logout:focus {
+    background: var(--theme-danger-bg, rgba(239, 68, 68, 0.12)) !important;
+    color: var(--danger-text, #dc2626) !important;
+}
+
+.user-dropdown-logout:hover i,
+.user-dropdown-logout:focus i {
+    color: var(--danger-text, #dc2626) !important;
+}
+
+.user-dropdown-divider {
+    height: 1px;
+    background: var(--dropdown-divider, var(--theme-nav-dropdown-divider, #e2e8f0)) !important;
+    border: none !important;
+    margin: 4px 0;
+}
+
+/* =========================================================================
+   16. ALERTS & TOAST MESSAGES
+   ========================================================================= */
+.alert-success {
+    background: var(--theme-success-bg) !important;
+    color: var(--theme-success-text) !important;
+    border-color: var(--theme-success-border) !important;
+}
+
+.alert-warning {
+    background: var(--theme-warning-bg) !important;
+    color: var(--theme-warning-text) !important;
+    border-color: var(--theme-warning-border) !important;
+}
+
+.alert-danger {
+    background: var(--theme-danger-bg) !important;
+    color: var(--theme-danger-text) !important;
+    border-color: var(--theme-danger-border) !important;
+}
+
+.alert-info {
+    background: var(--theme-info-bg) !important;
+    color: var(--theme-info-text) !important;
+    border-color: var(--theme-info-border) !important;
+}
+
+/* =========================================================================
+   17. BADGES & STATUS PILLS
+   ========================================================================= */
+.badge.bg-primary,
+.badge-primary { background: var(--theme-primary) !important; color: var(--theme-primary-text) !important; }
+
+.badge.bg-success,
+.badge-success { background: var(--theme-success) !important; color: #ffffff !important; }
+
+.badge.bg-warning,
+.badge-warning { background: var(--theme-warning) !important; color: #ffffff !important; }
+
+.badge.bg-danger,
+.badge-danger { background: var(--theme-danger) !important; color: #ffffff !important; }
+
+.badge.bg-info,
+.badge-info { background: var(--theme-info) !important; color: #ffffff !important; }
+
+.badge.bg-secondary,
+.badge-secondary { 
+    background: var(--theme-surface-alt) !important; 
+    color: var(--theme-text) !important;
+    border: 1px solid var(--theme-border) !important;
+}
+
+/* =========================================================================
+   18. PAGINATION
+   ========================================================================= */
+.page-link {
+    background: var(--theme-surface) !important;
+    border-color: var(--theme-border) !important;
+    color: var(--theme-primary) !important;
+    transition: all var(--theme-duration-fast) ease !important;
+}
+
+.page-link:hover {
+    background: var(--theme-surface-alt) !important;
+    color: var(--theme-primary-hover) !important;
+    border-color: var(--theme-primary) !important;
+}
+
+.page-item.active .page-link {
+    background: var(--theme-primary) !important;
+    border-color: var(--theme-primary) !important;
+    color: var(--theme-primary-text) !important;
+}
+
+.page-item.disabled .page-link {
+    background: var(--theme-input-disabled-bg) !important;
+    color: var(--theme-text-disabled) !important;
+    border-color: var(--theme-border-subtle) !important;
+}
+
+/* =========================================================================
+   19. TABS (nav-tabs)
+   ========================================================================= */
+.nav-tabs {
+    border-bottom-color: var(--theme-border) !important;
+}
+
+.nav-tabs .nav-link {
+    color: var(--theme-text-muted) !important;
+    border-color: transparent !important;
+    transition: all var(--theme-duration-fast) ease !important;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--theme-primary) !important;
+    border-bottom-color: var(--theme-border) !important;
+}
+
+.nav-tabs .nav-link.active {
+    background: var(--theme-surface) !important;
+    border-color: var(--theme-border) var(--theme-border) var(--theme-surface) !important;
+    color: var(--theme-primary) !important;
+}
+
+.tab-content {
+    background: var(--theme-surface) !important;
+    color: var(--theme-text) !important;
+}
+
+/* =========================================================================
+   20. TABLE ROW HOVER (overrides hard-coded #f8fafc in base.html)
+   ========================================================================= */
+table tbody tr {
+    transition: background-color var(--theme-duration-fast) ease !important;
+}
+
+table tbody tr:hover {
+    background-color: var(--theme-table-row-hover) !important;
+}
+
+table tbody tr:hover td {
+    background-color: var(--theme-table-row-hover) !important;
+    color: var(--theme-text) !important;
+}
+
+/* =========================================================================
+   21. FORM LAYOUT CONTAINERS
+   ========================================================================= */
+.form-container {
+    background: var(--theme-surface) !important;
+    border-color: var(--theme-border) !important;
+    color: var(--theme-text) !important;
+}
+
+.form-header {
+    border-bottom-color: var(--theme-border) !important;
+}
+
+.form-header h2 {
+    color: var(--theme-heading) !important;
+}
+
+.form-header p {
+    color: var(--theme-text-muted) !important;
+}
+
+.form-group label,
+label.form-label {
+    color: var(--theme-label) !important;
+}
+
+/* =========================================================================
+   22. HEADINGS & TEXT HIERARCHY
+   ========================================================================= */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--theme-heading) !important;
+}
+
+.text-muted,
+.text-secondary {
+    color: var(--theme-text-muted) !important;
+}
+
+.text-primary {
+    color: var(--theme-primary) !important;
+}
+
+/* Page/section headings in content */
+.content-heading,
+.section-heading,
+.page-title,
+.section-title,
+.card-heading,
+.panel-title {
+    color: var(--theme-heading) !important;
+}
+
+/* =========================================================================
+   23. BREADCRUMBS
+   ========================================================================= */
+.breadcrumb {
+    background: transparent !important;
+}
+
+.breadcrumb-item a {
+    color: var(--theme-text-link) !important;
+}
+
+.breadcrumb-item.active {
+    color: var(--theme-text-muted) !important;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    color: var(--theme-text-muted) !important;
+}
+
+/* =========================================================================
+   24. TOOLTIPS
+   ========================================================================= */
+.tooltip-inner {
+    background: var(--theme-nav-bg) !important;
+    color: var(--theme-nav-text) !important;
+}
+
+.tooltip .tooltip-arrow::before {
+    border-top-color: var(--theme-nav-bg) !important;
+}
+
+/* =========================================================================
+   25. PROGRESS BARS
+   ========================================================================= */
+.progress {
+    background: var(--theme-surface-alt) !important;
+    border: 1px solid var(--theme-border-subtle) !important;
+}
+
+.progress-bar {
+    background: var(--theme-primary) !important;
+}
+
+/* =========================================================================
+   26. DIVIDERS & HR
+   ========================================================================= */
+hr {
+    border-color: var(--theme-divider) !important;
+    opacity: 1 !important;
+}
+
+/* =========================================================================
+   27. SCROLLBARS (webkit) — theme-aware
+   ========================================================================= */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--theme-border) !important;
+    border-radius: var(--theme-radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--theme-border-strong) !important;
+}
+
+/* =========================================================================
+   28. FOCUS VISIBILITY — NEVER remove, always use theme token
+   ========================================================================= */
+*:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border) !important;
+    outline-offset: 2px !important;
+}
+
+/* Override Bootstrap's default blue focus for inputs */
+.form-control:focus-visible,
+.form-select:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: none !important;
+    border-color: var(--theme-input-focus-border) !important;
+    box-shadow: 0 0 0 var(--theme-focus-ring-width) var(--theme-input-focus-ring) !important;
+}
+
+/* =========================================================================
+   29. VMMC CUSTOM SEARCH & FILTER BARS
+   ========================================================================= */
+.search-bar,
+.filter-bar,
+.reg-filter-card,
+.quick-search-results,
+.patient-lookup-results {
+    background: var(--theme-surface) !important;
+    border-color: var(--theme-border) !important;
+    color: var(--theme-text) !important;
+}
+
+.quick-search-results .result-item,
+.patient-lookup-results .result-item {
+    border-bottom-color: var(--theme-border-subtle) !important;
+    color: var(--theme-text) !important;
+}
+
+.quick-search-results .result-item:hover,
+.patient-lookup-results .result-item:hover {
+    background: var(--theme-surface-alt) !important;
+}
+
+/* =========================================================================
+   30. VMMC SELECT CUSTOM COMPONENT
+   ========================================================================= */
+.vmmc-select-dropdown,
+.vmmc-select-option-list {
+    background: var(--theme-nav-dropdown-bg) !important;
+    border-color: var(--theme-nav-dropdown-border) !important;
+    color: var(--theme-nav-dropdown-text) !important;
+    box-shadow: var(--theme-nav-dropdown-shadow) !important;
+}
+
+.vmmc-select-option:hover,
+.vmmc-select-option.highlighted {
+    background: var(--theme-nav-dropdown-hover-bg) !important;
+    color: var(--theme-nav-dropdown-hover-text) !important;
+}
+
+.vmmc-select-option.selected {
+    background: var(--theme-nav-dropdown-active-bg) !important;
+    color: var(--theme-nav-dropdown-active-text) !important;
+}
+
+/* =========================================================================
+   31. MAC-STYLE SPRING INTERACTION SYSTEM
+   Applied globally on top of base.html animation values
+   ========================================================================= */
+
+/* Dropdown spring entrance */
+.top-nav-item:hover > .top-nav-dropdown,
+.top-nav-item.is-open > .top-nav-dropdown {
+    animation: vmmcDropdownSpring var(--theme-duration-fast) var(--theme-ease-spring) !important;
+}
+
+@keyframes vmmcDropdownSpring {
+    0%   { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    60%  { opacity: 1; transform: translateY(1px) scale(1.002); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Modal spring */
+.modal-content {
+    animation: vmmcModalSpring var(--theme-duration-normal) var(--theme-ease-spring) !important;
+}
+
+@keyframes vmmcModalSpring {
+    0%   { opacity: 0; transform: scale(0.96) translateY(8px); }
+    70%  { opacity: 1; transform: scale(1.005) translateY(-1px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Toast spring */
+.alert {
+    animation: vmmcToastSlide var(--theme-duration-normal) var(--theme-ease-spring);
+}
+
+@keyframes vmmcToastSlide {
+    from { opacity: 0; transform: translateX(-10px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+/* =========================================================================
+   32. THEME CROSSFADE — smooth theme switching, prevents FOUC
+   ========================================================================= */
+body,
+.app-header,
+.hospital-top-banner,
+.top-navbar-container,
+#mainSidebar,
+.main-site-content,
+.hospital-bottom-footer,
+.card,
+.panel,
+.modal-content,
+.dropdown-menu,
+.top-nav-dropdown,
+.form-control,
+.form-select,
+input,
+select,
+textarea,
+.table td,
+.table th {
+    transition: background-color var(--theme-duration-normal) var(--theme-ease-smooth),
+                color var(--theme-duration-fast) var(--theme-ease-smooth),
+                border-color var(--theme-duration-fast) var(--theme-ease-smooth) !important;
+}
+
+/* =========================================================================
+   33. PRINT SAFETY — All themes → black on white, no decoration
+   ========================================================================= */
+@media print {
+    html, body,
+    .main-layout,
+    .main-site-content,
+    .content-body {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    html::before, html::after,
+    body::before, body::after {
+        display: none !important;
+        animation: none !important;
+        content: none !important;
+    }
+
+    * {
+        animation: none !important;
+        transition: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        box-shadow: none !important;
+    }
+
+    .hospital-top-banner,
+    .top-navbar-container,
+    .hospital-bottom-footer,
+    .top-nav-dropdown,
+    .sidebar-toggle-btn,
+    #mainSidebar,
+    .app-header,
+    .btn-action-save,
+    .btn-action-reset,
+    .no-print,
+    .theme-settings-container,
+    .vmmc-select-dropdown {
+        display: none !important;
+    }
+
+    .card, .panel, .modal-content,
+    .patient-header-card, .review-card, .adm-details-container {
+        background: #ffffff !important;
+        border: 1px solid #cccccc !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+    }
+
+    .table th {
+        background: #eeeeee !important;
+        color: #000000 !important;
+        border-color: #cccccc !important;
+    }
+
+    .table td {
+        background: #ffffff !important;
+        color: #000000 !important;
+        border-color: #cccccc !important;
+    }
+}
+
+/* =========================================================================
+   34. REDUCED MOTION — Disabled animations, no particle layers
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce),
+html.reduce-motion {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+    }
+
+    body::before,
+    body::after {
+        animation: none !important;
+        display: none !important;
+    }
+}
+
+/* =========================================================================
+   35. ROVER WORLD ANIMATED ENVIRONMENT — SVG Rover CSS animation
+   pointer-events: none throughout — NEVER blocks any UI element
+   ========================================================================= */
+.rover-world-env {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 120px;
+    pointer-events: none !important;
+    z-index: 0;
+    display: none;
+    overflow: hidden;
+}
+
+[data-theme="rover-world"] .rover-world-env {
+    display: block;
+}
+
+.rover-terrain {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    background: linear-gradient(to bottom, transparent, rgba(200, 112, 64, 0.35));
+    border-radius: 0;
+}
+
+.rover-stars {
+    position: fixed;
+    inset: 0;
+    pointer-events: none !important;
+    z-index: 0;
+    display: none;
+    background:
+        radial-gradient(circle 1px at 8% 12%, rgba(245,220,200,0.8) 0%, transparent 80%),
+        radial-gradient(circle 1.5px at 22% 8%, rgba(245,220,200,0.6) 0%, transparent 80%),
+        radial-gradient(circle 1px at 40% 5%, rgba(245,220,200,0.7) 0%, transparent 80%),
+        radial-gradient(circle 2px at 55% 15%, rgba(245,220,200,0.5) 0%, transparent 80%),
+        radial-gradient(circle 1px at 70% 7%, rgba(245,220,200,0.8) 0%, transparent 80%),
+        radial-gradient(circle 1.5px at 85% 11%, rgba(245,220,200,0.6) 0%, transparent 80%),
+        radial-gradient(circle 1px at 95% 4%, rgba(245,220,200,0.7) 0%, transparent 80%);
+    animation: roverStarTwinkle 4s ease-in-out infinite alternate;
+}
+
+[data-theme="rover-world"] .rover-stars { display: block; }
+
+@keyframes roverStarTwinkle {
+    0%   { opacity: 0.5; }
+    50%  { opacity: 0.9; }
+    100% { opacity: 0.6; }
+}
+
+/* Rover SVG animation */
+.rover-vehicle {
+    position: fixed;
+    bottom: 18px;
+    left: -120px;
+    width: 80px;
+    height: 40px;
+    pointer-events: none !important;
+    z-index: 1;
+    display: none;
+    animation: roverDrive 60s linear infinite;
+    filter: drop-shadow(0 2px 4px rgba(200,112,64,0.4));
+}
+
+[data-theme="rover-world"] .rover-vehicle { display: block; }
+
+@keyframes roverDrive {
+    0%   { left: -120px; }
+    100% { left: 110%; }
+}
+
+/* Dust trail */
+.rover-dust {
+    position: fixed;
+    bottom: 22px;
+    left: -80px;
+    width: 40px;
+    height: 15px;
+    pointer-events: none !important;
+    z-index: 1;
+    display: none;
+    background: radial-gradient(ellipse at center, rgba(200,112,64,0.35) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: roverDrive 60s linear infinite, roverDustPulse 2s ease-in-out infinite;
+    margin-left: -20px;
+}
+
+[data-theme="rover-world"] .rover-dust { display: block; }
+
+@keyframes roverDustPulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50%       { opacity: 0.7; transform: scale(1.3); }
+}
+
+@media (prefers-reduced-motion: reduce), html.reduce-motion {
+    .rover-vehicle,
+    .rover-dust,
+    .rover-stars,
+    .rover-world-env {
+        display: none !important;
+    }
+}
+
+/* =========================================================================
+   36. GLOBAL SURFACE-AWARE CONTRAST ENGINE & TAILWIND CLASS MAPPINGS
+   Solves the hard-coded Tailwind & Bootstrap foreground clash across all 60 themes
+   ========================================================================= */
+
+/* High-contrast text mapping */
+.text-slate-900,
+.text-slate-800,
+.text-gray-900,
+.text-gray-800,
+.text-neutral-900,
+.text-neutral-800 {
+    color: var(--text-primary, var(--theme-text)) !important;
+}
+
+.text-slate-700,
+.text-slate-600,
+.text-gray-700,
+.text-gray-600,
+.text-neutral-700,
+.text-neutral-600 {
+    color: var(--text-secondary, var(--theme-text-secondary, var(--theme-text))) !important;
+}
+
+.text-slate-500,
+.text-slate-400,
+.text-gray-500,
+.text-gray-400,
+.text-neutral-500,
+.text-neutral-400 {
+    color: var(--text-muted, var(--theme-text-muted)) !important;
+}
+
+.text-slate-300,
+.text-gray-300 {
+    color: var(--text-disabled, var(--theme-text-disabled, rgba(148, 163, 184, 0.6))) !important;
+}
+
+/* Surface backgrounds */
+.bg-slate-50,
+.bg-slate-100,
+.bg-gray-50,
+.bg-gray-100,
+.bg-neutral-50,
+.bg-neutral-100 {
+    background-color: var(--theme-surface-alt, #f8fafc) !important;
+}
+
+.bg-white {
+    background-color: var(--theme-surface, #ffffff) !important;
+}
+
+/* Border mapping */
+.border-slate-100,
+.border-slate-200,
+.border-slate-300,
+.border-gray-100,
+.border-gray-200,
+.border-gray-300 {
+    border-color: var(--theme-border-subtle, var(--theme-border, #cbd5e1)) !important;
+}
+
+/* Semantic status text contrast (never dark red on dark bg, never pale green on white) */
+.text-emerald-700,
+.text-emerald-600,
+.text-green-700,
+.text-green-600 {
+    color: var(--success-text, #059669) !important;
+}
+
+.text-amber-700,
+.text-amber-600,
+.text-yellow-700,
+.text-yellow-600 {
+    color: var(--warning-text, #d97706) !important;
+}
+
+.text-rose-700,
+.text-rose-600,
+.text-red-700,
+.text-red-600 {
+    color: var(--danger-text, #dc2626) !important;
+}
+
+.text-sky-700,
+.text-sky-600,
+.text-blue-700,
+.text-blue-600 {
+    color: var(--info-text, #0284c7) !important;
+}
+
+.text-purple-700,
+.text-purple-600,
+.text-indigo-700,
+.text-indigo-600 {
+    color: var(--theme-primary, #6366f1) !important;
+}
+
+/* Quick Search dropdown container & items */
+.quick-search-box input {
+    background-color: var(--input-bg, #ffffff) !important;
+    color: var(--input-text, #0f172a) !important;
+    border-color: var(--input-border, #cbd5e1) !important;
+}
+
+.quick-search-box input::placeholder {
+    color: var(--input-placeholder, #94a3b8) !important;
+}
+
+.quick-search-results {
+    background-color: var(--dropdown-bg, #ffffff) !important;
+    border-color: var(--dropdown-border, #cbd5e1) !important;
+    box-shadow: var(--dropdown-shadow, 0 10px 25px rgba(0,0,0,0.15)) !important;
+    color: var(--dropdown-text, #0f172a) !important;
+}
+
+.search-res-item {
+    color: var(--dropdown-text, #0f172a) !important;
+    border-bottom-color: var(--dropdown-divider, #f1f5f9) !important;
+}
+
+.search-res-item:hover {
+    background-color: var(--dropdown-hover-bg, #e0f2fe) !important;
+    color: var(--dropdown-hover-text, #0369a1) !important;
+}
+
+/* Dashboard Front Office KPI card child contrast */
+.fo-kpi-card {
+    background: var(--theme-surface, #ffffff) !important;
+    border-color: var(--theme-border, #e2e8f0) !important;
+}
+
+.fo-kpi-card span[class*="text-slate-500"],
+.fo-kpi-card span[class*="text-slate-400"] {
+    color: var(--card-text-secondary, var(--theme-text-muted, #64748b)) !important;
+}
+
+.fo-kpi-card span[class*="text-slate-800"],
+.fo-kpi-card span[class*="text-2xl"] {
+    color: var(--card-text, var(--theme-text, #0f172a)) !important;
+}
+
+.fo-panel {
+    background: var(--theme-surface, #ffffff) !important;
+    border-color: var(--theme-border, #e2e8f0) !important;
+    color: var(--theme-text, #0f172a) !important;
+}
+
+.fo-panel-title {
+    color: var(--theme-heading, #0b2569) !important;
+    border-bottom-color: var(--theme-border-subtle, #f1f5f9) !important;
+}
+
+/* Modal dialog surfaces & forms */
+.vmmc-modal-card {
+    background-color: var(--modal-bg, var(--theme-surface, #ffffff)) !important;
+    color: var(--modal-text, var(--theme-text, #0f172a)) !important;
+    border: 1px solid var(--theme-border, #cbd5e1) !important;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35) !important;
+}
+
+.vmmc-modal-header {
+    background: var(--theme-surface-alt, #f8fafc) !important;
+    border-bottom: 1px solid var(--theme-border-subtle, #e2e8f0) !important;
+    color: var(--theme-heading, #0b2569) !important;
+}
+
+.vmmc-modal-footer {
+    background: var(--theme-surface-alt, #f8fafc) !important;
+    border-top: 1px solid var(--theme-border-subtle, #e2e8f0) !important;
+}
+
+.vmmc-modal-label {
+    color: var(--theme-label, var(--text-secondary, #475569)) !important;
+}
+
+.vmmc-modal-input {
+    background-color: var(--input-bg, #ffffff) !important;
+    color: var(--input-text, #0f172a) !important;
+    border: 1px solid var(--input-border, #cbd5e1) !important;
+}
+
+.vmmc-modal-input[readonly] {
+    background-color: var(--theme-input-readonly-bg, #f8fafc) !important;
+    color: var(--theme-input-readonly-text, #64748b) !important;
+}
+
+/* Visible keyboard focus state for all interactive controls (Section 28) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+    outline: var(--theme-focus-ring-width, 3px) solid var(--theme-focus, rgba(2, 132, 199, 0.45)) !important;
+    outline-offset: 2px !important;
+}
+
+/* Layering invariant: decorative floating layers NEVER intercept or obscure interactive ERP content */
+#floatingVisibilityLayer,
+.floating-visibility-layer,
+.rover-world-env,
+.rover-stars,
+.rover-vehicle,
+.rover-dust {
+    pointer-events: none !important;
+    z-index: 0 !important;
+}
+
+.main-layout,
+.main-site-content,
+.content-body,
+.top-navbar-container,
+.app-header {
+    position: relative;
+    z-index: 10;
+}
+
+.dropdown-menu,
+#userAccountDropdown,
+.user-account-dropdown,
+.top-nav-dropdown {
+    z-index: 99998 !important;
+}
+
+.modal,
+#vmmcProfileModal,
+#vmmcPasswordModal {
+    z-index: 100000 !important;
+}
+

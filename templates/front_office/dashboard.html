@@ -168,7 +168,8 @@
 {% endblock %}
 
 {% block content %}
-<div class="space-y-5">
+{% include 'includes/floating_visibility_layer.html' %}
+<div class="space-y-5 relative z-10">
 
     <!-- 1. Top Front Office Hero Banner -->
     <div class="fo-hero-banner">
@@ -307,7 +308,7 @@
                     <div class="border border-slate-200 rounded-lg p-3 bg-slate-50 hover:bg-white transition-all">
                         <div class="flex items-center justify-between">
                             <span class="font-bold text-xs text-slate-800 truncate" title="{{ item.ward.name }}">{{ item.ward.name }}</span>
-                            <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 10px; padding: 2px 6px;">{{ item.ward.code }}</span>
+                            <span class="badge" style="background: var(--theme-info-bg); color: var(--info-text); font-size: 10px; padding: 2px 6px;">{{ item.ward.code }}</span>
                         </div>
                         <div class="flex items-baseline justify-between mt-2">
                             <span class="text-xs text-slate-500">Occupancy</span>
@@ -343,9 +344,9 @@
                                 <div class="text-[11px] text-slate-500">{{ enq.category }} &bull; Assigned: {{ enq.assign_to }}</div>
                             </div>
                             <span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; 
-                                {% if enq.status == 'Open' %}background: #fee2e2; color: #991b1b;
-                                {% elif enq.status == 'Completed' %}background: #d1fae5; color: #065f46;
-                                {% else %}background: #fef3c7; color: #92400e;{% endif %}">
+                                {% if enq.status == 'Open' %}background: var(--theme-danger-bg); color: var(--danger-text);
+                                {% elif enq.status == 'Completed' %}background: var(--theme-success-bg); color: var(--success-text);
+                                {% else %}background: var(--theme-warning-bg); color: var(--warning-text);{% endif %}">
                                 {{ enq.status }}
                             </span>
                         </div>
@@ -368,10 +369,10 @@
                                 <div class="text-[11px] text-slate-500">{{ adm.department.name|default:"General" }} &bull; {{ adm.admission_type }}</div>
                             </div>
                             <span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px;
-                                {% if adm.status == 'Pending' %}background: #fef3c7; color: #92400e;
-                                {% elif adm.status == 'Approved' %}background: #e0f2fe; color: #0369a1;
-                                {% elif adm.status == 'Admitted' %}background: #d1fae5; color: #065f46;
-                                {% else %}background: #f1f5f9; color: #475569;{% endif %}">
+                                {% if adm.status == 'Pending' %}background: var(--theme-warning-bg); color: var(--warning-text);
+                                {% elif adm.status == 'Approved' %}background: var(--theme-info-bg); color: var(--info-text);
+                                {% elif adm.status == 'Admitted' %}background: var(--theme-success-bg); color: var(--success-text);
+                                {% else %}background: var(--theme-surface-alt); color: var(--text-muted);{% endif %}">
                                 {{ adm.status }}
                             </span>
                         </div>
@@ -391,7 +392,7 @@
             <div class="fo-panel">
                 <div class="fo-panel-title">
                     <span><i class="bi bi-telephone-outbound-fill text-sky-600 mr-1.5"></i> Important Contact Numbers</span>
-                    <span class="badge bg-red-100 text-red-700 text-[10px] font-bold px-1.5 py-0.5 rounded">24x7 Active</span>
+                    <span class="badge text-[10px] font-bold px-1.5 py-0.5 rounded" style="background: var(--theme-danger-bg); color: var(--danger-text);">24x7 Active</span>
                 </div>
                 <div class="space-y-2.5">
                     {% for contact in important_contacts %}
