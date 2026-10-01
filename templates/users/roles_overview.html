@@ -107,11 +107,6 @@
                 <i class="bi bi-grid-1x2-fill"></i> Landing Depts
             </a>
             {% endif %}
-            {% if request.user|can_view:'administration.roles' %}
-            <a href="{% url 'users:role_permissions' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
-                <i class="bi bi-grid-3x3-gap-fill"></i> Role Access Matrix
-            </a>
-            {% endif %}
             {% if request.user|can_view:'administration.user_management' %}
             <a href="{% url 'users:list' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
                 <i class="bi bi-person-lines-fill"></i> View All Users
@@ -159,8 +154,8 @@
                     {% endif %}
                 {% endif %}
 
-                {% if request.user|can_view:'administration.roles' %}
-                <a href="{% url 'users:role_permissions' %}?mode=granular&role={{ r.code }}" style="color: var(--accent-blue); text-decoration: none; font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                {% if request.user|can_view:'administration.navbar_mapping' or request.user|can_view:'administration.roles' %}
+                <a href="{% url 'users:navbar_mapping' %}?mode=role&role={{ r.code }}" style="color: var(--accent-blue); text-decoration: none; font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
                     Permissions <i class="bi bi-chevron-right"></i>
                 </a>
                 {% endif %}
