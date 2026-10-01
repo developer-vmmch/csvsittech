@@ -264,6 +264,38 @@
         margin: 0 4px;
     }
 
+    /* Triage Selector Colors */
+    .triage-green {
+        border-color: #16a34a !important;
+        background-color: #f0fdf4 !important;
+        color: #15803d !important;
+        font-weight: 700 !important;
+    }
+    .triage-yellow {
+        border-color: #ca8a04 !important;
+        background-color: #fefce8 !important;
+        color: #a16207 !important;
+        font-weight: 700 !important;
+    }
+    .triage-blue {
+        border-color: #2563eb !important;
+        background-color: #eff6ff !important;
+        color: #1d4ed8 !important;
+        font-weight: 700 !important;
+    }
+    .triage-red {
+        border-color: #dc2626 !important;
+        background-color: #fef2f2 !important;
+        color: #b91c1c !important;
+        font-weight: 700 !important;
+    }
+    .triage-black {
+        border-color: #0f172a !important;
+        background-color: #f1f5f9 !important;
+        color: #0f172a !important;
+        font-weight: 700 !important;
+    }
+
     /* 3. Bottom Action Bar */
     .reg-bottom-actions {
         background: #ffffff;
@@ -381,7 +413,7 @@
         <span id="jsValidationMessage"><strong>Validation Error:</strong> Please fill in all required fields marked with (*).</span>
     </div>
 
-    <form method="post" id="patientRegForm" novalidate>
+    <form method="post" id="patientRegForm" novalidate autocomplete="off">
         {% csrf_token %}
 
         <!-- 1. TOP HEADER ROW (PATIENT REGISTRATION & 4 RADIO MODES IN SINGLE HORIZONTAL ROW) -->
@@ -489,7 +521,7 @@
                         </div>
                     </div>
 
-                    <!-- 6. Guardian Name (Relationship + Name) (Mandatory) -->
+                    <!-- 6. Guardian Name (Relationship + Name) (Mandatory in Normal/Company/NRI) -->
                     <div class="reg-field-row" id="row_guardian">
                         <label class="reg-field-label" for="id_guardian_name" id="lblGuardian">Guardian Name: <span class="req-star">*</span></label>
                         <div class="reg-field-input-wrap" style="flex-direction: column; align-items: flex-start;">
@@ -502,6 +534,25 @@
                                 </div>
                             </div>
                             {% if form.guardian_name.errors %}<span class="js-field-error">{{ form.guardian_name.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 6b. Emergency Relation Selector (Emergency Mode only) -->
+                    <div class="reg-field-row mode-hidden" id="row_emergency_relation">
+                        <label class="reg-field-label" for="id_emergency_relation" id="lblEmergencyRelation">Relation:</label>
+                        <div class="reg-field-input-wrap" style="display: flex; gap: 4px; width: 100%; align-items: center;">
+                            <div style="width: 120px; min-width: 110px;">
+                                {{ form.emergency_relation }}
+                            </div>
+                            <div id="wrap_emergency_station" style="display: none; flex: 1;">
+                                {{ form.emergency_police_station }}
+                            </div>
+                            <div id="wrap_emergency_person" style="display: none; flex: 1;">
+                                {{ form.emergency_person_name }}
+                            </div>
+                            <div id="wrap_emergency_phone" style="display: none; width: 135px; min-width: 120px;">
+                                {{ form.emergency_contact_phone }}
+                            </div>
                         </div>
                     </div>
 
@@ -730,14 +781,6 @@
                     </div>
 
                     <!-- Mode-Specific Right Column Fields -->
-                    <!-- Last Patient Id -->
-                    <div class="reg-field-row mode-hidden" id="row_last_pid">
-                        <label class="reg-field-label">Last Patient Id:</label>
-                        <div class="reg-field-input-wrap">
-                            <span class="last-pid-text">{{ last_patient_id|default:"26176168" }}</span>
-                        </div>
-                    </div>
-
                     <!-- Email -->
                     <div class="reg-field-row mode-hidden" id="row_email">
                         <label class="reg-field-label" for="id_email">Email:</label>
@@ -779,9 +822,9 @@
                         </div>
                     </div>
 
-                    <!-- Emergency Medicine Type (Shown in Emergency Mode) -->
+                    <!-- Emergency Category (Shown in Emergency Mode) -->
                     <div class="reg-field-row mode-hidden" id="row_emergency_type">
-                        <label class="reg-field-label" for="id_emergency_medicine_type" id="lblEmerType">Emergency Type: <span class="req-star">*</span></label>
+                        <label class="reg-field-label" for="id_emergency_medicine_type" id="lblEmerType">Category: <span class="req-star">*</span></label>
                         <div class="reg-field-input-wrap">
                             {{ form.emergency_medicine_type }}
                         </div>
@@ -882,10 +925,10 @@
                             </a>
                         </td>
                         <td style="padding: 4px 8px; font-weight: 600; color: #0f172a;">
-                            {{ p.title|default:'' }} {{ p.name }}
+                            {{ p.name }}
                         </td>
                         <td style="padding: 4px 8px; color: #475569;">
-                            {% if p.guardian_name %}{{ p.guardian_relationship|default:'' }} {{ p.guardian_name }}{% else %}-{% endif %}
+                            {{ p.guardian_display }}
                         </td>
                         <td style="padding: 4px 8px; color: #475569;">
                             {{ p.village_area|default:p.city|default:"-" }}
@@ -984,7 +1027,6 @@
         const rowOfc = document.getElementById('row_ofc');
         const rowPurpose = document.getElementById('row_purpose');
 
-        const rowLastPid = document.getElementById('row_last_pid');
         const rowMobile = document.getElementById('row_mobile');
         const rowEmail = document.getElementById('row_email');
         const rowStreet = document.getElementById('row_street');
@@ -1001,6 +1043,15 @@
         const rowUnit = document.getElementById('row_unit');
         const rowPan = document.getElementById('row_pan');
         const rowEmergencyType = document.getElementById('row_emergency_type');
+        const rowEmergencyRelation = document.getElementById('row_emergency_relation');
+
+        const emergencyRelationSelect = document.getElementById('id_emergency_relation');
+        const wrapEmergencyStation = document.getElementById('wrap_emergency_station');
+        const wrapEmergencyPerson = document.getElementById('wrap_emergency_person');
+        const wrapEmergencyPhone = document.getElementById('wrap_emergency_phone');
+        const emergencyPhoneInput = document.getElementById('id_emergency_contact_phone');
+        const emergencyStationInput = document.getElementById('id_emergency_police_station');
+        const emergencyPersonInput = document.getElementById('id_emergency_person_name');
 
         const lblPassport = document.getElementById('lblPassport');
         const lblPurpose = document.getElementById('lblPurpose');
@@ -1150,7 +1201,7 @@
 
         stateSelect.addEventListener('change', function () {
             const mode = document.querySelector('input[name="registration_mode"]:checked')?.value || 'NORMAL';
-            if (mode === 'NORMAL' || mode === 'COMPANY') {
+            if (mode === 'NORMAL' || mode === 'COMPANY' || mode === 'EMERGENCY') {
                 updateNormalCities('');
             }
         });
@@ -1189,9 +1240,6 @@
                 if (passportInput) passportInput.value = '';
                 if (purposeInput) purposeInput.value = '';
                 if (employeeIdInput) employeeIdInput.value = '';
-                if (pincodeInput) pincodeInput.value = '';
-                if (streetInput) streetInput.value = '';
-                if (villageInput) villageInput.value = '';
             }
             else if (prevMode === 'EMERGENCY') {
                 if (emergencyTypeSelect) emergencyTypeSelect.value = '';
@@ -1227,13 +1275,13 @@
                 rowOfc.classList.add('mode-hidden');
                 rowPurpose.classList.add('mode-hidden');
 
-                rowLastPid.classList.add('mode-hidden');
                 rowEmail.classList.add('mode-hidden');
                 rowComplaint.classList.add('mode-hidden');
                 rowOccupation.classList.add('mode-hidden');
                 rowIncome.classList.add('mode-hidden');
                 rowPan.classList.add('mode-hidden');
                 rowEmergencyType.classList.add('mode-hidden');
+                if (rowEmergencyRelation) rowEmergencyRelation.classList.add('mode-hidden');
 
                 if (btnPrintOP) btnPrintOP.classList.add('mode-hidden');
                 if (btnSendSMS) btnSendSMS.classList.add('mode-hidden');
@@ -1250,6 +1298,7 @@
                 rowAadhar.classList.add('mode-hidden');
                 rowPan.classList.add('mode-hidden');
                 rowEmergencyType.classList.add('mode-hidden');
+                if (rowEmergencyRelation) rowEmergencyRelation.classList.add('mode-hidden');
                 rowPurpose.classList.remove('mode-hidden');
                 rowCountry.classList.remove('mode-hidden');
 
@@ -1271,6 +1320,7 @@
                 rowPassport.classList.add('mode-hidden');
                 rowPurpose.classList.add('mode-hidden');
                 rowEmergencyType.classList.add('mode-hidden');
+                if (rowEmergencyRelation) rowEmergencyRelation.classList.add('mode-hidden');
 
                 rowMarital.classList.add('mode-hidden');
                 rowReligion.classList.add('mode-hidden');
@@ -1288,7 +1338,10 @@
                 // EMERGENCY MODE: Fast emergency admission fields only
                 rowEmergencyType.classList.remove('mode-hidden');
                 rowEmergencyType.classList.add('mode-emergency-highlight');
-                rowDepartment.classList.add('mode-emergency-highlight');
+                if (rowEmergencyRelation) {
+                    rowEmergencyRelation.classList.remove('mode-hidden');
+                    updateEmergencyRelationFields();
+                }
 
                 // Hide all elective normal fields
                 rowIpno.classList.add('mode-hidden');
@@ -1297,6 +1350,8 @@
                 rowPassport.classList.add('mode-hidden');
                 rowPurpose.classList.add('mode-hidden');
                 rowIdentification.classList.add('mode-hidden');
+                rowVisitThrough.classList.add('mode-hidden');
+                rowCategory.classList.add('mode-hidden');
                 rowMarital.classList.add('mode-hidden');
                 rowReligion.classList.add('mode-hidden');
                 rowAbha.classList.add('mode-hidden');
@@ -1305,33 +1360,54 @@
                 rowOccupation.classList.add('mode-hidden');
                 rowIncome.classList.add('mode-hidden');
                 rowGuardian.classList.add('mode-hidden');
+                rowDepartment.classList.add('mode-hidden');
+                rowUnit.classList.add('mode-hidden');
 
-                rowStreet.classList.add('mode-hidden');
-                rowVillageArea.classList.add('mode-hidden');
                 rowCountry.classList.add('mode-hidden');
-                rowState.classList.add('mode-hidden');
-                rowCity.classList.add('mode-hidden');
-                rowPincode.classList.add('mode-hidden');
                 rowEmail.classList.add('mode-hidden');
 
-                // Auto-set Category to CASUALTY / EMERGENCY
+                if (starStreet) starStreet.style.display = 'none';
+                if (starVillage) starVillage.style.display = 'none';
+
+                populateNormalGeo(true);
+
+                // Auto-set background category
                 if (categorySelect) {
-                    if (categorySelect.querySelector('option[value="EMERGENCY"]')) {
-                        categorySelect.value = 'EMERGENCY';
-                    } else if (categorySelect.querySelector('option[value="CASUALTY"]')) {
-                        categorySelect.value = 'CASUALTY';
-                    }
+                    categorySelect.value = 'EMERGENCY';
                 }
 
-                // Auto-select Emergency Medicine department
+                // Auto-select Emergency Medicine department and Casualty unit
                 if (deptSelect) {
                     const emrOpt = Array.from(deptSelect.options).find(o => 
                         o.text.toUpperCase().includes('EMERGENCY') || o.text.toUpperCase().includes('CASUALTY') || o.text.toUpperCase().includes('EMR')
                     );
                     if (emrOpt) {
                         deptSelect.value = emrOpt.value;
-                        deptSelect.dispatchEvent(new Event('change'));
+                        fetchUnits(emrOpt.value);
                     }
+                }
+            }
+
+            // Dynamic placement of City, State, and Mobile Number for Emergency mode vs other modes
+            if (newMode === 'EMERGENCY') {
+                // In Emergency mode: Move City and State to the right side (after Blood Group / before Pincode)
+                if (rowBloodGroup && rowCity && rowState) {
+                    rowBloodGroup.insertAdjacentElement('afterend', rowCity);
+                    rowCity.insertAdjacentElement('afterend', rowState);
+                }
+                // Move Mobile Number to left side (after Village / Area)
+                if (rowVillageArea && rowMobile) {
+                    rowVillageArea.insertAdjacentElement('afterend', rowMobile);
+                }
+            } else {
+                // In Normal / Company / NRI modes: Restore City & State to the left side (after Village / Area)
+                if (rowVillageArea && rowCity && rowState) {
+                    rowVillageArea.insertAdjacentElement('afterend', rowCity);
+                    rowCity.insertAdjacentElement('afterend', rowState);
+                }
+                // Restore Mobile Number to right side (after DOB)
+                if (rowDob && rowMobile) {
+                    rowDob.insertAdjacentElement('afterend', rowMobile);
                 }
             }
 
@@ -1344,29 +1420,116 @@
             });
         });
 
+        // =========================================================================
+        // EMERGENCY RELATION DYNAMIC FIELDS HANDLER
+        // =========================================================================
+        function updateEmergencyRelationFields() {
+            if (!emergencyRelationSelect) return;
+            const val = emergencyRelationSelect.value;
+            if (val === 'Relative' || val === 'Neighbour' || val === 'Friend' || val === 'Unknown') {
+                if (wrapEmergencyStation) wrapEmergencyStation.style.display = 'none';
+                if (wrapEmergencyPerson) {
+                    wrapEmergencyPerson.style.display = 'flex';
+                    if (emergencyPersonInput) {
+                        if (val === 'Relative') emergencyPersonInput.placeholder = 'Relative Name (Optional)';
+                        else if (val === 'Neighbour') emergencyPersonInput.placeholder = 'Neighbour Name (Optional)';
+                        else if (val === 'Friend') emergencyPersonInput.placeholder = 'Friend Name (Optional)';
+                        else if (val === 'Unknown') emergencyPersonInput.placeholder = 'Brought By / Informant (Optional)';
+                    }
+                }
+                if (wrapEmergencyPhone) {
+                    wrapEmergencyPhone.style.display = 'flex';
+                    if (emergencyPhoneInput) emergencyPhoneInput.placeholder = 'Contact Number';
+                }
+            } else if (val === 'Police') {
+                if (wrapEmergencyStation) {
+                    wrapEmergencyStation.style.display = 'flex';
+                    if (emergencyStationInput) emergencyStationInput.placeholder = 'Police Station Name';
+                }
+                if (wrapEmergencyPerson) {
+                    wrapEmergencyPerson.style.display = 'flex';
+                    if (emergencyPersonInput) emergencyPersonInput.placeholder = 'Officer / PC Name (Optional)';
+                }
+                if (wrapEmergencyPhone) {
+                    wrapEmergencyPhone.style.display = 'flex';
+                    if (emergencyPhoneInput) emergencyPhoneInput.placeholder = 'Contact Number';
+                }
+            } else if (val === 'Self') {
+                if (wrapEmergencyStation) wrapEmergencyStation.style.display = 'none';
+                if (wrapEmergencyPerson) wrapEmergencyPerson.style.display = 'none';
+                if (wrapEmergencyPhone) wrapEmergencyPhone.style.display = 'none';
+                if (emergencyStationInput) emergencyStationInput.value = '';
+                if (emergencyPersonInput) emergencyPersonInput.value = '';
+                if (emergencyPhoneInput) emergencyPhoneInput.value = '';
+            } else {
+                if (wrapEmergencyStation) wrapEmergencyStation.style.display = 'none';
+                if (wrapEmergencyPerson) wrapEmergencyPerson.style.display = 'none';
+                if (wrapEmergencyPhone) wrapEmergencyPhone.style.display = 'none';
+            }
+        }
+
+        if (emergencyRelationSelect) {
+            emergencyRelationSelect.addEventListener('change', updateEmergencyRelationFields);
+        }
+
         // Initialize default
         populateNormalGeo(false);
-        switchRegistrationMode('NORMAL');
+        {% if is_edit %}
+            {% if object.category in "Green,Yellow,Blue,Red,Black,EMERGENCY" or object.guardian_relationship in "Relative,Neighbour,Friend,Police,Self,Unknown" or object.patient_id|slice:":1" == "E" %}
+                const emerRadio = document.getElementById('modeEmergency');
+                if (emerRadio) emerRadio.checked = true;
+                switchRegistrationMode('EMERGENCY');
+            {% elif object.patient_company and object.company_name != "INDIVIDUAL" %}
+                const compRadio = document.getElementById('modeCompany');
+                if (compRadio) compRadio.checked = true;
+                switchRegistrationMode('COMPANY');
+            {% elif object.country and object.country != "India" %}
+                const nriRadio = document.getElementById('modeNRI');
+                if (nriRadio) nriRadio.checked = true;
+                switchRegistrationMode('NRI');
+            {% else %}
+                switchRegistrationMode('NORMAL');
+            {% endif %}
+        {% else %}
+            switchRegistrationMode('NORMAL');
+        {% endif %}
+
+        {% if not is_edit %}
+        function clearNewRegistrationForm() {
+            if (form) {
+                form.reset();
+                document.querySelectorAll('.form-input, .form-select, textarea').forEach(el => {
+                    if (el.id !== 'id_patient_id_display' && el.name !== 'csrfmiddlewaretoken') {
+                        if (el.tagName === 'SELECT') {
+                            if (el.id === 'id_country_select') el.value = 'India';
+                            else if (el.id === 'id_state_select') el.value = 'Puducherry';
+                            else if (el.id === 'id_city_select') el.value = 'Karaikal';
+                            else if (el.id === 'id_visit_through') el.value = 'OP';
+                            else if (el.id === 'id_category') el.value = 'CONSULTATION';
+                            else el.selectedIndex = 0;
+                        } else if (el.type !== 'radio' && el.type !== 'hidden') {
+                            el.value = '';
+                        }
+                    }
+                });
+                clearValidationErrors();
+                populateNormalGeo(false);
+                switchRegistrationMode('NORMAL');
+            }
+        }
+        window.addEventListener('pageshow', function (e) {
+            clearNewRegistrationForm();
+        });
+        {% endif %}
 
         // =========================================================================
-        // RESET BUTTON BEHAVIOR (Clears form and restores active mode defaults)
+        // RESET BUTTON BEHAVIOR (Clears form and redirects to fresh Add Patient page)
         // =========================================================================
         const btnReset = document.getElementById('btnReset');
         if (btnReset) {
             btnReset.addEventListener('click', function (e) {
                 e.preventDefault();
-                form.reset();
-                clearValidationErrors();
-
-                // Clear input values
-                document.querySelectorAll('.form-input, .form-select, textarea').forEach(el => {
-                    if (el.id !== 'id_patient_id_display') {
-                        el.value = '';
-                    }
-                });
-
-                const activeMode = document.querySelector('input[name="registration_mode"]:checked')?.value || 'NORMAL';
-                switchRegistrationMode(activeMode, true);
+                window.location.href = "{% url 'patients:add' %}";
             });
         }
 
@@ -1387,6 +1550,7 @@
         }
         enforceDigits(aadharInput, false);
         enforceDigits(mobileInput, true);
+        enforceDigits(emergencyPhoneInput, false);
         enforceDigits(ageYearsInput, false);
         enforceDigits(ageMonthsInput, false);
         enforceDigits(ageDaysInput, false);
@@ -1488,33 +1652,40 @@
         // =========================================================================
         function updatePatientIdIndicator() {
             if (!patientIdDisplay) return;
-            const mode = document.querySelector('input[name="registration_mode"]:checked')?.value || 'NORMAL';
-            const isEmergency = (mode === 'EMERGENCY');
-            
-            if (isEmergency) {
-                patientIdDisplay.value = 'Auto-Generated (Prefix: E...)';
-                patientIdDisplay.style.backgroundColor = '#fef2f2';
-                patientIdDisplay.style.color = '#dc2626';
-                patientIdDisplay.style.fontWeight = '700';
-            } else {
-                patientIdDisplay.value = 'Auto-Generated on Save';
-                patientIdDisplay.style.backgroundColor = '#f8fafc';
-                patientIdDisplay.style.color = '#475569';
-                patientIdDisplay.style.fontWeight = '500';
-            }
+            patientIdDisplay.value = 'Auto-Generated on Save';
+            patientIdDisplay.style.backgroundColor = '#f8fafc';
+            patientIdDisplay.style.color = '#475569';
+            patientIdDisplay.style.fontWeight = '500';
         }
         if (categorySelect) categorySelect.addEventListener('change', updatePatientIdIndicator);
 
-        // Patient ID / OP Number filter for Today's Patient List
+        // Emergency Triage Select Color Formatter
+        function updateTriageSelectStyle() {
+            if (!emergencyTypeSelect) return;
+            const val = emergencyTypeSelect.value;
+            emergencyTypeSelect.classList.remove('triage-green', 'triage-yellow', 'triage-blue', 'triage-red', 'triage-black');
+            if (val === 'Green') emergencyTypeSelect.classList.add('triage-green');
+            else if (val === 'Yellow') emergencyTypeSelect.classList.add('triage-yellow');
+            else if (val === 'Blue') emergencyTypeSelect.classList.add('triage-blue');
+            else if (val === 'Red') emergencyTypeSelect.classList.add('triage-red');
+            else if (val === 'Black') emergencyTypeSelect.classList.add('triage-black');
+        }
+        if (emergencyTypeSelect) {
+            emergencyTypeSelect.addEventListener('change', updateTriageSelectStyle);
+            updateTriageSelectStyle();
+        }
+
+        // Patient ID / OP / Name filter for Registered Patients List
         const todaySearchInput = document.getElementById('todayPatientSearch');
         if (todaySearchInput) {
             todaySearchInput.addEventListener('input', function () {
                 const q = this.value.toLowerCase().trim();
                 const rows = document.querySelectorAll('#todayPatientsTableBody tr.today-row');
                 rows.forEach(row => {
-                    const pid = (row.getAttribute('data-patient-id') || row.querySelector('.td-patient-id')?.innerText || '').toLowerCase().trim();
-                    const opn = (row.getAttribute('data-op-number') || row.querySelector('.td-op-number')?.innerText || '').toLowerCase().trim();
-                    if (!q || pid.includes(q) || opn.includes(q)) {
+                    const rowText = row.innerText.toLowerCase();
+                    const pid = (row.getAttribute('data-patient-id') || '').toLowerCase();
+                    const opn = (row.getAttribute('data-op-number') || '').toLowerCase();
+                    if (!q || rowText.includes(q) || pid.includes(q) || opn.includes(q)) {
                         row.style.display = '';
                     } else {
                         row.style.display = 'none';
@@ -1663,16 +1834,18 @@
                     if (!firstInvalidEl) firstInvalidEl = ageYearsInput;
                 }
 
-                // Department & Unit
-                if (deptSelect && !deptSelect.value) {
-                    isValid = false;
-                    createError(deptSelect, 'Department is required.');
-                    if (!firstInvalidEl) firstInvalidEl = deptSelect;
-                }
-                if (unitSelect && !unitSelect.value) {
-                    isValid = false;
-                    createError(unitSelect, 'Unit / Doctor is required.');
-                    if (!firstInvalidEl) firstInvalidEl = unitSelect;
+                // Department & Unit (Mandatory in non-emergency modes)
+                if (mode !== 'EMERGENCY') {
+                    if (deptSelect && !deptSelect.value) {
+                        isValid = false;
+                        createError(deptSelect, 'Department is required.');
+                        if (!firstInvalidEl) firstInvalidEl = deptSelect;
+                    }
+                    if (unitSelect && !unitSelect.value) {
+                        isValid = false;
+                        createError(unitSelect, 'Unit / Doctor is required.');
+                        if (!firstInvalidEl) firstInvalidEl = unitSelect;
+                    }
                 }
 
                 // Mode Specific Rules
@@ -1721,7 +1894,7 @@
                 else if (mode === 'EMERGENCY') {
                     if (!emergencyTypeSelect || !emergencyTypeSelect.value) {
                         isValid = false;
-                        createError(emergencyTypeSelect, 'Emergency medicine type is required.');
+                        createError(emergencyTypeSelect, 'Emergency Category is required.');
                         if (!firstInvalidEl) firstInvalidEl = emergencyTypeSelect;
                     }
                 }

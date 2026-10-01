@@ -2,7 +2,10 @@ import os
 import base64
 import io
 from typing import Dict, Any, Optional
-import qrcode
+try:
+    import qrcode
+except ImportError:
+    qrcode = None
 from django.conf import settings
 from django.utils import timezone
 

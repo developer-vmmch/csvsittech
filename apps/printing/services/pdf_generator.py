@@ -1,22 +1,29 @@
 import os
 import io
-import qrcode
+try:
+    import qrcode
+except ImportError:
+    qrcode = None
 from typing import Optional
 from django.conf import settings
 from django.utils import timezone
 
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.units import mm
-from reportlab.pdfgen import canvas
-from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Image as RLImage,
-    Table, TableStyle, KeepTogether
-)
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-from reportlab.graphics.barcode import code128
-from reportlab.graphics.shapes import Drawing
+try:
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import mm
+    from reportlab.pdfgen import canvas
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Image as RLImage,
+        Table, TableStyle, KeepTogether
+    )
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from reportlab.graphics.barcode import code128
+    from reportlab.graphics.shapes import Drawing
+    REPORTLAB_AVAILABLE = True
+except ImportError:
+    REPORTLAB_AVAILABLE = False
 
 
 class PatientPdfGenerator:
