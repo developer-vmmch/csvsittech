@@ -33,13 +33,14 @@
                     <i class="bi bi-search" style="color: var(--accent-blue);"></i> Advanced Patient Search
                 </h2>
                 <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 2px;">
-                    Filter patient records by Name, Registration Date Range, Mobile Number, Aadhar Number, ABHA Number, Department, or Registered By User.
+                    Filter patient records by Patient Name, Date Range, Mobile Number, OP Number, IP Number, Department, or Registered User.
                 </p>
             </div>
         </div>
 
         <form method="get" action="{% url 'patients:search' %}" class="custom-form">
             <div class="search-form-grid">
+                <!-- Row 1: Primary Search Criteria -->
                 <div class="form-group">
                     <label for="q_name">Patient Name</label>
                     <input type="text" id="q_name" name="q_name" value="{{ q_name }}" class="form-input" placeholder="e.g. EDWIN or KARTHI">
@@ -60,14 +61,15 @@
                     <input type="text" id="q_mobile" name="q_mobile" value="{{ q_mobile }}" class="form-input" placeholder="10-digit mobile..." maxlength="10">
                 </div>
 
+                <!-- Row 2: OP Number, IP Number, Department, Registered By User -->
                 <div class="form-group">
-                    <label for="q_aadhar">Aadhar Card Number</label>
-                    <input type="text" id="q_aadhar" name="q_aadhar" value="{{ q_aadhar }}" class="form-input" placeholder="12-digit Aadhar..." maxlength="12">
+                    <label for="q_op_number">OP Number</label>
+                    <input type="text" id="q_op_number" name="q_op_number" value="{{ q_op_number }}" class="form-input" placeholder="e.g. 26101005">
                 </div>
 
                 <div class="form-group">
-                    <label for="q_abha">ABHA ID / Patient ID / OP No.</label>
-                    <input type="text" id="q_abha" name="q_abha" value="{{ q_abha }}" class="form-input" placeholder="ABHA / Patient ID / OP...">
+                    <label for="q_ip_number">IP Number</label>
+                    <input type="text" id="q_ip_number" name="q_ip_number" value="{{ q_ip_number }}" class="form-input" placeholder="e.g. 600203 / E101">
                 </div>
 
                 <div class="form-group">
@@ -88,15 +90,6 @@
                         {% for u in users_list %}
                         <option value="{{ u.id }}" {% if q_user == u.id|stringformat:"s" %}selected{% endif %}>{{ u.get_full_name|default:u.username }} ({{ u.username }})</option>
                         {% endfor %}
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="q_entry_type">Patient Type</label>
-                    <select id="q_entry_type" name="q_entry_type" class="form-select">
-                        <option value="A" {% if q_entry_type == 'A' or not q_entry_type %}selected{% endif %}>A</option>
-                        <option value="O" {% if q_entry_type == 'O' %}selected{% endif %}>O</option>
-                        <option value="D" {% if q_entry_type == 'D' %}selected{% endif %}>D</option>
                     </select>
                 </div>
             </div>
@@ -120,7 +113,7 @@
         <i class="bi bi-search" style="font-size: 2.2rem; display: block; margin-bottom: 0.5rem; color: var(--accent-teal);"></i>
         <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem;">Enter Search Criteria to Find Patients</h3>
         <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 550px; margin: 0 auto;">
-            Use the search filter panel above (Patient Name, ID, Mobile No, Aadhar, ABHA ID, Patient Type, or Date Range) and click <strong>"Search Patients"</strong> to view matching records.
+            Use the search filter panel above (Patient Name, Date Range, Mobile No, OP Number, IP Number, etc.) and click <strong>"Search Patients"</strong> to view matching records.
         </p>
     </div>
     {% else %}
@@ -145,60 +138,30 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Patient ID</th>
                         <th>OP Number</th>
+                        <th>Patient ID</th>
                         <th>Patient Name</th>
-                        <th>Age / Gender</th>
-                        <th>Mobile No</th>
-                        <th>Aadhar Card</th>
-                        <th>ABHA ID</th>
+                        <th>Guardian Name</th>
+                        <th>Address</th>
+                        <th>Age</th>
+                        <th>Mobile Number</th>
                         <th>Department</th>
-                        <th>IP Dept</th>
-                        <th>Patient Type</th>
                         <th>Doctor</th>
-                        <th>Registered By</th>
-                        <th>Registered On</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for patient in patients %}
                     <tr>
-                        <td><strong>{{ patient.patient_id }}</strong></td>
                         <td><strong style="color: var(--accent-purple);">{{ patient.op_number|default:"--" }}</strong></td>
-                        <td><strong>{{ patient.title }} {{ patient.name }}</strong></td>
+                        <td><strong>{{ patient.patient_id }}</strong></td>
+                        <td><strong>{{ patient.name }}</strong></td>
+                        <td>{% if patient.guardian_name %}{% if patient.guardian_relationship and patient.guardian_relationship != '-' %}{{ patient.guardian_relationship }} {% endif %}{{ patient.guardian_name }}{% else %}<span style="color: var(--text-muted); font-size: 0.85rem;">--</span>{% endif %}</td>
+                        <td>{% if patient.street or patient.village_area or patient.city %}{{ patient.street|default:"" }} {{ patient.village_area|default:"" }}{% if patient.city %}, {{ patient.city }}{% endif %}{% else %}<span style="color: var(--text-muted); font-size: 0.85rem;">--</span>{% endif %}</td>
                         <td>{{ patient.age_years }} Y / {{ patient.gender }}</td>
-                        <td>{{ patient.mobile_no }}</td>
-                        <td>{{ patient.aadhar_card|default:"--" }}</td>
-                        <td><span class="badge badge-purple">{{ patient.abha_id|default:"--" }}</span></td>
+                        <td>{{ patient.mobile_no|default:"--" }}</td>
                         <td><span class="badge badge-blue">{{ patient.department }}</span></td>
-                        <td>
-                            {% if patient.active_ip_admission %}
-                                <span class="badge badge-purple" style="font-weight: 700;">{{ patient.active_ip_admission.department }}</span>
-                            {% elif patient.is_admitted_inpatient %}
-                                <span class="badge badge-purple" style="font-weight: 700;">{{ patient.department }}</span>
-                            {% else %}
-                                <span style="color: var(--text-muted); font-size: 0.8rem;">--</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if patient.patient_type == 'D' or patient.created_source == 'D' %}
-                                <span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">D</span>
-                            {% else %}
-                                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">O</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ patient.unit_doctor }}</td>
-                        <td>
-                            {% if patient.created_by %}
-                            <span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); font-weight: 500;">
-                                <i class="bi bi-person-fill"></i> {{ patient.created_by.get_full_name|default:patient.created_by.username }}
-                            </span>
-                            {% else %}
-                            <span style="color: var(--text-muted); font-size: 0.82rem;">--</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ patient.created_at|date:"d/M/Y H:i" }}</td>
+                        <td>{{ patient.unit_doctor|default:"--" }}</td>
                         <td>
                             <div style="display: flex; align-items: center; gap: 0.4rem;">
                                 {% if request.user|has_perm:'search_patient.edit' or request.user|has_perm:'patient_list.edit' %}

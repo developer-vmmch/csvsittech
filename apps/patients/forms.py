@@ -187,7 +187,9 @@ class PatientRegistrationForm(forms.ModelForm):
 
     def clean_patient_id(self):
         patient_id = self.cleaned_data.get('patient_id')
-        if not patient_id and not self.instance.pk:
+        if not patient_id:
+            if self.instance.pk:
+                return self.instance.patient_id
             reg_mode = (self.data.get('registration_mode') or 'NORMAL').upper()
             is_emer = (reg_mode == 'EMERGENCY')
             return Patient.generate_next_patient_id(is_emergency=is_emer)
@@ -297,9 +299,6 @@ class PatientRegistrationForm(forms.ModelForm):
             purpose = (cleaned_data.get('purpose') or self.data.get('purpose') or '').strip()
             if not purpose:
                 self.add_error('purpose', "Purpose is mandatory for NRI registration.")
-
-        if self.instance and self.instance.pk and self.instance.is_admitted_inpatient:
-            raise forms.ValidationError("The patient is already admitted as an inpatient.")
 
         return cleaned_data
 
