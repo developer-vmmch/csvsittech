@@ -241,6 +241,11 @@ class Patient(TimeStampedModel):
         CASUALTY = 'CASUALTY', 'Casualty'
         EMERGENCY = 'EMERGENCY', 'Emergency'
         RE_CONSULTATION = 'RE_CONSULTATION', 'Re-Consultation'
+        GREEN = 'Green', 'Green'
+        YELLOW = 'Yellow', 'Yellow'
+        BLUE = 'Blue', 'Blue'
+        RED = 'Red', 'Red'
+        BLACK = 'Black', 'Black'
 
     class GuardianRelChoices(models.TextChoices):
         NONE = '-', '-'
@@ -252,6 +257,12 @@ class Patient(TimeStampedModel):
         FO = 'F/O', 'F/O (Father of)'
         MO = 'M/O', 'M/O (Mother of)'
         GO = 'G/O', 'G/O (Guardian of)'
+        RELATIVE = 'Relative', 'Relative'
+        NEIGHBOUR = 'Neighbour', 'Neighbour'
+        FRIEND = 'Friend', 'Friend'
+        POLICE = 'Police', 'Police'
+        SELF = 'Self', 'Self'
+        UNKNOWN = 'Unknown', 'Unknown'
 
     class CentreChoices(models.TextChoices):
         VMMCH = 'VMMCH', 'VMMCH'
@@ -331,7 +342,7 @@ class Patient(TimeStampedModel):
     
     # Guardian Info
     guardian_title = models.CharField(max_length=10, choices=TitleChoices.choices, default='-')
-    guardian_relationship = models.CharField(max_length=10, choices=GuardianRelChoices.choices, default='-')
+    guardian_relationship = models.CharField(max_length=20, choices=GuardianRelChoices.choices, default='-')
     guardian_name = models.CharField(max_length=100, blank=True, null=True)
     guardian_phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Guardian Phone")
     company_name = models.CharField(max_length=100, default="INDIVIDUAL")
@@ -390,6 +401,35 @@ class Patient(TimeStampedModel):
         """Returns True if the patient currently has an active, undischarged IP admission."""
         return self.active_ip_admission is not None
 
+    @property
+    def guardian_display(self):
+        rel = (self.guardian_relationship or '').strip()
+        gname = (self.guardian_name or '').strip()
+
+        if not rel or rel == '-':
+            return gname if gname else '-'
+
+        if rel == 'Self':
+            return 'Self'
+
+        if rel == 'Unknown':
+            return f"Unknown ({gname})" if (gname and gname.lower() != 'unknown') else 'Unknown'
+
+        if rel == 'Police':
+            if gname and gname.upper() not in ['POLICE', 'POLICE STATION']:
+                return f"Police: {gname}"
+            return 'Police'
+
+        if rel in ['Relative', 'Neighbour', 'Friend']:
+            if gname and gname != rel:
+                return f"{rel}: {gname}"
+            return rel
+
+        # Standard S/O, D/O, W/O, C/O, H/O, F/O, M/O, G/O
+        if gname:
+            return f"{rel} {gname}"
+        return rel
+
     def clean(self):
         super().clean()
         if self.age_years is not None and (self.age_years < 0 or self.age_years > 99):
@@ -413,8 +453,6 @@ class Patient(TimeStampedModel):
 
         if not self.patient_id:
             self.patient_id = self.generate_next_patient_id(is_emergency=is_emer)
-        elif is_emer and not str(self.patient_id).upper().startswith('E') and not self.pk:
-            self.patient_id = f"E{self.patient_id}"
 
         if not self.op_number:
             self.op_number = self.generate_next_op_number(is_emergency=is_emer)
@@ -436,51 +474,26 @@ class Patient(TimeStampedModel):
     @classmethod
     def generate_next_patient_id(cls, is_emergency=False):
         """
-        Generate the next unique patient ID (UHID).
-        Normal: Sequential numeric ID (e.g. 2699002004)
-        Emergency: Prefixed with 'E' (e.g. E2699002004)
+        Generate the next unique numeric patient ID (UHID).
+        Standard sequential numeric ID (e.g. 2699002019).
+        Scans all patient records, strips any non-digits, and increments the maximum.
         """
-        from django.db.models import Max
-        from django.db.models.functions import Cast
-        from django.db.models import BigIntegerField
-
-        if is_emergency:
-            e_patients = cls.objects.filter(patient_id__iregex=r'^E[0-9]+$').values_list('patient_id', flat=True)
-            max_e_num = None
-            for pid in e_patients:
+        all_ids = cls.objects.exclude(patient_id__isnull=True).exclude(patient_id='').values_list('patient_id', flat=True)
+        max_num = None
+        for pid in all_ids:
+            clean_pid = str(pid).strip().lstrip('Ee')
+            if clean_pid.isdigit():
                 try:
-                    num_val = int(pid[1:])
-                    if max_e_num is None or num_val > max_e_num:
-                        max_e_num = num_val
+                    val = int(clean_pid)
+                    if max_num is None or val > max_num:
+                        max_num = val
                 except (ValueError, TypeError):
                     continue
 
-            if max_e_num is not None:
-                return f"E{max_e_num + 1}"
-            else:
-                normal_next = cls.generate_next_patient_id(is_emergency=False)
-                return f"E{normal_next}"
-
-        max_patient_id = (
-            cls.objects
-            .filter(patient_id__isnull=False)
-            .exclude(patient_id='')
-            .filter(patient_id__regex=r'^[0-9]+$')
-            .annotate(
-                numeric_patient_id=Cast(
-                    'patient_id',
-                    BigIntegerField()
-                )
-            )
-            .aggregate(
-                max_id=Max('numeric_patient_id')
-            )['max_id']
-        )
-
-        if max_patient_id is None:
+        if max_num is None:
             return "2699000001"
 
-        return str(max_patient_id + 1)
+        return str(max_num + 1)
 
     @classmethod
     def generate_next_ipno(cls, is_emergency=False):

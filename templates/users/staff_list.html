@@ -88,9 +88,9 @@
             </p>
         </div>
         <div style="display: flex; gap: 0.75rem; align-items: center;">
-            {% if request.user|can_view:'administration.roles' %}
-            <a href="{% url 'users:role_permissions' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
-                <i class="bi bi-shield-check" style="color: var(--accent-blue);"></i> Role Access Matrix
+            {% if request.user|can_view:'administration.navbar_mapping' or request.user|can_view:'administration.roles' %}
+            <a href="{% url 'users:navbar_mapping' %}" class="btn btn-secondary" style="font-size: 0.85rem;">
+                <i class="bi bi-diagram-3-fill" style="color: var(--accent-blue);"></i> Nav Bar Mapping
             </a>
             {% endif %}
             {% if request.user|can_create:'administration.user_management' %}

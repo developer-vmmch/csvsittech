@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0007_landingdepartment_nav_permissions'),
+        ('users', '0008_alter_user_department'),
     ]
 
     operations = [
@@ -19,10 +19,5 @@ class Migration(migrations.Migration):
             model_name='user',
             name='theme_font',
             field=models.CharField(blank=True, default='Outfit', help_text='User interface font family preference', max_length=50),
-        ),
-        migrations.AlterField(
-            model_name='user',
-            name='department',
-            field=models.CharField(blank=True, help_text="Assigned department(s) (comma-separated or 'All Departments')", max_length=500, null=True),
         ),
     ]

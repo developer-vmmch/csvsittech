@@ -582,321 +582,21 @@ class RoleCreateView(LoginRequiredMixin, MenuAccessRequiredMixin, CreateView):
             return self.form_invalid(form)
 
 
-class RoleMenuPermissionsView(LoginRequiredMixin, MenuAccessRequiredMixin, View):
-    menu_key = 'users_roles'
-    template_name = 'users/role_permissions.html'
-
-    def get_menu_definitions(self):
-        return [
-            # Main Navigation
-            {'key': 'dashboard', 'label': 'Dashboard Overview', 'section': 'MAIN NAVIGATION'},
-
-            # Patients Management
-            {'key': 'add_patient', 'label': 'Add Patient', 'section': 'PATIENT MANAGEMENT'},
-            {'key': 'search_patient', 'label': 'Search Patient', 'section': 'PATIENT MANAGEMENT'},
-            {'key': 'patient_list', 'label': 'Patient Directory', 'section': 'PATIENT MANAGEMENT'},
-            {'key': 'patient_import', 'label': 'Patient Import', 'section': 'PATIENT MANAGEMENT'},
-            {'key': 'review', 'label': 'Patient Review', 'section': 'PATIENT MANAGEMENT'},
-            {'key': 'discharge', 'label': 'Patient Discharge', 'section': 'PATIENT MANAGEMENT'},
-            {'key': 'review_report', 'label': 'Patient Review Report', 'section': 'PATIENT MANAGEMENT'},
-            {'key': 'op_census', 'label': 'OP Census Analytics', 'section': 'PATIENT MANAGEMENT'},
-            {'key': 'patient_companies', 'label': 'Patient Companies', 'section': 'PATIENT MANAGEMENT'},
-            {'key': 'department_list', 'label': 'Departments & Units', 'section': 'PATIENT MANAGEMENT'},
-            {'key': 'add_department', 'label': '+ Add Department', 'section': 'PATIENT SETUP'},
-            {'key': 'add_company', 'label': '+ Add Company', 'section': 'PATIENT SETUP'},
-
-            # Ward Management
-            {'key': 'ward', 'label': 'Ward Module Access', 'section': 'WARD MANAGEMENT'},
-            {'key': 'ward_management', 'label': 'Ward Management', 'section': 'WARD MANAGEMENT'},
-            {'key': 'ward_allocation', 'label': 'Ward Allocation', 'section': 'WARD MANAGEMENT'},
-            {'key': 'ward_service_request', 'label': 'Ward Service Request', 'section': 'WARD MANAGEMENT'},
-            {'key': 'ward_transfer', 'label': 'Ward Transfer (Internal)', 'section': 'WARD MANAGEMENT'},
-            {'key': 'branch_transfer', 'label': 'Ward Transfer', 'section': 'WARD MANAGEMENT'},
-            {'key': 'branch_transfer_report', 'label': 'Ward Transfer Report', 'section': 'WARD MANAGEMENT'},
-
-            # Master Setup
-            {'key': 'master', 'label': 'Master Module Access', 'section': 'MASTER MODULE'},
-            {'key': 'master_departments', 'label': 'Hospital Departments', 'section': 'MASTER MODULE'},
-            {'key': 'master_wards', 'label': 'Hospital Wards', 'section': 'MASTER MODULE'},
-            {'key': 'master_investigations', 'label': 'Investigations', 'section': 'MASTER MODULE'},
-            {'key': 'master_parameters', 'label': 'Parameters', 'section': 'MASTER MODULE'},
-            {'key': 'lab_master', 'label': 'Lab Master Access', 'section': 'MASTER MODULE'},
-            {'key': 'lab_master_dashboard', 'label': 'Lab Dashboard', 'section': 'MASTER MODULE'},
-            {'key': 'lab_sub_departments', 'label': 'Lab Sub Departments', 'section': 'MASTER MODULE'},
-            {'key': 'investigation_parameter_mapping', 'label': 'Investigation Mapping', 'section': 'MASTER MODULE'},
-            {'key': 'workload_mapping_list', 'label': 'Workload Mapping', 'section': 'MASTER MODULE'},
-            {'key': 'mapping_validation', 'label': 'Mapping Validation', 'section': 'MASTER MODULE'},
-            {'key': 'legacy_mapping', 'label': 'Universal Import / Export', 'section': 'MASTER MODULE'},
-            {'key': 'import_lab_workload_csv', 'label': 'Workload Import', 'section': 'MASTER MODULE'},
-            {'key': 'export_lab_workload_csv', 'label': 'Workload Export', 'section': 'MASTER MODULE'},
-
-            # Consultant
-            {'key': 'consultant', 'label': 'Consultant Module Access', 'section': 'CONSULTANT'},
-            {'key': 'doctor_window', 'label': 'Doctor Window', 'section': 'CONSULTANT'},
-            {'key': 'service_request_add', 'label': 'Service Request', 'section': 'CONSULTANT'},
-
-            # Lab Orders
-            {'key': 'lab_orders', 'label': 'Lab Orders Module Access', 'section': 'LAB ORDERS'},
-            {'key': 'work_orders', 'label': 'Work Orders', 'section': 'LAB ORDERS'},
-            {'key': 'order_entry', 'label': 'New Order Entry', 'section': 'LAB ORDERS'},
-            {'key': 'result_entry_list', 'label': 'Result Entry', 'section': 'LAB ORDERS'},
-
-            # Lab Reports
-            {'key': 'lab_reports', 'label': 'Lab Reports Module Access', 'section': 'LAB REPORTS'},
-            {'key': 'report_dashboard', 'label': 'Reports Dashboard', 'section': 'LAB REPORTS'},
-            {'key': 'report_daily', 'label': 'Daily Report', 'section': 'LAB REPORTS'},
-            {'key': 'report_monthly', 'label': 'Monthly Report', 'section': 'LAB REPORTS'},
-            {'key': 'report_sub_department', 'label': 'Sub Department Report', 'section': 'LAB REPORTS'},
-            {'key': 'report_investigation', 'label': 'Investigation Report', 'section': 'LAB REPORTS'},
-            {'key': 'report_hospital_department', 'label': 'Hospital Department-wise Report', 'section': 'LAB REPORTS'},
-            {'key': 'report_benchmark', 'label': 'Benchmark Report', 'section': 'LAB REPORTS'},
-            {'key': 'report_abnormal', 'label': 'Abnormal Result Report', 'section': 'LAB REPORTS'},
-
-            # Auto Trigger
-            {'key': 'auto_trigger', 'label': 'Auto Trigger Module Access', 'section': 'AUTO TRIGGER'},
-            {'key': 'auto_trigger_configuration', 'label': 'Auto Trigger Configuration', 'section': 'AUTO TRIGGER'},
-            {'key': 'auto_trigger_history', 'label': 'Auto Trigger History', 'section': 'AUTO TRIGGER'},
-            {'key': 'auto_trigger_monthly_create', 'label': 'Monthly Trigger', 'section': 'AUTO TRIGGER'},
-            {'key': 'auto_trigger_monthly', 'label': 'Monthly Trigger History', 'section': 'AUTO TRIGGER'},
-            {'key': 'auto_trigger_monthly_census', 'label': 'Monthly Census', 'section': 'AUTO TRIGGER'},
-            {'key': 'auto_trigger_automate_test', 'label': 'Automate Test', 'section': 'AUTO TRIGGER'},
-            {'key': 'auto_trigger_result_view', 'label': 'Result View', 'section': 'AUTO TRIGGER'},
-            {'key': 'auto_trigger_atc', 'label': 'ATC Control', 'section': 'AUTO TRIGGER'},
-            {'key': 'auto_trigger_atc_status', 'label': 'ATC Live Status', 'section': 'AUTO TRIGGER'},
-            {'key': 'auto_trigger_atc_settings', 'label': 'ATC Settings', 'section': 'AUTO TRIGGER'},
-
-            # OT
-            {'key': 'ot', 'label': 'OT Module Access', 'section': 'OPERATION THEATRE (OT)'},
-            {'key': 'ot_dashboard', 'label': 'OT Dashboard', 'section': 'OPERATION THEATRE (OT)'},
-            {'key': 'ot_booking', 'label': 'OT Booking', 'section': 'OPERATION THEATRE (OT)'},
-            {'key': 'ot_schedule', 'label': 'OT Schedule', 'section': 'OPERATION THEATRE (OT)'},
-            {'key': 'ot_live', 'label': 'Live OT', 'section': 'OPERATION THEATRE (OT)'},
-            {'key': 'ot_history', 'label': 'OT History', 'section': 'OPERATION THEATRE (OT)'},
-            {'key': 'ot_master', 'label': 'OT Master', 'section': 'OPERATION THEATRE (OT)'},
-
-            # System Administration
-            {'key': 'system_section', 'label': 'Administration Access', 'section': 'SYSTEM ADMINISTRATION'},
-            {'key': 'administration', 'label': 'User Accounts Directory', 'section': 'SYSTEM ADMINISTRATION'},
-            {'key': 'users_roles', 'label': 'Users & Roles Matrix', 'section': 'SYSTEM ADMINISTRATION'},
-            {'key': 'inventory', 'label': 'Inventory Management', 'section': 'SYSTEM ADMINISTRATION'},
-            {'key': 'settings', 'label': 'System Settings', 'section': 'SYSTEM ADMINISTRATION'},
-        ]
-
+class RoleMenuPermissionsView(LoginRequiredMixin, View):
+    """
+    Legacy RoleMenuPermissionsView: Permanently redirects to the centralized
+    Navbar Module and Submodule Mapping Page (which now manages both Landing Department and Role permissions).
+    """
     def get(self, request, *args, **kwargs):
-        if not (request.user.is_superuser or request.user.is_admin_role):
-            messages.error(request, "Access restricted to system administrators.")
-            return redirect('patients:list')
-
-        mode = request.GET.get('mode', 'granular')
-        if mode not in ['granular', 'overview']:
-            mode = 'granular'
-
-        roles = [
-            {'code': User.Roles.ADMIN, 'label': 'Administrator', 'is_locked': True, 'badge_class': 'badge-admin'},
-            {'code': User.Roles.MANAGER, 'label': 'Department Manager', 'is_locked': False, 'badge_class': 'badge-manager'},
-            {'code': User.Roles.STAFF, 'label': 'Staff Member', 'is_locked': False, 'badge_class': 'badge-staff'},
-            {'code': User.Roles.AUDITOR, 'label': 'Auditor', 'is_locked': False, 'badge_class': 'badge-auditor'},
-        ]
-        for cr in CustomRole.objects.all():
-            roles.append({'code': cr.code, 'label': cr.name, 'is_locked': False, 'badge_class': 'badge-custom'})
-
-        selected_role = request.GET.get('role', '')
-        if not selected_role and len(roles) > 1:
-            selected_role = roles[1]['code']
-        elif not selected_role:
-            selected_role = User.Roles.ADMIN
-
-        selected_role_obj = next((r for r in roles if r['code'] == selected_role), roles[0])
-
-        # 1. Granular Modules and Submodules Data
-        from .permissions import PERMISSION_MODULES
-        role_db_perms = RoleMenuPermission.get_permissions_for_role(selected_role) or {}
-
-        granular_modules = []
-        total_actions_count = 0
-        granted_actions_count = 0
-
-        for mod in PERMISSION_MODULES:
-            sub_items = []
-            for sub in mod['sub_modules']:
-                sub_code = sub['code']
-                actions_list = sub.get('actions', [])
-                
-                # Check permissions
-                def _is_granted(act):
-                    if selected_role == User.Roles.ADMIN:
-                        return True
-                    # Check exact key e.g. patients.patient_list.update
-                    k1 = f"{sub_code}.{act}"
-                    k2 = f"{sub_code}_{act}"
-                    k3 = f"{sub_code.replace('.', '_')}_{act}"
-                    if act == 'view':
-                        # View can also be granted if base code is granted
-                        return role_db_perms.get(k1, role_db_perms.get(k2, role_db_perms.get(sub_code, role_db_perms.get(sub_code.replace('.', '_'), False))))
-                    return bool(role_db_perms.get(k1, role_db_perms.get(k2, role_db_perms.get(k3, False))))
-
-                has_view = 'view' in actions_list
-                has_create = 'create' in actions_list
-                has_update = 'update' in actions_list or 'edit' in actions_list
-                has_delete = 'delete' in actions_list or 'cancel' in actions_list
-                has_import = 'import' in actions_list
-                has_export = 'export' in actions_list
-
-                view_granted = _is_granted('view') if has_view else False
-                create_granted = _is_granted('create') if has_create else False
-                update_granted = _is_granted('update') if has_update else False
-                delete_granted = _is_granted('delete') if has_delete else False
-                import_granted = _is_granted('import') if has_import else False
-                export_granted = _is_granted('export') if has_export else False
-
-                if has_view:
-                    total_actions_count += 1
-                    if view_granted: granted_actions_count += 1
-                if has_create:
-                    total_actions_count += 1
-                    if create_granted: granted_actions_count += 1
-                if has_update:
-                    total_actions_count += 1
-                    if update_granted: granted_actions_count += 1
-                if has_delete:
-                    total_actions_count += 1
-                    if delete_granted: granted_actions_count += 1
-                if has_import:
-                    total_actions_count += 1
-                    if import_granted: granted_actions_count += 1
-                if has_export:
-                    total_actions_count += 1
-                    if export_granted: granted_actions_count += 1
-
-                sub_items.append({
-                    'code': sub_code,
-                    'label': sub['label'],
-                    'description': sub.get('description', ''),
-                    'has_view': has_view,
-                    'has_create': has_create,
-                    'has_update': has_update,
-                    'has_delete': has_delete,
-                    'has_import': has_import,
-                    'has_export': has_export,
-                    'view_granted': view_granted,
-                    'create_granted': create_granted,
-                    'update_granted': update_granted,
-                    'delete_granted': delete_granted,
-                    'import_granted': import_granted,
-                    'export_granted': export_granted,
-                })
-
-            granular_modules.append({
-                'module': mod['module'],
-                'label': mod['label'],
-                'icon': mod.get('icon', 'bi-folder2'),
-                'sub_modules': sub_items,
-            })
-
-        # 2. Overview High-Level Matrix
-        menus = self.get_menu_definitions()
-        matrix = []
-        for menu in menus:
-            m_key = menu['key']
-            row = {
-                'key': m_key,
-                'label': menu['label'],
-                'section': menu['section'],
-                'role_perms': []
-            }
-            for role in roles:
-                r_code = role['code']
-                if r_code == User.Roles.ADMIN:
-                    is_granted = True
-                else:
-                    temp_user = User(role=r_code)
-                    is_granted = temp_user.can_access_menu(m_key)
-                row['role_perms'].append({
-                    'role_code': r_code,
-                    'is_locked': role['is_locked'],
-                    'is_granted': is_granted
-                })
-            matrix.append(row)
-
-        context = {
-            'mode': mode,
-            'roles': roles,
-            'selected_role': selected_role,
-            'selected_role_obj': selected_role_obj,
-            'granular_modules': granular_modules,
-            'total_actions_count': total_actions_count,
-            'granted_actions_count': granted_actions_count,
-            'menus': menus,
-            'matrix': matrix,
-        }
-        return render(request, self.template_name, context)
+        role = request.GET.get('role', '')
+        url = reverse_lazy('users:navbar_mapping')
+        if role:
+            return redirect(f"{url}?mode=role&role={role}")
+        return redirect(f"{url}?mode=role")
 
     def post(self, request, *args, **kwargs):
-        if not (request.user.is_superuser or request.user.is_admin_role):
-            messages.error(request, "Access restricted to system administrators.")
-            return redirect('patients:list')
+        return self.get(request, *args, **kwargs)
 
-        mode = request.POST.get('mode', 'granular')
-
-        if mode == 'granular':
-            selected_role = request.POST.get('role')
-            if not selected_role or selected_role == User.Roles.ADMIN:
-                messages.error(request, "Administrator role cannot be altered as it retains full access.")
-                return redirect(f"{reverse_lazy('users:role_permissions')}?mode=granular&role={User.Roles.MANAGER}")
-
-            from .permissions import PERMISSION_MODULES
-            perms_dict = {}
-
-            for mod in PERMISSION_MODULES:
-                for sub in mod['sub_modules']:
-                    sub_code = sub['code']
-                    actions_list = sub.get('actions', [])
-
-                    for act in ['view', 'create', 'update', 'delete', 'import', 'export']:
-                        field_name = f"perm_{sub_code}_{act}"
-                        is_checked = field_name in request.POST
-                        if act in actions_list:
-                            perms_dict[f"{sub_code}.{act}"] = is_checked
-                            perms_dict[f"{sub_code}_{act}"] = is_checked
-                            perms_dict[f"{sub_code.replace('.', '_')}_{act}"] = is_checked
-                            if act == 'update':
-                                perms_dict[f"{sub_code}.edit"] = is_checked
-                                perms_dict[f"{sub_code}_edit"] = is_checked
-                                perms_dict[f"{sub_code.replace('.', '_')}_edit"] = is_checked
-
-                    # Also set base module key based on 'view' action
-                    is_view_checked = f"perm_{sub_code}_view" in request.POST
-                    perms_dict[sub_code] = is_view_checked
-                    perms_dict[sub_code.replace('.', '_')] = is_view_checked
-
-            obj, created = RoleMenuPermission.objects.get_or_create(role=selected_role)
-            existing = obj.menu_permissions if isinstance(obj.menu_permissions, dict) else {}
-            existing.update(perms_dict)
-            obj.menu_permissions = existing
-            obj.save()
-
-            messages.success(request, f"Granular permissions (View, Create, Edit, Delete, Import, Export) for '{selected_role}' saved successfully!")
-            return redirect(f"{reverse_lazy('users:role_permissions')}?mode=granular&role={selected_role}")
-
-        else:
-            menus = self.get_menu_definitions()
-            target_roles = [User.Roles.MANAGER, User.Roles.STAFF, User.Roles.AUDITOR] + list(CustomRole.objects.values_list('code', flat=True))
-
-            for r_code in target_roles:
-                perms_dict = {}
-                for menu in menus:
-                    m_key = menu['key']
-                    field_name = f"perm_{r_code}_{m_key}"
-                    perms_dict[m_key] = field_name in request.POST
-
-                obj, created = RoleMenuPermission.objects.get_or_create(role=r_code)
-                existing = obj.menu_permissions if isinstance(obj.menu_permissions, dict) else {}
-                existing.update(perms_dict)
-                obj.menu_permissions = existing
-                obj.save()
-
-            messages.success(request, "Role & Sidebar Menu Access Mapping permissions updated successfully!")
-            return redirect(f"{reverse_lazy('users:role_permissions')}?mode=overview")
 
 
 class RoleOverviewView(LoginRequiredMixin, MenuAccessRequiredMixin, TemplateView):
@@ -1522,13 +1222,6 @@ NAVBAR_MODULES_CONFIG = [
                 'url': '/administration/landing-departments/',
                 'description': 'Create, edit, delete, and customize department login cards on the landing page',
             },
-            {
-                'key': 'role_permissions',
-                'name': 'Role Access Matrix',
-                'icon': 'bi-grid-3x3-gap-fill',
-                'url': '/users/roles/access-matrix/',
-                'description': 'Comprehensive security permissions and sidebar access control matrix',
-            },
         ]
     },
     {
@@ -1741,8 +1434,12 @@ class NavBarMappingView(LoginRequiredMixin, MenuAccessRequiredMixin, View):
                     for sub in mod.submodules.all():
                         current_perms[sub.code] = True
             else:
-                temp_user = User(role=selected_role)
-                current_perms = temp_user.get_menu_mapping()
+                db_perms = RoleMenuPermission.get_permissions_for_role(selected_role)
+                if db_perms and isinstance(db_perms, dict) and len(db_perms) > 0:
+                    current_perms = db_perms
+                else:
+                    temp_user = User(role=selected_role)
+                    current_perms = temp_user.get_role_default_mapping()
 
         # Build structured modules list from DB
         all_modules = NavModule.objects.prefetch_related('submodules').order_by('order', 'id')
@@ -1765,11 +1462,23 @@ class NavBarMappingView(LoginRequiredMixin, MenuAccessRequiredMixin, View):
                 if is_admin_selected:
                     can_view = can_add = can_edit = can_delete = can_print = True
                 elif is_granted:
-                    can_view = bool(current_perms.get(f"{sub.code}.view", act_dict.get('view', True)))
-                    can_add = bool(current_perms.get(f"{sub.code}.add", current_perms.get(f"{sub.code}.create", act_dict.get('add', act_dict.get('create', True)))))
-                    can_edit = bool(current_perms.get(f"{sub.code}.edit", current_perms.get(f"{sub.code}.update", act_dict.get('edit', act_dict.get('update', True)))))
-                    can_delete = bool(current_perms.get(f"{sub.code}.delete", act_dict.get('delete', True)))
-                    can_print = bool(current_perms.get(f"{sub.code}.print", current_perms.get(f"{sub.code}.export", act_dict.get('print', act_dict.get('export', True)))))
+                    def _get_act_val(act_names, default_val=True):
+                        for a in act_names:
+                            if a in act_dict and act_dict[a] is not None:
+                                return bool(act_dict[a])
+                            k1 = f"{sub.code}.{a}"
+                            k2 = f"{sub.code}_{a}"
+                            if k1 in current_perms and current_perms[k1] is not None:
+                                return bool(current_perms[k1])
+                            if k2 in current_perms and current_perms[k2] is not None:
+                                return bool(current_perms[k2])
+                        return default_val
+
+                    can_view = _get_act_val(['view', 'access'], True)
+                    can_add = _get_act_val(['add', 'create'], True)
+                    can_edit = _get_act_val(['edit', 'update'], True)
+                    can_delete = _get_act_val(['delete', 'cancel'], True)
+                    can_print = _get_act_val(['print', 'export'], True)
                 else:
                     can_view = can_add = can_edit = can_delete = can_print = False
 

@@ -75,10 +75,14 @@ class User(AbstractUser):
         e.g. 'patients.patient_list.view', 'patients.patient_list.update',
              'patients.patient_list.delete', 'patients.patient_list.import',
              'patients.patient_list.export', 'patient_list.edit', 'patient_list.delete'
-        Super Admin / Administrator / Developer always returns True.
-        Universal Access ('All Departments') always returns True.
-        Checks both Department-Wise Page Mapping (LandingDepartment.nav_permissions)
-        and Role-Wise Permissions (RoleMenuPermission).
+        Unified Collaborative Permission Engine:
+        Evaluates effective user permissions by combining:
+        1. Landing Department Permission (LandingDepartment.nav_permissions / DEPT_DEFAULT_NAV_MAPPING)
+        2. System Role Permission (RoleMenuPermission / role default mapping)
+
+        RULE: Effective Access = Landing Department Permission AND System Role Permission.
+        Both must explicitly permit access. If either denies or is not granted, access is DENIED.
+        Superuser and Administrators retain full access.
         """
         role_str = (self.role or '').strip().upper()
         if self.is_superuser or role_str in [self.Roles.ADMIN, self.Roles.DEVELOPER, 'DEVELOPER', 'DEVELOPER_ROLE']:
@@ -87,10 +91,21 @@ class User(AbstractUser):
         if not perm_code:
             return False
 
-        # Check Universal Access
+        # Check aliases e.g. ATC_EDIT -> auto_trigger.atc.update
+        aliases = {
+            'ATC_VIEW': 'auto_trigger.atc.view',
+            'ATC_CREATE': 'auto_trigger.atc.create',
+            'ATC_EDIT': 'auto_trigger.atc.update',
+            'ATC_TRIGGER': 'auto_trigger.atc.trigger',
+            'ATC_EMERGENCY_STOP': 'auto_trigger.atc.stop',
+            'THEME_SETTINGS_VIEW': 'theme_settings.view',
+            'THEME_SETTINGS_CHANGE': 'theme_settings.change',
+        }
+        if perm_code in aliases:
+            perm_code = aliases[perm_code]
+
         depts_list = self.get_departments_list()
-        if 'All Departments' in depts_list:
-            return True
+        is_universal_dept = ('All Departments' in depts_list)
 
         # Helper to check a permission key/action in a permissions dict
         def _check_dict(perms_dict, code):
@@ -98,8 +113,20 @@ class User(AbstractUser):
                 return None
 
             parts = code.split('.')
-            action = parts[-1].lower() if len(parts) > 1 else 'view'
-            sub_code = parts[-2] if len(parts) > 1 else parts[0]
+            if len(parts) == 1:
+                sub_code = parts[0]
+                action = 'view'
+            elif len(parts) == 2:
+                action_words = ['view', 'access', 'create', 'add', 'edit', 'update', 'delete', 'cancel', 'print', 'export', 'stop', 'trigger']
+                if parts[1].lower() in action_words:
+                    sub_code = parts[0]
+                    action = parts[1].lower()
+                else:
+                    sub_code = parts[1]
+                    action = 'view'
+            else:
+                sub_code = parts[-2]
+                action = parts[-1].lower()
 
             # Map action synonyms
             action_aliases = [action]
@@ -111,14 +138,23 @@ class User(AbstractUser):
                 action_aliases = ['delete', 'cancel']
             elif action in ['print', 'export']:
                 action_aliases = ['print', 'export']
-            elif action == 'view':
+            elif action in ['view', 'access']:
                 action_aliases = ['view', 'access']
 
-            # Direct check
-            if code in perms_dict:
-                return bool(perms_dict[code])
+            # 1. If the submodule itself is explicitly disabled (False), all actions under it are False
+            if sub_code in perms_dict and perms_dict[sub_code] is False:
+                return False
+            if sub_code.replace('.', '_') in perms_dict and perms_dict[sub_code.replace('.', '_')] is False:
+                return False
 
-            # Check sub_code.action variants
+            # 2. Check granular action dict e.g. perms_dict.get('search_patient_actions')
+            act_obj = perms_dict.get(f"{sub_code}_actions")
+            if isinstance(act_obj, dict):
+                for act in action_aliases:
+                    if act in act_obj and act_obj[act] is not None:
+                        return bool(act_obj[act])
+
+            # 3. Check specific action keys
             for act in action_aliases:
                 k1 = f"{sub_code}.{act}"
                 k2 = f"{sub_code}_{act}"
@@ -130,68 +166,68 @@ class User(AbstractUser):
                 if k3 in perms_dict and perms_dict[k3] is not None:
                     return bool(perms_dict[k3])
 
-            # Check action dict e.g. perms_dict.get('patient_list_actions')
-            act_obj = perms_dict.get(f"{sub_code}_actions")
-            if isinstance(act_obj, dict):
-                for act in action_aliases:
-                    if act in act_obj and act_obj[act] is not None:
-                        return bool(act_obj[act])
+            # 4. Direct exact code match
+            if code in perms_dict and perms_dict[code] is not None:
+                return bool(perms_dict[code])
 
-            # If action is 'view', also check if submodule or module base key is granted
+            # 5. If action is 'view' or 'access', fallback to submodule base toggle
             if action in ['view', 'access']:
-                if sub_code in perms_dict:
+                if sub_code in perms_dict and perms_dict[sub_code] is not None:
                     return bool(perms_dict[sub_code])
-                if sub_code.replace('.', '_') in perms_dict:
+                if sub_code.replace('.', '_') in perms_dict and perms_dict[sub_code.replace('.', '_')] is not None:
                     return bool(perms_dict[sub_code.replace('.', '_')])
 
             return None
 
-        # 1. Check Department-Wise Page Mapping (LandingDepartment.nav_permissions) FIRST
+        # 1. Resolve Landing Department Permission
+        dept_allowed = True
+        dept_res = None
+        if depts_list and not is_universal_dept:
+            try:
+                from apps.users.models import LandingDepartment
+                from apps.users.nav_config import DEPT_DEFAULT_NAV_MAPPING
+                for dept_name in depts_list:
+                    dept_obj = (
+                        LandingDepartment.objects.filter(name__iexact=dept_name).first()
+                        or LandingDepartment.objects.filter(code__iexact=dept_name.lower().replace(' ', '_')).first()
+                        or LandingDepartment.objects.filter(slug__iexact=dept_name.lower().replace(' ', '-')).first()
+                    )
+                    if dept_obj:
+                        d_perms = dept_obj.nav_permissions if (dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict) and len(dept_obj.nav_permissions) > 0) else DEPT_DEFAULT_NAV_MAPPING.get(dept_obj.code, {})
+                        d_res = _check_dict(d_perms, perm_code)
+                        if d_res is not None:
+                            dept_res = d_res
+                            break
+            except Exception:
+                pass
+            dept_allowed = bool(dept_res is True)
+
+        # 2. Resolve System Role Permission
+        role_res = None
         try:
-            from apps.users.models import LandingDepartment
-            for dept_name in depts_list:
-                dept_obj = (
-                    LandingDepartment.objects.filter(name__iexact=dept_name).first()
-                    or LandingDepartment.objects.filter(code__iexact=dept_name.lower().replace(' ', '_')).first()
-                    or LandingDepartment.objects.filter(slug__iexact=dept_name.lower().replace(' ', '-')).first()
-                )
-                if dept_obj and dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict):
-                    res = _check_dict(dept_obj.nav_permissions, perm_code)
-                    if res is not None:
-                        return res
+            from apps.users.models import RoleMenuPermission
+            r_perms = RoleMenuPermission.get_permissions_for_role(self.role)
+            if r_perms and isinstance(r_perms, dict) and len(r_perms) > 0:
+                role_res = _check_dict(r_perms, perm_code)
+            else:
+                default_role_map = self.get_role_default_mapping()
+                role_res = _check_dict(default_role_map, perm_code)
         except Exception:
             pass
 
-        # 2. Check Role-Wise Permissions (RoleMenuPermission)
-        role_perms = None
-        try:
-            from apps.users.models import RoleMenuPermission
-            role_perms = RoleMenuPermission.get_permissions_for_role(self.role)
-            if role_perms and isinstance(role_perms, dict):
-                res = _check_dict(role_perms, perm_code)
-                if res is not None:
-                    return res
-        except Exception:
-            role_perms = None
+        role_allowed = bool(role_res is True)
 
-        # 3. Check aliases e.g. ATC_EDIT -> auto_trigger.atc.update
-        aliases = {
-            'ATC_VIEW': 'auto_trigger.atc.view',
-            'ATC_CREATE': 'auto_trigger.atc.create',
-            'ATC_EDIT': 'auto_trigger.atc.update',
-            'ATC_TRIGGER': 'auto_trigger.atc.trigger',
-            'ATC_EMERGENCY_STOP': 'auto_trigger.atc.stop',
-            'THEME_SETTINGS_VIEW': 'theme_settings.view',
-            'THEME_SETTINGS_CHANGE': 'theme_settings.change',
-        }
-        if perm_code in aliases:
-            return self.has_perm_code(aliases[perm_code])
-
-        # Theme Settings permission: dedicated permission - only granted if explicitly allowed in role/dept perms
+        # 3. Dedicated Web Theme Permission Evaluation
         if perm_code in ['theme_settings', 'theme_settings.view', 'theme_settings.change', 'settings.theme_settings']:
+            if role_res is not None or dept_res is not None:
+                return bool(dept_allowed and role_allowed)
             return False
 
-        # 4. Default fallback for specific legacy roles if not configured in DB
+        # 4. Collaborative Intersection: BOTH must allow access
+        if role_res is not None or dept_res is not None:
+            return bool(dept_allowed and role_allowed)
+
+        # 5. Default fallback for specific legacy roles if not configured in DB
         if self.role == self.Roles.MANAGER:
             return True
 
@@ -255,41 +291,9 @@ class User(AbstractUser):
     def can_manage_users(self):
         return self.is_admin_role
 
-    def get_menu_mapping(self):
-        """
-        Central mapping function returning a dictionary of sidebar menu keys
-        and their accessibility boolean flags based on the user's role/profile.
-        Supports dynamic DB overrides from RoleMenuPermission model.
-        """
-        all_keys = [
-            'dashboard',
-            'patients', 'add_patient', 'search_patient', 'patient_list', 'patient_import',
-            'review', 'discharge', 'review_report', 'op_census', 'patient_companies',
-            'department_list', 'add_department', 'add_company',
-            'ward', 'ward_management', 'ward_allocation', 'ward_service_request', 'ward_transfer', 'branch_transfer', 'branch_transfer_report',
-            'master', 'master_departments', 'master_wards', 'master_investigations', 'master_parameters',
-            'lab_master', 'lab_master_dashboard', 'lab_sub_departments', 'lab_master_permissions',
-            'investigation_parameter_mapping', 'workload_mapping_list', 'mapping_validation',
-            'import_lab_workload_csv', 'export_lab_workload_csv', 'legacy_mapping', 'universal_master_import_export',
-            'consultant', 'doctor_window', 'service_request_add',
-            'lab_orders', 'work_orders', 'order_entry', 'result_entry_list',
-            'lab_reports', 'report_dashboard', 'report_daily', 'report_monthly',
-            'report_sub_department', 'report_investigation', 'report_hospital_department',
-            'report_benchmark', 'report_abnormal',
-            'auto_trigger', 'auto_trigger_configuration', 'auto_trigger_history',
-            'auto_trigger_monthly_create', 'auto_trigger_monthly', 'auto_trigger_monthly_census',
-            'auto_trigger_automate_test', 'auto_trigger_result_view',
-            'auto_trigger_atc', 'auto_trigger_atc_status', 'auto_trigger_atc_settings',
-            'ot', 'ot_dashboard', 'ot_booking', 'ot_schedule', 'ot_live', 'ot_history', 'ot_master',
-            'system_section', 'administration', 'users_roles', 'inventory', 'settings', 'theme_settings',
-        ]
 
-        role_str = (self.role or '').strip().upper()
-        if self.is_superuser or role_str in [self.Roles.ADMIN, self.Roles.DEVELOPER, 'DEVELOPER', 'DEVELOPER_ROLE']:
-            return {k: True for k in all_keys}
-
-        db_perms = RoleMenuPermission.get_permissions_for_role(self.role)
-
+    def get_role_default_mapping(self):
+        """Returns the default permission mapping dictionary for the user's role."""
         role_mappings = {
             self.Roles.MANAGER: {
                 'dashboard': True,
@@ -378,27 +382,93 @@ class User(AbstractUser):
             'ot': True, 'ot_dashboard': True, 'ot_booking': True, 'ot_schedule': True, 'ot_live': False, 'ot_history': False, 'ot_master': False,
             'system_section': False, 'administration': False, 'users_roles': False, 'inventory': False, 'settings': False,
         })
+        return role_mappings.get(self.role, default_map).copy()
 
-        merged = default_map.copy()
+    def get_menu_mapping(self):
+        """
+        Central mapping function returning a dictionary of sidebar menu keys
+        and their accessibility boolean flags based on the user's role/profile.
+        Supports dynamic DB overrides from RoleMenuPermission model.
+        """
+        all_keys = [
+            'dashboard',
+            'patients', 'add_patient', 'search_patient', 'patient_list', 'patient_import',
+            'review', 'discharge', 'review_report', 'op_census', 'patient_companies',
+            'department_list', 'add_department', 'add_company',
+            'ward', 'ward_management', 'ward_allocation', 'ward_service_request', 'ward_transfer', 'branch_transfer', 'branch_transfer_report',
+            'master', 'master_departments', 'master_wards', 'master_investigations', 'master_parameters',
+            'lab_master', 'lab_master_dashboard', 'lab_sub_departments', 'lab_master_permissions',
+            'investigation_parameter_mapping', 'workload_mapping_list', 'mapping_validation',
+            'import_lab_workload_csv', 'export_lab_workload_csv', 'legacy_mapping', 'universal_master_import_export',
+            'consultant', 'doctor_window', 'service_request_add',
+            'lab_orders', 'work_orders', 'order_entry', 'result_entry_list',
+            'lab_reports', 'report_dashboard', 'report_daily', 'report_monthly',
+            'report_sub_department', 'report_investigation', 'report_hospital_department',
+            'report_benchmark', 'report_abnormal',
+            'auto_trigger', 'auto_trigger_configuration', 'auto_trigger_history',
+            'auto_trigger_monthly_create', 'auto_trigger_monthly', 'auto_trigger_monthly_census',
+            'auto_trigger_automate_test', 'auto_trigger_result_view',
+            'auto_trigger_atc', 'auto_trigger_atc_status', 'auto_trigger_atc_settings',
+            'ot', 'ot_dashboard', 'ot_booking', 'ot_schedule', 'ot_live', 'ot_history', 'ot_master',
+            'system_section', 'administration', 'users_roles', 'inventory', 'settings', 'theme_settings',
+        ]
+
+        role_str = (self.role or '').strip().upper()
+        if self.is_superuser or role_str in [self.Roles.ADMIN, self.Roles.DEVELOPER, 'DEVELOPER', 'DEVELOPER_ROLE']:
+            return {k: True for k in all_keys}
+
+        db_perms = RoleMenuPermission.get_permissions_for_role(self.role)
+        role_map = self.get_role_default_mapping()
         if db_perms:
-            merged.update(db_perms)
+            role_map.update(db_perms)
 
-        # Merge Department-level Nav Mapping Permissions
+        # Department mapping from LandingDepartment
+        dept_map = {}
+        has_dept_perms = False
+        depts_list = self.get_departments_list()
+        if 'All Departments' in depts_list:
+            res = {k: bool(role_map.get(k, False)) for k in all_keys}
+            res['theme_settings'] = self.can_access_theme_settings
+            return res
+
         try:
             from apps.users.models import LandingDepartment
-            depts_list = self.get_departments_list()
+            from apps.users.nav_config import DEPT_DEFAULT_NAV_MAPPING
             for dept_name in depts_list:
                 dept_obj = (
                     LandingDepartment.objects.filter(name__iexact=dept_name).first()
                     or LandingDepartment.objects.filter(code__iexact=dept_name.lower().replace(' ', '_')).first()
                     or LandingDepartment.objects.filter(slug__iexact=dept_name.lower().replace(' ', '-')).first()
                 )
-                if dept_obj and dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict):
-                    for k, v in dept_obj.nav_permissions.items():
-                        if isinstance(v, bool):
-                            merged[k] = v
+                if dept_obj:
+                    d_perms = dept_obj.nav_permissions if (dept_obj.nav_permissions and isinstance(dept_obj.nav_permissions, dict) and len(dept_obj.nav_permissions) > 0) else DEPT_DEFAULT_NAV_MAPPING.get(dept_obj.code, {})
+                    if d_perms:
+                        has_dept_perms = True
+                        for k, v in d_perms.items():
+                            if isinstance(v, bool):
+                                dept_map[k] = v
         except Exception:
             pass
+
+        if not has_dept_perms:
+            final_map = dict(role_map)
+            final_map['theme_settings'] = self.can_access_theme_settings
+            return final_map
+
+        # Collaborative intersection: Both Landing Department and System Role must permit access
+        merged = {}
+        all_keys_set = set(role_map.keys()) | set(dept_map.keys()) | set(all_keys)
+        for k in all_keys_set:
+            r_val = role_map.get(k)
+            d_val = dept_map.get(k)
+            if r_val is True and d_val is True:
+                merged[k] = True
+            elif r_val is True and d_val is None:
+                merged[k] = True
+            elif d_val is True and r_val is None:
+                merged[k] = True
+            else:
+                merged[k] = False
 
         merged['theme_settings'] = self.can_access_theme_settings
         return merged

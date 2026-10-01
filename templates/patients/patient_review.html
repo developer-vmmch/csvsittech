@@ -521,7 +521,7 @@
             <div class="patient-grid-4x4">
                 <!-- ROW 1 - Col 1: Name (Single field, Title dropdown removed) -->
                 <div class="field-cell">
-                    <label class="field-cell-label" for="display_name">Name:<span class="text-danger">*</span></label>
+                    <label class="field-cell-label" for="title_select">Name:<span class="text-danger">*</span></label>
                     <input type="text" name="name" id="display_name" 
                            class="form-control-compact {% if patient %}is-readonly{% endif %}" 
                            value="{% if patient %}{{ patient.name }}{% endif %}" 
@@ -769,14 +769,14 @@
 
                 <div class="field-cell">
                     <label class="field-cell-label" for="ref_last_visit_dept">Department:</label>
-                    <select id="ref_last_visit_dept" class="form-select-compact is-readonly" tabindex="-1" aria-readonly="true">
+                    <select id="ref_last_visit_dept" class="form-select-compact" disabled>
                         <option>{% if last_visit %}{{ last_visit.initial_department_name|default:last_visit.department }}{% else %}--{% endif %}</option>
                     </select>
                 </div>
 
                 <div class="field-cell">
                     <label class="field-cell-label" for="ref_last_visit_unit">Unit / Doctor:</label>
-                    <select id="ref_last_visit_unit" class="form-select-compact is-readonly" tabindex="-1" aria-readonly="true">
+                    <select id="ref_last_visit_unit" class="form-select-compact" disabled>
                         <option>{% if last_visit %}{{ last_visit.unit_doctor }}{% else %}--{% endif %}</option>
                     </select>
                 </div>
@@ -791,7 +791,7 @@
                     VISIT DETAILS
                 </div>
 
-                <div class="visit-details-5col">
+                <div class="visit-details-5col" style="display: flex; flex-direction: row; flex-wrap: nowrap; align-items: flex-end; gap: 10px; width: 100%; overflow-x: auto;">
                     <!-- 1. Department -->
                     <div class="field-cell">
                         <label class="field-cell-label" for="id_visit_department">Department:<span class="text-danger">*</span></label>

@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0008_user_theme_user_theme_font_alter_user_department'),
+        ('users', '0009_user_theme_user_theme_font'),
     ]
 
     operations = [

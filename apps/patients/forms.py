@@ -167,11 +167,17 @@ class PatientRegistrationForm(forms.ModelForm):
         self.fields['gender'].required = True
         self.fields['guardian_name'].required = (reg_mode != 'EMERGENCY')
         self.fields['guardian_name'].error_messages = {'required': 'Guardian Name is required.'}
-        self.fields['street'].required = False
-        self.fields['village_area'].required = False
-        self.fields['mobile_no'].required = False
-        self.fields['aadhar_card'].required = False
-        self.fields['abha_id'].required = False
+        self.fields['centre'].required = False
+        self.fields['visit_through'].required = False
+        self.fields['category'].required = False
+        self.fields['guardian_relationship'].required = False
+        self.fields['country'].required = False
+        self.fields['state'].required = False
+        self.fields['city'].required = False
+
+        if reg_mode == 'EMERGENCY':
+            self.fields['department_obj'].required = False
+            self.fields['unit_obj'].required = False
 
         # Dynamic queryset for unit_obj based on selected department
         if 'department_obj' in self.data:
@@ -185,12 +191,23 @@ class PatientRegistrationForm(forms.ModelForm):
         else:
             self.fields['unit_obj'].queryset = DepartmentUnit.objects.filter(is_active=True)
 
+        if self.instance.pk:
+            if self.instance.category in ['Green', 'Yellow', 'Blue', 'Red', 'Black']:
+                self.initial['emergency_medicine_type'] = self.instance.category
+            if self.instance.guardian_relationship in ['Relative', 'Neighbour', 'Friend', 'Police', 'Self', 'Unknown']:
+                self.initial['emergency_relation'] = self.instance.guardian_relationship
+                if self.instance.guardian_relationship == 'Police':
+                    self.initial['emergency_police_station'] = self.instance.guardian_name or ''
+                elif self.instance.guardian_relationship != 'Self':
+                    self.initial['emergency_person_name'] = self.instance.guardian_name or ''
+                self.initial['emergency_contact_phone'] = self.instance.emergency_contact_phone or self.instance.guardian_phone or ''
+
     def clean_patient_id(self):
         patient_id = self.cleaned_data.get('patient_id')
-        if not patient_id and not self.instance.pk:
-            reg_mode = (self.data.get('registration_mode') or 'NORMAL').upper()
-            is_emer = (reg_mode == 'EMERGENCY')
-            return Patient.generate_next_patient_id(is_emergency=is_emer)
+        if not patient_id:
+            if self.instance.pk:
+                return self.instance.patient_id
+            return Patient.generate_next_patient_id()
         return patient_id
 
     def clean_age_years(self):
@@ -260,16 +277,39 @@ class PatientRegistrationForm(forms.ModelForm):
     emergency_medicine_type = forms.ChoiceField(
         required=False,
         choices=[
-            ('', 'Select Emergency Medicine Type'),
-            ('Trauma / Accident', 'Trauma / Accident'),
-            ('Acute Medical Emergency', 'Acute Medical Emergency'),
-            ('Cardiac / Resuscitation', 'Cardiac / Resuscitation'),
-            ('Poisoning / Toxicity', 'Poisoning / Toxicity'),
-            ('Burns / Inhalation', 'Burns / Inhalation'),
-            ('Pediatric Emergency', 'Pediatric Emergency'),
-            ('General Casualty', 'General Casualty')
+            ('', 'Select Category'),
+            ('Green', 'Green'),
+            ('Yellow', 'Yellow'),
+            ('Blue', 'Blue'),
+            ('Red', 'Red'),
+            ('Black', 'Black'),
         ],
         widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_emergency_medicine_type'})
+    )
+    emergency_relation = forms.ChoiceField(
+        required=False,
+        choices=[
+            ('', 'Select Relation'),
+            ('Relative', 'Relative'),
+            ('Neighbour', 'Neighbour'),
+            ('Friend', 'Friend'),
+            ('Police', 'Police'),
+            ('Self', 'Self'),
+            ('Unknown', 'Unknown'),
+        ],
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_emergency_relation'})
+    )
+    emergency_contact_phone = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-input', 'id': 'id_emergency_contact_phone', 'placeholder': 'Contact Number', 'maxlength': '15'})
+    )
+    emergency_police_station = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-input', 'id': 'id_emergency_police_station', 'placeholder': 'Police Station Name'})
+    )
+    emergency_person_name = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-input', 'id': 'id_emergency_person_name', 'placeholder': 'Person / Attendant Name (Optional)'})
     )
 
     def clean_mobile_no(self):
@@ -301,6 +341,85 @@ class PatientRegistrationForm(forms.ModelForm):
             self.add_error('age_years', "Patient age must be selected.")
 
         reg_mode = (self.data.get('registration_mode') or 'NORMAL').upper()
+        if reg_mode == 'EMERGENCY':
+            if not cleaned_data.get('department_obj'):
+                emr_dept = Department.objects.filter(name__icontains='EMERGENCY').first() or Department.objects.filter(code__iexact='EMR').first()
+                if not emr_dept:
+                    emr_dept, _ = Department.objects.get_or_create(code='EMR', defaults={'name': 'EMERGENCY MEDICINE', 'is_active': True})
+                cleaned_data['department_obj'] = emr_dept
+
+            target_dept = cleaned_data.get('department_obj')
+            if not cleaned_data.get('unit_obj') and target_dept:
+                emr_unit = DepartmentUnit.objects.filter(department=target_dept, unit_name__icontains='CASUALTY').first() or DepartmentUnit.objects.filter(department=target_dept).first()
+                if not emr_unit:
+                    emr_unit, _ = DepartmentUnit.objects.get_or_create(
+                        department=target_dept,
+                        unit_name='Casualty / Emergency Unit',
+                        defaults={'code': 'EMR-CAS', 'is_active': True}
+                    )
+                cleaned_data['unit_obj'] = emr_unit
+
+        if reg_mode == 'EMERGENCY':
+            emer_rel = (cleaned_data.get('emergency_relation') or self.data.get('emergency_relation') or '').strip()
+            emer_phone = (cleaned_data.get('emergency_contact_phone') or self.data.get('emergency_contact_phone') or '').strip()
+            emer_station = (cleaned_data.get('emergency_police_station') or self.data.get('emergency_police_station') or '').strip()
+            emer_pname = (cleaned_data.get('emergency_person_name') or self.data.get('emergency_person_name') or '').strip()
+            mob_no = (cleaned_data.get('mobile_no') or self.data.get('mobile_no') or '').strip()
+
+            # Ensure phone numbers are synchronized so Mobile No is never blank
+            if not mob_no and emer_phone:
+                cleaned_data['mobile_no'] = emer_phone
+                mob_no = emer_phone
+            elif mob_no and not emer_phone:
+                cleaned_data['emergency_contact_phone'] = mob_no
+                emer_phone = mob_no
+
+            if emer_rel:
+                cleaned_data['guardian_relationship'] = emer_rel
+                if emer_rel == 'Police':
+                    if emer_station and emer_pname:
+                        cleaned_data['guardian_name'] = f"{emer_station} - {emer_pname}"
+                    else:
+                        cleaned_data['guardian_name'] = emer_station or emer_pname or ''
+                elif emer_rel == 'Self':
+                    cleaned_data['guardian_name'] = ''
+                elif emer_rel == 'Unknown':
+                    cleaned_data['guardian_name'] = emer_pname or 'Unknown'
+                else:
+                    cleaned_data['guardian_name'] = emer_pname or ''
+            else:
+                cleaned_data['guardian_relationship'] = '-'
+                cleaned_data['guardian_name'] = ''
+
+            if emer_phone:
+                cleaned_data['emergency_contact_phone'] = emer_phone
+                cleaned_data['guardian_phone'] = emer_phone
+            elif mob_no:
+                cleaned_data['emergency_contact_phone'] = mob_no
+                cleaned_data['guardian_phone'] = mob_no
+
+        if not cleaned_data.get('centre'):
+            cleaned_data['centre'] = 'VMMCH'
+        if not cleaned_data.get('visit_through'):
+            cleaned_data['visit_through'] = 'OP'
+        if not cleaned_data.get('guardian_relationship'):
+            cleaned_data['guardian_relationship'] = '-'
+        if not cleaned_data.get('country'):
+            cleaned_data['country'] = 'India'
+        if not cleaned_data.get('state'):
+            cleaned_data['state'] = 'Puducherry'
+        if not cleaned_data.get('city'):
+            cleaned_data['city'] = 'Karaikal'
+
+        if reg_mode == 'EMERGENCY':
+            emer_cat = (cleaned_data.get('emergency_medicine_type') or self.data.get('emergency_medicine_type') or '').strip()
+            if emer_cat:
+                cleaned_data['category'] = emer_cat
+            else:
+                cleaned_data['category'] = 'EMERGENCY'
+        elif not cleaned_data.get('category'):
+            cleaned_data['category'] = 'CONSULTATION'
+
         if reg_mode == 'NRI':
             passport = (cleaned_data.get('passport_number') or self.data.get('passport_number') or '').strip()
             if not passport:
@@ -309,9 +428,6 @@ class PatientRegistrationForm(forms.ModelForm):
             if not purpose:
                 self.add_error('purpose', "Purpose is mandatory for NRI registration.")
 
-        if self.instance and self.instance.pk and self.instance.is_admitted_inpatient:
-            raise forms.ValidationError("The patient is already admitted as an inpatient.")
-
         return cleaned_data
 
     class Meta:
@@ -319,7 +435,7 @@ class PatientRegistrationForm(forms.ModelForm):
         fields = [
             'ipno', 'patient_id', 'centre', 'title', 'name', 'gender', 'dob', 'age_years', 'age_months', 'age_days',
             'aadhar_card', 'visit_through', 'category', 'marital_status', 'religion',
-            'guardian_relationship', 'guardian_name', 'patient_company', 'abha_id', 'ofc_code',
+            'guardian_relationship', 'guardian_name', 'guardian_phone', 'emergency_contact_phone', 'patient_company', 'abha_id', 'ofc_code',
             'street', 'village_area', 'country', 'state', 'city', 'pincode',
             'mobile_no', 'email', 'blood_group', 'patient_type', 'complaint', 'occupation', 'income',
             'department_obj', 'unit_obj', 'pan_no'

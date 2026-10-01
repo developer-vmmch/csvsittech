@@ -681,7 +681,7 @@
             <input type="hidden" name="centre" value="VMMCH">
             <!-- Hidden Patient Title to preserve backend data -->
             <input type="hidden" name="title" id="hidden_title" value="{{ patient.title|default:'-' }}">
-            <!-- Hidden Admission Type (Completely removed from visible UI per specification) -->
+            <!-- Admission Type: Hidden field preserved for backend IP admission -->
             <input type="hidden" name="admission_type" id="hidden_admission_type" value="{{ admission_form.admission_type.value|default:'General Admission' }}">
 
             <!-- =========================================================================
@@ -1069,7 +1069,7 @@
                         </span>
                         <span class="bed-pill bed-pill-avail">
                             <span class="bed-pill-dot" style="background: #10b981;"></span>
-                            Available: <strong id="badge_avail_num" style="margin-left: 2px;">0</strong>
+                            Available Beds: <strong id="badge_avail_num" style="margin-left: 2px;">0</strong>
                         </span>
                         <span class="bed-pill bed-pill-occ">
                             <span class="bed-pill-dot" style="background: #ef4444;"></span>
@@ -1082,8 +1082,8 @@
                     </div>
 
                     <div>
-                        <button type="button" class="btn-action-base btn-action-reset" onclick="loadAvailableBedsForWard()" style="height: 26px; padding: 0 10px; font-size: 0.74rem;">
-                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        <button type="button" class="btn-action-base btn-action-reset" onclick="loadAvailableBedsForWard()" style="height: 26px; padding: 0 10px; font-size: 0.74rem;" title="Check Available Beds">
+                            <i class="bi bi-arrow-clockwise"></i> Check Available Beds
                         </button>
                     </div>
                 </div>
@@ -1095,7 +1095,7 @@
                 </div>
 
                 <!-- Visual Bed Cards Grid -->
-                <div class="ward-beds-grid" id="ward_beds_grid">
+                <div class="ward-beds-grid ip_ward_beds_grid" id="ward_beds_grid">
                     <div style="grid-column: 1 / -1; font-size: 0.78rem; color: var(--theme-text-muted, #64748b); padding: 12px; text-align: center;">
                         <i class="bi bi-info-circle"></i> Please select a ward from Admission Details to view and allocate beds.
                     </div>
@@ -1107,6 +1107,7 @@
                  Save / Admit Patient (always enabled for valid patient, even with 0 beds)
                  Reset | Print | Label - I | Print - OP | Label-A4
                  ========================================================================= -->
+            <!-- Actions: Save Admission | Reset | Print - Admission | Label - IP | Bed Allocation -->
             <div class="ip-action-bar">
                 <button type="submit" class="btn-action-base btn-action-save" id="btn_save_admission"
                         {% if not patient %}disabled title="Please search and select a patient first" style="opacity: 0.65; cursor: not-allowed;"{% endif %}>
